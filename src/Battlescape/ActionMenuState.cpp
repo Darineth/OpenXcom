@@ -160,10 +160,25 @@ void ActionMenuState::addItem(BattleActionType ba, const std::string &name, int 
 		acc = (int)(_action->actor->getThrowingAccuracy());
 	int tu = _action->actor->getActionTUs(ba, _action->weapon);
 
+	int shots = (ba == BA_AUTOSHOT ? _action->weapon->getRules()->getAutoShots() : 1);
+	
 	if (ba == BA_THROW || ba == BA_AIMEDSHOT || ba == BA_SNAPSHOT || ba == BA_AUTOSHOT || ba == BA_LAUNCH || ba == BA_HIT)
-		s1 = tr("STR_ACCURACY_SHORT").arg(Text::formatPercentage(acc));
+	{
+		if(shots > 1)
+		{
+			s1 = tr("STR_ACCURACY_SHORT").arg(Text::formatPercentage(acc).append(L"x").append(Text::formatNumber(shots)));
+		}
+		else
+		{
+			s1 = tr("STR_ACCURACY_SHORT").arg(Text::formatPercentage(acc));
+		}
+	}
+
+	auto ammoItem = _action->weapon->getAmmoItem();
+	int ammo = ammoItem ? ammoItem->getAmmoQuantity() : 0;
+
 	s2 = tr("STR_TIME_UNITS_SHORT").arg(tu);
-	_actionMenu[*id]->setAction(ba, tr(name), s1, s2, tu);
+	_actionMenu[*id]->setAction(ba, tr(name), s1, s2, tu, shots > ammo, tu > _action->actor->getTimeUnits());
 	_actionMenu[*id]->setVisible(true);
 	(*id)++;
 }

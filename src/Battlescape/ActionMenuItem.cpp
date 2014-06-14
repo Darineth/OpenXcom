@@ -51,7 +51,7 @@ ActionMenuItem::ActionMenuItem(int id, Game *game, int x, int y) : InteractiveSu
 	_txtDescription->setColor(Palette::blockOffset(0)-1);
 	_txtDescription->setVisible(true);
 
-	_txtAcc = new Text(100, 20, 140, 13);
+	_txtAcc = new Text(100, 20, 120, 13);
 	_txtAcc->initText(big, small, lang);
 	_txtAcc->setBig();
 	_txtAcc->setHighContrast(true);
@@ -83,12 +83,16 @@ ActionMenuItem::~ActionMenuItem()
  * @param timeunits The timeunits string, including the TUs> prefix.
  * @param tu The timeunits value.
  */
-void ActionMenuItem::setAction(BattleActionType action, std::wstring description, std::wstring accuracy, std::wstring timeunits, int tu)
+void ActionMenuItem::setAction(BattleActionType action, std::wstring description, std::wstring accuracy, std::wstring timeunits, int tu, bool accError, bool tuError)
 {
 	_action = action;
 	_txtDescription->setText(description);
 	_txtAcc->setText(accuracy);
+	_txtAcc->setColor(accError ? (Palette::blockOffset(2)) : (Palette::blockOffset(0) - 1));
+
 	_txtTU->setText(timeunits);
+	_txtTU->setColor(tuError ? (Palette::blockOffset(2)) : (Palette::blockOffset(0) - 1));
+
 	_tu = tu;
 	_redraw = true;
 }
