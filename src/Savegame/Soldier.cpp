@@ -28,6 +28,7 @@
 #include "../Ruleset/Ruleset.h"
 #include "../Ruleset/StatString.h"
 #include "../Engine/Options.h"
+#include "../Interface/Text.h"
 #include "SavedGame.h"
 
 namespace OpenXcom
@@ -230,6 +231,7 @@ std::wstring Soldier::getCraftString(Language *lang) const
 	if (_recovery > 0)
 	{
 		s = lang->getString("STR_WOUNDED");
+		s = s.append(L": ").append(Text::formatNumber(_recovery));
 	}
 	else if (_craft == 0)
 	{
