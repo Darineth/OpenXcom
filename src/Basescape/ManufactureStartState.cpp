@@ -48,21 +48,22 @@ ManufactureStartState::ManufactureStartState(Game * game, Base * base, RuleManuf
 {
 	_screen = false;
 
-	_window = new Window(this, 320, 170, 0, 20);
-	_btnCancel = new TextButton(136, 16, 16, 165);
+	_window = new Window(this, 320, 180, 0, 20);
+	_btnCancel = new TextButton(136, 16, 16, 175);
 	_txtTitle = new Text(320, 17, 0, 30);
 	_txtManHour = new Text(290, 9, 16, 50);
 	_txtCost = new Text(290, 9, 16, 60);
 	_txtSell = new Text(290, 9, 16, 80);
+	_txtCurrent = new Text(290, 9, 16, 90);
 	_txtWorkSpace = new Text(290, 9, 16, 70);
 
-	_txtRequiredItemsTitle = new Text(290, 9, 16, 94);
-	_txtItemNameColumn = new Text(60, 16, 30, 102);
-	_txtUnitRequiredColumn = new Text(60, 16, 155, 102);
-	_txtUnitAvailableColumn = new Text(60, 16, 230, 102);
-	_lstRequiredItems = new TextList(270, 40, 30, 118);
+	_txtRequiredItemsTitle = new Text(290, 9, 16, 104);
+	_txtItemNameColumn = new Text(60, 16, 30, 112);
+	_txtUnitRequiredColumn = new Text(60, 16, 155, 112);
+	_txtUnitAvailableColumn = new Text(60, 16, 230, 112);
+	_lstRequiredItems = new TextList(270, 40, 30, 128);
 
-	_btnStart = new TextButton(136, 16, 168, 165);
+	_btnStart = new TextButton(136, 16, 168, 175);
 
 	// Set palette
 	setPalette("PAL_BASESCAPE", 6);
@@ -72,6 +73,7 @@ ManufactureStartState::ManufactureStartState(Game * game, Base * base, RuleManuf
 	add(_txtManHour);
 	add(_txtCost);
 	add(_txtSell);
+	add(_txtCurrent);
 	add(_txtWorkSpace);
 	add(_btnCancel);
 
@@ -102,23 +104,49 @@ ManufactureStartState::ManufactureStartState(Game * game, Base * base, RuleManuf
 
 	_txtSell->setColor(Palette::blockOffset(13)+10);
 	_txtSell->setSecondaryColor(Palette::blockOffset(13));
+	
+	_txtCurrent->setColor(Palette::blockOffset(13)+10);
+	_txtCurrent->setSecondaryColor(Palette::blockOffset(13));
 
 	int sellPrice = 0;
 
 	Ruleset* rules = _game->getRuleset();
 
 	auto producedItems = _item->getProducedItems();
+
+	bool singleItem = false;
+	std::string singleItemId;
+
 	for(auto ii = producedItems.begin(); ii != producedItems.end(); ++ii)
 	{
 		RuleItem* item = rules->getItem(ii->first);
 		if(item)
 		{
+			if(singleItem)
+			{
+				singleItem = false;
+			}
+			else if(singleItemId.size() == 0)
+			{
+				singleItem = true;
+				singleItemId = ii->first;
+			}
+
 			sellPrice += item->getSellCost() * ii->second;
 		}
 	}
 
 	// TODO: Translate
 	_txtSell->setText(LocalizedText(L"Sell Price per Unit>\x01{0}").arg(Text::formatFunding(sellPrice)));
+
+	if(singleItem)
+	{
+		_txtCurrent->setText(LocalizedText(L"Current Stores>\x01{0}").arg(Text::formatNumber(_base->getItems()->getItem(singleItemId))));
+	}
+	else
+	{
+		_txtCurrent->setVisible(false);
+	}
 
 	_txtWorkSpace->setColor(Palette::blockOffset(13)+10);
 	_txtWorkSpace->setSecondaryColor(Palette::blockOffset(13));
