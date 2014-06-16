@@ -30,6 +30,9 @@
 #include "../Engine/Options.h"
 #include "../Resource/ResourcePack.h"
 #include "../Ruleset/RuleManufacture.h"
+#include "../Ruleset/Ruleset.h"
+#include "../Ruleset/RuleCraft.h"
+#include "../Ruleset/RuleItem.h"
 #include "../Savegame/Base.h"
 #include "../Savegame/Production.h"
 #include "../Engine/Timer.h"
@@ -72,7 +75,7 @@ void ManufactureInfoState::buildUi()
 	_txtTitle = new Text(320, 17, 0, 35);
 	_btnOk = new TextButton(136, 16, 168, 150);
 	_btnStop = new TextButton(136, 16, 16, 150);
-	_btnSell = new ToggleTextButton(60, 16, 244, 56);
+	_btnSell = new ToggleTextButton(136, 16, 168, 56);
 	_txtAvailableEngineer = new Text(200, 9, 16, 55);
 	_txtAvailableSpace = new Text(200, 9, 16, 65);
 	_txtAllocatedEngineer = new Text(112, 32, 16, 75);
@@ -182,7 +185,24 @@ void ManufactureInfoState::buildUi()
 	_txtUnitDown->setText(tr("STR_DECREASE_UC"));
 
 	_btnSell->setColor(Palette::blockOffset(15)+1);
-	_btnSell->setText(tr("STR_SELL_PRODUCTION"));
+
+	int sellPrice = 0;
+
+	Ruleset* rules = _game->getRuleset();
+
+	auto producedItems = _item ? _item->getProducedItems() : _production->getRules()->getProducedItems();
+	for(auto ii = producedItems.begin(); ii != producedItems.end(); ++ii)
+	{
+		RuleItem* item = rules->getItem(ii->first);
+		if(item)
+		{
+			sellPrice += item->getSellCost() * ii->second;
+		}
+	}
+
+	std::wostringstream sellText;
+	sellText << tr("STR_SELL_PRODUCTION") << ": " << Text::formatFunding(sellPrice);
+	_btnSell->setText(sellText.str());
 
 	_btnOk->setColor(Palette::blockOffset(15)+6);
 	_btnOk->setText(tr("STR_OK"));

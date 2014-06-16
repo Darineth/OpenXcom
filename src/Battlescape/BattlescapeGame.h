@@ -53,6 +53,7 @@ struct BattleAction
 	bool targeting;
 	int value;
 	std::string result;
+	std::wstring description;
 	bool strafe, run;
 	int diff;
 	int autoShotCounter;

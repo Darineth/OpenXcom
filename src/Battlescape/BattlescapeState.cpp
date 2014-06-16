@@ -145,6 +145,7 @@ BattlescapeState::BattlescapeState(Game *game) : State(game), _popups(), _xBefor
 	}
 	_numVisibleUnit[9]->setX(_numVisibleUnit[9]->getX() - 2); // center number 10
 	_warning = new WarningMessage(224, 24, _icons->getX() + 48, _icons->getY() + 32);
+	_message = new WarningMessage(224, 24, _icons->getX() + 48, _icons->getY() + 32);
 	_btnLaunch = new InteractiveSurface(32, 24, screenWidth - 32, 0); // we need screenWidth, because that is independent of the black bars on the screen
 	_btnLaunch->setVisible(false);
 	_btnPsi = new InteractiveSurface(32, 24, screenWidth - 32, 25); // we need screenWidth, because that is independent of the black bars on the screen
@@ -219,6 +220,7 @@ BattlescapeState::BattlescapeState(Game *game) : State(game), _popups(), _xBefor
 		add(_numVisibleUnit[i]);
 	}
 	add(_warning);
+	add(_message);
 	add(_txtDebug);
 	add(_txtTooltip);
 	add(_btnLaunch);
@@ -425,6 +427,8 @@ BattlescapeState::BattlescapeState(Game *game) : State(game), _popups(), _xBefor
 	}
 	_warning->setColor(Palette::blockOffset(2));
 	_warning->setTextColor(Palette::blockOffset(1));
+	_message->setColor(Palette::blockOffset(3));
+	_message->setTextColor(Palette::blockOffset(4));
 	_btnLaunch->onMouseClick((ActionHandler)&BattlescapeState::btnLaunchClick);
 	_btnPsi->onMouseClick((ActionHandler)&BattlescapeState::btnPsiClick);
 
@@ -1376,7 +1380,7 @@ void BattlescapeState::handleItemClick(BattleItem *item)
 		if (_game->getSavedGame()->isResearched(item->getRules()->getRequirements()) || _save->getSelectedUnit()->getOriginalFaction() == FACTION_HOSTILE)
 		{
 			_battleGame->getCurrentAction()->weapon = item;
-			popup(new ActionMenuState(_game, _battleGame->getCurrentAction(), _icons->getX(), _icons->getY()-5));
+			popup(new ActionMenuState(_game, _battleGame->getCurrentAction(), _icons->getX(), _icons->getY()-25));
 		}
 		else
 		{
@@ -1449,6 +1453,20 @@ void BattlescapeState::debug(const std::wstring &message)
 void BattlescapeState::warning(const std::string &message)
 {
 	_warning->showMessage(tr(message));
+}
+
+void BattlescapeState::warning(const std::wstring &message)
+{
+	_warning->showMessage(message);
+}
+
+/**
+ * Shows a warning message.
+ * @param message Warning message.
+ */
+void BattlescapeState::message(const std::wstring &message)
+{
+	_message->showMessage(message);
 }
 
 /**

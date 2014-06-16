@@ -653,6 +653,10 @@ void BattlescapeGame::handleNonTargetAction()
 		_currentAction.type = BA_NONE;
 		_parentState->updateSoldierInfo();
 	}
+	else
+	{
+		_parentState->message(_currentAction.description);
+	}
 
 	setupCursor();
 }
