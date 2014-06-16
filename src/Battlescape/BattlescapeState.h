@@ -62,6 +62,7 @@ private:
 	NumberText *_numVisibleUnit[VISIBLE_MAX];
 	BattleUnit *_visibleUnit[VISIBLE_MAX];
 	WarningMessage *_warning;
+	WarningMessage *_message;
 	Text *_txtName;
 	NumberText *_numTimeUnits, *_numEnergy, *_numHealth, *_numMorale, *_numLayers, *_numAmmoLeft, *_numAmmoRight;
 	Bar *_barTimeUnits, *_barEnergy, *_barHealth, *_barMorale;
@@ -172,6 +173,9 @@ public:
 	void debug(const std::wstring &message);
 	/// Show warning message.
 	void warning(const std::string &message);
+	void warning(const std::wstring &message);
+	/// Show message.
+	void message(const std::wstring &message);
 	/// Handles keypresses.
 	void handle(Action *action);
 	/// Displays a popup window.

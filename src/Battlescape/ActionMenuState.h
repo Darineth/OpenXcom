@@ -27,6 +27,7 @@ namespace OpenXcom
 
 class Game;
 class ActionMenuItem;
+class WarningMessage;
 
 /**
  * Window that allows the player

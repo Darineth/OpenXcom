@@ -41,6 +41,7 @@ class ActionMenuItem : public InteractiveSurface
 private:
 	bool _highlighted;
 	BattleActionType _action;
+	std::wstring _description;
 	int _tu;
 	Frame *_frame;
 	Text *_txtDescription, *_txtAcc, *_txtTU;
@@ -63,7 +64,8 @@ public:
 	void mouseIn(Action *action, State *state);
 	/// Processes a mouse hover out event.
 	void mouseOut(Action *action, State *state);
-
+	/// Gets the action description.
+	std::wstring getDescription() const;
 };
 
 }

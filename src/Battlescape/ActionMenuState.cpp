@@ -135,7 +135,6 @@ ActionMenuState::ActionMenuState(Game *game, BattleAction *action, int x, int y)
 	{
 		addItem(BA_USE, "STR_USE_MIND_PROBE", &id);
 	}
-
 }
 
 /**
@@ -177,9 +176,12 @@ void ActionMenuState::addItem(BattleActionType ba, const std::string &name, int 
 	auto ammoItem = _action->weapon->getAmmoItem();
 	int ammo = ammoItem ? ammoItem->getAmmoQuantity() : 0;
 
+	int key = (*id) + 1;
+
 	s2 = tr("STR_TIME_UNITS_SHORT").arg(tu);
-	_actionMenu[*id]->setAction(ba, tr(name), s1, s2, tu, shots > ammo, tu > _action->actor->getTimeUnits());
+	_actionMenu[*id]->setAction(ba, Text::formatNumber(key) + L". " + tr(name).c_str(), s1, s2, tu, shots > ammo, tu > _action->actor->getTimeUnits());
 	_actionMenu[*id]->setVisible(true);
+	_actionMenu[*id]->onKeyboardPress((ActionHandler)&ActionMenuState::btnActionMenuItemClick, (SDLKey)((int)SDLKey::SDLK_0 + key));
 	(*id)++;
 }
 
@@ -226,6 +228,7 @@ void ActionMenuState::btnActionMenuItemClick(Action *action)
 	if (btnID != -1)
 	{
 		_action->type = _actionMenu[btnID]->getAction();
+		_action->description = _actionMenu[btnID]->getDescription();
 		_action->TU = _actionMenu[btnID]->getTUs();
 		if (_action->type == BA_PRIME)
 		{
