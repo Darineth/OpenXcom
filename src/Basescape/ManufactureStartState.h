@@ -40,7 +40,7 @@ private:
 	RuleManufacture * _item;
 	Window * _window;
 	TextButton * _btnCancel, * _btnStart;
-	Text * _txtTitle, * _txtManHour, * _txtCost, * _txtSell, * _txtWorkSpace, * _txtRequiredItemsTitle, * _txtItemNameColumn, * _txtUnitRequiredColumn, * _txtUnitAvailableColumn;
+	Text * _txtTitle, * _txtManHour, * _txtCost, * _txtSell, * _txtCurrent, * _txtWorkSpace, * _txtRequiredItemsTitle, * _txtItemNameColumn, * _txtUnitRequiredColumn, * _txtUnitAvailableColumn;
 	TextList * _lstRequiredItems;
 public:
 	/// Creates the State.
