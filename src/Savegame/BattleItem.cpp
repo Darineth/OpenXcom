@@ -384,6 +384,15 @@ int BattleItem::setAmmoItem(BattleItem *item)
 }
 
 /**
+ * Gets the ammo item's reload cost.
+ * @return The TU cost of reloading this ammo item.
+ */
+int BattleItem::getAmmoReloadCost() const
+{
+	return _rules->getWeight() * 2;
+}
+
+/**
  * Gets the item's tile.
  * @return The tile.
  */

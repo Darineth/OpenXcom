@@ -672,7 +672,7 @@ void Inventory::mouseClick(Action *action, State *state)
 						{
 							_warning->showMessage(_game->getLanguage()->getString("STR_WEAPON_IS_ALREADY_LOADED"));
 						}
-						else if (!_tu || _selUnit->spendTimeUnits(15))
+						else if (!_tu || (Options::battleAdjustReloadCost ? _selUnit->spendTimeUnits(_selItem->getSlot()->getCost(item->getSlot()) + _selItem->getAmmoReloadCost()) : _selUnit->spendTimeUnits(15)))
 						{
 							moveItem(_selItem, 0, 0, 0);
 							item->setAmmoItem(_selItem);

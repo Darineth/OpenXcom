@@ -25,6 +25,7 @@
 #include "../Engine/Language.h"
 #include "../Engine/Palette.h"
 #include "../Engine/Action.h"
+#include "../Engine/Sound.h"
 #include "../Savegame/BattleUnit.h"
 #include "../Savegame/BattleItem.h"
 #include "../Ruleset/RuleItem.h"
@@ -38,6 +39,7 @@
 #include "Pathfinding.h"
 #include "TileEngine.h"
 #include "../Interface/Text.h"
+#include "../Ruleset/RuleInventory.h"
 
 namespace OpenXcom
 {
@@ -56,7 +58,7 @@ ActionMenuState::ActionMenuState(Game *game, BattleAction *action, int x, int y)
 	// Set palette
 	setPalette("PAL_BATTLESCAPE");
 
-	for (int i = 0; i < 6; ++i)
+	for (int i = 0; i < MAX_ACTIONS; ++i)
 	{
 		_actionMenu[i] = new ActionMenuItem(i, _game, x, y);
 		add(_actionMenu[i]);
@@ -135,6 +137,15 @@ ActionMenuState::ActionMenuState(Game *game, BattleAction *action, int x, int y)
 	{
 		addItem(BA_USE, "STR_USE_MIND_PROBE", &id);
 	}
+	
+	if(_action->weapon->needsAmmo()
+			&& (_action->weapon->getAmmoItem() == 0 /*
+				|| (_action->weapon->getAmmoItem()->getAmmoQuantity() < _action->weapon->getAmmoItem()->getRules()->getClipSize())
+					&& !(_action->weapon->getSlot()->getId() == "STR_LEFT_HAND" ? action->actor->getItem("STR_RIGHT_HAND") : action->actor->getItem("STR_LEFT_HAND"))*/)
+			&& _action->actor->hasInventory())
+	{
+		addItem(BA_RELOAD, "STR_RELOAD", &id);
+	}
 }
 
 /**
@@ -159,12 +170,17 @@ void ActionMenuState::addItem(BattleActionType ba, const std::string &name, int 
 		acc = (int)(_action->actor->getThrowingAccuracy());
 	int tu = _action->actor->getActionTUs(ba, _action->weapon);
 
+	BattleItem* ammoItem = _action->weapon->getAmmoItem();
+	int ammo = ammoItem ? ammoItem->getAmmoQuantity() : 0;
+	bool ammoError;
+
 	int shots;
 
 	switch(ba)
 	{
 	case BA_AUTOSHOT:
 		shots = _action->weapon->getRules()->getAutoShots();
+		ammoError = (shots > ammo);
 		break;
 
 	case BA_MINDCONTROL:
@@ -177,9 +193,18 @@ void ActionMenuState::addItem(BattleActionType ba, const std::string &name, int 
 	case BA_USE:
 	case BA_WALK:
 		shots = 0;
+		ammoError = false;
+		break;
+
+	case BA_RELOAD:
+		shots = 0;
+		ammoError = !_action->actor->findQuickAmmo(_action->weapon, &tu);
+
+		break;
 
 	default:
 		shots = 1;
+		ammoError = (ammo == 0);
 	}
 	
 	if (ba == BA_THROW || ba == BA_AIMEDSHOT || ba == BA_SNAPSHOT || ba == BA_AUTOSHOT || ba == BA_LAUNCH || ba == BA_HIT)
@@ -194,13 +219,10 @@ void ActionMenuState::addItem(BattleActionType ba, const std::string &name, int 
 		}
 	}
 
-	auto ammoItem = _action->weapon->getAmmoItem();
-	int ammo = ammoItem ? ammoItem->getAmmoQuantity() : 0;
-
 	int key = (*id) + 1;
 
 	s2 = tr("STR_TIME_UNITS_SHORT").arg(tu);
-	_actionMenu[*id]->setAction(ba, Text::formatNumber(key) + L". " + tr(name).c_str(), s1, s2, tu, shots > ammo, tu > _action->actor->getTimeUnits());
+	_actionMenu[*id]->setAction(ba, Text::formatNumber(key) + L". " + tr(name).c_str(), s1, s2, tu, ammoError, tu > _action->actor->getTimeUnits());
 	_actionMenu[*id]->setVisible(true);
 	_actionMenu[*id]->onKeyboardPress((ActionHandler)&ActionMenuState::btnActionMenuItemClick, (SDLKey)((int)SDLKey::SDLK_0 + key));
 	(*id)++;
@@ -343,6 +365,34 @@ void ActionMenuState::btnActionMenuItemClick(Action *action)
 				_action->result = "STR_THERE_IS_NO_ONE_THERE";
 			}
 			_game->popState();
+		}
+		else if(_action->type == BA_RELOAD)
+		{
+			int tu;
+			BattleItem *quickAmmo = _action->actor->findQuickAmmo(_action->weapon, &tu);
+
+			if(!quickAmmo)
+			{
+				// Temporary mesage.
+				_action->result = "STR_NO_ROUNDS_LEFT";
+			}
+			else if(!_action->actor->spendTimeUnits(tu))
+			{
+				_action->result = "STR_NOT_ENOUGH_TIME_UNITS";
+			}
+			else
+			{
+				// RELOAD
+				if (quickAmmo->getSlot()->getType() == INV_GROUND)
+				{
+					_action->actor->getTile()->removeItem(quickAmmo);
+				}
+				quickAmmo->moveToOwner(0);
+				_action->weapon->setAmmoItem(quickAmmo);
+				quickAmmo->moveToOwner(0);
+				_game->getResourcePack()->getSound("BATTLE.CAT", 17)->play();
+				_game->popState();
+			}
 		}
 		else
 		{
