@@ -146,6 +146,7 @@ BattlescapeState::BattlescapeState(Game *game) : State(game), _popups(), _xBefor
 	_numVisibleUnit[9]->setX(_numVisibleUnit[9]->getX() - 2); // center number 10
 	_warning = new WarningMessage(224, 24, _icons->getX() + 48, _icons->getY() + 32);
 	_message = new WarningMessage(224, 24, _icons->getX() + 48, _icons->getY() + 32);
+	_combatLog = new CombatLog(screenWidth - 10, 100, 5, 5);
 	_btnLaunch = new InteractiveSurface(32, 24, screenWidth - 32, 0); // we need screenWidth, because that is independent of the black bars on the screen
 	_btnLaunch->setVisible(false);
 	_btnPsi = new InteractiveSurface(32, 24, screenWidth - 32, 25); // we need screenWidth, because that is independent of the black bars on the screen
@@ -221,6 +222,7 @@ BattlescapeState::BattlescapeState(Game *game) : State(game), _popups(), _xBefor
 	}
 	add(_warning);
 	add(_message);
+	add(_combatLog);
 	add(_txtDebug);
 	add(_txtTooltip);
 	add(_btnLaunch);
@@ -1467,6 +1469,16 @@ void BattlescapeState::message(const std::wstring &message, WarningColor color)
 {
 	_message->setColor(color);
 	_message->showMessage(message);
+}
+
+/**
+ * Adds an entry to the combat log.
+ * @param message Message.
+ * @param color The color of the message.
+ */
+void BattlescapeState::combatLog(const std::wstring &message, CombatLogColor color)
+{
+	_combatLog->log(message, color);
 }
 
 /**

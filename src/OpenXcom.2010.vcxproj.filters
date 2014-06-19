@@ -856,6 +856,7 @@
     <ClCompile Include="Battlescape\DelayedSaveState.cpp">
       <Filter>Battlescape</Filter>
     </ClCompile>
+    <ClCompile Include="Battlescape\CombatLog.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h" />
@@ -1734,6 +1735,7 @@
     <ClInclude Include="Battlescape\DelayedSaveState.h">
       <Filter>Battlescape</Filter>
     </ClInclude>
+    <ClInclude Include="Battlescape\CombatLog.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Geoscape">

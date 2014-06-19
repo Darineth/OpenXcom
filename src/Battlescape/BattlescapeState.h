@@ -20,7 +20,8 @@
 #define OPENXCOM_BATTLESCAPESTATE_H
 
 #include "../Engine/State.h"
-#include "../Battlescape/WarningMessage.h"
+#include "WarningMessage.h"
+#include "CombatLog.h"
 #include "Position.h"
 
 #include <vector>
@@ -63,6 +64,7 @@ private:
 	NumberText *_numVisibleUnit[VISIBLE_MAX];
 	BattleUnit *_visibleUnit[VISIBLE_MAX];
 	WarningMessage *_warning, *_message;
+	CombatLog *_combatLog;
 	Text *_txtName;
 	NumberText *_numTimeUnits, *_numEnergy, *_numHealth, *_numMorale, *_numLayers, *_numAmmoLeft, *_numAmmoRight;
 	Bar *_barTimeUnits, *_barEnergy, *_barHealth, *_barMorale;
@@ -176,6 +178,8 @@ public:
 	void warning(const std::wstring &message);
 	/// Show message.
 	void message(const std::wstring &message, WarningColor color);
+	/// Add a combat log entry.
+	void combatLog(const std::wstring &message, CombatLogColor color);
 	/// Handles keypresses.
 	void handle(Action *action);
 	/// Displays a popup window.
