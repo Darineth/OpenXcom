@@ -1101,8 +1101,8 @@ bool BattlescapeGame::handlePanickingUnit(BattleUnit *unit)
 		{
 			ba.weapon = unit->getMainHandWeapon();
 			if(ba.weapon)
-			{
-				if (ba.weapon->getRules()->getBattleType() == BT_FIREARM)
+			{	//Xusilak: Made berserking check if your weapon can actually fire snap shots.
+				if (ba.weapon->getRules()->getBattleType() == BT_FIREARM && ba.weapon->getRules()->getTUSnap() > 0)
 				{
 					ba.type = BA_SNAPSHOT;
 					int tu = ba.actor->getActionTUs(ba.type, ba.weapon);
