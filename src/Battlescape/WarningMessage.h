@@ -23,6 +23,7 @@
 
 namespace OpenXcom
 {
+enum WarningColor { WARNING_RED, WARNING_GREEN, WARNING_BLUE };
 
 class Text;
 class Timer;
@@ -51,6 +52,8 @@ public:
 	void initText(Font *big, Font *small, Language *lang);
 	/// Sets the warning message's palette.
 	void setPalette(SDL_Color *colors, int firstcolor = 0, int ncolors = 256);
+	/// Sets the warning colors to a standard set.
+	void setColor(WarningColor color);
 	/// Shows the warning message.
 	void showMessage(const std::wstring &msg);
 	/// Handles the timers.

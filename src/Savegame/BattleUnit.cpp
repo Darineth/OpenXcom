@@ -879,10 +879,15 @@ int BattleUnit::getMorale() const
  * @param ignoreArmor Should the damage ignore armor resistance?
  * @return damage done after adjustment
  */
-int BattleUnit::damage(const Position &relative, int power, ItemDamageType type, bool ignoreArmor)
+int BattleUnit::damage(const Position &relative, int power, ItemDamageType type, bool ignoreArmor, int *wounds)
 {
 	UnitSide side = SIDE_FRONT;
 	UnitBodyPart bodypart = BODYPART_TORSO;
+
+	if(wounds)
+	{
+		(*wounds) = 0;
+	}
 
 	if (power <= 0)
 	{
@@ -990,7 +995,14 @@ int BattleUnit::damage(const Position &relative, int power, ItemDamageType type,
 				if (isWoundable())
 				{
 					if (RNG::generate(0, 10) < power)
-						_fatalWounds[bodypart] += RNG::generate(1,3);
+					{
+						int newWounds = RNG::generate(1,3);
+						if(wounds)
+						{
+							(*wounds) = newWounds;
+						}
+						_fatalWounds[bodypart] += newWounds;
+					}
 
 					if (_fatalWounds[bodypart])
 						moraleChange(-_fatalWounds[bodypart]);

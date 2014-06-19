@@ -159,7 +159,28 @@ void ActionMenuState::addItem(BattleActionType ba, const std::string &name, int 
 		acc = (int)(_action->actor->getThrowingAccuracy());
 	int tu = _action->actor->getActionTUs(ba, _action->weapon);
 
-	int shots = (ba == BA_AUTOSHOT ? _action->weapon->getRules()->getAutoShots() : (ba == BA_THROW ? 0 : 1));
+	int shots;
+
+	switch(ba)
+	{
+	case BA_AUTOSHOT:
+		shots = _action->weapon->getRules()->getAutoShots();
+		break;
+
+	case BA_MINDCONTROL:
+	case BA_PANIC:
+	case BA_PRIME:
+	case BA_RETHINK:
+	case BA_STUN:
+	case BA_THROW:
+	case BA_TURN:
+	case BA_USE:
+	case BA_WALK:
+		shots = 0;
+
+	default:
+		shots = 1;
+	}
 	
 	if (ba == BA_THROW || ba == BA_AIMEDSHOT || ba == BA_SNAPSHOT || ba == BA_AUTOSHOT || ba == BA_LAUNCH || ba == BA_HIT)
 	{

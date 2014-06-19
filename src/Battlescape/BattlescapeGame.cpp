@@ -655,7 +655,7 @@ void BattlescapeGame::handleNonTargetAction()
 	}
 	else
 	{
-		_parentState->message(_currentAction.description);
+		_parentState->message(_currentAction.description, WARNING_BLUE);
 	}
 
 	setupCursor();
