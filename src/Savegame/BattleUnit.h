@@ -279,6 +279,10 @@ public:
 	BattleItem *getMainHandWeapon(bool quickest = true) const;
 	/// Gets a grenade from the belt, if any.
 	BattleItem *getGrenadeFromBelt() const;
+	/// Finds the quickest item to grab, if any.
+	BattleItem *findQuickItem(const std::string &item, RuleInventory* destSlot, int *moveCost = 0) const;
+	/// Finds the quickest ammo to reload a weapon.
+	BattleItem *findQuickAmmo(BattleItem *weapon, int *reloadCost = 0) const;
 	/// Reloads righthand weapon if needed.
 	bool checkAmmo();
 	/// Check if this unit is in the exit area
