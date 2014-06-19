@@ -2944,8 +2944,6 @@ void TileEngine::displayDamage(BattleUnit *attacker, BattleUnit *target, int dam
 
 	if(target->getVisible())
 	{
-		WarningColor color = WARNING_RED;
-
 		if(attacker && attacker->getVisible())
 		{
 			switch(attacker->getFaction())
@@ -2963,28 +2961,28 @@ void TileEngine::displayDamage(BattleUnit *attacker, BattleUnit *target, int dam
 				break;
 			}
 		}
+		else if(attacker)
+		{
+			damageWarning << "UNKNOWN" << " > ";
+		}
+
+		int targetMaxHealth = target->getStats()->health;
 
 		if(target->getFaction() != FACTION_PLAYER)
 		{
-			color = target->getFaction() == FACTION_HOSTILE ? WARNING_RED : WARNING_GREEN;
-
-			damageWarning << "HOSTILE" << " : ";
-
-			int targetHealth = target->getStats()->health;
-
-			float damageRatio = targetHealth < 1 ? 0 : ((float)damage / (float)targetHealth);
-
-			damageWarning << Text::formatNumber(damage) << "/" << Text::formatNumber(targetHealth) << "(" << Text::formatPercentage((int)(damageRatio * 100)) << ") ";
-
-			if(target->getHealth() == 0)
+			if(target->getFaction() == FACTION_HOSTILE)
 			{
-				damageWarning << "KILLED";
+				damageWarning << "HOSTILE" << " : ";
 			}
-			else if(target->getStunlevel() >= targetHealth)
+			else
 			{
-				damageWarning << "STUNNED";
+				damageWarning << "NEUTRAL" << " : ";
 			}
-			else if(damageRatio > 0.5)
+			
+			float damageRatio = targetMaxHealth < 1 ? 0 : ((float)damage / (float)targetMaxHealth);
+
+			//damageWarning << Text::formatNumber(damage) << "/" << Text::formatNumber(targetMaxHealth) << "(" << Text::formatPercentage((int)(damageRatio * 100)) << ") ";
+			if(damageRatio > 0.5)
 			{
 				damageWarning << "CRITICAL";
 			}
@@ -2997,33 +2995,61 @@ void TileEngine::displayDamage(BattleUnit *attacker, BattleUnit *target, int dam
 				damageWarning << "GLANCING";
 			}
 
-			if(wounds)
+			if(target->getHealth() == 0)
 			{
-				damageWarning << " [WOUNDED]";
+				damageWarning << " [KILLED]";
+			}
+			else
+			{
+				if(stun && (target->getStunlevel() >= targetMaxHealth))
+				{
+					damageWarning << " [STUNNED]";
+				}
+
+				if(wounds)
+				{
+					damageWarning << " [WOUNDED]";
+				}
 			}
 		}
 		else
 		{
-			color = WARNING_RED;
-
 			damageWarning << target->getName(lang) << " : " << Text::formatNumber(damage);
-			if(wounds)
+
+			if(target->getHealth() == 0)
 			{
-				damageWarning << " [" << Text::formatNumber(wounds) << "]";
+				damageWarning << " [KILLED]";
+			}
+			else
+			{
+				if(stun && (target->getStunlevel() >= targetMaxHealth))
+				{
+					damageWarning << " [STUNNED]";
+				}
+				if(wounds)
+				{
+					damageWarning << " [WOUNDED: " << Text::formatNumber(wounds) << "]";
+				}
 			}
 		}
 
 		if(stun)
 		{
-			_save->getBattleState()->message(damageWarning.str(), WARNING_BLUE);
-		}
-		else if(target->getOriginalFaction() != FACTION_HOSTILE || (attacker && (attacker->getFaction() != FACTION_PLAYER)))
-		{
-			_save->getBattleState()->message(damageWarning.str(), WARNING_RED);
+			_save->getBattleState()->combatLog(damageWarning.str(), COMBAT_LOG_WHITE);
 		}
 		else
 		{
-			_save->getBattleState()->message(damageWarning.str(), WARNING_GREEN);
+			switch(target->getOriginalFaction())
+			{
+			case FACTION_PLAYER:
+				_save->getBattleState()->combatLog(damageWarning.str(), COMBAT_LOG_RED);
+				break;
+			case FACTION_NEUTRAL:
+				_save->getBattleState()->combatLog(damageWarning.str(), COMBAT_LOG_ORANGE);
+				break;
+			default:
+				_save->getBattleState()->combatLog(damageWarning.str(), COMBAT_LOG_GREEN);
+			}
 		}
 	}
 }
