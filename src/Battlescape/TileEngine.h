@@ -48,6 +48,7 @@ private:
 	static const int heightFromCenter[11];
 	void addLight(const Position &center, int power, int layer);
 	int blockage(Tile *tile, const int part, ItemDamageType type, int direction = -1, bool checkingFromOrigin = false);
+	void displayDamage(BattleUnit *attacker, BattleUnit *target, int damage, int wounds, bool stun);
 	bool _personalLighting;
 public:
 	/// Creates a new TileEngine class.

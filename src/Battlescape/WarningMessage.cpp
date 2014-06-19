@@ -21,6 +21,7 @@
 #include <string>
 #include "../Engine/Timer.h"
 #include "../Interface/Text.h"
+#include "../Engine/Palette.h"
 
 namespace OpenXcom
 {
@@ -71,6 +72,29 @@ void WarningMessage::setColor(Uint8 color)
 void WarningMessage::setTextColor(Uint8 color)
 {
 	_text->setColor(color);
+}
+
+/**
+ * Changes the color for the message text and background.
+ * @param color Color value.
+ */
+void WarningMessage::setColor(WarningColor color)
+{
+	switch(color)
+	{
+	case WARNING_RED:
+		setColor(Palette::blockOffset(2));
+		setTextColor(Palette::blockOffset(1));
+		break;
+	case WARNING_GREEN:
+		setColor(Palette::blockOffset(3));
+		setTextColor(Palette::blockOffset(4));
+		break;
+	case WARNING_BLUE:
+		setColor(Palette::blockOffset(7));
+		setTextColor(Palette::blockOffset(0));
+		break;
+	}
 }
 
 /**
@@ -127,7 +151,7 @@ void WarningMessage::fade()
 {
 	_fade++;
 	_redraw = true;
-	if (_fade == 24)
+	if (_fade == 40)
 	{
 		setVisible(false);
 		_timer->stop();
@@ -140,7 +164,7 @@ void WarningMessage::fade()
 void WarningMessage::draw()
 {
 	Surface::draw();
-	drawRect(0, 0, getWidth(), getHeight(), _color + (_fade > 12 ? 12 : _fade));
+	drawRect(0, 0, getWidth(), getHeight(), _color + (_fade > 24 ? 12 : (int)(_fade / 2)));
 	_text->blit(this);
 }
 

@@ -427,8 +427,7 @@ BattlescapeState::BattlescapeState(Game *game) : State(game), _popups(), _xBefor
 	}
 	_warning->setColor(Palette::blockOffset(2));
 	_warning->setTextColor(Palette::blockOffset(1));
-	_message->setColor(Palette::blockOffset(3));
-	_message->setTextColor(Palette::blockOffset(4));
+	_message->setColor(WARNING_GREEN);
 	_btnLaunch->onMouseClick((ActionHandler)&BattlescapeState::btnLaunchClick);
 	_btnPsi->onMouseClick((ActionHandler)&BattlescapeState::btnPsiClick);
 
@@ -1461,11 +1460,12 @@ void BattlescapeState::warning(const std::wstring &message)
 }
 
 /**
- * Shows a warning message.
- * @param message Warning message.
+ * Shows a message.
+ * @param message Message.
  */
-void BattlescapeState::message(const std::wstring &message)
+void BattlescapeState::message(const std::wstring &message, WarningColor color)
 {
+	_message->setColor(color);
 	_message->showMessage(message);
 }
 

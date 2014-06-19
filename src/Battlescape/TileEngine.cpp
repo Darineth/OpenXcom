@@ -50,6 +50,8 @@
 #include "ProjectileFlyBState.h"
 #include "../Engine/Logger.h"
 #include "../fmath.h"
+#include "../Interface/Text.h"
+#include "../Engine/Game.h"
 
 namespace OpenXcom
 {
@@ -1050,7 +1052,8 @@ BattleUnit *TileEngine::hit(const Position &center, int power, ItemDamageType ty
 			const Position relative = (center - target) - Position(0,0,verticaloffset);
 			const int wounds = bu->getFatalWounds();
 
-			adjustedDamage = bu->damage(relative, rndPower, type);
+			int newWounds;
+			adjustedDamage = bu->damage(relative, rndPower, type, false, &newWounds);
 
 			// if it's going to bleed to death and it's not a player, give credit for the kill.
 			if (unit && bu->getFaction() != FACTION_PLAYER && wounds < bu->getFatalWounds())
@@ -1062,6 +1065,8 @@ BattleUnit *TileEngine::hit(const Position &center, int power, ItemDamageType ty
 			const int morale_loss = 100 * (adjustedDamage * bravery / 10) / modifier;
 
 			bu->moraleChange(-morale_loss);
+
+			displayDamage(unit, bu, adjustedDamage, newWounds, false);
 
 			if (bu->getSpecialAbility() == SPECAB_EXPLODEONDEATH && !bu->isOut() && (bu->getHealth() == 0 || bu->getStunlevel() >= bu->getHealth()))
 			{
@@ -1193,6 +1198,7 @@ void TileEngine::explode(const Position &center, int power, ItemDamageType type,
 						int max = power_ * (100 + dmgRng) / 100;
 						BattleUnit *bu = dest->getUnit();
 						int wounds = 0;
+						int newWounds = 0;
 						if (bu && unit)
 						{
 							wounds = bu->getFatalWounds();
@@ -1201,22 +1207,27 @@ void TileEngine::explode(const Position &center, int power, ItemDamageType type,
 						{
 						case DT_STUN:
 							// power 0 - 200%
+							int damage;
 							if (bu)
 							{
 								if (distance(dest->getPosition(), Position(centerX, centerY, centerZ)) < 2)
 								{
-									bu->damage(Position(0, 0, 0), RNG::generate(min, max), type);
+									damage = bu->damage(Position(0, 0, 0), RNG::generate(min, max), type);
 								}
 								else
 								{
-									bu->damage(Position(centerX, centerY, centerZ) - dest->getPosition(), RNG::generate(min, max), type);
+									damage = bu->damage(Position(centerX, centerY, centerZ) - dest->getPosition(), RNG::generate(min, max), type, false, &newWounds);
 								}
+
+								displayDamage(unit, bu, damage, newWounds, true);
 							}
 							for (std::vector<BattleItem*>::iterator it = dest->getInventory()->begin(); it != dest->getInventory()->end(); ++it)
 							{
 								if ((*it)->getUnit())
 								{
-									(*it)->getUnit()->damage(Position(0, 0, 0), RNG::generate(min, max), type);
+									BattleUnit *target = (*it)->getUnit();
+									damage = target->damage(Position(0, 0, 0), RNG::generate(min, max), type, false, &newWounds);
+									displayDamage(unit, target, damage, newWounds, true);
 								}
 							}
 							break;
@@ -1225,17 +1236,20 @@ void TileEngine::explode(const Position &center, int power, ItemDamageType type,
 								// power 50 - 150%
 								if (bu)
 								{
+									int damage;
 									if (distance(dest->getPosition(), Position(centerX, centerY, centerZ)) < 2)
 									{
 										// ground zero effect is in effect
-										bu->damage(Position(0, 0, 0), (int)(RNG::generate(min, max)), type);
+										damage = bu->damage(Position(0, 0, 0), (int)(RNG::generate(min, max)), type);
 									}
 									else
 									{
 										// directional damage relative to explosion position.
 										// units above the explosion will be hit in the legs, units lateral to or below will be hit in the torso
-										bu->damage(Position(centerX, centerY, centerZ + 5) - dest->getPosition(), (int)(RNG::generate(min, max)), type);
+										damage = bu->damage(Position(centerX, centerY, centerZ + 5) - dest->getPosition(), (int)(RNG::generate(min, max)), type, false, &newWounds);
 									}
+
+									displayDamage(unit, bu, damage, newWounds, false);
 								}
 								bool done = false;
 								while (!done)
@@ -2909,6 +2923,98 @@ void TileEngine::setDangerZone(Position pos, int radius, BattleUnit *unit)
 					}
 				}
 			}
+		}
+	}
+}
+
+void TileEngine::displayDamage(BattleUnit *attacker, BattleUnit *target, int damage, int wounds, bool stun)
+{
+	std::wostringstream damageWarning;
+
+	static Language* lang = _save->getBattleState()->getGame()->getLanguage();
+
+	if(target->getVisible())
+	{
+		WarningColor color = WARNING_RED;
+
+		if(attacker && attacker->getVisible())
+		{
+			switch(attacker->getFaction())
+			{
+			case FACTION_PLAYER:
+				damageWarning << attacker->getName(lang) << " > ";
+				break;
+			case FACTION_HOSTILE:
+				// TODO: Translate
+				damageWarning << "HOSTILE" << " > ";
+				break;
+			default:
+				// TODO: Translate
+				damageWarning << "NEUTRAL" << " > ";
+				break;
+			}
+		}
+
+		if(target->getFaction() != FACTION_PLAYER)
+		{
+			color = target->getFaction() == FACTION_HOSTILE ? WARNING_RED : WARNING_GREEN;
+
+			damageWarning << "HOSTILE" << " : ";
+
+			int targetHealth = target->getStats()->health;
+
+			float damageRatio = targetHealth < 1 ? 0 : ((float)damage / (float)targetHealth);
+
+			damageWarning << Text::formatNumber(damage) << "/" << Text::formatNumber(targetHealth) << "(" << Text::formatPercentage((int)(damageRatio * 100)) << ") ";
+
+			if(target->getHealth() == 0)
+			{
+				damageWarning << "KILLED";
+			}
+			else if(target->getStunlevel() >= targetHealth)
+			{
+				damageWarning << "STUNNED";
+			}
+			else if(damageRatio > 0.5)
+			{
+				damageWarning << "CRITICAL";
+			}
+			else if (damageRatio > 0)
+			{
+				damageWarning << "HIT";
+			}
+			else
+			{
+				damageWarning << "GLANCING";
+			}
+
+			if(wounds)
+			{
+				damageWarning << " [WOUNDED]";
+			}
+		}
+		else
+		{
+			color = WARNING_RED;
+
+			damageWarning << target->getName(lang) << " : " << Text::formatNumber(damage);
+			if(wounds)
+			{
+				damageWarning << " [" << Text::formatNumber(wounds) << "]";
+			}
+		}
+
+		if(stun)
+		{
+			_save->getBattleState()->message(damageWarning.str(), WARNING_BLUE);
+		}
+		else if(target->getOriginalFaction() != FACTION_HOSTILE || (attacker && (attacker->getFaction() != FACTION_PLAYER)))
+		{
+			_save->getBattleState()->message(damageWarning.str(), WARNING_RED);
+		}
+		else
+		{
+			_save->getBattleState()->message(damageWarning.str(), WARNING_GREEN);
 		}
 	}
 }
