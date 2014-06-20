@@ -40,6 +40,7 @@
 #include "TileEngine.h"
 #include "../Interface/Text.h"
 #include "../Ruleset/RuleInventory.h"
+#include "../Ruleset/Ruleset.h"
 
 namespace OpenXcom
 {
@@ -138,11 +139,11 @@ ActionMenuState::ActionMenuState(Game *game, BattleAction *action, int x, int y)
 		addItem(BA_USE, "STR_USE_MIND_PROBE", &id);
 	}
 	
-	if(_action->weapon->needsAmmo()
-			&& (_action->weapon->getAmmoItem() == 0 /*
-				|| (_action->weapon->getAmmoItem()->getAmmoQuantity() < _action->weapon->getAmmoItem()->getRules()->getClipSize())
-					&& !(_action->weapon->getSlot()->getId() == "STR_LEFT_HAND" ? action->actor->getItem("STR_RIGHT_HAND") : action->actor->getItem("STR_LEFT_HAND"))*/)
-			&& _action->actor->hasInventory())
+	if(_action->actor->hasInventory()
+		&&_action->weapon->needsAmmo()
+		&& (_action->weapon->getAmmoItem() == 0 
+			|| (_action->weapon->getAmmoItem()->getAmmoQuantity() < _action->weapon->getAmmoItem()->getRules()->getClipSize())
+				&& !(_action->weapon->getSlot()->getId() == "STR_LEFT_HAND" ? action->actor->getItem("STR_RIGHT_HAND") : action->actor->getItem("STR_LEFT_HAND"))))
 	{
 		addItem(BA_RELOAD, "STR_RELOAD", &id);
 	}
@@ -199,6 +200,11 @@ void ActionMenuState::addItem(BattleActionType ba, const std::string &name, int 
 	case BA_RELOAD:
 		shots = 0;
 		ammoError = !_action->actor->findQuickAmmo(_action->weapon, &tu);
+
+		if(_action->weapon->getAmmoItem())
+		{
+			tu += _action->weapon->getSlot()->getCost(_game->getRuleset()->getInventory("STR_GROUND"));
+		}
 
 		break;
 
@@ -368,8 +374,15 @@ void ActionMenuState::btnActionMenuItemClick(Action *action)
 		}
 		else if(_action->type == BA_RELOAD)
 		{
-			int tu;
+			int tu = 0;
 			BattleItem *quickAmmo = _action->actor->findQuickAmmo(_action->weapon, &tu);
+
+			RuleInventory *ground = _game->getRuleset()->getInventory("STR_GROUND");
+
+			if(_action->weapon->getAmmoItem())
+			{
+				tu += _action->weapon->getSlot()->getCost(ground);
+			}
 
 			if(!quickAmmo)
 			{
@@ -382,17 +395,10 @@ void ActionMenuState::btnActionMenuItemClick(Action *action)
 			}
 			else
 			{
-				// RELOAD
-				if (quickAmmo->getSlot()->getType() == INV_GROUND)
-				{
-					_action->actor->getTile()->removeItem(quickAmmo);
-				}
-				quickAmmo->moveToOwner(0);
-				_action->weapon->setAmmoItem(quickAmmo);
-				quickAmmo->moveToOwner(0);
-				_game->getResourcePack()->getSound("BATTLE.CAT", 17)->play();
-				_game->popState();
+				_action->TU = tu;
 			}
+
+			_game->popState();
 		}
 		else
 		{
