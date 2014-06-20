@@ -650,6 +650,41 @@ void BattlescapeGame::handleNonTargetAction()
 				}
 			}
 		}
+		if(_currentAction.type == BA_RELOAD)
+		{
+			BattleItem *quickAmmo = _currentAction.actor->findQuickAmmo(_currentAction.weapon);
+
+			RuleInventory *ground = getRuleset()->getInventory("STR_GROUND");
+
+			// Drop existing ammo item
+			BattleItem *existingAmmo;
+			if(existingAmmo = _currentAction.weapon->getAmmoItem())
+			{
+				existingAmmo->moveToOwner(0);
+				_currentAction.actor->getTile()->addItem(existingAmmo, ground);
+				existingAmmo->setSlot(ground);
+				existingAmmo->setSlotX(0);
+				existingAmmo->setSlotY(0);
+				_currentAction.weapon->setAmmoItem(0);
+			}
+
+			// Reload weapon
+			if (quickAmmo->getSlot()->getType() == INV_GROUND)
+			{
+				_currentAction.actor->getTile()->removeItem(quickAmmo);
+			}
+			quickAmmo->moveToOwner(0);
+			_currentAction.weapon->setAmmoItem(quickAmmo);
+			quickAmmo->moveToOwner(0);
+			getResourcePack()->getSound("BATTLE.CAT", 17)->play();
+
+			// TODO: TRANSLATE
+			std::wostringstream reloadLog;
+
+			reloadLog << _currentAction.actor->getName(_parentState->getGame()->getLanguage()) << " > " << "RELOADED: " << _parentState->tr(_currentAction.weapon->getRules()->getName()) << " [" << _parentState->tr(quickAmmo->getRules()->getName()) << "]";
+
+			_parentState->combatLog(reloadLog.str(), COMBAT_LOG_GREEN);
+		}
 		_currentAction.type = BA_NONE;
 		_parentState->updateSoldierInfo();
 	}

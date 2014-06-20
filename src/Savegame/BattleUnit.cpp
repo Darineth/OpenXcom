@@ -1812,7 +1812,7 @@ BattleItem *BattleUnit::findQuickItem(const std::string &item, RuleInventory* de
 		BattleItem *bi = (*ii);
 
 		int cost;
-		if(bi->getRules()->getType() == item && ((cost = bi->getSlot()->getCost(destSlot)) < quickCost))
+		if(bi->getRules()->getType() == item && bi->getSlot() != destSlot && ((cost = bi->getSlot()->getCost(destSlot)) < quickCost))
 		{
 			quickItem = bi;
 			quickCost = cost; // ??
@@ -1827,7 +1827,7 @@ BattleItem *BattleUnit::findQuickItem(const std::string &item, RuleInventory* de
 		if(bi->getRules()->getType() == item && ((cost = bi->getSlot()->getCost(destSlot)) < quickCost))
 		{
 			quickItem = bi;
-			quickCost = cost; // ??
+			quickCost = cost;
 		}
 	}
 
@@ -1859,7 +1859,10 @@ BattleItem *BattleUnit::findQuickAmmo(BattleItem *weapon, int* reloadCost) const
 		}
 	}
 
-	if(bestAmmo && reloadCost) { *reloadCost = bestCost; }
+	if(bestAmmo && reloadCost)
+	{
+		*reloadCost = bestCost;
+	}
 
 	return bestAmmo;
 }
