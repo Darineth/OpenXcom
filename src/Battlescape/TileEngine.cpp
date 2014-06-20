@@ -2931,7 +2931,13 @@ void TileEngine::displayDamage(BattleUnit *attacker, BattleUnit *target, int dam
 {
 	std::wostringstream damageWarning;
 
-	static Language* lang = _save->getBattleState()->getGame()->getLanguage();
+	BattlescapeState* battleState = _save->getBattleState();
+	if(battleState == 0)
+	{
+		return;
+	}
+
+	static Language* lang = battleState->getGame()->getLanguage();
 
 	if(target->getVisible())
 	{
