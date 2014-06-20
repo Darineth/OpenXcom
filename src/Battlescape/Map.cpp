@@ -887,6 +887,8 @@ void Map::drawTerrain(Surface *surface)
 					{
 						if (_camera->getViewLevel() == itZ)
 						{
+							BattleAction *action = _save->getBattleGame()->getCurrentAction();
+
 							if (_cursorType != CT_AIM)
 							{
 								if (unit && (unit->getVisible() || _save->getDebugMode()))
@@ -896,7 +898,9 @@ void Map::drawTerrain(Surface *surface)
 							}
 							else
 							{
-								if (unit && (unit->getVisible() || _save->getDebugMode()))
+								if(action->actor && action->TU && action->actor->getTimeUnits() < action->TU)
+									frameNumber = _animFrame % 2 ? 6 : 7;
+								else if (unit && (unit->getVisible() || _save->getDebugMode()))
 									frameNumber = 7 + (_animFrame / 2); // yellow animated crosshairs
 								else
 									frameNumber = 6; // red static crosshairs
@@ -907,7 +911,6 @@ void Map::drawTerrain(Surface *surface)
 							// UFO extender accuracy: display adjusted accuracy value on crosshair in real-time.
 							if (_cursorType == CT_AIM && Options::battleUFOExtenderAccuracy)
 							{
-								BattleAction *action = _save->getBattleGame()->getCurrentAction();
 								RuleItem *weapon = action->weapon->getRules();
 								std::ostringstream ss;
 								int accuracy = action->actor->getFiringAccuracy(action->type, action->weapon);
