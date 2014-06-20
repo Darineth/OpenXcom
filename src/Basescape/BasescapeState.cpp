@@ -51,6 +51,7 @@
 #include "TransferBaseState.h"
 #include "CraftInfoState.h"
 #include "../Geoscape/AllocatePsiTrainingState.h"
+#include "../Engine/Screen.h"
 
 namespace OpenXcom
 {
@@ -63,6 +64,13 @@ namespace OpenXcom
  */
 BasescapeState::BasescapeState(Game *game, Base *base, Globe *globe) : State(game), _base(base), _globe(globe)
 {
+	if (Options::maximizeInfoScreens)
+	{
+		Options::baseXResolution = Screen::ORIGINAL_WIDTH;
+		Options::baseYResolution = Screen::ORIGINAL_HEIGHT;
+		_game->getScreen()->resetDisplay(false);
+	}
+
 	// Create objects
 	_txtFacility = new Text(192, 9, 0, 0);
 	_view = new BaseView(192, 192, 0, 8);
@@ -190,6 +198,12 @@ BasescapeState::BasescapeState(Game *game, Base *base, Globe *globe) : State(gam
  */
 BasescapeState::~BasescapeState()
 {
+	if (Options::maximizeInfoScreens)
+	{
+		Screen::updateScale(Options::geoscapeScale, Options::geoscapeScale, Options::baseXGeoscape, Options::baseYGeoscape, true);
+		_game->getScreen()->resetDisplay(false);
+	}
+
 	// Clean up any temporary bases
 	bool exists = false;
 	for (std::vector<Base*>::iterator i = _game->getSavedGame()->getBases()->begin(); i != _game->getSavedGame()->getBases()->end() && !exists; ++i)
