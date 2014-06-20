@@ -2929,18 +2929,18 @@ void TileEngine::setDangerZone(Position pos, int radius, BattleUnit *unit)
 
 void TileEngine::displayDamage(BattleUnit *attacker, BattleUnit *target, int damage, int wounds, bool stun)
 {
-	std::wostringstream damageWarning;
-
 	BattlescapeState* battleState = _save->getBattleState();
 	if(battleState == 0)
 	{
 		return;
 	}
 
-	static Language* lang = battleState->getGame()->getLanguage();
-
 	if(target->getVisible())
 	{
+		static Language* lang = battleState->getGame()->getLanguage();
+
+		std::wostringstream damageWarning;
+
 		if(attacker && attacker->getVisible())
 		{
 			switch(attacker->getFaction())
