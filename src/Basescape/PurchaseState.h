@@ -44,7 +44,7 @@ private:
 
 	TextButton *_btnOk, *_btnCancel;
 	Window *_window;
-	Text *_txtTitle, *_txtFunds, *_txtPurchases, *_txtItem, *_txtCost, *_txtQuantity, *_txtSpaceUsed;
+	Text *_txtTitle, *_txtFunds, *_txtPurchases, *_txtItem, *_txtCost, *_txtQuantity, *_txtSpaceUsed, *_txtQuartersUsed;
 	TextList *_lstItems;
 	std::vector<std::string> _crafts, _items;
 	std::vector<int> _qtys;
