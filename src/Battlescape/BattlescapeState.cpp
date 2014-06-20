@@ -442,6 +442,7 @@ BattlescapeState::BattlescapeState(Game *game) : State(game), _popups(), _xBefor
 	_barEnergy->setScale(1.0);
 	_barHealth->setColor(Palette::blockOffset(2));
 	_barHealth->setColor2(Palette::blockOffset(5)+2);
+	_barHealth->setColor3(Palette::blockOffset(0)+1);
 	_barHealth->setScale(1.0);
 	_barMorale->setColor(Palette::blockOffset(12));
 	_barMorale->setScale(1.0);
@@ -1295,6 +1296,7 @@ void BattlescapeState::updateSoldierInfo()
 	_barHealth->setMax(battleUnit->getStats()->health);
 	_barHealth->setValue(battleUnit->getHealth());
 	_barHealth->setValue2(battleUnit->getStunlevel());
+	_barHealth->setValue3(battleUnit->getFatalWounds());
 	_numMorale->setValue(battleUnit->getMorale());
 	_barMorale->setMax(100);
 	_barMorale->setValue(battleUnit->getMorale());

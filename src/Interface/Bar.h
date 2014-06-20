@@ -33,8 +33,8 @@ namespace OpenXcom
 class Bar : public Surface
 {
 private:
-	Uint8 _color, _color2;
-	double _scale, _max, _value, _value2;
+	Uint8 _color, _color2, _color3;
+	double _scale, _max, _value, _value2, _value3;
 	bool _invert, _secondOnTop;
 public:
 	/// Creates a new bar with the specified size and position.
@@ -49,6 +49,10 @@ public:
 	void setColor2(Uint8 color);
 	/// Gets the bar's second color.
 	Uint8 getColor2() const;
+	/// Sets the bar's third color.
+	void setColor3(Uint8 color);
+	/// Gets the bar's third color.
+	Uint8 getColor3() const;
 	/// Sets the bar's scale.
 	void setScale(double scale);
 	/// Gets the bar's scale.
@@ -65,6 +69,10 @@ public:
 	void setValue2(double value);
 	/// Gets the bar's second current value.
 	double getValue2() const;
+	/// Sets the bar's third current value.
+	void setValue3(double value);
+	/// Gets the bar's third current value.
+	double getValue3() const;
 	/// Defines whether the second value should be drawn on top.
 	void setSecondValueOnTop(bool onTop);
 	/// Sets the bar's color invert setting.

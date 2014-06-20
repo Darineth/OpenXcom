@@ -30,7 +30,7 @@ namespace OpenXcom
  * @param x X position in pixels.
  * @param y Y position in pixels.
  */
-Bar::Bar(int width, int height, int x, int y) : Surface(width, height, x, y), _color(0), _color2(0), _scale(0), _max(0), _value(0), _value2(0), _invert(false), _secondOnTop(true)
+Bar::Bar(int width, int height, int x, int y) : Surface(width, height, x, y), _color(0), _color2(0), _scale(0), _max(0), _value(0), _value2(0), _value3(0), _invert(false), _secondOnTop(true)
 {
 
 }
@@ -78,6 +78,25 @@ void Bar::setColor2(Uint8 color)
 Uint8 Bar::getColor2() const
 {
 	return _color2;
+}
+
+/**
+ * Changes the color used to draw the third contents.
+ * @param color Color value.
+ */
+void Bar::setColor3(Uint8 color)
+{
+	_color3 = color;
+	_redraw = true;
+}
+
+/**
+ * Returns the third color used to draw the bar.
+ * @return Color value.
+ */
+Uint8 Bar::getColor3() const
+{
+	return _color3;
 }
 
 /**
@@ -154,6 +173,25 @@ void Bar::setValue2(double value)
 double Bar::getValue2() const
 {
 	return _value2;
+}
+
+/**
+ * Changes the value used to draw the third inner contents.
+ * @param value Current value.
+ */
+void Bar::setValue3(double value)
+{
+	_value3 = value;
+	_redraw = true;
+}
+
+/**
+ * Returns the value used to draw the third inner contents.
+ * @return Current value.
+ */
+double Bar::getValue3() const
+{
+	return _value3;
 }
 
 /**
@@ -237,6 +275,20 @@ void Bar::draw()
 			drawRect(&square, _color2);
 			square.w = (Uint16)(_scale * _value);
 			drawRect(&square, _color);
+		}
+	}
+
+	if(_value3)
+	{
+		square.h += 2;
+		square.y--;
+		square.w = 1;
+
+		for(Uint16 ii = 0; ii < _value3; ++ii)
+		{
+			//square.w = (Uint16)(_scale * _value3);
+			square.x = (Uint16)(_scale * ii * 2);
+			drawRect(&square, _color3);
 		}
 	}
 }
