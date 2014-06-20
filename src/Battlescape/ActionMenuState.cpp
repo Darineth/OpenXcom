@@ -140,6 +140,7 @@ ActionMenuState::ActionMenuState(Game *game, BattleAction *action, int x, int y)
 	}
 	
 	if(_action->actor->hasInventory()
+		&& weapon->getBattleType() == BT_FIREARM
 		&&_action->weapon->needsAmmo()
 		&& (_action->weapon->getAmmoItem() == 0 
 			|| (_action->weapon->getAmmoItem()->getAmmoQuantity() < _action->weapon->getAmmoItem()->getRules()->getClipSize())
