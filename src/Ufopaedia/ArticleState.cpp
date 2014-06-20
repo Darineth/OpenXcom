@@ -28,6 +28,7 @@
 #include "../Engine/Palette.h"
 #include "../Interface/TextButton.h"
 #include "../Ruleset/RuleItem.h"
+#include "../Engine/Screen.h"
 
 namespace OpenXcom
 {
@@ -40,6 +41,13 @@ namespace OpenXcom
 	ArticleState::ArticleState(Game *game, std::string article_id) :
 		State(game), _id(article_id)
 	{
+		if (Options::maximizeInfoScreens)
+		{
+			Options::baseXResolution = Screen::ORIGINAL_WIDTH;
+			Options::baseYResolution = Screen::ORIGINAL_HEIGHT;
+			_game->getScreen()->resetDisplay(false);
+		}
+
 		// init background and navigation elements
 		_bg = new Surface(320, 200, 0, 0);
 		_btnOk = new TextButton(30, 14, 5, 5);
@@ -51,7 +59,13 @@ namespace OpenXcom
 	 * Destructor
 	 */
 	ArticleState::~ArticleState()
-	{}
+	{
+		if (Options::maximizeInfoScreens)
+		{
+			Screen::updateScale(Options::geoscapeScale, Options::geoscapeScale, Options::baseXGeoscape, Options::baseYGeoscape, true);
+			_game->getScreen()->resetDisplay(false);
+		}
+	}
 
 	std::string ArticleState::getDamageTypeText(ItemDamageType dt) const
 	{
