@@ -105,6 +105,15 @@ ActionMenuState::ActionMenuState(Game *game, BattleAction *action, int x, int y)
 				addItem(BA_AIMEDSHOT, "STR_AIMED_SHOT", &id);
 			}
 		}
+
+		if(_action->actor->hasInventory()
+			&&_action->weapon->needsAmmo()
+			&& (_action->weapon->getAmmoItem() == 0 
+				|| (_action->weapon->getAmmoItem()->getAmmoQuantity() < _action->weapon->getAmmoItem()->getRules()->getClipSize())
+					&& !(_action->weapon->getSlot()->getId() == "STR_LEFT_HAND" ? action->actor->getItem("STR_RIGHT_HAND") : action->actor->getItem("STR_LEFT_HAND"))))
+		{
+			addItem(BA_RELOAD, "STR_RELOAD", &id);
+		}
 	}
 
 	if (weapon->getTUMelee())
@@ -137,16 +146,6 @@ ActionMenuState::ActionMenuState(Game *game, BattleAction *action, int x, int y)
 	else if (weapon->getBattleType() == BT_MINDPROBE)
 	{
 		addItem(BA_USE, "STR_USE_MIND_PROBE", &id);
-	}
-	
-	if(_action->actor->hasInventory()
-		&& weapon->getBattleType() == BT_FIREARM
-		&&_action->weapon->needsAmmo()
-		&& (_action->weapon->getAmmoItem() == 0 
-			|| (_action->weapon->getAmmoItem()->getAmmoQuantity() < _action->weapon->getAmmoItem()->getRules()->getClipSize())
-				&& !(_action->weapon->getSlot()->getId() == "STR_LEFT_HAND" ? action->actor->getItem("STR_RIGHT_HAND") : action->actor->getItem("STR_LEFT_HAND"))))
-	{
-		addItem(BA_RELOAD, "STR_RELOAD", &id);
 	}
 }
 
