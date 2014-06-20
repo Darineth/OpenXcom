@@ -1866,21 +1866,27 @@ BattleItem *BattleUnit::findQuickAmmo(BattleItem *weapon, int* reloadCost) const
 
 /**
  * Check if we have ammo and reload if needed (used for AI).
- * @return Do we have ammo?
+ * @return Do we have ammo?as
  */
 bool BattleUnit::checkAmmo()
 {
 	BattleItem *weapon = getItem("STR_RIGHT_HAND");
-	if (!weapon || weapon->getAmmoItem() != 0 || weapon->getRules()->getBattleType() == BT_MELEE || getTimeUnits() < 15)
+	BattleItem *ammo = 0;
+	int tu = 0;
+	if (!weapon || weapon->getAmmoItem() != 0 || weapon->getRules()->getBattleType() == BT_MELEE || !(ammo = findQuickAmmo(weapon, &tu)) || !spendTimeUnits(tu))
 	{
 		weapon = getItem("STR_LEFT_HAND");
-		if (!weapon || weapon->getAmmoItem() != 0 || weapon->getRules()->getBattleType() == BT_MELEE || getTimeUnits() < 15)
+		if (!weapon || weapon->getAmmoItem() != 0 || weapon->getRules()->getBattleType() == BT_MELEE || !(ammo = findQuickAmmo(weapon, &tu)) || !spendTimeUnits(tu))
 		{
 			return false;
 		}
 	}
+
+	weapon->setAmmoItem(ammo);
+	ammo->moveToOwner(0);
+
 	// we have a non-melee weapon with no ammo and 15 or more TUs - we might need to look for ammo then
-	BattleItem *ammo = 0;
+	/*BattleItem *ammo = 0;
 	bool wrong = true;
 	for (std::vector<BattleItem*>::iterator i = getInventory()->begin(); i != getInventory()->end(); ++i)
 	{
@@ -1900,7 +1906,7 @@ bool BattleUnit::checkAmmo()
 
 	spendTimeUnits(15);
 	weapon->setAmmoItem(ammo);
-	ammo->moveToOwner(0);
+	ammo->moveToOwner(0);*/
 
 	return true;
 }
