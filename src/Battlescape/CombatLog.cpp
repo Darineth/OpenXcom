@@ -35,12 +35,6 @@ namespace OpenXcom
  */
 CombatLog::CombatLog(int width, int height, int x, int y) : Surface(width, height, x, y), _fade(0), _currentLine(0)
 {
-	/*_text = new Text(width, height, 0, 0);
-	_text->setHighContrast(true);
-	_text->setAlign(ALIGN_CENTER);
-	_text->setVerticalAlign(ALIGN_MIDDLE);
-	_text->setWordWrap(true);*/
-
 	for(int ii = 0; ii < MAX_LOG_LINES; ++ii)
 	{
 		Text *text = _text[ii] = new Text(width, 9, x, y + ii * 10);
@@ -48,7 +42,7 @@ CombatLog::CombatLog(int width, int height, int x, int y) : Surface(width, heigh
 		text->setAlign(ALIGN_CENTER);
 	}
 
-	_timer = new Timer(5000);
+	_timer = new Timer(50000);
 	_timer->onTimer((SurfaceHandler)&CombatLog::hideOldLines);
 
 	setVisible(false);
@@ -105,7 +99,7 @@ void CombatLog::shiftUp()
 		}
 
 		_redraw = true;
-		_text[_currentLine--]->clear();
+		_text[--_currentLine]->clear();
 	}
 }
 
@@ -120,17 +114,12 @@ void CombatLog::setPalette(SDL_Color *colors, int firstcolor, int ncolors)
 
 void CombatLog::log(const std::wstring &msg, CombatLogColor color)
 {
-	int line = _currentLine;
 	if(_currentLine == MAX_LOG_LINES)
 	{
 		shiftUp();
 	}
-	else
-	{
-		_currentLine++;
-	}
 
-	Text* text = _text[line];
+	Text* text = _text[_currentLine++];
 	text->setText(msg);
 
 	switch(color)
