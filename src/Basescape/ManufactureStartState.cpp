@@ -136,12 +136,11 @@ ManufactureStartState::ManufactureStartState(Game * game, Base * base, RuleManuf
 		}
 	}
 
-	// TODO: Translate
-	_txtSell->setText(LocalizedText(L"Sell Price per Unit>\x01{0}").arg(Text::formatFunding(sellPrice)));
+	_txtSell->setText(tr("STR_SELL_PER_UNIT").arg(Text::formatFunding(sellPrice)));
 
 	if(singleItem)
 	{
-		_txtCurrent->setText(LocalizedText(L"Current Stores>\x01{0}").arg(Text::formatNumber(_base->getItems()->getItem(singleItemId))));
+		_txtCurrent->setText(tr("STR_CURRENT_STORES").arg(Text::formatNumber(_base->getItems()->getItem(singleItemId))));
 	}
 	else
 	{

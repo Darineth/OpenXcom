@@ -51,6 +51,7 @@
 #include "../Engine/Logger.h"
 #include "../fmath.h"
 #include "../Interface/Text.h"
+#include "../Engine/LocalizedText.h"
 #include "../Engine/Game.h"
 
 namespace OpenXcom
@@ -2955,21 +2956,19 @@ void TileEngine::displayDamage(BattleUnit *attacker, BattleUnit *target, int dam
 			switch(attacker->getFaction())
 			{
 			case FACTION_PLAYER:
-				damageWarning << attacker->getName(lang) << " > ";
+				damageWarning << battleState->tr("STR_LOG_ACTOR").arg(attacker->getName(lang));
 				break;
 			case FACTION_HOSTILE:
-				// TODO: Translate
-				damageWarning << "HOSTILE" << " > ";
+				damageWarning << battleState->tr("STR_LOG_ACTOR").arg(battleState->tr("STR_HOSTILE"));
 				break;
 			default:
-				// TODO: Translate
-				damageWarning << "NEUTRAL" << " > ";
+				damageWarning << battleState->tr("STR_LOG_ACTOR").arg(battleState->tr("STR_NEUTRAL"));
 				break;
 			}
 		}
 		else if(attacker)
 		{
-			damageWarning << "UNKNOWN" << " > ";
+			damageWarning << battleState->tr("STR_LOG_ACTOR").arg(battleState->tr("STR_UNKNOWN_UC"));
 		}
 
 		int targetMaxHealth = target->getStats()->health;
@@ -2978,84 +2977,77 @@ void TileEngine::displayDamage(BattleUnit *attacker, BattleUnit *target, int dam
 		{
 			if(target->getFaction() == FACTION_HOSTILE)
 			{
-				damageWarning << "HOSTILE" << " : ";
+				damageWarning << battleState->tr("STR_LOG_TARGET").arg(battleState->tr("STR_HOSTILE"));
 			}
 			else
 			{
-				damageWarning << "NEUTRAL" << " : ";
+				damageWarning << battleState->tr("STR_LOG_TARGET").arg(battleState->tr("STR_NEUTRAL"));
 			}
 			
 			float damageRatio = targetMaxHealth < 1 ? 0 : ((float)damage / (float)targetMaxHealth);
 
-			//damageWarning << Text::formatNumber(damage) << "/" << Text::formatNumber(targetMaxHealth) << "(" << Text::formatPercentage((int)(damageRatio * 100)) << ") ";
 			if(damageRatio > 0.5)
 			{
-				damageWarning << "CRITICAL";
+				damageWarning << battleState->tr("STR_LOG_DAMAGE").arg(battleState->tr("STR_LOG_HIGH_DAMAGE"));
 			}
 			else if (damageRatio > 0)
 			{
-				damageWarning << "HIT";
+				damageWarning << battleState->tr("STR_LOG_DAMAGE").arg(battleState->tr("STR_LOG_LOW_DAMAGE"));
 			}
 			else
 			{
-				damageWarning << "GLANCING";
+				damageWarning << battleState->tr("STR_LOG_DAMAGE").arg(battleState->tr("STR_LOG_NO_DAMAGE"));
 			}
 
 			if(target->getHealth() == 0)
 			{
-				damageWarning << " [KILLED]";
+				damageWarning << battleState->tr("STR_LOG_KILLED");
 			}
 			else
 			{
-				if(stun && (target->getStunlevel() >= targetMaxHealth))
+				if(stun && (target->getStunlevel() >= target->getHealth()))
 				{
-					damageWarning << " [STUNNED]";
+					damageWarning << battleState->tr("STR_LOG_STUNNED");
 				}
 
 				if(wounds)
 				{
-					damageWarning << " [WOUNDED]";
+					damageWarning << battleState->tr("STR_LOG_WOUNDED");
 				}
 			}
 		}
 		else
 		{
-			damageWarning << target->getName(lang) << " : " << Text::formatNumber(damage);
+			damageWarning << battleState->tr("STR_LOG_TARGET").arg(target->getName(lang));
+			damageWarning << battleState->tr("STR_LOG_DAMAGE").arg(Text::formatNumber(damage));
 
 			if(target->getHealth() == 0)
 			{
-				damageWarning << " [KILLED]";
+				damageWarning << battleState->tr("STR_LOG_KILLED");
 			}
 			else
 			{
 				if(stun && (target->getStunlevel() >= targetMaxHealth))
 				{
-					damageWarning << " [STUNNED]";
+					damageWarning << battleState->tr("STR_LOG_STUNNED");
 				}
 				if(wounds)
 				{
-					damageWarning << " [WOUNDED: " << Text::formatNumber(wounds) << "]";
+					damageWarning << battleState->tr("STR_LOG_WOUNDS").arg(Text::formatNumber(wounds));
 				}
 			}
 		}
 
-		if(stun)
+		switch(target->getOriginalFaction())
 		{
-			_save->getBattleState()->combatLog(damageWarning.str(), COMBAT_LOG_WHITE);
-		}
-		else
-		{
-			switch(target->getOriginalFaction())
-			{
-			case FACTION_PLAYER:
-				_save->getBattleState()->combatLog(damageWarning.str(), COMBAT_LOG_RED);
-				break;
-			case FACTION_NEUTRAL:
-				_save->getBattleState()->combatLog(damageWarning.str(), COMBAT_LOG_ORANGE);
-				break;
-			default:
-				_save->getBattleState()->combatLog(damageWarning.str(), COMBAT_LOG_GREEN);
-			}
+		case FACTION_PLAYER:
+			_save->getBattleState()->combatLog(damageWarning.str(), COMBAT_LOG_RED);
+			break;
+		case FACTION_NEUTRAL:
+			_save->getBattleState()->combatLog(damageWarning.str(), COMBAT_LOG_ORANGE);
+			break;
+		default:
+			_save->getBattleState()->combatLog(damageWarning.str(), COMBAT_LOG_GREEN);
 		}
 	}
 }

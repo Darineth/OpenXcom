@@ -118,16 +118,13 @@ PurchaseState::PurchaseState(Game *game, Base *base) : State(game), _base(base),
 	_txtSpaceUsed->setColor(Palette::blockOffset(13)+10);
 	_txtSpaceUsed->setSecondaryColor(Palette::blockOffset(13));
 	std::wostringstream ss5;
-	// TODO: Improve translation
 	ss5 << tr("STR_STORES") << ">\x01" << _base->getUsedStores() << "/" << _base->getAvailableStores();
 	_txtSpaceUsed->setText(ss5.str());
 
 	_txtQuartersUsed->setColor(Palette::blockOffset(13)+10);
 	_txtQuartersUsed->setSecondaryColor(Palette::blockOffset(13));
-	// TODO: Translate
 	std::wostringstream ss6;
 	ss6 << tr("STR_LIVING_QUARTERS_PLURAL") << ">\x01" << _base->getUsedQuarters() << "/" << _base->getAvailableQuarters();
-	// TODO: Translate
 	_txtQuartersUsed->setText(ss6.str());
 
 	_txtItem->setColor(Palette::blockOffset(13)+10);
@@ -614,7 +611,6 @@ void PurchaseState::updateItemStrings()
 	ss5 << "/" << _base->getAvailableStores();
 	_txtSpaceUsed->setText(ss5.str());
 
-	// TODO: Translate
 	ss6 << tr("STR_LIVING_QUARTERS_PLURAL") << ">\x01" << _base->getUsedQuarters();
 
 	if(_pQty >= 1)
