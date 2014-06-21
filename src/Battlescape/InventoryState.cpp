@@ -48,6 +48,7 @@
 #include "Map.h"
 #include "Camera.h"
 #include "Pathfinding.h"
+#include "RoleMenuState.h"
 
 namespace OpenXcom
 {
@@ -519,6 +520,10 @@ void InventoryState::btnCreateTemplateClick(Action *action)
 		return;
 	}
 
+	_game->pushState(new RoleMenuState(_game, this));
+
+	return;
+
 	// clear current template
 	_clearInventoryTemplate(_curInventoryTemplate);
 
@@ -569,6 +574,18 @@ void InventoryState::btnApplyTemplateClick(Action *action)
 		return;
 	}
 
+	applyEquipmentLayout(&_curInventoryTemplate);
+
+	// refresh ui
+	_inv->arrangeGround(false);
+	updateStats();
+
+	// give audio feedback
+	_game->getResourcePack()->getSound("BATTLE.CAT", 38)->play();
+}
+
+void InventoryState::applyEquipmentLayout(std::vector<EquipmentLayoutItem*> *layout)
+{
 	BattleUnit               *unit          = _battleGame->getSelectedUnit();
 	std::vector<BattleItem*> *unitInv       = unit->getInventory();
 	Tile                     *groundTile    = unit->getTile();
@@ -588,7 +605,7 @@ void InventoryState::btnApplyTemplateClick(Action *action)
 	// message, but continue attempting to fulfill the template as best we can
 	bool itemMissing = false;
 	std::vector<EquipmentLayoutItem*>::iterator templateIt;
-	for (templateIt = _curInventoryTemplate.begin(); templateIt != _curInventoryTemplate.end(); ++templateIt)
+	for (templateIt = layout->begin(); templateIt != layout->end(); ++templateIt)
 	{
 		// search for template item in ground inventory
 		std::vector<BattleItem*>::iterator groundItem;
@@ -623,13 +640,6 @@ void InventoryState::btnApplyTemplateClick(Action *action)
 	{
 		_inv->showWarning(tr("STR_NOT_ENOUGH_ITEMS_FOR_TEMPLATE"));
 	}
-
-	// refresh ui
-	_inv->arrangeGround(false);
-	updateStats();
-
-	// give audio feedback
-	_game->getResourcePack()->getSound("BATTLE.CAT", 38)->play();
 }
 
 /**

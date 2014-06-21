@@ -857,6 +857,7 @@
       <Filter>Battlescape</Filter>
     </ClCompile>
     <ClCompile Include="Battlescape\CombatLog.cpp" />
+    <ClCompile Include="Battlescape\RoleMenuState.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h" />
@@ -1736,6 +1737,7 @@
       <Filter>Battlescape</Filter>
     </ClInclude>
     <ClInclude Include="Battlescape\CombatLog.h" />
+    <ClInclude Include="Battlescape\RoleMenuState.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Geoscape">

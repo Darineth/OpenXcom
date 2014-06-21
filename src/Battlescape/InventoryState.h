@@ -79,6 +79,8 @@ public:
 	void btnCreateTemplateClick(Action *action);
 	/// Handler for clicking the Apply Template button.
 	void btnApplyTemplateClick(Action *action);
+	/// Apply an equipment layout to the current unit.
+	void applyEquipmentLayout(std::vector<EquipmentLayoutItem*> *layout);
 	/// Handler for clicking on the inventory.
 	void invClick(Action *action);
 	/// Handler for showing item info.
