@@ -42,7 +42,7 @@ CombatLog::CombatLog(int width, int height, int x, int y) : Surface(width, heigh
 		text->setAlign(ALIGN_CENTER);
 	}
 
-	_timer = new Timer(50000);
+	_timer = new Timer(5000);
 	_timer->onTimer((SurfaceHandler)&CombatLog::hideOldLines);
 
 	setVisible(false);

@@ -1816,15 +1816,20 @@ BattleItem *BattleUnit::findQuickItem(const std::string &item, RuleInventory* de
 		}
 	}
 
-	for(auto ii = this->getTile()->getInventory()->begin(); ii != this->getTile()->getInventory()->end(); ++ii)
-	{
-		BattleItem *bi = (*ii);
+	Tile* tile = getTile();
 
-		int cost;
-		if(bi->getRules()->getType() == item && ((cost = bi->getSlot()->getCost(destSlot)) < quickCost))
+	if(tile && tile->getInventory())
+	{
+		for(auto ii = tile->getInventory()->begin(); ii != tile->getInventory()->end(); ++ii)
 		{
-			quickItem = bi;
-			quickCost = cost;
+			BattleItem *bi = (*ii);
+
+			int cost;
+			if(bi->getRules()->getType() == item && ((cost = bi->getSlot()->getCost(destSlot)) < quickCost))
+			{
+				quickItem = bi;
+				quickCost = cost;
+			}
 		}
 	}
 
@@ -1866,7 +1871,7 @@ BattleItem *BattleUnit::findQuickAmmo(BattleItem *weapon, int* reloadCost) const
 
 /**
  * Check if we have ammo and reload if needed (used for AI).
- * @return Do we have ammo?as
+ * @return Do we have ammo?
  */
 bool BattleUnit::checkAmmo()
 {

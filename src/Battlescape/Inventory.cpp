@@ -814,7 +814,8 @@ bool Inventory::unload()
 		}
 	}
 
-	if (!_tu || _selUnit->spendTimeUnits(8))
+	// Adjusted unload cost: Magazine weight + hand->hand
+	if (!_tu || _selUnit->spendTimeUnits(Options::battleAdjustReloadCost ? (_selItem->getAmmoItem()->getRules()->getWeight() + _game->getRuleset()->getInventory("STR_LEFT_HAND")->getCost(_game->getRuleset()->getInventory("STR_RIGHT_HAND"))) : 8))
 	{
 		moveItem(_selItem->getAmmoItem(), _game->getRuleset()->getInventory("STR_LEFT_HAND"), 0, 0);
 		_selItem->getAmmoItem()->moveToOwner(_selUnit);

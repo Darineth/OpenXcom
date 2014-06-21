@@ -381,7 +381,8 @@ void ActionMenuState::btnActionMenuItemClick(Action *action)
 
 			if(_action->weapon->getAmmoItem())
 			{
-				tu += _action->weapon->getSlot()->getCost(ground);
+				// Adjusted unload cost: Magazine weight + hand->hand
+				tu += Options::battleAdjustReloadCost ? (_action->weapon->getAmmoItem()->getRules()->getWeight() + _action->weapon->getSlot()->getCost(ground)) : 8;
 			}
 
 			if(!quickAmmo)
