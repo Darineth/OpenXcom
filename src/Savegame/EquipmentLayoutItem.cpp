@@ -43,6 +43,10 @@ EquipmentLayoutItem::EquipmentLayoutItem(std::string itemType, std::string slot,
 {
 }
 
+EquipmentLayoutItem::EquipmentLayoutItem(const EquipmentLayoutItem &item) : _itemType(item._itemType), _slot(item._slot), _slotX(item._slotX), _slotY(item._slotY), _ammoItem(item._ammoItem), _fuseTimer(item._fuseTimer)
+{
+}
+
 /**
  *
  */

@@ -383,6 +383,7 @@
     <ClCompile Include="Battlescape\ProjectileFlyBState.cpp" />
     <ClCompile Include="Battlescape\PromotionsState.cpp" />
     <ClCompile Include="Battlescape\DelayedSaveState.cpp" />
+    <ClCompile Include="Battlescape\RoleChangeState.cpp" />
     <ClCompile Include="Battlescape\RoleMenuState.cpp" />
     <ClCompile Include="Battlescape\ScannerState.cpp" />
     <ClCompile Include="Battlescape\ScannerView.cpp" />
@@ -537,6 +538,7 @@
     <ClCompile Include="Ruleset\MapData.cpp" />
     <ClCompile Include="Ruleset\AlienDeployment.cpp" />
     <ClCompile Include="Ruleset\AlienRace.cpp" />
+    <ClCompile Include="Ruleset\RuleRole.cpp" />
     <ClCompile Include="Ruleset\StatString.cpp" />
     <ClCompile Include="Ruleset\StatStringCondition.cpp" />
     <ClCompile Include="Ruleset\Unit.cpp" />
@@ -574,6 +576,7 @@
     <ClCompile Include="Savegame\Production.cpp" />
     <ClCompile Include="Savegame\Region.cpp" />
     <ClCompile Include="Savegame\ResearchProject.cpp" />
+    <ClCompile Include="Savegame\Role.cpp" />
     <ClCompile Include="Savegame\SavedBattleGame.cpp" />
     <ClCompile Include="Savegame\SavedGame.cpp" />
     <ClCompile Include="Savegame\SerializationHelper.cpp" />
@@ -679,6 +682,7 @@
     <ClInclude Include="Battlescape\ProjectileFlyBState.h" />
     <ClInclude Include="Battlescape\PromotionsState.h" />
     <ClInclude Include="Battlescape\DelayedSaveState.h" />
+    <ClInclude Include="Battlescape\RoleChangeState.h" />
     <ClInclude Include="Battlescape\RoleMenuState.h" />
     <ClInclude Include="Battlescape\ScannerState.h" />
     <ClInclude Include="Battlescape\ScannerView.h" />
@@ -833,6 +837,7 @@
     <ClInclude Include="Ruleset\AlienDeployment.h" />
     <ClInclude Include="Ruleset\AlienRace.h" />
     <ClInclude Include="Ruleset\MCDPatch.h" />
+    <ClInclude Include="Ruleset\RuleRole.h" />
     <ClInclude Include="Ruleset\StatString.h" />
     <ClInclude Include="Ruleset\StatStringCondition.h" />
     <ClInclude Include="Ruleset\Unit.h" />
@@ -871,6 +876,7 @@
     <ClInclude Include="Savegame\Production.h" />
     <ClInclude Include="Savegame\Region.h" />
     <ClInclude Include="Savegame\ResearchProject.h" />
+    <ClInclude Include="Savegame\Role.h" />
     <ClInclude Include="Savegame\SavedBattleGame.h" />
     <ClInclude Include="Savegame\SavedGame.h" />
     <ClInclude Include="Savegame\SerializationHelper.h" />

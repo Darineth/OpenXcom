@@ -35,6 +35,7 @@ class Inventory;
 class SavedBattleGame;
 class BattlescapeState;
 class BattleUnit;
+class Soldier;
 
 /**
  * Screen which displays soldier's inventory.
@@ -43,8 +44,8 @@ class InventoryState : public State
 {
 private:
 	Surface *_bg, *_soldier;
-	Text *_txtName, *_txtItem, *_txtAmmo, *_txtWeight, *_txtTus, *_txtFAcc, *_txtReact, *_txtPSkill, *_txtPStr;
-	InteractiveSurface *_btnOk, *_btnPrev, *_btnNext, *_btnUnload, *_btnGround, *_btnRank;
+	Text *_txtName, *_txtRole, *_txtItem, *_txtAmmo, *_txtWeight, *_txtTus, *_txtFAcc, *_txtReact, *_txtPSkill, *_txtPStr;
+	InteractiveSurface *_btnOk, *_btnPrev, *_btnNext, *_btnUnload, *_btnGround, *_btnRank, *_btnRole;
 	InteractiveSurface *_btnCreateTemplate, *_btnApplyTemplate;
 	Surface *_selAmmo;
 	Inventory *_inv;
@@ -75,12 +76,16 @@ public:
 	void btnGroundClick(Action *action);
 	/// Handler for clicking the Rank button.
 	void btnRankClick(Action *action);
+	/// Handler for clicking on the Role button.
+	void btnRoleClick(Action *action);
 	/// Handler for clicking on the Create Template button.
 	void btnCreateTemplateClick(Action *action);
 	/// Handler for clicking the Apply Template button.
 	void btnApplyTemplateClick(Action *action);
+	/// Gets the selected unit's equipment layout.
+	void InventoryState::getUnitEquipmentLayout(std::vector<EquipmentLayoutItem*> *layout) const;
 	/// Apply an equipment layout to the current unit.
-	void applyEquipmentLayout(std::vector<EquipmentLayoutItem*> *layout);
+	void applyEquipmentLayout(const std::vector<EquipmentLayoutItem*> &layout);
 	/// Handler for clicking on the inventory.
 	void invClick(Action *action);
 	/// Handler for showing item info.
@@ -89,6 +94,12 @@ public:
 	void invMouseOut(Action *action);
 	/// Handles keypresses.
 	void handle(Action *action);
+	/// Gets the current battle unit.
+	BattleUnit *getSelectedUnit() const;
+	/// Gets the current soldier.
+	Soldier *getSelectedSoldier() const;
+	/// Change the current soldier's role.
+	void setRole(const std::string &role);
 };
 
 }

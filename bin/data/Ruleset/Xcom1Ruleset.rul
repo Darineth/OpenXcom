@@ -9401,6 +9401,14 @@ MCDPatches:
         noFloor: true
       - MCDIndex: 80
         noFloor: true
+roles:
+  - name: STR_ROLE_NONE
+    iconSprite: RoleIconNone
+    isBlank: true
+  - name: STR_ROLE_ASSAULT
+    iconSprite: RoleIconAssault
+  - name: STR_ROLE_SNIPER
+    iconSprite: RoleIconSniper
 extraSprites:
   - type: Pathfinding
     files:
@@ -9453,3 +9461,21 @@ extraSprites:
     subY: 48
     files:
       -4: Resources/Weapons/Terror.png
+  - type: RoleIconNone
+    width: 24
+    height: 24
+    singleImage: true
+    files:
+      0: Resources/Roles/RoleIconNone.png
+  - type: RoleIconAssault
+    width: 24
+    height: 24
+    singleImage: true
+    files:
+      0: Resources/Roles/RoleIconAssault.png
+  - type: RoleIconSniper
+    width: 24
+    height: 24
+    singleImage: true
+    files:
+      0: Resources/Roles/RoleIconSniper.png

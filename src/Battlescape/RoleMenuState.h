@@ -29,6 +29,7 @@ class TextButton;
 class Window;
 class Text;
 class InventoryState;
+class Role;
 
 /**
  * Notifies the player about things like soldiers going unconscious or dying from wounds.
@@ -37,22 +38,27 @@ class RoleMenuState : public State
 {
 private:
 	InventoryState *_parentState;
-	TextButton *_btnChangeRole, *_btnSaveLayout, *_btnLoadLayout, *_btnCancel;
+	TextButton *_btnChangeRole, *_btnSaveLayout, *_btnLoadLayout, *_btnClose;
 	Window *_window;
 	Text *_txtTitle;
+	Role *_role;
+	void updateDisplay();
+
 public:
 	/// Creates the RoleMenuState.
 	RoleMenuState(Game *game, InventoryState *parentState);
 	/// Cleans up the RoleMenuState.
 	~RoleMenuState();
 	/// Handler for clicking the Cancel button.
-	void btnCancelClick(Action *action);
+	void btnCloseClick(Action *action);
 	/// Handler for clicking the Change Role button.
 	void btnChangeRoleClick(Action *action);
 	/// Handler for clicking the Save Layout button.
 	void btnSaveLayoutClick(Action *action);
 	/// Handler for clicking the Load Layout button.
 	void btnLoadLayoutClick(Action *action);
+	/// Change the selected unit's role.
+	void changeRole(const std::string &role);
 };
 
 }

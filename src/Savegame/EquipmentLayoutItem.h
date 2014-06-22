@@ -40,6 +40,8 @@ private:
 public:
 	/// Creates a new soldier-equipment layout item and loads its contents from YAML.
 	EquipmentLayoutItem(const YAML::Node& node);
+	/// Copy an existing equipment layout item.
+	EquipmentLayoutItem(const EquipmentLayoutItem &item);
 	/// Creates a new soldier-equipment layout item.
 	EquipmentLayoutItem(std::string itemType, std::string slot, int slotX, int slotY, std::string ammoItem, int fuseTimer);
 	/// Cleans up the soldier-equipment layout item.

@@ -28,6 +28,8 @@
 #include "../Interface/Window.h"
 #include "../Engine/Surface.h"
 #include "../Resource/ResourcePack.h"
+#include "RoleChangeState.h"
+#include "../Savegame/Role.h"
 
 namespace OpenXcom
 {
@@ -47,7 +49,7 @@ RoleMenuState::RoleMenuState(Game *game, InventoryState* parentState) : State(ga
 	_btnChangeRole = new TextButton(180, 18, 70, 65);
 	_btnSaveLayout = new TextButton(180, 18, 70, 85);
 	_btnLoadLayout = new TextButton(180, 18, 70, 105);
-	_btnCancel = new TextButton(90, 18, 115, 130);
+	_btnClose = new TextButton(90, 18, 115, 130);
 
 	// Set palette
 	setPalette("PAL_BATTLESCAPE");
@@ -56,7 +58,7 @@ RoleMenuState::RoleMenuState(Game *game, InventoryState* parentState) : State(ga
 	add(_btnChangeRole);
 	add(_btnSaveLayout);
 	add(_btnLoadLayout);
-	add(_btnCancel);
+	add(_btnClose);
 	add(_txtTitle);
 
 	centerAllSurfaces();
@@ -72,7 +74,12 @@ RoleMenuState::RoleMenuState(Game *game, InventoryState* parentState) : State(ga
 	_txtTitle->setVerticalAlign(ALIGN_MIDDLE);
 	_txtTitle->setHighContrast(true);
 	_txtTitle->setWordWrap(true);
-	_txtTitle->setText(tr("STR_ROLE"));
+
+	std::wostringstream roleTitle;
+
+	roleTitle << tr("STR_ROLE") << ": " << tr(_parentState->getSelectedSoldier()->getRole()->getName());
+
+	_txtTitle->setText(roleTitle.str());
 
 	_btnChangeRole->setColor(Palette::blockOffset(0)-1);
 	_btnChangeRole->setText(tr("STR_CHANGE_ROLE"));
@@ -89,14 +96,16 @@ RoleMenuState::RoleMenuState(Game *game, InventoryState* parentState) : State(ga
 	_btnLoadLayout->setHighContrast(true);
 	_btnLoadLayout->onMouseClick((ActionHandler)&RoleMenuState::btnLoadLayoutClick);
 
-	_btnCancel->setColor(Palette::blockOffset(0)-1);
-	_btnCancel->setText(tr("STR_CANCEL"));
-	_btnCancel->onMouseClick((ActionHandler)&RoleMenuState::btnCancelClick);
-	_btnCancel->onKeyboardPress((ActionHandler)&RoleMenuState::btnCancelClick, Options::keyOk);
-	_btnCancel->onKeyboardPress((ActionHandler)&RoleMenuState::btnCancelClick, Options::keyCancel);
-	_btnCancel->setHighContrast(true);
+	_btnClose->setColor(Palette::blockOffset(0)-1);
+	_btnClose->setText(tr("STR_OK"));
+	_btnClose->onMouseClick((ActionHandler)&RoleMenuState::btnCloseClick);
+	_btnClose->onKeyboardPress((ActionHandler)&RoleMenuState::btnCloseClick, Options::keyOk);
+	_btnClose->onKeyboardPress((ActionHandler)&RoleMenuState::btnCloseClick, Options::keyCancel);
+	_btnClose->setHighContrast(true);
 
 	_game->getCursor()->setVisible(true);
+
+	updateDisplay();
 }
 
 /**
@@ -113,6 +122,7 @@ RoleMenuState::~RoleMenuState()
  */
 void RoleMenuState::btnChangeRoleClick(Action *action)
 {
+	_game->pushState(new RoleChangeState(_game, this));
 }
 
 /**
@@ -121,6 +131,10 @@ void RoleMenuState::btnChangeRoleClick(Action *action)
  */
 void RoleMenuState::btnSaveLayoutClick(Action *action)
 {
+	std::vector<EquipmentLayoutItem*> layout;
+	_parentState->getUnitEquipmentLayout(&layout);
+	_parentState->getSelectedSoldier()->getRole()->setDefaultLayout(layout);
+	_game->popState();
 }
 
 /**
@@ -129,15 +143,32 @@ void RoleMenuState::btnSaveLayoutClick(Action *action)
  */
 void RoleMenuState::btnLoadLayoutClick(Action *action)
 {
+	_parentState->applyEquipmentLayout(_parentState->getSelectedSoldier()->getRole()->getDefaultLayout());
+	_game->popState();
 }
 
 /**
  * Returns to the previous screen.
  * @param action Pointer to an action.
  */
-void RoleMenuState::btnCancelClick(Action *)
+void RoleMenuState::btnCloseClick(Action *)
 {
 	_game->popState();
 }
 
+void RoleMenuState::updateDisplay()
+{
+	Soldier *s = _parentState->getSelectedSoldier();
+	_role = s ? s->getRole() : 0;
+
+	_btnSaveLayout->setVisible(_role && !_role->isBlank());
+	_btnLoadLayout->setVisible(_role && !_role->isBlank());
+}
+
+/// Change the selected unit's role.
+void RoleMenuState::changeRole(const std::string &role)
+{
+	_parentState->setRole(role);
+	_game->popState();
+}
 }

@@ -40,6 +40,7 @@ class Language;
 class EquipmentLayoutItem;
 class SoldierDeath;
 class SavedGame;
+class Role;
 
 /**
  * Represents a soldier hired by the player.
@@ -60,6 +61,7 @@ private:
 	int _missions, _kills, _recovery;
 	bool _recentlyPromoted, _psiTraining;
 	Armor *_armor;
+	Role *_role;
 	std::vector<EquipmentLayoutItem*> _equipmentLayout;
 	SoldierDeath *_death;
 	std::wstring _statString;
@@ -142,6 +144,10 @@ public:
 	void die(SoldierDeath *death);
 	/// Calculate statString.
 	void calcStatString(const std::vector<StatString *> &statStrings, bool psiStrengthEval);
+	/// Sets the soldier's role.
+	void setRole(Role *role);
+	/// Gets the soldier's role.
+	Role *getRole() const;
 };
 
 }

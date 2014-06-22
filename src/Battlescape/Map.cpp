@@ -50,6 +50,8 @@
 #include "../Interface/Cursor.h"
 #include "../Interface/NumberText.h"
 #include "../Interface/Text.h"
+#include "../Savegame/Role.h"
+#include "../Ruleset/RuleRole.h"
 
 
 /*
@@ -1078,7 +1080,8 @@ void Map::drawTerrain(Surface *surface)
 			}
 		}
 	}
-	unit = (BattleUnit*)_save->getSelectedUnit();
+
+	unit = _save->getSelectedUnit();
 	if (unit && (_save->getSide() == FACTION_PLAYER || _save->getDebugMode()) && unit->getPosition().z <= _camera->getViewLevel())
 	{
 		_camera->convertMapToScreen(unit->getPosition(), &screenPosition);
@@ -1096,7 +1099,17 @@ void Map::drawTerrain(Surface *surface)
 		}
 		if (this->getCursorType() != CT_NONE)
 		{
-			_arrow->blitNShade(surface, screenPosition.x + offset.x + (_spriteWidth / 2) - (_arrow->getWidth() / 2), screenPosition.y + offset.y - _arrow->getHeight() + arrowBob[_animFrame], 0);
+			Soldier *soldier = _game->getSavedGame()->getSoldier(unit->getId());
+			Role *role;
+			if(soldier && (role = soldier->getRole()) && !role->isBlank())
+			{
+				Surface *roleIcon = _game->getResourcePack()->getSurface(role->getRules()->getSmallIconSprite());
+				roleIcon->blitNShade(surface, screenPosition.x + offset.x + (_spriteWidth / 2) - (roleIcon->getWidth() / 2), screenPosition.y + offset.y - roleIcon->getHeight(), 0);
+			}
+			else
+			{
+				_arrow->blitNShade(surface, screenPosition.x + offset.x + (_spriteWidth / 2) - (_arrow->getWidth() / 2), screenPosition.y + offset.y - _arrow->getHeight() + arrowBob[_animFrame], 0);
+			}
 		}
 	}
 	delete _numWaypid;
