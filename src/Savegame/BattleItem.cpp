@@ -389,7 +389,7 @@ int BattleItem::setAmmoItem(BattleItem *item)
  */
 int BattleItem::getAmmoReloadCost() const
 {
-	return _rules->getWeight() * 2;
+	return (_rules->getWeight() * 2) + 5;
 }
 
 /**
