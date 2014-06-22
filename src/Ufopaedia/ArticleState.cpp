@@ -41,12 +41,7 @@ namespace OpenXcom
 	ArticleState::ArticleState(Game *game, std::string article_id) :
 		State(game), _id(article_id)
 	{
-		if (Options::maximizeInfoScreens)
-		{
-			Options::baseXResolution = Screen::ORIGINAL_WIDTH;
-			Options::baseYResolution = Screen::ORIGINAL_HEIGHT;
-			_game->getScreen()->resetDisplay(false);
-		}
+		_game->getScreen()->pushMaximizeInfoScreen(false);
 
 		// init background and navigation elements
 		_bg = new Surface(320, 200, 0, 0);
@@ -60,11 +55,7 @@ namespace OpenXcom
 	 */
 	ArticleState::~ArticleState()
 	{
-		if (Options::maximizeInfoScreens)
-		{
-			Screen::updateScale(Options::geoscapeScale, Options::geoscapeScale, Options::baseXGeoscape, Options::baseYGeoscape, true);
-			_game->getScreen()->resetDisplay(false);
-		}
+		_game->getScreen()->popMaximizeInfoScreen();
 	}
 
 	std::string ArticleState::getDamageTypeText(ItemDamageType dt) const

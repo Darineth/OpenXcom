@@ -71,9 +71,7 @@ InventoryState::InventoryState(Game *game, bool tu, BattlescapeState *parent) : 
 
 	if (Options::maximizeInfoScreens)
 	{
-		Options::baseXResolution = Screen::ORIGINAL_WIDTH;
-		Options::baseYResolution = Screen::ORIGINAL_HEIGHT;
-		_game->getScreen()->resetDisplay(false);
+		_game->getScreen()->pushMaximizeInfoScreen(true);
 	}
 	else if (!_battleGame->getTileEngine())
 	{
@@ -240,8 +238,7 @@ InventoryState::~InventoryState()
 	{
 		if (Options::maximizeInfoScreens)
 		{
-			Screen::updateScale(Options::battlescapeScale, Options::battlescapeScale, Options::baseXBattlescape, Options::baseYBattlescape, true);
-			_game->getScreen()->resetDisplay(false);
+			_game->getScreen()->popMaximizeInfoScreen();
 		}
 		Tile *inventoryTile = _battleGame->getSelectedUnit()->getTile();
 		_battleGame->getTileEngine()->applyGravity(inventoryTile);

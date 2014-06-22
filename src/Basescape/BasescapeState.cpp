@@ -64,12 +64,7 @@ namespace OpenXcom
  */
 BasescapeState::BasescapeState(Game *game, Base *base, Globe *globe) : State(game), _base(base), _globe(globe)
 {
-	if (Options::maximizeInfoScreens)
-	{
-		Options::baseXResolution = Screen::ORIGINAL_WIDTH;
-		Options::baseYResolution = Screen::ORIGINAL_HEIGHT;
-		_game->getScreen()->resetDisplay(false);
-	}
+	_game->getScreen()->pushMaximizeInfoScreen();
 
 	// Create objects
 	_txtFacility = new Text(192, 9, 0, 0);
@@ -198,11 +193,7 @@ BasescapeState::BasescapeState(Game *game, Base *base, Globe *globe) : State(gam
  */
 BasescapeState::~BasescapeState()
 {
-	if (Options::maximizeInfoScreens)
-	{
-		Screen::updateScale(Options::geoscapeScale, Options::geoscapeScale, Options::baseXGeoscape, Options::baseYGeoscape, true);
-		_game->getScreen()->resetDisplay(false);
-	}
+	_game->getScreen()->popMaximizeInfoScreen();
 
 	// Clean up any temporary bases
 	bool exists = false;

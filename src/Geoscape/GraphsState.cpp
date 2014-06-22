@@ -54,12 +54,7 @@ struct GraphButInfo
  */
 GraphsState::GraphsState(Game *game) : State(game), _butRegionsOffset(0), _butCountriesOffset(0)
 {
-	if (Options::maximizeInfoScreens)
-	{
-		Options::baseXResolution = Screen::ORIGINAL_WIDTH;
-		Options::baseYResolution = Screen::ORIGINAL_HEIGHT;
-		_game->getScreen()->resetDisplay(false);
-	}
+	_game->getScreen()->pushMaximizeInfoScreen();
 
 	// Create objects
 	_bg = new InteractiveSurface(320, 200, 0, 0);
@@ -318,11 +313,7 @@ GraphsState::GraphsState(Game *game) : State(game), _butRegionsOffset(0), _butCo
  */
 GraphsState::~GraphsState()
 {
-	if (Options::maximizeInfoScreens)
-	{
-		Screen::updateScale(Options::geoscapeScale, Options::geoscapeScale, Options::baseXGeoscape, Options::baseYGeoscape, true);
-		_game->getScreen()->resetDisplay(false);
-	}
+	_game->getScreen()->popMaximizeInfoScreen();
 
 	std::string graphRegionToggles = "";
 	std::string graphCountryToggles = "";
