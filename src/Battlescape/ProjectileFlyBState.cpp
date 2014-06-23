@@ -290,10 +290,22 @@ bool ProjectileFlyBState::createNewProjectile()
 		}
 	}
 	// create a new projectile
-	Projectile *projectile = new Projectile(_parent->getResourcePack(), _parent->getSave(), _action, _origin, _targetVoxel, bulletSprite);
+	Projectile *projectile = 0;
 
 	// add the projectile on the map
-	_parent->getMap()->setProjectile(projectile);
+
+	int shots = _ammo->getRules()->getShotgunPellets();
+	if(shots < 2)
+	{
+		_parent->getMap()->addProjectile(projectile = new Projectile(_parent->getResourcePack(), _parent->getSave(), _action, _origin, _targetVoxel, bulletSprite));
+	}
+	else
+	{
+		for(int ii = 0; ii < shots; ++ii)
+		{
+			_parent->getMap()->addProjectile(new Projectile(_parent->getResourcePack(), _parent->getSave(), _action, _origin, _targetVoxel, bulletSprite));
+		}
+	}
 
 	// set the speed of the state think cycle to 16 ms (roughly one think cycle per frame)
 	_parent->setStateInterval(1000/60);
@@ -318,8 +330,7 @@ bool ProjectileFlyBState::createNewProjectile()
 		else
 		{
 			// unable to throw here
-			delete projectile;
-			_parent->getMap()->setProjectile(0);
+			_parent->getMap()->deleteProjectiles();
 			_action.result = "STR_UNABLE_TO_THROW_HERE";
 			_action.TU = 0;
 			_parent->popState();
@@ -353,8 +364,7 @@ bool ProjectileFlyBState::createNewProjectile()
 		else
 		{
 			// no line of fire
-			delete projectile;
-			_parent->getMap()->setProjectile(0);
+			_parent->getMap()->deleteProjectiles();
 			_action.result = "STR_NO_LINE_OF_FIRE";
 			_unit->abortTurn();
 			_parent->popState();
@@ -363,44 +373,56 @@ bool ProjectileFlyBState::createNewProjectile()
 	}
 	else
 	{
-		if (_originVoxel != Position(-1,-1,-1))
+		const std::vector<Projectile*> projectiles = _parent->getMap()->getProjectiles();
+
+		bool firstProjectile = true;
+		for(std::vector<Projectile*>::const_iterator ii = projectiles.begin(); ii != projectiles.end(); ++ii)
 		{
-			_projectileImpact = projectile->calculateTrajectory(_unit->getFiringAccuracy(_action.type, _action.weapon) / 100.0, _originVoxel);
-		}
-		else
-		{
-			_projectileImpact = projectile->calculateTrajectory(_unit->getFiringAccuracy(_action.type, _action.weapon) / 100.0);
-		}
-		if (_projectileImpact != V_EMPTY || _action.type == BA_LAUNCH)
-		{
-			// set the soldier in an aiming position
-			_unit->aim(true);
-			_unit->setCache(0);
-			_parent->getMap()->cacheUnit(_unit);
-			// and we have a lift-off
-			if (_ammo->getRules()->getFireSound() != -1)
+			projectile = *ii;
+
+			if (_originVoxel != Position(-1,-1,-1))
 			{
-				_parent->getResourcePack()->getSound("BATTLE.CAT", _ammo->getRules()->getFireSound())->play();
+				_projectileImpact = projectile->calculateTrajectory(_unit->getFiringAccuracy(_action.type, _action.weapon) / 100.0, _originVoxel);
 			}
-			else if (_action.weapon->getRules()->getFireSound() != -1)
+			else
 			{
-				_parent->getResourcePack()->getSound("BATTLE.CAT", _action.weapon->getRules()->getFireSound())->play();
+				_projectileImpact = projectile->calculateTrajectory(_unit->getFiringAccuracy(_action.type, _action.weapon) / 100.0);
 			}
-			if (!_parent->getSave()->getDebugMode() && _action.type != BA_LAUNCH && _ammo->spendBullet() == false)
+
+			if(firstProjectile)
 			{
-				_parent->getSave()->removeItem(_ammo);
-				_action.weapon->setAmmoItem(0);
+				firstProjectile = false;
+				if (_projectileImpact != V_EMPTY || _action.type == BA_LAUNCH)
+				{
+					// set the soldier in an aiming position
+					_unit->aim(true);
+					_unit->setCache(0);
+					_parent->getMap()->cacheUnit(_unit);
+					// and we have a lift-off
+					if (_ammo->getRules()->getFireSound() != -1)
+					{
+						_parent->getResourcePack()->getSound("BATTLE.CAT", _ammo->getRules()->getFireSound())->play();
+					}
+					else if (_action.weapon->getRules()->getFireSound() != -1)
+					{
+						_parent->getResourcePack()->getSound("BATTLE.CAT", _action.weapon->getRules()->getFireSound())->play();
+					}
+					if (!_parent->getSave()->getDebugMode() && _action.type != BA_LAUNCH && _ammo->spendBullet() == false)
+					{
+						_parent->getSave()->removeItem(_ammo);
+						_action.weapon->setAmmoItem(0);
+					}
+				}
+				else
+				{
+					// no line of fire
+					_parent->getMap()->deleteProjectiles();
+					_action.result = "STR_NO_LINE_OF_FIRE";
+					_unit->abortTurn();
+					_parent->popState();
+					return false;
+				}
 			}
-		}
-		else
-		{
-			// no line of fire
-			delete projectile;
-			_parent->getMap()->setProjectile(0);
-			_action.result = "STR_NO_LINE_OF_FIRE";
-			_unit->abortTurn();
-			_parent->popState();
-			return false;
 		}
 	}
 	return true;
@@ -415,7 +437,7 @@ void ProjectileFlyBState::think()
 {
 	_parent->getSave()->getBattleState()->clearMouseScrollingState();
 	/* TODO refactoring : store the projectile in this state, instead of getting it from the map each time? */
-	if (_parent->getMap()->getProjectile() == 0)
+	if (!_parent->getMap()->hasProjectile())
 	{
 		Tile *t = _parent->getSave()->getTile(_action.actor->getPosition());
 		Tile *bt = _parent->getSave()->getTile(_action.actor->getPosition() + Position(0,0,-1));
@@ -459,139 +481,148 @@ void ProjectileFlyBState::think()
 	}
 	else
 	{
-		if (_action.type != BA_THROW && _ammo && _ammo->getRules()->getShotgunPellets() != 0)
-		{
-			// shotgun pellets move to their terminal location instantly as fast as possible
-			_parent->getMap()->getProjectile()->skipTrajectory();
-		}
-		if(!_parent->getMap()->getProjectile()->move())
-		{
-			// impact !
-			if (_action.type == BA_THROW)
-			{
-				Position pos = _parent->getMap()->getProjectile()->getPosition(-1);
-				pos.x /= 16;
-				pos.y /= 16;
-				pos.z /= 24;
-				if (pos.y > _parent->getSave()->getMapSizeY())
-				{
-					pos.y--;
-				}
-				if (pos.x > _parent->getSave()->getMapSizeX())
-				{
-					pos.x--;
-				}
-				BattleItem *item = _parent->getMap()->getProjectile()->getItem();
-				_parent->getResourcePack()->getSound("BATTLE.CAT", 38)->play();
+		//if (_action.type != BA_THROW && _ammo && _ammo->getRules()->getShotgunPellets() != 0)
+		//{
+		//	// shotgun pellets move to their terminal location instantly as fast as possible
+		//	_parent->getMap()->getProjectile()->skipTrajectory();
+		//}
 
-				if (Options::battleInstantGrenade && item->getRules()->getBattleType() == BT_GRENADE && item->getFuseTimer() == 0)
+		const std::vector<Projectile*> projectiles = _parent->getMap()->getProjectiles();
+
+		for(std::vector<Projectile*>::const_iterator ii = projectiles.begin(); ii != projectiles.end();)
+		{
+			Projectile *projectile = *(ii++);
+
+			if(!projectile->move())
+			{
+				// impact !
+				if (_action.type == BA_THROW)
 				{
-					// it's a hot grenade to explode immediately
-					_parent->statePushFront(new ExplosionBState(_parent, _parent->getMap()->getProjectile()->getPosition(-1), item, _action.actor));
+					Position pos = projectile->getPosition(-1);
+					pos.x /= 16;
+					pos.y /= 16;
+					pos.z /= 24;
+					if (pos.y > _parent->getSave()->getMapSizeY())
+					{
+						pos.y--;
+					}
+					if (pos.x > _parent->getSave()->getMapSizeX())
+					{
+						pos.x--;
+					}
+					BattleItem *item = projectile->getItem();
+					_parent->getResourcePack()->getSound("BATTLE.CAT", 38)->play();
+
+					if (Options::battleInstantGrenade && item->getRules()->getBattleType() == BT_GRENADE && item->getFuseTimer() == 0)
+					{
+						// it's a hot grenade to explode immediately
+						_parent->statePushFront(new ExplosionBState(_parent, projectile->getPosition(-1), item, _action.actor));
+					}
+					else
+					{
+						_parent->dropItem(pos, item);
+						if (_unit->getFaction() != FACTION_PLAYER && _projectileItem->getRules()->getBattleType() == BT_GRENADE)
+						{
+							_parent->getTileEngine()->setDangerZone(pos, item->getRules()->getExplosionRadius(), _action.actor);
+						}
+					}
+				}
+				else if (_action.type == BA_LAUNCH && _action.waypoints.size() > 1 && _projectileImpact == -1)
+				{
+					_origin = _action.waypoints.front();
+					_action.waypoints.pop_front();
+					_action.target = _action.waypoints.front();
+					// launch the next projectile in the waypoint cascade
+					ProjectileFlyBState *nextWaypoint = new ProjectileFlyBState(_parent, _action, _origin);
+					nextWaypoint->setOriginVoxel(projectile->getPosition(-1));
+					if (_origin == _action.target)
+					{
+						nextWaypoint->targetFloor();
+					}
+					_parent->statePushNext(nextWaypoint);
+
 				}
 				else
 				{
-					_parent->dropItem(pos, item);
-					if (_unit->getFaction() != FACTION_PLAYER && _projectileItem->getRules()->getBattleType() == BT_GRENADE)
+					if (_ammo && _action.type == BA_LAUNCH && _ammo->spendBullet() == false)
 					{
-						_parent->getTileEngine()->setDangerZone(pos, item->getRules()->getExplosionRadius(), _action.actor);
+						_parent->getSave()->removeItem(_ammo);
+						_action.weapon->setAmmoItem(0);
 					}
-				}
-			}
-			else if (_action.type == BA_LAUNCH && _action.waypoints.size() > 1 && _projectileImpact == -1)
-			{
-				_origin = _action.waypoints.front();
-				_action.waypoints.pop_front();
-				_action.target = _action.waypoints.front();
-				// launch the next projectile in the waypoint cascade
-				ProjectileFlyBState *nextWaypoint = new ProjectileFlyBState(_parent, _action, _origin);
-				nextWaypoint->setOriginVoxel(_parent->getMap()->getProjectile()->getPosition(-1));
-				if (_origin == _action.target)
-				{
-					nextWaypoint->targetFloor();
-				}
-				_parent->statePushNext(nextWaypoint);
 
-			}
-			else
-			{
-				if (_ammo && _action.type == BA_LAUNCH && _ammo->spendBullet() == false)
-				{
-					_parent->getSave()->removeItem(_ammo);
-					_action.weapon->setAmmoItem(0);
-				}
-
-				if (_projectileImpact != V_OUTOFBOUNDS)
-				{
-					int offset = 0;
-					// explosions impact not inside the voxel but two steps back (projectiles generally move 2 voxels at a time)
-					if (_ammo && _ammo->getRules()->getExplosionRadius() != 0 && _projectileImpact != V_UNIT)
+					if (_projectileImpact != V_OUTOFBOUNDS)
 					{
-						offset = -2;
-					}
-					_parent->statePushFront(new ExplosionBState(_parent, _parent->getMap()->getProjectile()->getPosition(offset), _ammo, _action.actor, 0, (_action.type != BA_AUTOSHOT || _action.autoShotCounter == _action.weapon->getRules()->getAutoShots() || !_action.weapon->getAmmoItem())));
-
-					// special shotgun behaviour: trace extra projectile paths, and add bullet hits at their termination points.
-					if (_ammo && _ammo->getRules()->getShotgunPellets()  != 0)
-					{
-						int i = 1;
-						int bulletSprite = _ammo->getRules()->getBulletSprite();
-						if (bulletSprite == -1)
+						int offset = 0;
+						// explosions impact not inside the voxel but two steps back (projectiles generally move 2 voxels at a time)
+						if (_ammo && _ammo->getRules()->getExplosionRadius() != 0 && _projectileImpact != V_UNIT)
 						{
-							bulletSprite = _action.weapon->getRules()->getBulletSprite();
+							offset = -2;
 						}
-						while (i != _ammo->getRules()->getShotgunPellets())
+						_parent->statePushFront(new ExplosionBState(_parent, projectile->getPosition(offset), _ammo, _action.actor, 0, (_action.type != BA_AUTOSHOT || _action.autoShotCounter == _action.weapon->getRules()->getAutoShots() || !_action.weapon->getAmmoItem())));
+
+						// special shotgun behaviour: trace extra projectile paths, and add bullet hits at their termination points.
+						/*if (_ammo && _ammo->getRules()->getShotgunPellets()  != 0)
 						{
-							// create a projectile
-							Projectile *proj = new Projectile(_parent->getResourcePack(), _parent->getSave(), _action, _origin, _targetVoxel, bulletSprite);
-							// let it trace to the point where it hits
-							_projectileImpact = proj->calculateTrajectory(std::max(0.0, (_unit->getFiringAccuracy(_action.type, _action.weapon) / 100.0) - i * 5.0));
-							if (_projectileImpact != V_EMPTY)
+							int i = 1;
+							int bulletSprite = _ammo->getRules()->getBulletSprite();
+							if (bulletSprite == -1)
 							{
-								// as above: skip the shot to the end of it's path
-								proj->skipTrajectory();
-								// insert an explosion and hit 
-								if (_projectileImpact != V_OUTOFBOUNDS)
+								bulletSprite = _action.weapon->getRules()->getBulletSprite();
+							}
+							while (i != _ammo->getRules()->getShotgunPellets())
+							{
+								// create a projectile
+								Projectile *proj = new Projectile(_parent->getResourcePack(), _parent->getSave(), _action, _origin, _targetVoxel, bulletSprite);
+								// let it trace to the point where it hits
+								_projectileImpact = proj->calculateTrajectory(std::max(0.0, (_unit->getFiringAccuracy(_action.type, _action.weapon) / 100.0) - i * 5.0));
+								if (_projectileImpact != V_EMPTY)
 								{
-									Explosion *explosion = new Explosion(proj->getPosition(1), _ammo->getRules()->getHitAnimation(), false, false);
-									_parent->getMap()->getExplosions()->push_back(explosion);
-									_parent->getSave()->getTileEngine()->hit(proj->getPosition(1), _ammo->getRules()->getPower(), _ammo->getRules()->getDamageType(), 0);
+									// as above: skip the shot to the end of it's path
+									proj->skipTrajectory();
+									// insert an explosion and hit 
+									if (_projectileImpact != V_OUTOFBOUNDS)
+									{
+										Explosion *explosion = new Explosion(proj->getPosition(1), _ammo->getRules()->getHitAnimation(), false, false);
+										_parent->getMap()->getExplosions()->push_back(explosion);
+										_parent->getSave()->getTileEngine()->hit(proj->getPosition(1), _ammo->getRules()->getPower(), _ammo->getRules()->getDamageType(), 0);
+									}
+									++i;
 								}
-								++i;
+								delete proj;
 							}
-							delete proj;
-						}
-					}
-					// if the unit burns floortiles, burn floortiles
-					if (_unit->getSpecialAbility() == SPECAB_BURNFLOOR)
-					{
-						_parent->getSave()->getTile(_action.target)->ignite(15);
-					}
-
-					if (_projectileImpact == 4)
-					{
-						BattleUnit *victim = _parent->getSave()->getTile(_parent->getMap()->getProjectile()->getPosition(offset) / Position(16,16,24))->getUnit();
-						if (victim && !victim->isOut() && victim->getFaction() == FACTION_HOSTILE)
+						}*/
+						// if the unit burns floortiles, burn floortiles
+						if (_unit->getSpecialAbility() == SPECAB_BURNFLOOR)
 						{
-							AlienBAIState *aggro = dynamic_cast<AlienBAIState*>(victim->getCurrentAIState());
-							if (aggro != 0)
+							_parent->getSave()->getTile(_action.target)->ignite(15);
+						}
+
+						if (_projectileImpact == 4)
+						{
+							BattleUnit *victim = _parent->getSave()->getTile(projectile->getPosition(offset) / Position(16,16,24))->getUnit();
+							if (victim && !victim->isOut() && victim->getFaction() == FACTION_HOSTILE)
 							{
-								aggro->setWasHit();
-								_unit->setTurnsSinceSpotted(0);
+								AlienBAIState *aggro = dynamic_cast<AlienBAIState*>(victim->getCurrentAIState());
+								if (aggro != 0)
+								{
+									aggro->setWasHit();
+									_unit->setTurnsSinceSpotted(0);
+								}
 							}
 						}
 					}
+					else if (_action.type != BA_AUTOSHOT || _action.autoShotCounter == _action.weapon->getRules()->getAutoShots() || !_action.weapon->getAmmoItem())
+					{
+						_unit->aim(false);
+						_unit->setCache(0);
+						_parent->getMap()->cacheUnits();
+					}
 				}
-				else if (_action.type != BA_AUTOSHOT || _action.autoShotCounter == _action.weapon->getRules()->getAutoShots() || !_action.weapon->getAmmoItem())
-				{
-					_unit->aim(false);
-					_unit->setCache(0);
-					_parent->getMap()->cacheUnits();
-				}
-			}
 
-			delete _parent->getMap()->getProjectile();
-			_parent->getMap()->setProjectile(0);
+				_parent->getMap()->removeProjectile(projectile);
+				delete projectile;
+				//_parent->getMap()->setProjectile(0);
+			}
 		}
 	}
 }
@@ -602,12 +633,23 @@ void ProjectileFlyBState::think()
  */
 void ProjectileFlyBState::cancel()
 {
-	if (_parent->getMap()->getProjectile())
+	if (_parent->getMap()->hasProjectile())
 	{
-		_parent->getMap()->getProjectile()->skipTrajectory();
-		Position p = _parent->getMap()->getProjectile()->getPosition();
-		if (!_parent->getMap()->getCamera()->isOnScreen(Position(p.x/16, p.y/16, p.z/24), false))
-			_parent->getMap()->getCamera()->centerOnPosition(Position(p.x/16, p.y/16, p.z/24));
+		Position avgPos;
+		int avgCount = 0;
+		for(std::vector<Projectile*>::const_iterator ii = _parent->getMap()->getProjectiles().begin(); ii != _parent->getMap()->getProjectiles().end(); ++ii)
+		{
+			Projectile *pp = *ii;
+			pp->skipTrajectory();
+			//Position p = pp->getPosition();
+			avgPos += pp->getPosition();
+			++avgCount;
+		}
+
+		if(avgCount > 1) { avgPos = avgPos / avgCount; }
+
+		if (!_parent->getMap()->getCamera()->isOnScreen(Position(avgPos.x/16, avgPos.y/16, avgPos.z/24), false))
+			_parent->getMap()->getCamera()->centerOnPosition(Position(avgPos.x/16, avgPos.y/16, avgPos.z/24));
 	}
 }
 
