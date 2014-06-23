@@ -1101,10 +1101,10 @@ void Map::drawTerrain(Surface *surface)
 		{
 			Soldier *soldier = _game->getSavedGame()->getSoldier(unit->getId());
 			Role *role;
-			if(soldier && (role = soldier->getRole()) && !role->isBlank())
+			Surface *roleIcon;
+			if(soldier && (role = soldier->getRole()) && !role->isBlank() && (roleIcon = _game->getResourcePack()->getSurface(role->getRules()->getSmallIconSprite())))
 			{
-				Surface *roleIcon = _game->getResourcePack()->getSurface(role->getRules()->getSmallIconSprite());
-				roleIcon->blitNShade(surface, screenPosition.x + offset.x + (_spriteWidth / 2) - (roleIcon->getWidth() / 2), screenPosition.y + offset.y - roleIcon->getHeight() + arrowBob[_animFrame], 0);
+				roleIcon->blitNShade(surface, screenPosition.x + offset.x + (_spriteWidth / 2) - (roleIcon->getWidth() / 2), screenPosition.y + offset.y - roleIcon->getHeight(), 0);
 			}
 			else
 			{

@@ -27,7 +27,7 @@ RuleRole *RuleRole::s_defaultRole = 0;
  * type of Role section.
  * @param id String defining the id.
  */
-RuleRole::RuleRole(const std::string &name): _name(name), _iconSprite(""), _isBlank(false)
+RuleRole::RuleRole(const std::string &name): _name(name), _iconSprite(""), _smallIconSprite(), _isBlank(false)
 {
 }
 
@@ -45,7 +45,7 @@ void RuleRole::load(const YAML::Node &node, int listOrder)
 {
 	_name = node["name"].as<std::string>(_name);
 	_iconSprite = node["iconSprite"].as<std::string>(_iconSprite);
-	_smallIconSprite = node["smallIconSprite"].as<std::string>(_iconSprite);
+	_smallIconSprite = node["smallIconSprite"].as<std::string>(_smallIconSprite);
 	_isBlank = node["isBlank"].as<bool>(_isBlank);
 
 	if(_isBlank)

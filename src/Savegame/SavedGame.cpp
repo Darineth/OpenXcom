@@ -97,7 +97,7 @@ bool equalProduction::operator()(const Production * p) const
 /**
  * Initializes a brand new saved game according to the specified difficulty.
  */
-SavedGame::SavedGame() : _difficulty(DIFF_BEGINNER), _ironman(false), _globeLon(0.0), _globeLat(0.0), _globeZoom(0), _battleGame(0), _debug(false), _warned(false), _monthsPassed(-1), _graphRegionToggles(""), _graphCountryToggles(""), _graphFinanceToggles(""), _selectedBase(0), _defaultRole(0)
+SavedGame::SavedGame(const Ruleset *rules) : _difficulty(DIFF_BEGINNER), _ironman(false), _globeLon(0.0), _globeLat(0.0), _globeZoom(0), _battleGame(0), _debug(false), _warned(false), _monthsPassed(-1), _graphRegionToggles(""), _graphCountryToggles(""), _graphFinanceToggles(""), _selectedBase(0), _defaultRole(0)
 {
 	_time = new GameTime(6, 1, 1, 1999, 12, 0, 0);
 	_alienStrategy = new AlienStrategy();
@@ -106,6 +106,16 @@ SavedGame::SavedGame() : _difficulty(DIFF_BEGINNER), _ironman(false), _globeLon(
 	_researchScores.push_back(0);
 	_incomes.push_back(0);
 	_expenditures.push_back(0);
+
+	for (auto ii = rules->getRolesList().begin(); ii != rules->getRolesList().end(); ++ii)
+	{
+		RuleRole *role = rules->getRole(*ii);
+		_roles[*ii] = new Role(*ii, role);
+		if(role->isBlank())
+		{
+			_defaultRole = _roles[*ii];
+		}
+	}
 }
 
 /**
@@ -341,16 +351,6 @@ void SavedGame::load(const std::string &filename, Ruleset *rule)
 	_globeZoom = doc["globeZoom"].as<int>(_globeZoom);
 	_ids = doc["ids"].as< std::map<std::string, int> >(_ids);
 
-	for (auto ii = rule->getRolesList().begin(); ii != rule->getRolesList().end(); ++ii)
-	{
-		RuleRole *role = rule->getRole(*ii);
-		_roles[*ii] = new Role(*ii, role);
-		if(role->isBlank())
-		{
-			_defaultRole = _roles[*ii];
-		}
-	}
-
 	for (YAML::const_iterator i = doc["roles"].begin(); i != doc["roles"].end(); ++i)
 	{
 		std::string name = (*i)["name"].as<std::string>();
@@ -459,7 +459,7 @@ void SavedGame::load(const std::string &filename, Ruleset *rule)
 
 	for (YAML::const_iterator i = doc["deadSoldiers"].begin(); i != doc["deadSoldiers"].end(); ++i)
 	{
-		Soldier *s = new Soldier(rule->getSoldier("XCOM"), rule->getArmor("STR_NONE_UC"));
+		Soldier *s = new Soldier(rule->getSoldier("XCOM"), this, rule->getArmor("STR_NONE_UC"));
 		s->load(*i, rule, this);
 		_deadSoldiers.push_back(s);
 	}

@@ -117,7 +117,7 @@ public:
 	static const std::string AUTOSAVE_GEOSCAPE, AUTOSAVE_BATTLESCAPE, QUICKSAVE;
 
 	/// Creates a new saved game.
-	SavedGame();
+	SavedGame(const Ruleset *rules);
 	/// Cleans up the saved game.
 	~SavedGame();
 	/// Gets list of saves in the user directory.

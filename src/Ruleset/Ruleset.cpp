@@ -576,7 +576,7 @@ T *Ruleset::loadRule(const YAML::Node &node, std::map<std::string, T*> *map, std
  */
 SavedGame *Ruleset::newSave() const
 {
-	SavedGame *save = new SavedGame();
+	SavedGame *save = new SavedGame(this);
 
 	// Add countries
 	for (std::vector<std::string>::const_iterator i = _countriesIndex.begin(); i != _countriesIndex.end(); ++i)
@@ -1365,7 +1365,7 @@ Soldier *Ruleset::genSoldier(SavedGame *save) const
 	for (int i = 0; i < 10 && duplicate; i++)
 	{
 		delete soldier;
-		soldier = new Soldier(getSoldier("XCOM"), getArmor("STR_NONE_UC"), &_names, newId);
+		soldier = new Soldier(getSoldier("XCOM"), save, getArmor("STR_NONE_UC"), &_names, newId);
 		duplicate = false;
 		for (std::vector<Base*>::iterator i = save->getBases()->begin(); i != save->getBases()->end() && !duplicate; ++i)
 		{

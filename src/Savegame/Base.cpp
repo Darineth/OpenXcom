@@ -134,7 +134,7 @@ void Base::load(const YAML::Node &node, SavedGame *save, bool newGame, bool newB
 
 	for (YAML::const_iterator i = node["soldiers"].begin(); i != node["soldiers"].end(); ++i)
 	{
-		Soldier *s = new Soldier(_rule->getSoldier("XCOM"), _rule->getArmor("STR_NONE_UC"));
+		Soldier *s = new Soldier(_rule->getSoldier("XCOM"), save, _rule->getArmor("STR_NONE_UC"));
 		s->load(*i, _rule, save);
 		s->setCraft(0);
 		if (const YAML::Node &craft = (*i)["craft"])
