@@ -396,7 +396,6 @@ void BattlescapeGame::endTurn()
 				p.y = _save->getTiles()[i]->getPosition().y*16 + 8;
 				p.z = _save->getTiles()[i]->getPosition().z*24 - _save->getTiles()[i]->getTerrainLevel();
 
-
 				_save->removeItem(grenade);
 				statePushNext(new ExplosionBState(this, p, grenade, grenade->getPreviousOwner()));
 				statePushBack(0);
