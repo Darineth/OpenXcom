@@ -9398,6 +9398,43 @@ MCDPatches:
         noFloor: true
       - MCDIndex: 80
         noFloor: true
+roles:
+  - name: STR_ROLE_NONE
+    iconSprite: RoleIconNone
+    isBlank: true
+  - name: STR_ROLE_RIFLEMAN
+    iconSprite: RoleIconRifleman
+    smallIconSprite: RoleIconRiflemanSimple
+  - name: STR_ROLE_SNIPER
+    iconSprite: RoleIconSniper
+    smallIconSprite: RoleIconSniperSimple
+  - name: STR_ROLE_SCOUT
+    iconSprite: RoleIconScout
+    smallIconSprite: RoleIconScoutSimple
+  - name: STR_ROLE_ROCKETEER
+    iconSprite: RoleIconRocketeer
+    smallIconSprite: RoleIconRocketeerSimple
+  - name: STR_ROLE_ASSAULT
+    iconSprite: RoleIconAssault
+    smallIconSprite: RoleIconAssaultSimple
+  - name: STR_ROLE_HEAVY
+    iconSprite: RoleIconHeavy
+    smallIconSprite: RoleIconHeavySimple
+  - name: STR_ROLE_GRENADIER
+    iconSprite: RoleIconGrenadier
+    smallIconSprite: RoleIconGrenadierSimple
+  - name: STR_ROLE_MEDIC
+    iconSprite: RoleIconMedic
+    smallIconSprite: RoleIconMedicSimple
+  - name: STR_ROLE_PSIONICS
+    iconSprite: RoleIconPsionics
+    smallIconSprite: RoleIconPsionicsSimple
+  - name: STR_ROLE_DEMOLITIONS
+    iconSprite: RoleIconDemolitions
+    smallIconSprite: RoleIconDemolitionsSimple
+  - name: STR_ROLE_SPECIALIST
+    iconSprite: RoleIconSpecialist
+    smallIconSprite: RoleIconSpecialistSimple
 extraSprites:
   - type: Pathfinding
     files:
@@ -9450,3 +9487,141 @@ extraSprites:
     subY: 48
     files:
       -4: Resources/Weapons/Terror.png
+  - type: RoleIconNone
+    width: 23
+    height: 23
+    singleImage: true
+    files:
+      0: Resources/Roles/RoleIconNone.png
+  - type: RoleIconAssault
+    width: 23
+    height: 23
+    singleImage: true
+    files:
+      0: Resources/Roles/RoleIconAssault.png
+  - type: RoleIconAssaultSimple
+    width: 16
+    height: 16
+    singleImage: true
+    files:
+      0: Resources/Roles/RoleIconAssaultSimple.png
+  - type: RoleIconSniper
+    width: 23
+    height: 23
+    singleImage: true
+    files:
+      0: Resources/Roles/RoleIconSniper.png
+  - type: RoleIconSniperSimple
+    width: 16
+    height: 16
+    singleImage: true
+    files:
+      0: Resources/Roles/RoleIconSniperSimple.png
+  - type: RoleIconRifleman
+    width: 23
+    height: 23
+    singleImage: true
+    files:
+      0: Resources/Roles/RoleIconRifleman.png
+  - type: RoleIconRiflemanSimple
+    width: 16
+    height: 16
+    singleImage: true
+    files:
+      0: Resources/Roles/RoleIconRiflemanSimple.png
+  - type: RoleIconScout
+    width: 23
+    height: 23
+    singleImage: true
+    files:
+      0: Resources/Roles/RoleIconScout.png
+  - type: RoleIconScoutSimple
+    width: 16
+    height: 16
+    singleImage: true
+    files:
+      0: Resources/Roles/RoleIconScoutSimple.png
+  - type: RoleIconRocketeer
+    width: 23
+    height: 23
+    singleImage: true
+    files:
+      0: Resources/Roles/RoleIconRocketeer.png
+  - type: RoleIconRocketeerSimple
+    width: 16
+    height: 16
+    singleImage: true
+    files:
+      0: Resources/Roles/RoleIconRocketeerSimple.png
+  - type: RoleIconHeavy
+    width: 23
+    height: 23
+    singleImage: true
+    files:
+      0: Resources/Roles/RoleIconHeavy.png
+  - type: RoleIconHeavySimple
+    width: 16
+    height: 16
+    singleImage: true
+    files:
+      0: Resources/Roles/RoleIconHeavySimple.png
+  - type: RoleIconGrenadier
+    width: 23
+    height: 23
+    singleImage: true
+    files:
+      0: Resources/Roles/RoleIconGrenadier.png
+  - type: RoleIconGrenadierSimple
+    width: 16
+    height: 16
+    singleImage: true
+    files:
+      0: Resources/Roles/RoleIconGrenadierSimple.png
+  - type: RoleIconMedic
+    width: 23
+    height: 23
+    singleImage: true
+    files:
+      0: Resources/Roles/RoleIconMedic.png
+  - type: RoleIconMedicSimple
+    width: 16
+    height: 16
+    singleImage: true
+    files:
+      0: Resources/Roles/RoleIconMedicSimple.png
+  - type: RoleIconPsionics
+    width: 23
+    height: 23
+    singleImage: true
+    files:
+      0: Resources/Roles/RoleIconPsionics.png
+  - type: RoleIconPsionicsSimple
+    width: 16
+    height: 16
+    singleImage: true
+    files:
+      0: Resources/Roles/RoleIconPsionicsSimple.png
+  - type: RoleIconDemolitions
+    width: 23
+    height: 23
+    singleImage: true
+    files:
+      0: Resources/Roles/RoleIconDemolitions.png
+  - type: RoleIconDemolitionsSimple
+    width: 16
+    height: 16
+    singleImage: true
+    files:
+      0: Resources/Roles/RoleIconDemolitionsSimple.png
+  - type: RoleIconSpecialist
+    width: 23
+    height: 23
+    singleImage: true
+    files:
+      0: Resources/Roles/RoleIconSpecialist.png
+  - type: RoleIconSpecialistSimple
+    width: 16
+    height: 16
+    singleImage: true
+    files:
+      0: Resources/Roles/RoleIconSpecialistSimple.png

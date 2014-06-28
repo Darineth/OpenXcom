@@ -27,6 +27,7 @@ namespace OpenXcom
 
 class Game;
 class ActionMenuItem;
+class WarningMessage;
 
 /**
  * Window that allows the player
@@ -35,8 +36,10 @@ class ActionMenuItem;
 class ActionMenuState : public State
 {
 private:
+	const static int MAX_ACTIONS = 6;
+
 	BattleAction *_action;
-	ActionMenuItem *_actionMenu[6];
+	ActionMenuItem *_actionMenu[MAX_ACTIONS];
 	/// Adds a new menu item for an action.
 	void addItem(BattleActionType ba, const std::string &name, int *id);
 public:

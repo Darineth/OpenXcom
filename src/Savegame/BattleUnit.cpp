@@ -879,10 +879,15 @@ int BattleUnit::getMorale() const
  * @param ignoreArmor Should the damage ignore armor resistance?
  * @return damage done after adjustment
  */
-int BattleUnit::damage(const Position &relative, int power, ItemDamageType type, bool ignoreArmor)
+int BattleUnit::damage(const Position &relative, int power, ItemDamageType type, bool ignoreArmor, int *wounds)
 {
 	UnitSide side = SIDE_FRONT;
 	UnitBodyPart bodypart = BODYPART_TORSO;
+
+	if(wounds)
+	{
+		(*wounds) = 0;
+	}
 
 	if (power <= 0)
 	{
@@ -990,7 +995,14 @@ int BattleUnit::damage(const Position &relative, int power, ItemDamageType type,
 				if (isWoundable())
 				{
 					if (RNG::generate(0, 10) < power)
-						_fatalWounds[bodypart] += RNG::generate(1,3);
+					{
+						int newWounds = RNG::generate(1,3);
+						if(wounds)
+						{
+							(*wounds) = newWounds;
+						}
+						_fatalWounds[bodypart] += newWounds;
+					}
 
 					if (_fatalWounds[bodypart])
 						moraleChange(-_fatalWounds[bodypart]);
@@ -1281,11 +1293,16 @@ void BattleUnit::clearVisibleTiles()
  * @param item
  * @return firing Accuracy
  */
-int BattleUnit::getFiringAccuracy(BattleActionType actionType, BattleItem *item)
+int BattleUnit::getFiringAccuracy(BattleActionType actionType, BattleItem *item, bool useShotgun)
 {
-
 	int weaponAcc = item->getRules()->getAccuracySnap();
-	if (actionType == BA_AIMEDSHOT || actionType == BA_LAUNCH)
+	int shotgunAcc = item->getRules()->getAccuracyShotgunSpread();
+
+	if(useShotgun && shotgunAcc)
+	{
+		weaponAcc = shotgunAcc;
+	}
+	else if (actionType == BA_AIMEDSHOT || actionType == BA_LAUNCH)
 		weaponAcc = item->getRules()->getAccuracyAimed();
 	else if (actionType == BA_AUTOSHOT)
 		weaponAcc = item->getRules()->getAccuracyAuto();
@@ -1302,7 +1319,9 @@ int BattleUnit::getFiringAccuracy(BattleActionType actionType, BattleItem *item)
 
 	if (_kneeled)
 	{
-		result = result * 115 / 100;
+		int kneelMod = item->getRules()->getKneelModifier();
+
+		result = kneelMod ? result * kneelMod / 100 : result * 115 / 100;
 	}
 
 	if (item->getRules()->isTwoHanded())
@@ -1785,22 +1804,101 @@ BattleItem *BattleUnit::getGrenadeFromBelt() const
 }
 
 /**
+ * Find the cheapest to grab item from the inventory
+ * @return Pointer to item.
+ */
+BattleItem *BattleUnit::findQuickItem(const std::string &item, RuleInventory* destSlot, int* moveCost) const
+{
+	BattleItem *quickItem = 0;
+	int quickCost = 1000000;
+	for (std::vector<BattleItem*>::const_iterator ii = _inventory.begin(); ii != _inventory.end(); ++ii)
+	{
+		BattleItem *bi = (*ii);
+
+		int cost;
+		if(bi->getRules()->getType() == item && bi->getSlot() != destSlot && ((cost = bi->getSlot()->getCost(destSlot)) < quickCost))
+		{
+			quickItem = bi;
+			quickCost = cost; // ??
+		}
+	}
+
+	Tile* tile = getTile();
+
+	if(tile && tile->getInventory())
+	{
+		for(auto ii = tile->getInventory()->begin(); ii != tile->getInventory()->end(); ++ii)
+		{
+			BattleItem *bi = (*ii);
+
+			int cost;
+			if(bi->getRules()->getType() == item && ((cost = bi->getSlot()->getCost(destSlot)) < quickCost))
+			{
+				quickItem = bi;
+				quickCost = cost;
+			}
+		}
+	}
+
+	if(quickItem && moveCost) { (*moveCost) = quickCost; }
+
+	return quickItem;
+}
+
+/**
+ * Find the cheapest to ammo item for the specified weapon.
+ * @param weapon The weapon to find ammo for.
+ * @return Pointer to item.
+ */
+BattleItem *BattleUnit::findQuickAmmo(BattleItem *weapon, int* reloadCost) const
+{
+	BattleItem *bestAmmo = 0;
+	int bestCost = 100000;
+
+	auto ammoItems = weapon->getRules()->getCompatibleAmmo();
+
+	for(auto ii = ammoItems->begin(); ii != ammoItems->end(); ++ii)
+	{
+		int cost = 100000;
+		BattleItem *ammo = findQuickItem(*ii, weapon->getSlot(), &cost);
+		if(ammo && (Options::battleAdjustReloadCost ? cost += ammo->getAmmoReloadCost() : cost = 15) < bestCost)
+		{
+			bestAmmo = ammo;
+			bestCost = cost;
+		}
+	}
+
+	if(bestAmmo && reloadCost)
+	{
+		*reloadCost = bestCost;
+	}
+
+	return bestAmmo;
+}
+
+/**
  * Check if we have ammo and reload if needed (used for AI).
  * @return Do we have ammo?
  */
 bool BattleUnit::checkAmmo()
 {
 	BattleItem *weapon = getItem("STR_RIGHT_HAND");
-	if (!weapon || weapon->getAmmoItem() != 0 || weapon->getRules()->getBattleType() == BT_MELEE || getTimeUnits() < 15)
+	BattleItem *ammo = 0;
+	int tu = 0;
+	if (!weapon || weapon->getAmmoItem() != 0 || weapon->getRules()->getBattleType() == BT_MELEE || !(ammo = findQuickAmmo(weapon, &tu)) || !spendTimeUnits(tu))
 	{
 		weapon = getItem("STR_LEFT_HAND");
-		if (!weapon || weapon->getAmmoItem() != 0 || weapon->getRules()->getBattleType() == BT_MELEE || getTimeUnits() < 15)
+		if (!weapon || weapon->getAmmoItem() != 0 || weapon->getRules()->getBattleType() == BT_MELEE || !(ammo = findQuickAmmo(weapon, &tu)) || !spendTimeUnits(tu))
 		{
 			return false;
 		}
 	}
+
+	weapon->setAmmoItem(ammo);
+	ammo->moveToOwner(0);
+
 	// we have a non-melee weapon with no ammo and 15 or more TUs - we might need to look for ammo then
-	BattleItem *ammo = 0;
+	/*BattleItem *ammo = 0;
 	bool wrong = true;
 	for (std::vector<BattleItem*>::iterator i = getInventory()->begin(); i != getInventory()->end(); ++i)
 	{
@@ -1820,7 +1918,7 @@ bool BattleUnit::checkAmmo()
 
 	spendTimeUnits(15);
 	weapon->setAmmoItem(ammo);
-	ammo->moveToOwner(0);
+	ammo->moveToOwner(0);*/
 
 	return true;
 }

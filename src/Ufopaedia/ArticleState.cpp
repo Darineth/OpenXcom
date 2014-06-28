@@ -28,6 +28,7 @@
 #include "../Engine/Palette.h"
 #include "../Interface/TextButton.h"
 #include "../Ruleset/RuleItem.h"
+#include "../Engine/Screen.h"
 
 namespace OpenXcom
 {
@@ -39,6 +40,8 @@ namespace OpenXcom
 	 */
 	ArticleState::ArticleState(std::string article_id) : _id(article_id)
 	{
+		_game->getScreen()->pushMaximizeInfoScreen(false);
+
 		// init background and navigation elements
 		_bg = new Surface(320, 200, 0, 0);
 		_btnOk = new TextButton(30, 14, 5, 5);
@@ -50,7 +53,9 @@ namespace OpenXcom
 	 * Destructor
 	 */
 	ArticleState::~ArticleState()
-	{}
+	{
+		_game->getScreen()->popMaximizeInfoScreen();
+	}
 
 	std::string ArticleState::getDamageTypeText(ItemDamageType dt) const
 	{

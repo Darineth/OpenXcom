@@ -40,7 +40,7 @@ private:
 	BattleItem *_ammo;
 	BattleItem *_projectileItem;
 	Position _origin, _targetVoxel, _originVoxel;
-	int _projectileImpact;
+	//int _projectileImpact;
 	/// Tries to create a projectile sprite.
 	bool createNewProjectile();
 	bool _initialized, _targetFloor;

@@ -54,6 +54,8 @@ struct GraphButInfo
  */
 GraphsState::GraphsState() : _butRegionsOffset(0), _butCountriesOffset(0)
 {
+	_game->getScreen()->pushMaximizeInfoScreen();
+
 	// Create objects
 	_bg = new InteractiveSurface(320, 200, 0, 0);
 	_bg->onMousePress((ActionHandler)&GraphsState::shiftButtons, SDL_BUTTON_WHEELUP);
@@ -311,6 +313,8 @@ GraphsState::GraphsState() : _butRegionsOffset(0), _butCountriesOffset(0)
  */
 GraphsState::~GraphsState()
 {
+	_game->getScreen()->popMaximizeInfoScreen();
+
 	std::string graphRegionToggles = "";
 	std::string graphCountryToggles = "";
 	std::string graphFinanceToggles = "";

@@ -49,15 +49,17 @@ private:
 	int _speed;
 	int _bulletSprite;
 	bool _reversed;
+	int _impact;
+	bool _shotgun;
 	void applyAccuracy(const Position& origin, Position *target, double accuracy, bool keepRange, Tile *targetTile, bool extendLine);
 public:
 	/// Creates a new Projectile.
-	Projectile(ResourcePack *res, SavedBattleGame *save, BattleAction action, Position origin, Position target, int bulletSprite);
+	Projectile(ResourcePack *res, SavedBattleGame *save, BattleAction action, Position origin, Position target, int bulletSprite, bool shotgun);
 	/// Cleans up the Projectile.
 	~Projectile();
 	/// Calculates the trajectory for a straight path.
-	int calculateTrajectory(double accuracy);
-	int calculateTrajectory(double accuracy, Position originVoxel);
+	int calculateTrajectory(double accuracy, bool force = false);
+	int calculateTrajectory(double accuracy, Position originVoxel, bool force = false);
 	/// Calculates the trajectory for a curved path.
 	int calculateThrow(double accuracy);
 	/// Moves the projectile one step in its trajectory.
@@ -76,6 +78,8 @@ public:
 	Position getOrigin();
 	/// Gets the targetted tile for the projectile.
 	Position getTarget();
+	/// Returns the last calculated impact for the projectile.
+	int getImpact() const;
 	bool isReversed() const;
 };
 

@@ -50,6 +50,9 @@
 #include "ProjectileFlyBState.h"
 #include "../Engine/Logger.h"
 #include "../fmath.h"
+#include "../Interface/Text.h"
+#include "../Engine/LocalizedText.h"
+#include "../Engine/Game.h"
 
 namespace OpenXcom
 {
@@ -1050,7 +1053,8 @@ BattleUnit *TileEngine::hit(const Position &center, int power, ItemDamageType ty
 			const Position relative = (center - target) - Position(0,0,verticaloffset);
 			const int wounds = bu->getFatalWounds();
 
-			adjustedDamage = bu->damage(relative, rndPower, type);
+			int newWounds;
+			adjustedDamage = bu->damage(relative, rndPower, type, false, &newWounds);
 
 			// if it's going to bleed to death and it's not a player, give credit for the kill.
 			if (unit && bu->getFaction() != FACTION_PLAYER && wounds < bu->getFatalWounds())
@@ -1062,6 +1066,8 @@ BattleUnit *TileEngine::hit(const Position &center, int power, ItemDamageType ty
 			const int morale_loss = 100 * (adjustedDamage * bravery / 10) / modifier;
 
 			bu->moraleChange(-morale_loss);
+
+			displayDamage(unit, bu, adjustedDamage, newWounds, false);
 
 			if (bu->getSpecialAbility() == SPECAB_EXPLODEONDEATH && !bu->isOut() && (bu->getHealth() == 0 || bu->getStunlevel() >= bu->getHealth()))
 			{
@@ -1193,6 +1199,7 @@ void TileEngine::explode(const Position &center, int power, ItemDamageType type,
 						int max = power_ * (100 + dmgRng) / 100;
 						BattleUnit *bu = dest->getUnit();
 						int wounds = 0;
+						int newWounds = 0;
 						if (bu && unit)
 						{
 							wounds = bu->getFatalWounds();
@@ -1201,22 +1208,27 @@ void TileEngine::explode(const Position &center, int power, ItemDamageType type,
 						{
 						case DT_STUN:
 							// power 0 - 200%
+							int damage;
 							if (bu)
 							{
 								if (distance(dest->getPosition(), Position(centerX, centerY, centerZ)) < 2)
 								{
-									bu->damage(Position(0, 0, 0), RNG::generate(min, max), type);
+									damage = bu->damage(Position(0, 0, 0), RNG::generate(min, max), type);
 								}
 								else
 								{
-									bu->damage(Position(centerX, centerY, centerZ) - dest->getPosition(), RNG::generate(min, max), type);
+									damage = bu->damage(Position(centerX, centerY, centerZ) - dest->getPosition(), RNG::generate(min, max), type, false, &newWounds);
 								}
+
+								displayDamage(unit, bu, damage, newWounds, true);
 							}
 							for (std::vector<BattleItem*>::iterator it = dest->getInventory()->begin(); it != dest->getInventory()->end(); ++it)
 							{
 								if ((*it)->getUnit())
 								{
-									(*it)->getUnit()->damage(Position(0, 0, 0), RNG::generate(min, max), type);
+									BattleUnit *target = (*it)->getUnit();
+									damage = target->damage(Position(0, 0, 0), RNG::generate(min, max), type, false, &newWounds);
+									displayDamage(unit, target, damage, newWounds, true);
 								}
 							}
 							break;
@@ -1225,17 +1237,20 @@ void TileEngine::explode(const Position &center, int power, ItemDamageType type,
 								// power 50 - 150%
 								if (bu)
 								{
+									int damage;
 									if (distance(dest->getPosition(), Position(centerX, centerY, centerZ)) < 2)
 									{
 										// ground zero effect is in effect
-										bu->damage(Position(0, 0, 0), (int)(RNG::generate(min, max)), type);
+										damage = bu->damage(Position(0, 0, 0), (int)(RNG::generate(min, max)), type);
 									}
 									else
 									{
 										// directional damage relative to explosion position.
 										// units above the explosion will be hit in the legs, units lateral to or below will be hit in the torso
-										bu->damage(Position(centerX, centerY, centerZ + 5) - dest->getPosition(), (int)(RNG::generate(min, max)), type);
+										damage = bu->damage(Position(centerX, centerY, centerZ + 5) - dest->getPosition(), (int)(RNG::generate(min, max)), type, false, &newWounds);
 									}
+
+									displayDamage(unit, bu, damage, newWounds, false);
 								}
 								bool done = false;
 								while (!done)
@@ -2918,6 +2933,121 @@ void TileEngine::setDangerZone(Position pos, int radius, BattleUnit *unit)
 					}
 				}
 			}
+		}
+	}
+}
+
+void TileEngine::displayDamage(BattleUnit *attacker, BattleUnit *target, int damage, int wounds, bool stun)
+{
+	BattlescapeState* battleState = _save->getBattleState();
+	if(battleState == 0)
+	{
+		return;
+	}
+
+	if(target->getVisible())
+	{
+		static Language* lang = battleState->getGame()->getLanguage();
+
+		std::wostringstream damageWarning;
+
+		if(attacker && attacker->getVisible())
+		{
+			switch(attacker->getFaction())
+			{
+			case FACTION_PLAYER:
+				damageWarning << battleState->tr("STR_LOG_ACTOR").arg(attacker->getName(lang));
+				break;
+			case FACTION_HOSTILE:
+				damageWarning << battleState->tr("STR_LOG_ACTOR").arg(battleState->tr("STR_HOSTILE"));
+				break;
+			default:
+				damageWarning << battleState->tr("STR_LOG_ACTOR").arg(battleState->tr("STR_NEUTRAL"));
+				break;
+			}
+		}
+		else if(attacker)
+		{
+			damageWarning << battleState->tr("STR_LOG_ACTOR").arg(battleState->tr("STR_UNKNOWN_UC"));
+		}
+
+		int targetMaxHealth = target->getStats()->health;
+
+		if(target->getFaction() != FACTION_PLAYER)
+		{
+			if(target->getFaction() == FACTION_HOSTILE)
+			{
+				damageWarning << battleState->tr("STR_LOG_TARGET").arg(battleState->tr("STR_HOSTILE"));
+			}
+			else
+			{
+				damageWarning << battleState->tr("STR_LOG_TARGET").arg(battleState->tr("STR_NEUTRAL"));
+			}
+			
+			float damageRatio = targetMaxHealth < 1 ? 0 : ((float)damage / (float)targetMaxHealth);
+
+			if(damageRatio > 0.5)
+			{
+				damageWarning << battleState->tr("STR_LOG_DAMAGE").arg(battleState->tr("STR_LOG_HIGH_DAMAGE"));
+			}
+			else if (damageRatio > 0)
+			{
+				damageWarning << battleState->tr("STR_LOG_DAMAGE").arg(battleState->tr("STR_LOG_LOW_DAMAGE"));
+			}
+			else
+			{
+				damageWarning << battleState->tr("STR_LOG_DAMAGE").arg(battleState->tr("STR_LOG_NO_DAMAGE"));
+			}
+
+			if(target->getHealth() == 0)
+			{
+				damageWarning << battleState->tr("STR_LOG_KILLED");
+			}
+			else
+			{
+				if(stun && (target->getStunlevel() >= target->getHealth()))
+				{
+					damageWarning << battleState->tr("STR_LOG_STUNNED");
+				}
+
+				if(wounds)
+				{
+					damageWarning << battleState->tr("STR_LOG_WOUNDED");
+				}
+			}
+		}
+		else
+		{
+			damageWarning << battleState->tr("STR_LOG_TARGET").arg(target->getName(lang));
+			damageWarning << battleState->tr("STR_LOG_DAMAGE").arg(Text::formatNumber(damage));
+
+			if(target->getHealth() == 0)
+			{
+				damageWarning << battleState->tr("STR_LOG_KILLED");
+			}
+			else
+			{
+				if(stun && (target->getStunlevel() >= targetMaxHealth))
+				{
+					damageWarning << battleState->tr("STR_LOG_STUNNED");
+				}
+				if(wounds)
+				{
+					damageWarning << battleState->tr("STR_LOG_WOUNDS").arg(Text::formatNumber(wounds));
+				}
+			}
+		}
+
+		switch(target->getOriginalFaction())
+		{
+		case FACTION_PLAYER:
+			_save->getBattleState()->combatLog(damageWarning.str(), COMBAT_LOG_RED);
+			break;
+		case FACTION_NEUTRAL:
+			_save->getBattleState()->combatLog(damageWarning.str(), COMBAT_LOG_ORANGE);
+			break;
+		default:
+			_save->getBattleState()->combatLog(damageWarning.str(), COMBAT_LOG_GREEN);
 		}
 	}
 }

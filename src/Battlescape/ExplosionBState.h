@@ -59,6 +59,8 @@ public:
 	void think();
 	/// Gets the result of the state.
 	std::string getResult() const;
+	/// Returns if the current explosion is AoE.
+	bool getAreaOfEffect() const;
 
 };
 

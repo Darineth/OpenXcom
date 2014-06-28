@@ -25,6 +25,7 @@
 #include "../Engine/Language.h"
 #include "../Engine/Palette.h"
 #include "../Engine/Action.h"
+#include "../Engine/Sound.h"
 #include "../Savegame/BattleUnit.h"
 #include "../Savegame/BattleItem.h"
 #include "../Ruleset/RuleItem.h"
@@ -38,6 +39,8 @@
 #include "Pathfinding.h"
 #include "TileEngine.h"
 #include "../Interface/Text.h"
+#include "../Ruleset/RuleInventory.h"
+#include "../Ruleset/Ruleset.h"
 
 namespace OpenXcom
 {
@@ -56,7 +59,7 @@ ActionMenuState::ActionMenuState(BattleAction *action, int x, int y) : _action(a
 	// Set palette
 	setPalette("PAL_BATTLESCAPE");
 
-	for (int i = 0; i < 6; ++i)
+	for (int i = 0; i < MAX_ACTIONS; ++i)
 	{
 		_actionMenu[i] = new ActionMenuItem(i, _game, x, y);
 		add(_actionMenu[i]);
@@ -102,6 +105,15 @@ ActionMenuState::ActionMenuState(BattleAction *action, int x, int y) : _action(a
 				addItem(BA_AIMEDSHOT, "STR_AIMED_SHOT", &id);
 			}
 		}
+
+		if(_action->actor->hasInventory()
+			&&_action->weapon->needsAmmo()
+			&& (_action->weapon->getAmmoItem() == 0 
+				|| (_action->weapon->getAmmoItem()->getAmmoQuantity() < _action->weapon->getAmmoItem()->getRules()->getClipSize())
+					&& !(_action->weapon->getSlot()->getId() == "STR_LEFT_HAND" ? action->actor->getItem("STR_RIGHT_HAND") : action->actor->getItem("STR_LEFT_HAND"))))
+		{
+			addItem(BA_RELOAD, "STR_RELOAD", &id);
+		}
 	}
 
 	if (weapon->getTUMelee())
@@ -135,7 +147,6 @@ ActionMenuState::ActionMenuState(BattleAction *action, int x, int y) : _action(a
 	{
 		addItem(BA_USE, "STR_USE_MIND_PROBE", &id);
 	}
-
 }
 
 /**
@@ -160,11 +171,83 @@ void ActionMenuState::addItem(BattleActionType ba, const std::string &name, int 
 		acc = (int)(_action->actor->getThrowingAccuracy());
 	int tu = _action->actor->getActionTUs(ba, _action->weapon);
 
+	BattleItem* ammoItem = _action->weapon->getAmmoItem();
+	int ammo = ammoItem ? ammoItem->getAmmoQuantity() : 0;
+	bool ammoError;
+
+	int shots = 1;
+	int bulletsPerShot = 1;
+
+	if(ammoItem)
+	{
+		bulletsPerShot = ammoItem->getRules()->getShotgunPellets();
+	}
+
+	if(bulletsPerShot < 1) { bulletsPerShot = 1; }
+	
+
+	switch(ba)
+	{
+	case BA_AUTOSHOT:
+		shots = _action->weapon->getRules()->getAutoShots();
+		ammoError = _action->weapon->needsAmmo() && (ammo < shots);
+		break;
+
+	case BA_MINDCONTROL:
+	case BA_PANIC:
+	case BA_PRIME:
+	case BA_RETHINK:
+	case BA_STUN:
+	case BA_THROW:
+	case BA_TURN:
+	case BA_USE:
+	case BA_WALK:
+		shots = 0;
+		ammoError = false;
+		break;
+
+	case BA_RELOAD:
+		shots = 0;
+		ammoError = !_action->actor->findQuickAmmo(_action->weapon, &tu);
+
+		if(_action->weapon->getAmmoItem())
+		{
+			tu += _action->weapon->getSlot()->getCost(_game->getRuleset()->getInventory("STR_GROUND"));
+		}
+
+		break;
+
+	default:
+		shots = 1;
+		ammoError = (ammo < 1);
+	}
+	
 	if (ba == BA_THROW || ba == BA_AIMEDSHOT || ba == BA_SNAPSHOT || ba == BA_AUTOSHOT || ba == BA_LAUNCH || ba == BA_HIT)
-		s1 = tr("STR_ACCURACY_SHORT").arg(Text::formatPercentage(acc));
+	{
+		if(shots > 1 && bulletsPerShot > 1)
+		{
+			s1 = tr("STR_ACCURACY_SHORT").arg(Text::formatPercentage(acc).append(L" ").append(Text::formatNumber(shots)).append(L"x").append(Text::formatNumber(bulletsPerShot)));
+		}
+		else if(shots > 1)
+		{
+			s1 = tr("STR_ACCURACY_SHORT").arg(Text::formatPercentage(acc).append(L" ").append(Text::formatNumber(shots)).append(L"x"));
+		}
+		else if(bulletsPerShot > 1)
+		{
+			s1 = tr("STR_ACCURACY_SHORT").arg(Text::formatPercentage(acc).append(L" x").append(Text::formatNumber(bulletsPerShot)));
+		}
+		else
+		{
+			s1 = tr("STR_ACCURACY_SHORT").arg(Text::formatPercentage(acc));
+		}
+	}
+
+	int key = (*id) + 1;
+
 	s2 = tr("STR_TIME_UNITS_SHORT").arg(tu);
-	_actionMenu[*id]->setAction(ba, tr(name), s1, s2, tu);
+	_actionMenu[*id]->setAction(ba, Text::formatNumber(key) + L". " + tr(name).c_str(), s1, s2, tu, ammoError, tu > _action->actor->getTimeUnits());
 	_actionMenu[*id]->setVisible(true);
+	_actionMenu[*id]->onKeyboardPress((ActionHandler)&ActionMenuState::btnActionMenuItemClick, (SDLKey)((int)SDLK_0 + key));
 	(*id)++;
 }
 
@@ -211,6 +294,7 @@ void ActionMenuState::btnActionMenuItemClick(Action *action)
 	if (btnID != -1)
 	{
 		_action->type = _actionMenu[btnID]->getAction();
+		_action->description = _actionMenu[btnID]->getDescription();
 		_action->TU = _actionMenu[btnID]->getTUs();
 		if (_action->type == BA_PRIME)
 		{
@@ -303,6 +387,35 @@ void ActionMenuState::btnActionMenuItemClick(Action *action)
 			{
 				_action->result = "STR_THERE_IS_NO_ONE_THERE";
 			}
+			_game->popState();
+		}
+		else if(_action->type == BA_RELOAD)
+		{
+			int tu = 0;
+			BattleItem *quickAmmo = _action->actor->findQuickAmmo(_action->weapon, &tu);
+
+			RuleInventory *ground = _game->getRuleset()->getInventory("STR_GROUND");
+
+			if(_action->weapon->getAmmoItem())
+			{
+				// Adjusted unload cost: Magazine weight + hand->hand
+				tu += Options::battleAdjustReloadCost ? (_action->weapon->getAmmoItem()->getRules()->getWeight() + _action->weapon->getSlot()->getCost(ground)) : 8;
+			}
+
+			if(!quickAmmo)
+			{
+				// Temporary mesage.
+				_action->result = "STR_NO_ROUNDS_LEFT";
+			}
+			else if(!_action->actor->spendTimeUnits(tu))
+			{
+				_action->result = "STR_NOT_ENOUGH_TIME_UNITS";
+			}
+			else
+			{
+				_action->TU = tu;
+			}
+
 			_game->popState();
 		}
 		else

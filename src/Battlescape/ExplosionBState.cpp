@@ -317,4 +317,13 @@ void ExplosionBState::explode()
 	}
 }
 
+/**
+ * Returns if the current explosion is AoE.
+ * @return True if the explosion is an area of effect.
+ */
+bool ExplosionBState::getAreaOfEffect() const
+{
+	return _areaOfEffect;
+}
+
 }

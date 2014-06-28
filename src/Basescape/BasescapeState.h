@@ -41,7 +41,7 @@ class BasescapeState : public State
 private:
 	BaseView *_view;
 	MiniBaseView *_mini;
-	Text *_txtFacility, *_txtLocation, *_txtFunds;
+	Text *_txtFacility, *_txtLocation, *_txtFunds, *_txtStores, *_txtQuarters, *_txtSoldiers;
 	TextEdit *_edtBase;
 	TextButton *_btnNewBase, *_btnBaseInfo, *_btnSoldiers, *_btnCrafts, *_btnFacilities, *_btnResearch, *_btnManufacture, *_btnTransfer, *_btnPurchase, *_btnSell, *_btnGeoscape;
 	Base *_base;

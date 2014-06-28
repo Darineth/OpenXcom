@@ -145,6 +145,7 @@ BattlescapeState::BattlescapeState() : _reserve(0), _popups(), _xBeforeMouseScro
 	}
 	_numVisibleUnit[9]->setX(_numVisibleUnit[9]->getX() - 2); // center number 10
 	_warning = new WarningMessage(224, 24, _icons->getX() + 48, _icons->getY() + 32);
+	_combatLog = new CombatLog(screenWidth - 10, 100, 5, 5);
 	_btnLaunch = new InteractiveSurface(32, 24, screenWidth - 32, 0); // we need screenWidth, because that is independent of the black bars on the screen
 	_btnLaunch->setVisible(false);
 	_btnPsi = new InteractiveSurface(32, 24, screenWidth - 32, 25); // we need screenWidth, because that is independent of the black bars on the screen
@@ -219,6 +220,7 @@ BattlescapeState::BattlescapeState() : _reserve(0), _popups(), _xBeforeMouseScro
 		add(_numVisibleUnit[i]);
 	}
 	add(_warning);
+	add(_combatLog);
 	add(_txtDebug);
 	add(_txtTooltip);
 	add(_btnLaunch);
@@ -440,6 +442,7 @@ BattlescapeState::BattlescapeState() : _reserve(0), _popups(), _xBeforeMouseScro
 	_barEnergy->setScale(1.0);
 	_barHealth->setColor(Palette::blockOffset(2));
 	_barHealth->setColor2(Palette::blockOffset(5)+2);
+	_barHealth->setColor3(Palette::blockOffset(0)+1);
 	_barHealth->setScale(1.0);
 	_barMorale->setColor(Palette::blockOffset(12));
 	_barMorale->setScale(1.0);
@@ -1293,6 +1296,7 @@ void BattlescapeState::updateSoldierInfo()
 	_barHealth->setMax(battleUnit->getStats()->health);
 	_barHealth->setValue(battleUnit->getHealth());
 	_barHealth->setValue2(battleUnit->getStunlevel());
+	_barHealth->setValue3(battleUnit->getFatalWounds());
 	_numMorale->setValue(battleUnit->getMorale());
 	_barMorale->setMax(100);
 	_barMorale->setValue(battleUnit->getMorale());
@@ -1376,7 +1380,7 @@ void BattlescapeState::handleItemClick(BattleItem *item)
 		if (_game->getSavedGame()->isResearched(item->getRules()->getRequirements()) || _save->getSelectedUnit()->getOriginalFaction() == FACTION_HOSTILE)
 		{
 			_battleGame->getCurrentAction()->weapon = item;
-			popup(new ActionMenuState(_battleGame->getCurrentAction(), _icons->getX(), _icons->getY()+16));
+			popup(new ActionMenuState(_battleGame->getCurrentAction(), _icons->getX(), _icons->getY()-25));
 		}
 		else
 		{
@@ -1448,7 +1452,34 @@ void BattlescapeState::debug(const std::wstring &message)
  */
 void BattlescapeState::warning(const std::string &message)
 {
+	_warning->setColor(WARNING_RED);
 	_warning->showMessage(tr(message));
+}
+
+void BattlescapeState::warning(const std::wstring &message)
+{
+	_warning->setColor(WARNING_RED);
+	_warning->showMessage(message);
+}
+
+/**
+ * Shows a message.
+ * @param message Message.
+ */
+void BattlescapeState::message(const std::wstring &message, WarningColor color)
+{
+	_warning->setColor(color);
+	_warning->showMessage(message);
+}
+
+/**
+ * Adds an entry to the combat log.
+ * @param message Message.
+ * @param color The color of the message.
+ */
+void BattlescapeState::combatLog(const std::wstring &message, CombatLogColor color)
+{
+	_combatLog->log(message, color);
 }
 
 /**
@@ -2020,7 +2051,7 @@ bool BattlescapeState::allowButtons(bool allowSaving) const
 {
 	return ((allowSaving || _save->getSide() == FACTION_PLAYER || _save->getDebugMode())
 		&& (_battleGame->getPanicHandled() || _firstInit )
-		&& (_map->getProjectile() == 0));
+		&& (!_map->hasProjectile()));
 }
 
 /**

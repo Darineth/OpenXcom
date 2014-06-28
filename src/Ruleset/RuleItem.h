@@ -52,6 +52,7 @@ private:
 	ItemDamageType _damageType;
 	int _accuracyAuto, _accuracySnap, _accuracyAimed, _tuAuto, _tuSnap, _tuAimed;
 	int _clipSize, _accuracyMelee, _tuMelee;
+	int _accuracyShotgunSpread;
 	BattleType _battleType;
 	bool _twoHanded, _waypoint, _fixedWeapon;
 	int _invWidth, _invHeight;
@@ -68,6 +69,7 @@ private:
 	std::string _zombieUnit;
 	bool _strengthApplied, _skillApplied, _LOSRequired;
 	int _meleeSound, _meleePower, _meleeAnimation, _meleeHitSound;
+	int _kneelModifier;
 public:
 	/// Creates a blank item ruleset.
 	RuleItem(const std::string &type);
@@ -121,6 +123,8 @@ public:
 	int getAccuracyAimed() const;
 	/// Gets the item's melee accuracy.
 	int getAccuracyMelee() const;
+	/// Gets the item's shotgun spread accuracy.
+	int getAccuracyShotgunSpread() const;
 	/// Gets the item's snapshot TU cost.
 	int getTUSnap() const;
 	/// Gets the item's autoshot TU cost.
@@ -219,6 +223,8 @@ public:
 	int getMeleeAnimation() const;
 	/// Check if LOS is required to use this item (only applies to psionic type items)
 	bool isLOSRequired() const;
+	/// Get the kneeling accuracy modifier for this weapon.
+	int getKneelModifier() const;
 };
 
 }

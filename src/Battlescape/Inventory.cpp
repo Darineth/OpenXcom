@@ -679,7 +679,7 @@ void Inventory::mouseClick(Action *action, State *state)
 						{
 							_warning->showMessage(_game->getLanguage()->getString("STR_WEAPON_IS_ALREADY_LOADED"));
 						}
-						else if (!_tu || _selUnit->spendTimeUnits(15))
+						else if (!_tu || (Options::battleAdjustReloadCost ? _selUnit->spendTimeUnits(_selItem->getSlot()->getCost(item->getSlot()) + _selItem->getAmmoReloadCost()) : _selUnit->spendTimeUnits(15)))
 						{
 							moveItem(_selItem, 0, 0, 0);
 							item->setAmmoItem(_selItem);
@@ -821,7 +821,8 @@ bool Inventory::unload()
 		}
 	}
 
-	if (!_tu || _selUnit->spendTimeUnits(8))
+	// Adjusted unload cost: Magazine weight + hand->hand
+	if (!_tu || _selUnit->spendTimeUnits(Options::battleAdjustReloadCost ? (_selItem->getAmmoItem()->getRules()->getWeight() + _game->getRuleset()->getInventory("STR_LEFT_HAND")->getCost(_game->getRuleset()->getInventory("STR_RIGHT_HAND"))) : 8))
 	{
 		moveItem(_selItem->getAmmoItem(), _game->getRuleset()->getInventory("STR_LEFT_HAND"), 0, 0);
 		_selItem->getAmmoItem()->moveToOwner(_selUnit);

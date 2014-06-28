@@ -49,7 +49,7 @@ namespace OpenXcom
  * @param origin Position the projectile originates from.
  * @param targetVoxel Position the projectile is targeting.
  */
-Projectile::Projectile(ResourcePack *res, SavedBattleGame *save, BattleAction action, Position origin, Position targetVoxel, int bulletSprite) : _res(res), _save(save), _action(action), _origin(origin), _targetVoxel(targetVoxel), _position(0), _bulletSprite(bulletSprite), _reversed(false)
+Projectile::Projectile(ResourcePack *res, SavedBattleGame *save, BattleAction action, Position origin, Position targetVoxel, int bulletSprite, bool shotgun) : _res(res), _save(save), _action(action), _origin(origin), _targetVoxel(targetVoxel), _position(0), _bulletSprite(bulletSprite), _reversed(false), _impact(0), _shotgun(shotgun)
 {
 	// this is the number of pixels the sprite will move between frames
 	_speed = Options::battleFireSpeed;
@@ -92,13 +92,13 @@ Projectile::~Projectile()
  * @return The objectnumber(0-3) or unit(4) or out of map (5) or -1 (no line of fire).
  */
 
-int Projectile::calculateTrajectory(double accuracy)
+int Projectile::calculateTrajectory(double accuracy, bool force)
 {
 	Position originVoxel = _save->getTileEngine()->getOriginVoxel(_action, _save->getTile(_origin));
-	return calculateTrajectory(accuracy, originVoxel);
+	return (_impact = calculateTrajectory(accuracy, originVoxel, force));
 }
 
-int Projectile::calculateTrajectory(double accuracy, Position originVoxel)
+int Projectile::calculateTrajectory(double accuracy, Position originVoxel, bool force)
 {
 	Tile *targetTile = _save->getTile(_action.target);
 	BattleUnit *bu = _action.actor;
@@ -108,6 +108,7 @@ int Projectile::calculateTrajectory(double accuracy, Position originVoxel)
 		!_trajectory.empty() &&
 		_action.actor->getFaction() == FACTION_PLAYER &&
 		_action.autoShotCounter == 1 &&
+		!force &&
 		((SDL_GetModState() & KMOD_CTRL) == 0 || !Options::forceFire) &&
 		_save->getBattleGame()->getPanicHandled() &&
 		_action.type != BA_LAUNCH)
@@ -125,7 +126,7 @@ int Projectile::calculateTrajectory(double accuracy, Position originVoxel)
 				if (hitPos.y - 1 != _action.target.y)
 				{
 					_trajectory.clear();
-					return V_EMPTY;
+					return (_impact = V_EMPTY);
 				}
 			}
 			else if (test == V_WESTWALL)
@@ -133,7 +134,7 @@ int Projectile::calculateTrajectory(double accuracy, Position originVoxel)
 				if (hitPos.x - 1 != _action.target.x)
 				{
 					_trajectory.clear();
-					return V_EMPTY;
+					return (_impact = V_EMPTY);
 				}
 			}
 			else if (test == V_UNIT)
@@ -143,13 +144,13 @@ int Projectile::calculateTrajectory(double accuracy, Position originVoxel)
 				if (hitUnit != targetUnit)
 				{
 					_trajectory.clear();
-					return V_EMPTY;
+					return (_impact = V_EMPTY);
 				}
 			}
 			else
 			{
 				_trajectory.clear();
-				return V_EMPTY;
+				return (_impact = V_EMPTY);
 			}
 		}
 	}
@@ -177,7 +178,7 @@ int Projectile::calculateTrajectory(double accuracy, Position originVoxel)
 	applyAccuracy(originVoxel, &_targetVoxel, accuracy, false, targetTile, extendLine);
 
 	// finally do a line calculation and store this trajectory.
-	return _save->getTileEngine()->calculateLine(originVoxel, _targetVoxel, true, &_trajectory, bu);
+	return (_impact = _save->getTileEngine()->calculateLine(originVoxel, _targetVoxel, true, &_trajectory, bu));
 }
 
 /**
@@ -288,28 +289,56 @@ void Projectile::applyAccuracy(const Position& origin, Position *target, double 
 	int zDist = abs(origin.z - target->z);
 	int xyShift, zShift;
 
-	if (xDist / 2 <= yDist)				//yes, we need to add some x/y non-uniformity
-		xyShift = xDist / 4 + yDist;	//and don't ask why, please. it's The Commandment
-	else
-		xyShift = (xDist + yDist) / 2;	//that's uniform part of spreading
+	//int shotgunPellets = ammo ? ammo->getRules()->getShotgunPellets() : 0;
+	int deviation = 0;
 
-	if (xyShift <= zDist)				//slight z deviation
-		zShift = xyShift / 2 + zDist;
-	else
-		zShift = xyShift + zDist / 2;
+	if(!_shotgun)
+	{
+		if (xDist / 2 <= yDist)				//yes, we need to add some x/y non-uniformity
+			xyShift = xDist / 4 + yDist;	//and don't ask why, please. it's The Commandment
+		else
+			xyShift = (xDist + yDist) / 2;	//that's uniform part of spreading
 
-	int deviation = RNG::generate(0, 100) - (accuracy * 100);
+		if (xyShift <= zDist)				//slight z deviation
+			zShift = xyShift / 2 + zDist;
+		else
+			zShift = xyShift + zDist / 2;
 
-	if (deviation >= 0)
-		deviation += 50;				// add extra spread to "miss" cloud
-	else
-		deviation += 10;				//accuracy of 109 or greater will become 1 (tightest spread)
-	
-	deviation = std::max(1, zShift * deviation / 200);	//range ratio
+		deviation = RNG::generate(0, 100) - (accuracy * 100);
+
+		if (deviation >= 0)
+			deviation += 50;				// add extra spread to "miss" cloud
+		else
+			deviation += 10;				//accuracy of 109 or greater will become 1 (tightest spread)
+
+		deviation = std::max(1, zShift * deviation / 200);	//range ratio
 		
-	target->x += RNG::generate(0, deviation) - deviation / 2;
-	target->y += RNG::generate(0, deviation) - deviation / 2;
-	target->z += RNG::generate(0, deviation / 2) / 2 - deviation / 8;
+		target->x += RNG::generate(0, deviation) - deviation / 2;
+		target->y += RNG::generate(0, deviation) - deviation / 2;
+		target->z += RNG::generate(0, deviation / 2) / 2 - deviation / 8;
+	}
+	else
+	{	//Shotgun spread
+		//Uses a normal distribution to calculate the deviation from the target, multiplied by the distance so that far shots impact farther apart than near shots
+		double distance = sqrt(double(origin.x - target->x) * double(origin.x - target->x) + double(origin.y - target->y) * double(origin.y - target->y) + double(origin.z - target->z) * double(origin.z - target->z));
+
+		double shotgunAccuracy = (double)weapon->getAccuracyShotgunSpread();
+		if(shotgunAccuracy > 100.0)
+			shotgunAccuracy = 100.0;
+		else if(shotgunAccuracy <= 0.0)
+			shotgunAccuracy = 0.0;
+
+		//Rough accuracy model
+		target->x += (int)(RNG::boxMuller(0.0, 50.0 - shotgunAccuracy/2.0) * distance / 160.0);
+		target->y += (int)(RNG::boxMuller(0.0, 50.0 - shotgunAccuracy/2.0) * distance / 160.0);
+		target->z += (int)(RNG::boxMuller(0.0, 6.25 - shotgunAccuracy/16.0) * distance / 160.0);
+		
+		//Circular error probability model
+		/*double stdDev = shotgunAccuracy * 1.5;
+		target->x += (int)(RNG::boxMuller(0.0, stdDev * 1.6) * distance / 160.0);
+		target->y += (int)(RNG::boxMuller(0.0, stdDev * 1.6) * distance / 160.0);
+		target->z += (int)(RNG::boxMuller(0.0, stdDev * 1.6) * distance / 160.0);*/
+	}
 	
 	if (extendLine)
 	{
@@ -358,6 +387,15 @@ Position Projectile::getPosition(int offset) const
 		return _trajectory.at(posOffset);
 	else
 		return _trajectory.at(_position);
+}
+
+/**
+ * Returns the last calculated impact for the projectile.
+ * @return The last calculated impact type.
+ */
+int Projectile::getImpact() const
+{
+	return _impact;
 }
 
 /**

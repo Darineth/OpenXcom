@@ -29,7 +29,9 @@
 #include "../Ruleset/Ruleset.h"
 #include "../Ruleset/StatString.h"
 #include "../Engine/Options.h"
+#include "../Interface/Text.h"
 #include "SavedGame.h"
+#include "Role.h"
 
 namespace OpenXcom
 {
@@ -41,7 +43,7 @@ namespace OpenXcom
  * @param names List of name pools for soldier generation.
  * @param id Pointer to unique soldier id for soldier generation.
  */
-Soldier::Soldier(RuleSoldier *rules, Armor *armor, const std::vector<SoldierNamePool*> *names, int id) : _name(L""), _id(id), _improvement(0), _psiStrImprovement(0), _rules(rules), _initialStats(), _currentStats(), _rank(RANK_ROOKIE), _craft(0), _gender(GENDER_MALE), _look(LOOK_BLONDE), _missions(0), _kills(0), _recovery(0), _recentlyPromoted(false), _psiTraining(false), _armor(armor), _equipmentLayout(), _death(0)
+Soldier::Soldier(RuleSoldier *rules, SavedGame *save, Armor *armor, const std::vector<SoldierNamePool*> *names, int id) : _name(L""), _id(id), _improvement(0), _psiStrImprovement(0), _rules(rules), _initialStats(), _currentStats(), _rank(RANK_ROOKIE), _craft(0), _gender(GENDER_MALE), _look(LOOK_BLONDE), _missions(0), _kills(0), _recovery(0), _recentlyPromoted(false), _psiTraining(false), _armor(armor), _equipmentLayout(), _death(0), _role(save->getDefaultRole())
 {
 	if (names != 0)
 	{
@@ -136,6 +138,17 @@ void Soldier::load(const YAML::Node& node, const Ruleset *rule, SavedGame *save)
 		_death = new SoldierDeath();
 		_death->load(node["death"]);
 	}
+
+	if(const YAML::Node &role = node["role"])
+	{
+		_role = save->getRole(role.as<std::string>());
+	}
+
+	if(!_role)
+	{
+		_role = save->getDefaultRole();
+	}
+
 	calcStatString(rule->getStatStrings(), (Options::psiStrengthEval && save->isResearched(rule->getPsiRequirements())));
 }
 
@@ -174,6 +187,10 @@ YAML::Node Soldier::save() const
 	if (_death != 0)
 	{
 		node["death"] = _death->save();
+	}
+	if(_role)
+	{
+		node["role"] = _role->getName();
 	}
 	return node;
 }
@@ -243,6 +260,7 @@ std::wstring Soldier::getCraftString(Language *lang) const
 	if (_recovery > 0)
 	{
 		s = lang->getString("STR_WOUNDED");
+		s = s.append(L": ").append(Text::formatNumber(_recovery));
 	}
 	else if (_craft == 0)
 	{
@@ -620,6 +638,24 @@ void Soldier::die(SoldierDeath *death)
 void Soldier::calcStatString(const std::vector<StatString *> &statStrings, bool psiStrengthEval)
 {
 	_statString = StatString::calcStatString(_currentStats, statStrings, psiStrengthEval);
+}
+
+/**
+ * Sets the soldier's role.
+ * @param The new role for the soldier.
+ */
+void Soldier::setRole(Role *role)
+{
+	_role = role;
+}
+
+/**
+ * Gets the soldier's role.
+ * @return The soldier's current role
+ */
+Role *Soldier::getRole() const
+{
+	return _role;
 }
 
 }

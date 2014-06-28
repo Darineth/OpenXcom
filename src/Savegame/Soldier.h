@@ -40,6 +40,7 @@ class Language;
 class EquipmentLayoutItem;
 class SoldierDeath;
 class SavedGame;
+class Role;
 
 /**
  * Represents a soldier hired by the player.
@@ -60,12 +61,13 @@ private:
 	int _missions, _kills, _recovery;
 	bool _recentlyPromoted, _psiTraining;
 	Armor *_armor;
+	Role *_role;
 	std::vector<EquipmentLayoutItem*> _equipmentLayout;
 	SoldierDeath *_death;
 	std::wstring _statString;
 public:
 	/// Creates a new soldier.
-	Soldier(RuleSoldier *rules, Armor *armor, const std::vector<SoldierNamePool*> *names = 0, int id = 0);
+	Soldier(RuleSoldier *rules, SavedGame *save, Armor *armor, const std::vector<SoldierNamePool*> *names = 0, int id = 0);
 	/// Cleans up the soldier.
 	~Soldier();
 	/// Loads the soldier from YAML.
@@ -142,6 +144,10 @@ public:
 	void die(SoldierDeath *death);
 	/// Calculate statString.
 	void calcStatString(const std::vector<StatString *> &statStrings, bool psiStrengthEval);
+	/// Sets the soldier's role.
+	void setRole(Role *role);
+	/// Gets the soldier's role.
+	Role *getRole() const;
 };
 
 }
