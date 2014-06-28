@@ -68,6 +68,7 @@
 #include "../Ruleset/RuleItem.h"
 #include "../Ruleset/AlienDeployment.h"
 #include "../Ruleset/Armor.h"
+#include "../Ruleset/RuleInventory.h"
 #include "../Engine/Timer.h"
 #include "WarningMessage.h"
 #include "../Menu/PauseState.h"
@@ -1368,6 +1369,52 @@ void BattlescapeState::blinkVisibleUnitButtons()
 }
 
 /**
+ * Animates grenade primer indicators.
+ */
+void BattlescapeState::drawPrimers()
+{
+	BattleUnit *battleUnit = _save->getSelectedUnit();
+
+	if(playableUnitSelected())
+	{
+		const int pulsate[8] = { 0, 1, 2, 3, 4, 3, 2, 1 };
+		static int frame = 0;
+
+		BattleItem *leftHandItem = battleUnit->getItem("STR_LEFT_HAND");
+		BattleItem *rightHandItem = battleUnit->getItem("STR_RIGHT_HAND");
+
+		static Surface *indicator = _game->getResourcePack()->getSurfaceSet("SCANG.DAT")->getFrame(6);
+
+		bool grenades = false;
+
+		if(leftHandItem && leftHandItem->getFuseTimer() >= 0)
+		{
+			grenades = true;
+
+			int x = _btnLeftHandItem->getX() + ((RuleInventory::HAND_W - leftHandItem->getRules()->getInventoryWidth()) * RuleInventory::SLOT_W/2);
+			int y = _btnLeftHandItem->getY() + ((RuleInventory::HAND_H - leftHandItem->getRules()->getInventoryHeight()) * RuleInventory::SLOT_H/2);
+
+			indicator->blitNShade(_btnLeftHandItem, x, y, pulsate[frame]);
+		}
+
+		if(rightHandItem && rightHandItem->getFuseTimer() >= 0)
+		{
+			grenades = true;
+
+			int x = _btnRightHandItem->getX() + ((RuleInventory::HAND_W - rightHandItem->getRules()->getInventoryWidth()) * RuleInventory::SLOT_W/2);
+			int y = _btnRightHandItem->getY() + ((RuleInventory::HAND_H - rightHandItem->getRules()->getInventoryHeight()) * RuleInventory::SLOT_H/2);
+
+			indicator->blitNShade(_btnRightHandItem, x, y, pulsate[frame]);
+		}
+
+		if(grenades)
+		{
+			frame = (frame + 1) % 8;
+		}
+	}
+}
+
+/**
  * Popups a context sensitive list of actions the user can choose from.
  * Some actions result in a change of gamestate.
  * @param item Item the user clicked on (righthand/lefthand)
@@ -1397,6 +1444,7 @@ void BattlescapeState::animate()
 	_map->animate(!_battleGame->isBusy());
 
 	blinkVisibleUnitButtons();
+	drawPrimers();
 }
 
 /**
