@@ -36,7 +36,7 @@ RuleItem::RuleItem(const std::string &type) : _type(type), _name(type), _size(0.
 											_recover(true), _liveAlien(false), _blastRadius(-1), _attraction(0), _flatRate(false), _arcingShot(false), _listOrder(0),
 											_maxRange(200), _aimRange(200), _snapRange(15), _autoRange(7), _minRange(0), _dropoff(2), _bulletSpeed(0), _explosionSpeed(0), _autoShots(3), _shotgunPellets(0), _zombieUnit(""),
 											_strengthApplied(false), _skillApplied(true), _LOSRequired(false), _meleeSound(39), _meleePower(0), _meleeAnimation(0), _meleeHitSound(-1),
-											_accuracyShotgunSpread(0), _kneelModifier(0)
+											_accuracyShotgunSpread(0), _autoDelay(0), _kneelModifier(0)
 {
 }
 
@@ -185,6 +185,7 @@ void RuleItem::load(const YAML::Node &node, int modIndex, int listOrder)
 	_skillApplied = node["skillApplied"].as<bool>(_skillApplied);
 	_LOSRequired = node["LOSRequired"].as<bool>(_LOSRequired);
 	_meleePower = node["meleePower"].as<int>(_meleePower);
+	_autoDelay = node["autoDelay"].as<int>(_autoDelay);
 	_kneelModifier = node["kneelModifier"].as<int>(_kneelModifier);
 	if (!_listOrder)
 	{
@@ -901,5 +902,14 @@ int RuleItem::getMeleeAnimation() const
 int RuleItem::getKneelModifier() const
 {
 	return _kneelModifier;
+}
+
+/**
+ * What is the auto fire delay for this weapon?
+ * @return The auto fire delay for this weapon.
+ */
+int RuleItem::getAutoDelay() const
+{
+	return _autoDelay;
 }
 }

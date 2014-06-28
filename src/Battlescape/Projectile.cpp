@@ -289,7 +289,6 @@ void Projectile::applyAccuracy(const Position& origin, Position *target, double 
 	int zDist = abs(origin.z - target->z);
 	int xyShift, zShift;
 
-	//int shotgunPellets = ammo ? ammo->getRules()->getShotgunPellets() : 0;
 	int deviation = 0;
 
 	if(!_shotgun)

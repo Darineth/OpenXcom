@@ -19,6 +19,8 @@
 #include "Timer.h"
 #include "Game.h"
 #include "Options.h"
+#include "State.h"
+#include "Surface.h"
 #include <assert.h>
 
 namespace OpenXcom
@@ -49,7 +51,7 @@ int Timer::maxFrameSkip = 8; // this is a pretty good default at 60FPS.
  * @param interval Time interval in milliseconds.
  * @param frameSkipping Use frameskipping.
  */
-Timer::Timer(Uint32 interval, bool frameSkipping) : _start(0), _interval(interval), _running(false), _frameSkipping(frameSkipping), _state(0), _surface(0)
+Timer::Timer(Uint32 interval, bool frameSkipping) : _start(0), _interval(interval), _running(false), _frameSkipping(frameSkipping), _state(0), _surface(0), _battleState(0)
 {
 	Timer::maxFrameSkip = Options::maxFrameSkip;
 }
@@ -109,6 +111,17 @@ bool Timer::isRunning() const
  */
 void Timer::think(State* state, Surface* surface)
 {
+	think(state, surface, 0);
+}
+
+/**
+ * The timer keeps calculating the passed time while it's running,
+ * calling the respective action handler whenever the set interval passes.
+ * @param state State that the action handler belongs to.
+ * @param surface Surface that the action handler belongs to.
+ */
+void Timer::think(State* state, Surface* surface, BattleState* battleState)
+{
 	Sint64 now = slowTick(); // must be signed to permit negative numbers
 	Game *game = state ? state->_game : 0; // this is used to make sure we stop calling *_state on *state in the loop once *state has been popped and deallocated
 	//assert(!game || game->isState(state));
@@ -132,6 +145,12 @@ void Timer::think(State* state, Surface* surface)
 			{
 				(surface->*_surface)();
 			}
+
+			if(_running && battleState && _battleState)
+			{
+				(battleState->*_battleState)();
+			}
+
 			_start = slowTick();
 			if (_start > _frameSkipStart) _frameSkipStart = _start; // don't play animations in ffwd to catch up :P
 		}
@@ -163,6 +182,15 @@ void Timer::onTimer(StateHandler handler)
 void Timer::onTimer(SurfaceHandler handler)
 {
 	_surface = handler;
+}
+
+/**
+ * Sets a battle state function for the timer to call every interval.
+ * @param handler Event handler.
+ */
+void Timer::onTimer(BattleStateHandler handler)
+{
+	_battleState = handler;
 }
 
 /**

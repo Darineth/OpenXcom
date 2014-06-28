@@ -52,7 +52,7 @@ private:
 	ItemDamageType _damageType;
 	int _accuracyAuto, _accuracySnap, _accuracyAimed, _tuAuto, _tuSnap, _tuAimed;
 	int _clipSize, _accuracyMelee, _tuMelee;
-	int _accuracyShotgunSpread;
+	int _accuracyShotgunSpread, _autoDelay;
 	BattleType _battleType;
 	bool _twoHanded, _waypoint, _fixedWeapon;
 	int _invWidth, _invHeight;
@@ -225,6 +225,8 @@ public:
 	bool isLOSRequired() const;
 	/// Get the kneeling accuracy modifier for this weapon.
 	int getKneelModifier() const;
+	/// Get the delay between auto fire shots.
+	int getAutoDelay() const;
 };
 
 }

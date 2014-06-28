@@ -1590,15 +1590,10 @@ items:
     fireSound: 4
     compatibleAmmo:
       - STR_RIFLE_CLIP
-    accuracyAuto: 3
+    accuracyAuto: 35
     accuracySnap: 60
     accuracyAimed: 110
-    minRange: 10
-    bulletSpeed: 10
-    explosionSpeed: 1000
-    kneelModifier: 10000
-    autoShots: 10
-    tuAuto: 5
+    tuAuto: 35
     tuSnap: 25
     tuAimed: 80
     battleType: 1
@@ -1618,7 +1613,6 @@ items:
     damageType: 1
     clipSize: 20
     battleType: 2
-    explosionSpeed: 1000
   - type: STR_HEAVY_CANNON
     size: 0.3
     costBuy: 6400
@@ -5165,6 +5159,7 @@ units:
     kneelHeight: 15
     value: 20
     deathSound: 9
+    moveSound: 15
     intelligence: 6
     aggression: 1
     energyRecovery: 40
@@ -5188,6 +5183,7 @@ units:
     kneelHeight: 15
     value: 30
     deathSound: 9
+    moveSound: 15
     intelligence: 7
     aggression: 1
     energyRecovery: 40
@@ -5211,6 +5207,7 @@ units:
     kneelHeight: 15
     value: 40
     deathSound: 9
+    moveSound: 15
     intelligence: 8
     aggression: 1
     energyRecovery: 40

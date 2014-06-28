@@ -49,9 +49,8 @@ namespace OpenXcom
  * @param tile Tile the explosion is on.
  * @param lowerWeapon Whether the unit causing this explosion should now lower their weapon.
  */
-ExplosionBState::ExplosionBState(BattlescapeGame *parent, Position center, BattleItem *item, BattleUnit *unit, Tile *tile, bool lowerWeapon) : BattleState(parent), _unit(unit), _center(center), _item(item), _tile(tile), _power(0), _areaOfEffect(false), _lowerWeapon(lowerWeapon), _pistolWhip(false)
+ExplosionBState::ExplosionBState(BattlescapeGame *parent, Position center, BattleItem *item, BattleUnit *unit, Tile *tile, bool lowerWeapon, bool subState) : BattleState(parent), _unit(unit), _center(center), _item(item), _tile(tile), _power(0), _areaOfEffect(false), _lowerWeapon(lowerWeapon), _pistolWhip(false), _subState(subState), _explosions(), _finished(false)
 {
-
 }
 
 /**
@@ -120,6 +119,7 @@ void ExplosionBState::init()
 				Explosion *explosion = new Explosion(p, frame, true);
 				// add the explosion on the map
 				_parent->getMap()->getExplosions()->push_back(explosion);
+				_explosions.push_back(explosion);
 				if (i > 0 && i % counter == 0)
 				{
 					--frame;
@@ -136,7 +136,9 @@ void ExplosionBState::init()
 		}
 		else
 		{
-			_parent->popState();
+			_finished = true;
+			if(!_subState) _parent->popState();
+			return;
 		}
 	}
 	else
@@ -157,6 +159,7 @@ void ExplosionBState::init()
 		}
 		Explosion *explosion = new Explosion(_center, anim, false, hit);
 		_parent->getMap()->getExplosions()->push_back(explosion);
+		_explosions.push_back(explosion);
 		_parent->getMap()->getCamera()->setViewLevel(_center.z / 24);
 
 		BattleUnit *target = t->getUnit();
@@ -165,6 +168,8 @@ void ExplosionBState::init()
 			_parent->getMap()->getCamera()->centerOnPosition(t->getPosition(), false);
 		}
 	}
+
+	explode();
 }
 
 /**
@@ -173,21 +178,33 @@ void ExplosionBState::init()
  */
 void ExplosionBState::think()
 {
-	for (std::list<Explosion*>::iterator i = _parent->getMap()->getExplosions()->begin(); i != _parent->getMap()->getExplosions()->end();)
+	for (std::vector<Explosion*>::iterator ii = _explosions.begin(); ii != _explosions.end();)
 	{
-		if(!(*i)->animate())
+		if(!(*ii)->animate())
 		{
-			delete (*i);
-			i = _parent->getMap()->getExplosions()->erase(i);
-			if (_parent->getMap()->getExplosions()->empty())
+			std::list<Explosion*> *mapExplosions = _parent->getMap()->getExplosions();
+			for(std::list<Explosion*>::const_iterator jj = mapExplosions->begin(); jj != mapExplosions->end(); ++jj)
 			{
-				explode();
+				if(*jj == *ii)
+				{
+					mapExplosions->erase(jj);
+					break;
+				}
+			}
+
+			delete (*ii);
+			ii = _explosions.erase(ii);
+			if (_explosions.empty())
+			{
+				_finished = true;
+				if(!_subState) _parent->popState();
+				//explode();
 				return;
 			}
 		}
 		else
 		{
-			++i;
+			++ii;
 		}
 	}
 }
@@ -219,7 +236,8 @@ void ExplosionBState::explode()
 		if (!RNG::percent(_unit->getFiringAccuracy(BA_HIT, _item)))
 		{
 			_parent->getMap()->cacheUnits();
-			_parent->popState();
+			//_finished = true;
+			//if(!_subState) _parent->popState();
 			return;
 		}
 		else if (targetUnit && targetUnit->getOriginalFaction() == FACTION_HOSTILE &&
@@ -283,7 +301,7 @@ void ExplosionBState::explode()
 	}
 
 	// now check for new casualties
-	_parent->checkForCasualties(_item, _unit, false, terrainExplosion);
+	_parent->checkForCasualties(_item, _unit, false, terrainExplosion, _subState);
 
 	// if this explosion was caused by a unit shooting, now it's the time to put the gun down
 	if (_unit && !_unit->isOut() && _lowerWeapon)
@@ -292,7 +310,8 @@ void ExplosionBState::explode()
 		_unit->setCache(0);
 	}
 	_parent->getMap()->cacheUnits();
-	_parent->popState();
+	//_finished = true;
+	//if(!_subState) _parent->popState();
 
 	// check for terrain explosions
 	Tile *t = save->getTileEngine()->checkForTerrainExplosions();
@@ -324,6 +343,15 @@ void ExplosionBState::explode()
 bool ExplosionBState::getAreaOfEffect() const
 {
 	return _areaOfEffect;
+}
+
+/**
+ * Returns If the state is a substate and has finished processing.
+ * @return True if the state is a substate and has finished processing.
+ */
+bool ExplosionBState::getFinished() const
+{
+	return _finished;
 }
 
 }

@@ -118,7 +118,7 @@ public:
 	/// Sets state think interval.
 	void setStateInterval(Uint32 interval);
 	/// Checks for casualties in battle.
-	void checkForCasualties(BattleItem *murderweapon, BattleUnit *murderer, bool hiddenExplosion = false, bool terrainExplosion = false);
+	void checkForCasualties(BattleItem *murderweapon, BattleUnit *murderer, bool hiddenExplosion = false, bool terrainExplosion = false, bool pushDeathFront = false);
 	/// Checks if a unit panics.
 	void checkForPanic(BattleUnit *unit);
 	/// Checks reserved tu.

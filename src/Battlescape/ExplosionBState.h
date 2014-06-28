@@ -22,6 +22,7 @@
 #include "BattleState.h"
 #include "Position.h"
 #include <string>
+#include <vector>
 
 namespace OpenXcom
 {
@@ -30,6 +31,7 @@ class BattlescapeGame;
 class BattleUnit;
 class BattleItem;
 class Tile;
+class Explosion;
 
 /**
  * Explosion state not only handles explosions, but also bullet impacts!
@@ -43,12 +45,13 @@ private:
 	BattleItem *_item;
 	Tile *_tile;
 	int _power;
-	bool _areaOfEffect, _lowerWeapon, _pistolWhip;
+	bool _areaOfEffect, _lowerWeapon, _pistolWhip, _subState, _finished;
+	std::vector<Explosion*> _explosions;
 	/// Calculates the effects of the explosion.
 	void explode();
 public:
 	/// Creates a new ExplosionBState class.
-	ExplosionBState(BattlescapeGame *parent, Position center, BattleItem *item, BattleUnit *unit, Tile *tile = 0, bool lowerWeapon = false);
+	ExplosionBState(BattlescapeGame *parent, Position center, BattleItem *item, BattleUnit *unit, Tile *tile = 0, bool lowerWeapon = false, bool subState = false);
 	/// Cleans up the ExplosionBState.
 	~ExplosionBState();
 	/// Initializes the state.
@@ -61,7 +64,8 @@ public:
 	std::string getResult() const;
 	/// Returns if the current explosion is AoE.
 	bool getAreaOfEffect() const;
-
+	/// Returns if the state is finished.
+	bool getFinished() const;
 };
 
 }

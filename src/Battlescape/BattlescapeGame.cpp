@@ -389,13 +389,16 @@ void BattlescapeGame::endTurn()
 	{
 		for (std::vector<BattleItem*>::iterator it = _save->getTiles()[i]->getInventory()->begin(); it != _save->getTiles()[i]->getInventory()->end(); )
 		{
-			if ((*it)->getRules()->getBattleType() == BT_GRENADE && (*it)->getFuseTimer() == 0)  // it's a grenade to explode now
+			BattleItem *grenade = *it;
+			if (grenade->getRules()->getBattleType() == BT_GRENADE && grenade->getFuseTimer() == 0)  // it's a grenade to explode now
 			{
 				p.x = _save->getTiles()[i]->getPosition().x*16 + 8;
 				p.y = _save->getTiles()[i]->getPosition().y*16 + 8;
 				p.z = _save->getTiles()[i]->getPosition().z*24 - _save->getTiles()[i]->getTerrainLevel();
-				statePushNext(new ExplosionBState(this, p, (*it), (*it)->getPreviousOwner()));
-				_save->removeItem((*it));
+
+
+				_save->removeItem(grenade);
+				statePushNext(new ExplosionBState(this, p, grenade, grenade->getPreviousOwner()));
 				statePushBack(0);
 				return;
 			}
@@ -484,10 +487,11 @@ void BattlescapeGame::endTurn()
  * @param hiddenExplosion Set to true for the explosions of UFO Power sources at start of battlescape.
  * @param terrainExplosion Set to true for the explosions of terrain.
  */
-void BattlescapeGame::checkForCasualties(BattleItem *murderweapon, BattleUnit *murderer, bool hiddenExplosion, bool terrainExplosion)
+void BattlescapeGame::checkForCasualties(BattleItem *murderweapon, BattleUnit *murderer, bool hiddenExplosion, bool terrainExplosion, bool pushDeathFront)
 {
 	for (std::vector<BattleUnit*>::iterator j = _save->getUnits()->begin(); j != _save->getUnits()->end(); ++j)
 	{
+		UnitDieBState* deathState = 0;
 		if ((*j)->getHealth() == 0 && (*j)->getStatus() != STATUS_DEAD && (*j)->getStatus() != STATUS_COLLAPSING)
 		{
 			BattleUnit *victim = (*j);
@@ -550,35 +554,48 @@ void BattlescapeGame::checkForCasualties(BattleItem *murderweapon, BattleUnit *m
 					}
 				}
 			}
+
 			if (murderweapon)
 			{
-				statePushNext(new UnitDieBState(this, (*j), murderweapon->getRules()->getDamageType(), false));
+				deathState = new UnitDieBState(this, (*j), murderweapon->getRules()->getDamageType(), false);
 			}
 			else
 			{
 				if (hiddenExplosion)
 				{
 					// this is instant death from UFO powersources, without screaming sounds
-					statePushNext(new UnitDieBState(this, (*j), DT_HE, true));
+					deathState = new UnitDieBState(this, (*j), DT_HE, true);
 				}
 				else
 				{
 					if (terrainExplosion)
 					{
 						// terrain explosion
-						statePushNext(new UnitDieBState(this, (*j), DT_HE, false));
+						deathState = new UnitDieBState(this, (*j), DT_HE, false);
 					}
 					else
 					{
 						// no murderer, and no terrain explosion, must be fatal wounds
-						statePushNext(new UnitDieBState(this, (*j), DT_NONE, false));  // DT_NONE = STR_HAS_DIED_FROM_A_FATAL_WOUND
+						deathState = new UnitDieBState(this, (*j), DT_NONE, false);  // DT_NONE = STR_HAS_DIED_FROM_A_FATAL_WOUND
 					}
 				}
 			}
 		}
 		else if ((*j)->getStunlevel() >= (*j)->getHealth() && (*j)->getStatus() != STATUS_DEAD && (*j)->getStatus() != STATUS_UNCONSCIOUS && (*j)->getStatus() != STATUS_COLLAPSING && (*j)->getStatus() != STATUS_TURNING)
 		{
-			statePushNext(new UnitDieBState(this, (*j), DT_STUN, true));
+			deathState = new UnitDieBState(this, (*j), DT_STUN, true);
+		}
+
+		if(deathState)
+		{
+			if(pushDeathFront)
+			{
+				statePushFront(deathState);
+			}
+			else
+			{
+				statePushNext(deathState);
+			}
 		}
 	}
 	BattleUnit *bu = _save->getSelectedUnit();

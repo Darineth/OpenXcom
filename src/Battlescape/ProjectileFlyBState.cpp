@@ -35,6 +35,7 @@
 #include "../Ruleset/Armor.h"
 #include "../Ruleset/RuleItem.h"
 #include "../Engine/Options.h"
+#include "../Engine/Timer.h"
 #include "AlienBAIState.h"
 #include "Camera.h"
 #include "Explosion.h"
@@ -46,11 +47,11 @@ namespace OpenXcom
 /**
  * Sets up an ProjectileFlyBState.
  */
-ProjectileFlyBState::ProjectileFlyBState(BattlescapeGame *parent, BattleAction action, Position origin) : BattleState(parent, action), _unit(0), _ammo(0), _projectileItem(0), _origin(origin), _originVoxel(-1,-1,-1), _initialized(false), _targetFloor(false)
+ProjectileFlyBState::ProjectileFlyBState(BattlescapeGame *parent, BattleAction action, Position origin) : BattleState(parent, action), _unit(0), _ammo(0), _projectileItem(0), _origin(origin), _originVoxel(-1,-1,-1), _initialized(false), _targetFloor(false), _autoShotTimer(0), _autoShotsRemaining(0), _explosionStates()
 {
 }
 
-ProjectileFlyBState::ProjectileFlyBState(BattlescapeGame *parent, BattleAction action) : BattleState(parent, action), _unit(0), _ammo(0), _projectileItem(0), _origin(action.actor->getPosition()), _originVoxel(-1,-1,-1), _initialized(false), _targetFloor(false)
+ProjectileFlyBState::ProjectileFlyBState(BattlescapeGame *parent, BattleAction action) : BattleState(parent, action), _unit(0), _ammo(0), _projectileItem(0), _origin(action.actor->getPosition()), _originVoxel(-1,-1,-1), _initialized(false), _targetFloor(false), _autoShotTimer(0), _autoShotsRemaining(0), _explosionStates()
 {
 }
 
@@ -59,6 +60,12 @@ ProjectileFlyBState::ProjectileFlyBState(BattlescapeGame *parent, BattleAction a
  */
 ProjectileFlyBState::~ProjectileFlyBState()
 {
+	if(_autoShotTimer) delete _autoShotTimer;
+
+	for(std::vector<ExplosionBState*>::const_iterator ii = _explosionStates.begin(); ii != _explosionStates.end(); ++ii)
+	{
+		delete *ii;
+	}
 }
 
 /**
@@ -133,9 +140,10 @@ void ProjectileFlyBState::init()
 	Tile *endTile = _parent->getSave()->getTile(_action.target);
 	switch (_action.type)
 	{
+	case BA_AUTOSHOT:
+		_autoShotsRemaining = _action.weapon->getRules()->getAutoShots();
 	case BA_SNAPSHOT:
 	case BA_AIMEDSHOT:
-	case BA_AUTOSHOT:
 	case BA_LAUNCH:
 		if (_ammo == 0)
 		{
@@ -264,10 +272,39 @@ void ProjectileFlyBState::init()
 			_targetVoxel = Position(_action.target.x*16 + 8, _action.target.y*16 + 8, _action.target.z*24 + 12);
 		}
 	}
+
 	if(createNewProjectile())
 	{
 		_parent->getMap()->setCursorType(CT_NONE);
 		_parent->getMap()->getCamera()->stopMouseScrolling();
+
+		if(_action.type == BA_AUTOSHOT)
+		{
+			int delay = _action.weapon->getRules()->getAutoDelay();
+			if(delay == 0)
+			{
+				delay = _action.weapon->getAmmoItem()->getRules()->getAutoDelay();
+				if(delay == 0)
+				{
+					delay = 250;
+				}
+			}
+
+			_autoShotTimer = new Timer(delay, true);
+			_autoShotTimer->onTimer((BattleStateHandler)&ProjectileFlyBState::onAutoshotTimer);
+			_autoShotTimer->start();
+		}
+	}
+}
+
+/**
+ * Fires the next autoshot projectile.
+ */
+void ProjectileFlyBState::onAutoshotTimer()
+{
+	if((_action.weapon->needsAmmo() && (!_action.weapon->getAmmoItem() || !_action.weapon->getAmmoItem()->getAmmoQuantity())) || !createNewProjectile() || !_autoShotsRemaining)
+	{
+		_autoShotTimer->stop();
 	}
 }
 
@@ -279,6 +316,7 @@ void ProjectileFlyBState::init()
 bool ProjectileFlyBState::createNewProjectile()
 {
 	++_action.autoShotCounter;
+	--_autoShotsRemaining;
 	
 	int bulletSprite = -1;
 	int shots = 1;
@@ -298,27 +336,37 @@ bool ProjectileFlyBState::createNewProjectile()
 	// create a new projectile
 	Projectile *projectile = 0;
 
+	std::vector<Projectile*> newProjectiles;
+
 	// add the projectile on the map
 	bool shotgun = false;
+
+	// Do not allow shotgun mode for thrown projectiles as the item becomes the projectile.
 	if(shots < 2 || _action.type == BA_THROW) //&& _action.weapon->getRules()->getBattleType() != 4))
 	{
 		_parent->getMap()->addProjectile(projectile = new Projectile(_parent->getResourcePack(), _parent->getSave(), _action, _origin, _targetVoxel, bulletSprite, false));
+		newProjectiles.push_back(projectile);
 	}
 	else
 	{
 		shotgun = true;
 		Projectile *accuracySource = new Projectile(_parent->getResourcePack(), _parent->getSave(), _action, _origin, _targetVoxel, bulletSprite, false);
+		int projectileImpact;
 
+		if (_action.type == BA_THROW)
+		{
+			projectileImpact = accuracySource->calculateThrow(_unit->getThrowingAccuracy() / 100.0);
+		}
 		if (_originVoxel != Position(-1,-1,-1))
 		{
-			accuracySource->calculateTrajectory(_unit->getFiringAccuracy(_action.type, _action.weapon) / 100.0, _originVoxel);
+			projectileImpact = accuracySource->calculateTrajectory(_unit->getFiringAccuracy(_action.type, _action.weapon) / 100.0, _originVoxel);
 		}
 		else
 		{
-			accuracySource->calculateTrajectory(_unit->getFiringAccuracy(_action.type, _action.weapon) / 100.0);
+			projectileImpact = accuracySource->calculateTrajectory(_unit->getFiringAccuracy(_action.type, _action.weapon) / 100.0);
 		}
 
-		if (accuracySource->getImpact() == V_EMPTY)
+		if(projectileImpact == V_EMPTY || (_action.type == BA_THROW && !(projectileImpact == V_FLOOR || projectileImpact == V_UNIT || projectileImpact == V_OBJECT)))
 		{
 			delete accuracySource;
 
@@ -337,7 +385,8 @@ bool ProjectileFlyBState::createNewProjectile()
 
 		for(int ii = 0; ii < shots; ++ii)
 		{
-			_parent->getMap()->addProjectile(new Projectile(_parent->getResourcePack(), _parent->getSave(), _action, _origin, _targetVoxel, bulletSprite, true));
+			_parent->getMap()->addProjectile(projectile = new Projectile(_parent->getResourcePack(), _parent->getSave(), _action, _origin, _targetVoxel, bulletSprite, true));
+			newProjectiles.push_back(projectile);
 		}
 	}
 
@@ -347,35 +396,44 @@ bool ProjectileFlyBState::createNewProjectile()
 	// let it calculate a trajectory
 	if (_action.type == BA_THROW)
 	{
-		int projectileImpact = projectile->calculateThrow(_unit->getThrowingAccuracy() / 100.0);
-		if (projectileImpact == V_FLOOR || projectileImpact == V_UNIT || projectileImpact == V_OBJECT)
+		bool firstProjectile = true;
+		for(std::vector<Projectile*>::const_iterator ii = newProjectiles.begin(); ii != newProjectiles.end(); ++ii)
 		{
-			if (_unit->getFaction() != FACTION_PLAYER && _projectileItem->getRules()->getBattleType() == BT_GRENADE)
+			projectile = *ii;
+			int projectileImpact = projectile->calculateThrow(_unit->getThrowingAccuracy() / 100.0);
+
+			if(firstProjectile)
 			{
-				_projectileItem->setFuseTimer(0);
+				if (projectileImpact == V_FLOOR || projectileImpact == V_UNIT || projectileImpact == V_OBJECT)
+				{
+					if (_unit->getFaction() != FACTION_PLAYER && _projectileItem->getRules()->getBattleType() == BT_GRENADE)
+					{
+						_projectileItem->setFuseTimer(0);
+					}
+					_projectileItem->moveToOwner(0);
+					_unit->setCache(0);
+					_parent->getMap()->cacheUnit(_unit);
+					_parent->getResourcePack()->getSound("BATTLE.CAT", 39)->play();
+					_unit->addThrowingExp();
+				}
+				else
+				{
+					// unable to throw here
+					_parent->getMap()->deleteProjectiles();
+					_action.result = "STR_UNABLE_TO_THROW_HERE";
+					_action.TU = 0;
+					_parent->popState();
+					return false;
+				}
 			}
-			_projectileItem->moveToOwner(0);
-			_unit->setCache(0);
-			_parent->getMap()->cacheUnit(_unit);
-			_parent->getResourcePack()->getSound("BATTLE.CAT", 39)->play();
-			_unit->addThrowingExp();
-		}
-		else
-		{
-			// unable to throw here
-			_parent->getMap()->deleteProjectiles();
-			_action.result = "STR_UNABLE_TO_THROW_HERE";
-			_action.TU = 0;
-			_parent->popState();
-			return false;
 		}
 	}
 	else if (_action.weapon->getRules()->getArcingShot()) // special code for the "spit" trajectory
 	{
-		const std::vector<Projectile*> projectiles = _parent->getMap()->getProjectiles();
+		//const std::vector<Projectile*> projectiles = _parent->getMap()->getProjectiles();
 
 		bool firstProjectile = true;
-		for(std::vector<Projectile*>::const_iterator ii = projectiles.begin(); ii != projectiles.end(); ++ii)
+		for(std::vector<Projectile*>::const_iterator ii = newProjectiles.begin(); ii != newProjectiles.end(); ++ii)
 		{
 			projectile = *ii;
 			int projectileImpact = projectile->calculateThrow(_unit->getFiringAccuracy(_action.type, _action.weapon, shotgun) / 100.0);
@@ -418,10 +476,10 @@ bool ProjectileFlyBState::createNewProjectile()
 	}
 	else
 	{
-		const std::vector<Projectile*> projectiles = _parent->getMap()->getProjectiles();
+		//const std::vector<Projectile*> projectiles = _parent->getMap()->getProjectiles();
 
 		bool firstProjectile = true;
-		for(std::vector<Projectile*>::const_iterator ii = projectiles.begin(); ii != projectiles.end(); ++ii)
+		for(std::vector<Projectile*>::const_iterator ii = newProjectiles.begin(); ii != newProjectiles.end(); ++ii)
 		{
 			projectile = *ii;
 
@@ -482,9 +540,10 @@ bool ProjectileFlyBState::createNewProjectile()
  */
 void ProjectileFlyBState::think()
 {
+	if(_autoShotTimer) { _autoShotTimer->think(0, 0, this); }
 	_parent->setStateInterval(1000/60);
 	_parent->getSave()->getBattleState()->clearMouseScrollingState();
-	if (!_parent->getMap()->hasProjectile())
+	if (!_parent->getMap()->hasProjectile() && !_explosionStates.size())
 	{
 		Tile *t = _parent->getSave()->getTile(_action.actor->getPosition());
 		Tile *bt = _parent->getSave()->getTile(_action.actor->getPosition() + Position(0,0,-1));
@@ -492,12 +551,12 @@ void ProjectileFlyBState::think()
 		bool unitCanFly = _action.actor->getArmor()->getMovementType() == MT_FLY;
 
 		if (_action.type == BA_AUTOSHOT
-			&& _action.autoShotCounter < _action.weapon->getRules()->getAutoShots()
+			&& _autoShotsRemaining
 			&& !_action.actor->isOut()
 			&& _ammo->getAmmoQuantity() != 0
 			&& (hasFloor || unitCanFly))
 		{
-			createNewProjectile();
+			//createNewProjectile();
 			if (_action.cameraPosition.z != -1)
 			{
 				_parent->getMap()->getCamera()->setMapOffset(_action.cameraPosition);
@@ -608,7 +667,18 @@ void ProjectileFlyBState::think()
 							// explosions impact not inside the voxel but two steps back (projectiles generally move 2 voxels at a time)
 							offset = -2;
 						}
+						
+						ExplosionBState *exp = new ExplosionBState(_parent, projectile->getPosition(offset), _ammo, _action.actor, 0, (_action.type != BA_AUTOSHOT || _action.autoShotCounter == _action.weapon->getRules()->getAutoShots() || !_action.weapon->getAmmoItem()), true);
+						exp->init();
+						_explosionStates.push_back(exp);
 
+						/*if(_action.type == BA_AUTOSHOT)
+						{
+							ExplosionBState *exp = new ExplosionBState(_parent, projectile->getPosition(offset), _ammo, _action.actor, 0, (_action.type != BA_AUTOSHOT || _action.autoShotCounter == _action.weapon->getRules()->getAutoShots() || !_action.weapon->getAmmoItem()));
+							exp->init();
+							_explosionStates.push_back(exp);
+						}
+						else
 						if(!explosionStateCreated)
 						{
 							explosionStateCreated = true;
@@ -625,7 +695,7 @@ void ProjectileFlyBState::think()
 							Explosion *explosion = new Explosion(projectile->getPosition(offset), _ammo->getRules()->getHitAnimation(), false, false);
 							_parent->getMap()->getExplosions()->push_back(explosion);
 							_parent->getSave()->getTileEngine()->hit(projectile->getPosition(offset), _ammo->getRules()->getPower(), _ammo->getRules()->getDamageType(), _action.actor);
-						}
+						}*/
 
 						// special shotgun behaviour: trace extra projectile paths, and add bullet hits at their termination points.
 						/*if (_ammo && _ammo->getRules()->getShotgunPellets()  != 0)
@@ -689,6 +759,24 @@ void ProjectileFlyBState::think()
 				_parent->getMap()->removeProjectile(projectile);
 				delete projectile;
 				//_parent->getMap()->setProjectile(0);
+			}
+		}
+	}
+
+	if(_explosionStates.size())
+	{
+		for(std::vector<ExplosionBState*>::const_iterator ii = _explosionStates.begin(); ii != _explosionStates.end();)
+		{
+			ExplosionBState *exp = *ii;
+			exp->think();
+			if(exp->getFinished())
+			{
+				delete exp;
+				ii = _explosionStates.erase(ii);
+			}
+			else
+			{
+				++ii;
 			}
 		}
 	}
