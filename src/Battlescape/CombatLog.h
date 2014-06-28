@@ -36,11 +36,9 @@ class Font;
 class CombatLog : public Surface
 {
 private:
-	Text *_text[10];
+	Text **_text;
 	Timer *_timer;
-	Uint8 _fade, _currentLine;
-
-	static const Uint8 MAX_LOG_LINES = 10;
+	int _fade, _currentLine, _maxLines;
 
 	/// Shifts log lines up a slot.
 	void shiftUp();

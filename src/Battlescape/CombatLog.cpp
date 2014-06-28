@@ -33,9 +33,10 @@ namespace OpenXcom
  * @param x X position in pixels.
  * @param y Y position in pixels.
  */
-CombatLog::CombatLog(int width, int height, int x, int y) : Surface(width, height, x, y), _fade(0), _currentLine(0)
+CombatLog::CombatLog(int width, int height, int x, int y) : Surface(width, height, x, y), _fade(0), _currentLine(0), _maxLines(height / 10)
 {
-	for(int ii = 0; ii < MAX_LOG_LINES; ++ii)
+	_text = new Text*[_maxLines];
+	for(int ii = 0; ii < _maxLines; ++ii)
 	{
 		Text *text = _text[ii] = new Text(width, 9, x, y + ii * 10);
 		text->setHighContrast(true);
@@ -54,15 +55,17 @@ CombatLog::CombatLog(int width, int height, int x, int y) : Surface(width, heigh
 CombatLog::~CombatLog()
 {
 	delete _timer;
-	for(int ii = 0; ii < MAX_LOG_LINES; ++ii)
+	for(int ii = 0; ii < _maxLines; ++ii)
 	{
 		delete _text[ii];
 	}
+
+	delete _text;
 }
 
 void CombatLog::initText(Font *big, Font *small, Language *lang)
 {
-	for(int ii = 0; ii < MAX_LOG_LINES; ++ii)
+	for(int ii = 0; ii < _maxLines; ++ii)
 	{
 		_text[ii]->initText(big, small, lang);
 	}
@@ -106,7 +109,7 @@ void CombatLog::shiftUp()
 void CombatLog::setPalette(SDL_Color *colors, int firstcolor, int ncolors)
 {
 	Surface::setPalette(colors, firstcolor, ncolors);
-	for(int ii = 0; ii < MAX_LOG_LINES; ++ii)
+	for(int ii = 0; ii < _maxLines; ++ii)
 	{
 		_text[ii]->setPalette(colors, firstcolor, ncolors);
 	}
@@ -114,7 +117,7 @@ void CombatLog::setPalette(SDL_Color *colors, int firstcolor, int ncolors)
 
 void CombatLog::log(const std::wstring &msg, CombatLogColor color)
 {
-	if(_currentLine == MAX_LOG_LINES)
+	if(_currentLine == _maxLines)
 	{
 		shiftUp();
 	}

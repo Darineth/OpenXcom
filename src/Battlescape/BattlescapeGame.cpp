@@ -687,7 +687,7 @@ void BattlescapeGame::handleNonTargetAction()
 
 				std::wostringstream reloadLog;
 
-				reloadLog << _currentAction.actor->getName(_parentState->getGame()->getLanguage()) << " > " << _parentState->tr("RELOADED").arg(_parentState->tr(_currentAction.weapon->getRules()->getName())).arg(_parentState->tr(quickAmmo->getRules()->getName()));
+				reloadLog << _currentAction.actor->getName(_parentState->getGame()->getLanguage()) << " > " << _parentState->tr("STR_RELOADED").arg(_parentState->tr(_currentAction.weapon->getRules()->getName())).arg(_parentState->tr(quickAmmo->getRules()->getName()));
 
 				_parentState->combatLog(reloadLog.str(), COMBAT_LOG_GREEN);
 			}
