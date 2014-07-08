@@ -97,7 +97,7 @@ bool equalProduction::operator()(const Production * p) const
 /**
  * Initializes a brand new saved game according to the specified difficulty.
  */
-SavedGame::SavedGame(const Ruleset *rules) : _difficulty(DIFF_BEGINNER), _ironman(false), _globeLon(0.0), _globeLat(0.0), _globeZoom(0), _battleGame(0), _debug(false), _warned(false), _monthsPassed(-1), _graphRegionToggles(""), _graphCountryToggles(""), _graphFinanceToggles(""), _selectedBase(0), _defaultRole(0)
+SavedGame::SavedGame() : _difficulty(DIFF_BEGINNER), _ironman(false), _globeLon(0.0), _globeLat(0.0), _globeZoom(0), _battleGame(0), _debug(false), _warned(false), _monthsPassed(-1), _graphRegionToggles(""), _graphCountryToggles(""), _graphFinanceToggles(""), _selectedBase(0), _defaultRole(0)
 {
 	_time = new GameTime(6, 1, 1, 1999, 12, 0, 0);
 	_alienStrategy = new AlienStrategy();
@@ -106,16 +106,6 @@ SavedGame::SavedGame(const Ruleset *rules) : _difficulty(DIFF_BEGINNER), _ironma
 	_researchScores.push_back(0);
 	_incomes.push_back(0);
 	_expenditures.push_back(0);
-
-	for (auto ii = rules->getRolesList().begin(); ii != rules->getRolesList().end(); ++ii)
-	{
-		RuleRole *role = rules->getRole(*ii);
-		_roles[*ii] = new Role(*ii, role);
-		if(role->isBlank())
-		{
-			_defaultRole = _roles[*ii];
-		}
-	}
 }
 
 /**
@@ -351,12 +341,14 @@ void SavedGame::load(const std::string &filename, Ruleset *rule)
 	_globeZoom = doc["globeZoom"].as<int>(_globeZoom);
 	_ids = doc["ids"].as< std::map<std::string, int> >(_ids);
 
+	loadRoles(rule);
+
 	for (YAML::const_iterator i = doc["roles"].begin(); i != doc["roles"].end(); ++i)
 	{
 		std::string name = (*i)["name"].as<std::string>();
 		if (RuleRole *ruleRole = rule->getRole(name))
 		{
-			auto jj = _roles.find(name);
+			std::map<std::string, Role*>::const_iterator jj = _roles.find(name);
 			if(jj != _roles.end())
 			{
 				jj->second->load(*i, this);
@@ -1729,4 +1721,27 @@ Role* SavedGame::getDefaultRole() const
 	return _defaultRole;
 }
 
+/// Loads the roles from the ruleset.
+void SavedGame::loadRoles(const Ruleset *rule)
+{
+	// Setup the default roles list.
+	if(!_roles.empty())
+	{
+		for (std::map<std::string, Role*>::iterator i = _roles.begin(); i != _roles.end(); ++i)
+		{
+			delete i->second;
+		}
+		_roles.clear();
+	}
+
+	for (std::vector<std::string>::const_iterator ii = rule->getRolesList().begin(); ii != rule->getRolesList().end(); ++ii)
+	{
+		RuleRole *role = rule->getRole(*ii);
+		_roles[*ii] = new Role(*ii, role);
+		if(role->isBlank())
+		{
+			_defaultRole = _roles[*ii];
+		}
+	}
+}
 }

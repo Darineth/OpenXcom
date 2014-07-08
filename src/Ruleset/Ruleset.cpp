@@ -578,7 +578,7 @@ T *Ruleset::loadRule(const YAML::Node &node, std::map<std::string, T*> *map, std
  */
 SavedGame *Ruleset::newSave() const
 {
-	SavedGame *save = new SavedGame(this);
+	SavedGame *save = new SavedGame();
 
 	// Add countries
 	for (std::vector<std::string>::const_iterator i = _countriesIndex.begin(); i != _countriesIndex.end(); ++i)
@@ -613,6 +613,9 @@ SavedGame *Ruleset::newSave() const
 	{
 		save->getId((*i)->getRules()->getType());
 	}
+
+	// Load Roles
+	save->loadRoles(this);
 
 	// Generate soldiers
 	int soldiers = _startingBase["randomSoldiers"].as<int>(0);

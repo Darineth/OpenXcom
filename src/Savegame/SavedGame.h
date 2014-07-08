@@ -117,7 +117,7 @@ public:
 	static const std::string AUTOSAVE_GEOSCAPE, AUTOSAVE_BATTLESCAPE, QUICKSAVE;
 
 	/// Creates a new saved game.
-	SavedGame(const Ruleset *rules);
+	SavedGame();
 	/// Cleans up the saved game.
 	~SavedGame();
 	/// Gets list of saves in the user directory.
@@ -278,6 +278,8 @@ public:
 	Role* getRole(const std::string &name) const;
 	/// Gets the default role.
 	Role* getDefaultRole() const;
+	/// Loads the roles from the ruleset.
+	void loadRoles(const Ruleset *rule);
 };
 
 }
