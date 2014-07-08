@@ -51,6 +51,9 @@ private:
 	int _painKiller, _heal, _stimulant;
 	bool _XCOMProperty, _droppedOnAlienTurn;
 public:
+	static const int GRENADE_INACTIVE = -1;
+	static const int GRENADE_INSTANT_FUSE = -2;
+
 	/// Creates a item of the specified type.
 	BattleItem(RuleItem *rules, int *id);
 	/// Cleans up the item.
@@ -69,6 +72,12 @@ public:
 	int getFuseTimer() const;
 	/// Sets the turns until explosion.
 	void setFuseTimer(int turns);
+	/// Checks if the grenade is live.
+	bool getGrenadeLive() const;
+	/// Checks if the grenade is ready to explode.
+	bool getFuseDone() const;
+	/// Checks if the fuse is set to go instantly.
+	bool getFuseInstant() const;
 	/// Spend one bullet.
 	bool spendBullet();
 	/// Gets the item's owner.

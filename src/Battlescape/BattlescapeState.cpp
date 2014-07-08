@@ -1430,7 +1430,7 @@ void BattlescapeState::drawPrimers()
 
 		bool grenades = false;
 
-		if(leftHandItem && leftHandItem->getFuseTimer() >= 0)
+		if(leftHandItem && leftHandItem->getGrenadeLive())
 		{
 			grenades = true;
 
@@ -1440,7 +1440,7 @@ void BattlescapeState::drawPrimers()
 			indicator->blitNShade(_btnLeftHandItem, x, y, pulsate[frame]);
 		}
 
-		if(rightHandItem && rightHandItem->getFuseTimer() >= 0)
+		if(rightHandItem && rightHandItem->getGrenadeLive())
 		{
 			grenades = true;
 

@@ -245,7 +245,7 @@ void Inventory::drawItems()
 			texture->getFrame((*i)->getRules()->getBigSprite())->blit(_items);
 
 			// grenade primer indicators
-			if ((*i)->getFuseTimer() >= 0)
+			if ((*i)->getGrenadeLive())
 			{
 				_grenadeIndicators.push_back(std::make_pair(frame->getX(), frame->getY()));
 			}
@@ -264,7 +264,7 @@ void Inventory::drawItems()
 			texture->getFrame((*i)->getRules()->getBigSprite())->blit(_items);
 
 			// grenade primer indicators
-			if ((*i)->getFuseTimer() >= 0)
+			if ((*i)->getGrenadeLive())
 			{
 				_grenadeIndicators.push_back(std::make_pair(frame->getX(), frame->getY()));
 			}
@@ -606,7 +606,7 @@ void Inventory::mouseClick(Action *action, State *state)
 					else
 					{
 						setSelectedItem(item);
-						if (item->getFuseTimer() >= 0)
+						if (item->getGrenadeLive())
 						{
 							_warning->showMessage(_game->getLanguage()->getString("STR_GRENADE_IS_ACTIVATED"));
 						}
@@ -758,7 +758,7 @@ void Inventory::mouseClick(Action *action, State *state)
 							BattleType itemType = item->getRules()->getBattleType();
 							if (BT_GRENADE == itemType || BT_PROXIMITYGRENADE == itemType)
 							{
-								if (item->getFuseTimer() == -1)
+								if (!item->getGrenadeLive())
 								{
 									// Prime that grenade!
 									if (BT_PROXIMITYGRENADE == itemType)
@@ -1021,7 +1021,7 @@ bool Inventory::canBeStacked(BattleItem *itemA, BattleItem *itemB)
 		// and the same ammo quantity
 		itemA->getAmmoItem()->getAmmoQuantity() == itemB->getAmmoItem()->getAmmoQuantity())) &&
 		// and neither is set to explode
-		itemA->getFuseTimer() == -1 && itemB->getFuseTimer() == -1 &&
+		!itemA->getGrenadeLive() && !itemB->getGrenadeLive() &&
 		// and neither is a corpse or unconscious unit
 		itemA->getUnit() == 0 && itemB->getUnit() == 0 &&
 		// and if it's a medkit, it has the same number of charges

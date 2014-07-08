@@ -30,7 +30,7 @@ namespace OpenXcom
  * @param rules Pointer to ruleset.
  * @param id The id of the item.
  */
-BattleItem::BattleItem(RuleItem *rules, int *id) : _id(*id), _rules(rules), _owner(0), _previousOwner(0), _unit(0), _tile(0), _inventorySlot(0), _inventoryX(0), _inventoryY(0), _ammoItem(0), _fuseTimer(-1), _ammoQuantity(0), _painKiller(0), _heal(0), _stimulant(0), _XCOMProperty(false), _droppedOnAlienTurn(false)
+BattleItem::BattleItem(RuleItem *rules, int *id) : _id(*id), _rules(rules), _owner(0), _previousOwner(0), _unit(0), _tile(0), _inventorySlot(0), _inventoryX(0), _inventoryY(0), _ammoItem(0), _fuseTimer(GRENADE_INACTIVE), _ammoQuantity(0), _painKiller(0), _heal(0), _stimulant(0), _XCOMProperty(false), _droppedOnAlienTurn(false)
 {
 	if (_rules && _rules->getBattleType() == BT_AMMO)
 	{
@@ -155,6 +155,32 @@ RuleItem *BattleItem::getRules() const
 int BattleItem::getFuseTimer() const
 {
 	return _fuseTimer;
+}
+/**
+ * Checks if the grenade is currently live (the fuse is active).
+ * @return True if the fuse is active.
+ */
+bool BattleItem::getGrenadeLive() const
+{
+	return _fuseTimer != GRENADE_INACTIVE;
+}
+
+/**
+ * Checks if the grenade is ready to explode immediately.
+ * @return True if the grenade should explode immediately.
+ */
+bool BattleItem::getFuseDone() const
+{
+	return _fuseTimer == 0 || _fuseTimer == GRENADE_INSTANT_FUSE;
+}
+
+/**
+ * Checks if the grenade is set to explode instantly.
+ * @return True if the grenade fuse is set to explode immediately.
+ */
+bool BattleItem::getFuseInstant() const
+{
+	return _fuseTimer == GRENADE_INSTANT_FUSE;
 }
 
 /**

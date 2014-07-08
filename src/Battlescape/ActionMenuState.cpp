@@ -81,7 +81,7 @@ ActionMenuState::ActionMenuState(BattleAction *action, int x, int y) : _action(a
 
 	// priming
 	if ((weaponRules->getBattleType() == BT_GRENADE || weaponRules->getBattleType() == BT_PROXIMITYGRENADE)
-		&& _action->weapon->getFuseTimer() == -1)
+		&& !_action->weapon->getGrenadeLive())
 	{
 		addItem(BA_PRIME, "STR_PRIME_GRENADE", &id);
 	}

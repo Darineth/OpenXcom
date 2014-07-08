@@ -624,7 +624,7 @@ void ProjectileFlyBState::think()
 					BattleItem *item = projectile->getItem();
 					_parent->getResourcePack()->getSound("BATTLE.CAT", 38)->play();
 
-					if (Options::battleInstantGrenade && item->getRules()->getBattleType() == BT_GRENADE && item->getFuseTimer() == 0)
+					if (item->getFuseInstant() || (Options::battleInstantGrenade && item->getRules()->getBattleType() == BT_GRENADE && item->getFuseTimer() == 0))
 					{
 						// it's a hot grenade to explode immediately
 						_parent->statePushFront(new ExplosionBState(_parent, projectile->getPosition(-1), item, _action.actor));

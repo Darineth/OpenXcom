@@ -395,7 +395,7 @@ void BattlescapeGame::endTurn()
 		for (std::vector<BattleItem*>::iterator it = _save->getTiles()[i]->getInventory()->begin(); it != _save->getTiles()[i]->getInventory()->end(); )
 		{
 			BattleItem *grenade = *it;
-			if (grenade->getRules()->getBattleType() == BT_GRENADE && grenade->getFuseTimer() == 0)  // it's a grenade to explode now
+			if (grenade->getRules()->getBattleType() == BT_GRENADE && grenade->getFuseDone())  // it's a grenade to explode now
 			{
 				p.x = _save->getTiles()[i]->getPosition().x*16 + 8;
 				p.y = _save->getTiles()[i]->getPosition().y*16 + 8;
@@ -633,7 +633,7 @@ void BattlescapeGame::handleNonTargetAction()
 	if (!_currentAction.targeting)
 	{
 		_currentAction.cameraPosition = Position(0,0,-1);
-		if (_currentAction.type == BA_PRIME && _currentAction.value > -1)
+		if (_currentAction.type == BA_PRIME && _currentAction.value != -1)
 		{
 			if (_currentAction.actor->spendTimeUnits(_currentAction.TU))
 			{
@@ -2199,7 +2199,7 @@ bool BattlescapeGame::checkForProximityGrenades(BattleUnit *unit)
 					{
 						for (std::vector<BattleItem*>::iterator i = t->getInventory()->begin(); i != t->getInventory()->end(); ++i)
 						{
-							if ((*i)->getRules()->getBattleType() == BT_PROXIMITYGRENADE && (*i)->getFuseTimer() == 0)
+							if ((*i)->getRules()->getBattleType() == BT_PROXIMITYGRENADE && (*i)->getFuseDone())
 							{
 								Position p;
 								p.x = t->getPosition().x*16 + 8;

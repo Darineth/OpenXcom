@@ -1020,6 +1020,7 @@ en-US:
   STR_OUT_OF_RANGE: "Out of Range!"
   STR_UNABLE_TO_THROW_HERE: "Unable to throw here!"
   STR_SET_TIMER: "Set Timer"
+  STR_INSTANT: "Instant"
   STR_HIDDEN_MOVEMENT: "HIDDEN MOVEMENT"
   STR_TURN: "TURN> {0}"
   STR_SIDE: "SIDE> {0}"
