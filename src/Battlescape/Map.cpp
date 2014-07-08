@@ -572,7 +572,7 @@ void Map::drawTerrain(Surface *surface)
 			Surface *surfaceTracer = _res->getSurfaceSet("Projectiles")->getFrame(35);
 			Surface *surfaceImpact = _res->getSurfaceSet("Projectiles")->getFrame(280);
 
-			int offsetX = 0;
+			/*int offsetX = 0;
 			int offsetY = 0;
 
 			if(_targetingProjectile->getItem())
@@ -583,7 +583,7 @@ void Map::drawTerrain(Surface *surface)
 					offsetX = floorSprite->getWidth() / 2;
 					offsetY = floorSprite->getHeight() / 2;
 				}
-			}
+			}*/
 
 			if(surface)
 			{
@@ -598,23 +598,23 @@ void Map::drawTerrain(Surface *surface)
 
 					if (posX >= beginX && posX <= endX
 						&& posY >= beginY && posY <= endY
-						&& posZ >= beginZ && posZ <= endZ
 						&& _save->getTileEngine()->isVoxelVisible(pos))
 					{
+						int offsetY = 0;
+						if(posZ > endZ)
+						{
+							offsetY -= 26 * (posZ - endZ);
+							posZ = endZ;
+						}
+
 						Position tilePos(posX, posY, posZ);
+
 						Tile *displayTile = _save->getTile(tilePos);
 
 						if(displayTile)
 						{				
 							_camera->convertVoxelToScreen(pos, &bulletPositionScreen);
-							if(_targetingProjectile->getItem())
-							{
-								displayTile->getDrawables().push_back(new TileDrawable(impact ? surfaceImpact : surfaceTracer, bulletPositionScreen.x - 16 + offsetX, bulletPositionScreen.y - 26 + offsetY, 0, true));
-							}
-							else
-							{
-								displayTile->getDrawables().push_back(new TileDrawable(impact ? surfaceImpact : surfaceTracer, bulletPositionScreen.x, bulletPositionScreen.y, 0, true));
-							}
+							displayTile->getDrawables().push_back(new TileDrawable(impact ? surfaceImpact : surfaceTracer, bulletPositionScreen.x, bulletPositionScreen.y, 0, true));
 						}
 					}
 				}
