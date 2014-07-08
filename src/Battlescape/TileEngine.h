@@ -145,7 +145,7 @@ public:
 	/// mark a region of the map as "dangerous" for a turn.
 	void setDangerZone(Position pos, int radius, BattleUnit *unit);
 
-	Position& getTargetVoxel(BattleAction *action, const Position &target);
+	void getTargetVoxel(BattleAction *action, const Position &target, Position &targetVoxel);
 };
 
 }

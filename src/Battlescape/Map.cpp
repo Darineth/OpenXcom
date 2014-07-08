@@ -531,7 +531,8 @@ void Map::drawTerrain(Surface *surface)
 
 			if(targetTile)
 			{
-				Position targetVoxel = _save->getTileEngine()->getTargetVoxel(currentAction, _targetingTarget);
+				Position targetVoxel;
+				_save->getTileEngine()->getTargetVoxel(currentAction, _targetingTarget, targetVoxel);
 
 				switch(currentAction->type)
 				{
@@ -556,7 +557,6 @@ void Map::drawTerrain(Surface *surface)
 
 				if(_targetingProjectile)
 				{
-					//Position originVoxel = _save->getTileEngine()->getOriginVoxel(*currentAction, 0);
 					int hit = currentAction->type != BA_THROW ? _targetingProjectile->calculateTrajectory(100, true, true) : _targetingProjectile->calculateThrow(100, true);
 					if(hit == V_OUTOFBOUNDS)
 					{
@@ -594,12 +594,14 @@ void Map::drawTerrain(Surface *surface)
 					Position pos = _targetingProjectile->getPosition();
 					int posX = pos.x / 16;
 					int posY = pos.y / 16;
+					int posZ = pos.z / 24;
 
 					if (posX >= beginX && posX <= endX
 						&& posY >= beginY && posY <= endY
+						&& posZ >= beginZ && posZ <= endZ
 						&& _save->getTileEngine()->isVoxelVisible(pos))
 					{
-						Position tilePos(posX, posY, pos.z / 24);
+						Position tilePos(posX, posY, posZ);
 						Tile *displayTile = _save->getTile(tilePos);
 
 						if(displayTile)

@@ -102,6 +102,12 @@ int Projectile::calculateTrajectory(double accuracy, Position originVoxel, bool 
 {
 	Tile *targetTile = _save->getTile(_action.target);
 	BattleUnit *bu = _action.actor;
+
+	int test1 = _action.target.x + _action.target.y;
+	if(test1 > 10000)
+	{
+		return V_EMPTY;
+	}
 	
 	int test = _save->getTileEngine()->calculateLine(originVoxel, _targetVoxel, false, &_trajectory, bu);
 	if (test != V_EMPTY &&

@@ -3250,57 +3250,56 @@ void TileEngine::displayDamage(BattleUnit *attacker, BattleUnit *target, BattleA
 	}
 }
 
-Position& TileEngine::getTargetVoxel(BattleAction *action, const Position &target)
+void TileEngine::getTargetVoxel(BattleAction *action, const Position &target, Position &targetVoxel)
 {
 	BattleUnit *actor = action->actor;
 	Tile *targetTile = _save->getTile(target);
 	Position origin = action->actor->getPosition();
 	Position originVoxel = getOriginVoxel(*action, _save->getTile(origin));
-	Position tempTarget;
 	if (targetTile->getUnit() != 0)
 	{
 		if (origin == target || targetTile->getUnit() == actor)
 		{
 			// don't shoot at yourself but shoot at the floor
-			return Position(target.x*16 + 8, target.y*16 + 8, target.z*24);
+			targetVoxel = Position(target.x*16 + 8, target.y*16 + 8, target.z*24);
 		}
 		else
 		{
-			Position target;
-			canTargetUnit(&originVoxel, targetTile, &target, actor);
-			return target;
+			canTargetUnit(&originVoxel, targetTile, &targetVoxel, actor);
 		}
 	}
 	else if (targetTile->getMapData(MapData::O_OBJECT) != 0)
 	{
-		if (!canTargetTile(&originVoxel, targetTile, MapData::O_OBJECT, &tempTarget, actor))
+		if (!canTargetTile(&originVoxel, targetTile, MapData::O_OBJECT, &targetVoxel, actor))
 		{
-			return Position(target.x*16 + 8, target.y*16 + 8, target.z*24 + 10);
+			targetVoxel = Position(target.x*16 + 8, target.y*16 + 8, target.z*24 + 10);
 		}
 	}
 	else if (targetTile->getMapData(MapData::O_NORTHWALL) != 0)
 	{
-		if (!canTargetTile(&originVoxel, targetTile, MapData::O_NORTHWALL, &tempTarget, actor))
+		if (!canTargetTile(&originVoxel, targetTile, MapData::O_NORTHWALL, &targetVoxel, actor))
 		{
-			return Position(target.x*16 + 8, target.y*16, target.z*24 + 9);
+			targetVoxel = Position(target.x*16 + 8, target.y*16, target.z*24 + 9);
 		}
 	}
 	else if (targetTile->getMapData(MapData::O_WESTWALL) != 0)
 	{
-		if (!canTargetTile(&originVoxel, targetTile, MapData::O_WESTWALL, &tempTarget, actor))
+		if (!canTargetTile(&originVoxel, targetTile, MapData::O_WESTWALL, &targetVoxel, actor))
 		{
-			return Position(target.x*16, target.y*16 + 8, target.z*24 + 9);
+			targetVoxel = Position(target.x*16, target.y*16 + 8, target.z*24 + 9);
 		}
 	}
 	else if (targetTile->getMapData(MapData::O_FLOOR) != 0)
 	{
-		if (!canTargetTile(&originVoxel, targetTile, MapData::O_FLOOR, &tempTarget, actor))
+		if (!canTargetTile(&originVoxel, targetTile, MapData::O_FLOOR, &targetVoxel, actor))
 		{
-			return Position(target.x*16 + 8, target.y*16 + 8, target.z*24 + 2);
+			targetVoxel = Position(target.x*16 + 8, target.y*16 + 8, target.z*24 + 2);
 		}
 	}
-
-	// target nothing, targets the middle of the tile
-	return Position(target.x*16 + 8, target.y*16 + 8, target.z*24 + 12);
+	else
+	{
+		// target nothing, targets the middle of the tile
+		targetVoxel = Position(target.x*16 + 8, target.y*16 + 8, target.z*24 + 12);
+	}
 }
 }
