@@ -1344,13 +1344,46 @@ void BattlescapeState::updateSoldierInfo()
 	}
 
 	_save->getTileEngine()->calculateFOV(_save->getSelectedUnit());
-	int j = 0;
-	for (std::vector<BattleUnit*>::iterator i = battleUnit->getVisibleUnits()->begin(); i != battleUnit->getVisibleUnits()->end() && j < VISIBLE_MAX; ++i)
+	int visibleUnit = 0;
+	for (std::vector<BattleUnit*>::const_iterator ii = battleUnit->getVisibleUnits()->begin(); ii != battleUnit->getVisibleUnits()->end() && visibleUnit < VISIBLE_MAX; ++ii)
 	{
-		_btnVisibleUnit[j]->setVisible(true);
-		_numVisibleUnit[j]->setVisible(true);
-		_visibleUnit[j] = (*i);
-		++j;
+		_btnVisibleUnit[visibleUnit]->setVisible(true);
+		_numVisibleUnit[visibleUnit]->setVisible(true);
+		_visibleUnit[visibleUnit] = (*ii);
+		_visibleUnitSpotted[visibleUnit] = true;
+		++visibleUnit;
+	}
+
+	std::vector<BattleUnit*> *units = _battleGame->getSave()->getUnits();
+	for(std::vector<BattleUnit*>::const_iterator ii = units->begin(); ii != units->end() && visibleUnit < VISIBLE_MAX; ++ii)
+	{
+		BattleUnit *otherUnit = *ii;
+		if(otherUnit != battleUnit && otherUnit->getFaction() == battleUnit->getFaction())
+		{
+			_save->getTileEngine()->calculateFOV(otherUnit);
+			for (std::vector<BattleUnit*>::const_iterator jj = otherUnit->getVisibleUnits()->begin(); jj != otherUnit->getVisibleUnits()->end() && visibleUnit < VISIBLE_MAX; ++jj)
+			{
+				BattleUnit *spotted = *jj;
+				bool addUnit = true;
+				for(int kk = 0; kk < visibleUnit; kk++)
+				{
+					if(_visibleUnit[kk] == spotted)
+					{
+						addUnit = false;
+						break;
+					}
+				}
+
+				if(addUnit)
+				{
+ 					_btnVisibleUnit[visibleUnit]->setVisible(true);
+					_numVisibleUnit[visibleUnit]->setVisible(true);
+					_visibleUnit[visibleUnit] = spotted;
+					_visibleUnitSpotted[visibleUnit] = false;
+					++visibleUnit;
+				}
+			}
+		}
 	}
 
 	showPsiButton(battleUnit->getOriginalFaction() == FACTION_HOSTILE && battleUnit->getStats()->psiSkill > 0);
@@ -1365,10 +1398,10 @@ void BattlescapeState::blinkVisibleUnitButtons()
 
 	for (int i = 0; i < VISIBLE_MAX;  ++i)
 	{
-		if (_btnVisibleUnit[i]->getVisible() == true)
+		if (_btnVisibleUnit[i]->getVisible())
 		{
-			_btnVisibleUnit[i]->drawRect(0, 0, 15, 12, 15);
-			_btnVisibleUnit[i]->drawRect(1, 1, 13, 10, color);
+			_btnVisibleUnit[i]->drawRect(0, 0, 15, 12, _visibleUnitSpotted[i] ? 15 : 13);
+			_btnVisibleUnit[i]->drawRect(1, 1, 13, 10, _visibleUnitSpotted[i] ? color : 44);
 		}
 	}
 

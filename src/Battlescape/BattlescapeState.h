@@ -63,6 +63,7 @@ private:
 	InteractiveSurface *_btnVisibleUnit[VISIBLE_MAX];
 	NumberText *_numVisibleUnit[VISIBLE_MAX];
 	BattleUnit *_visibleUnit[VISIBLE_MAX];
+	bool _visibleUnitSpotted[VISIBLE_MAX];
 	WarningMessage *_warning;
 	CombatLog *_combatLog;
 	Text *_txtName;
