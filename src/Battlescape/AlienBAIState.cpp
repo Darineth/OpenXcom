@@ -43,6 +43,8 @@
 namespace OpenXcom
 {
 
+std::vector<std::string> AlienBAIState::_aiAttackPriorityClose, AlienBAIState::_aiAttackPriorityMid, AlienBAIState::_aiAttackPriorityLong, AlienBAIState::_aiAttackPriorityMax;
+std::string AlienBAIState::_attackSnap("snap"), AlienBAIState::_attackAimed("aimed"), AlienBAIState::_attackAuto("auto");
 
 /**
  * Sets up a BattleAIState.
@@ -62,6 +64,34 @@ AlienBAIState::AlienBAIState(SavedBattleGame *save, BattleUnit *unit, Node *node
 	_attackAction = new BattleAction();
 	_patrolAction = new BattleAction();
 	_psiAction = new BattleAction();
+
+	if(_aiAttackPriorityClose.empty())
+	{
+		/*
+			Default AI Priorities:
+
+			0 - close:		auto, aimed, snap
+			close - mid:	snap, aimed, auto
+			mid - long:		aimed, snap, auto
+			long - max:		aimed, snap, auto
+		*/
+
+		_aiAttackPriorityClose.push_back("auto");
+		_aiAttackPriorityClose.push_back("aimed");
+		_aiAttackPriorityClose.push_back("snap");
+		
+		_aiAttackPriorityMid.push_back("snap");
+		_aiAttackPriorityMid.push_back("aimed");
+		_aiAttackPriorityMid.push_back("auto");
+		
+		_aiAttackPriorityLong.push_back("aimed");
+		_aiAttackPriorityLong.push_back("snap");
+		_aiAttackPriorityLong.push_back("auto");
+		
+		_aiAttackPriorityMax.push_back("aimed");
+		_aiAttackPriorityMax.push_back("snap");
+		_aiAttackPriorityMax.push_back("auto");
+	}
 }
 
 /**
@@ -191,7 +221,18 @@ void AlienBAIState::think(BattleAction *action)
 			if (!rule->isWaypoint())
 			{
 				_rifle = true;
-				_reachableWithAttack = _save->getPathfinding()->findReachable(_unit, _unit->getTimeUnits() - _unit->getActionTUs(BA_SNAPSHOT, action->weapon));
+
+				int tuSnap = _unit->getActionTUs(BA_SNAPSHOT, action->weapon);
+				int tuAimed = _unit->getActionTUs(BA_AIMEDSHOT, action->weapon);
+				int tuAuto = _unit->getActionTUs(BA_AUTOSHOT, action->weapon);
+
+				int tuMin = _unit->getTimeUnits();
+
+				if(tuSnap && tuSnap < tuMin) tuMin = tuSnap;
+				if(tuAimed && tuAimed < tuMin) tuMin = tuAimed;
+				if(tuAuto && tuAuto < tuMin) tuMin = tuAuto;
+
+				_reachableWithAttack = _save->getPathfinding()->findReachable(_unit, _unit->getTimeUnits() - tuMin);
 			}
 			else
 			{
@@ -1692,6 +1733,45 @@ void AlienBAIState::projectileAction()
 	}
 }
 
+bool AlienBAIState::selectRangeOption(int currentTU, int tuAuto, int tuSnap, int tuAimed, const std::vector<std::string> &actions)
+{
+	for(std::vector<std::string>::const_iterator ii = actions.begin(); ii != actions.end(); ++ii)
+	{
+		const std::string &attack = *ii;
+
+		if(attack == _attackSnap)
+		{
+			if(tuSnap && currentTU >= _unit->getActionTUs(BA_SNAPSHOT, _attackAction->weapon))
+			{
+				_attackAction->type = BA_SNAPSHOT;
+				return true;
+			}
+		}
+		else if(attack == _attackAimed)
+		{
+			if(tuAimed && currentTU >= _unit->getActionTUs(BA_AIMEDSHOT, _attackAction->weapon))
+			{
+				_attackAction->type = BA_AIMEDSHOT;
+				return true;
+			}
+		}
+		else if(attack == _attackAuto)
+		{
+			if(tuAuto && currentTU >= _unit->getActionTUs(BA_AUTOSHOT, _attackAction->weapon))
+			{
+				_attackAction->type = BA_AUTOSHOT;
+				return true;
+			}
+		}
+		else
+		{
+			assert(0 && "Unknown attack");
+		}
+	}
+
+	return false;
+}
+
 /**
  * Selects a fire method based on range, time units, and time units reserved for cover.
  */
@@ -1699,12 +1779,114 @@ void AlienBAIState::selectFireMethod()
 {
 	int distance = _save->getTileEngine()->distance(_unit->getPosition(), _attackAction->target);
 	_attackAction->type = BA_RETHINK;
-	int tuAuto = _attackAction->weapon->getRules()->getTUAuto();
-	int tuSnap = _attackAction->weapon->getRules()->getTUSnap();
-	int tuAimed = _attackAction->weapon->getRules()->getTUAimed();
+
+	BattleItem *weapon = _attackAction->weapon;
+	RuleItem *rules = weapon->getRules();
+	BattleItem *ammo = weapon->getAmmoItem();
+	RuleItem *ammoRules = ammo? ammo->getRules() : 0;
+
+	int closeRange = -1;
+	int midRange = -1;
+	int longRange = -1;
+	int maxRange = -1;
+
+	if(ammoRules)
+	{
+		if(closeRange < 0) closeRange = ammoRules->getAiRangeClose();
+		if(midRange < 0) midRange = ammoRules->getAiRangeMid();
+		if(longRange < 0) longRange = ammoRules->getAiRangeLong();
+		if(maxRange < 0) maxRange = ammoRules->getAiRangeMax();
+	}
+
+	if(rules)
+	{
+		if(closeRange < 0) closeRange = rules->getAiRangeClose();
+		if(midRange < 0) midRange = rules->getAiRangeMid();
+		if(longRange < 0) longRange = rules->getAiRangeLong();
+		if(maxRange < 0) maxRange = rules->getAiRangeMax();
+	}
+
+	if(closeRange < 0) closeRange = 4;
+	if(midRange < 0) midRange = 12;
+	if(longRange < 0) longRange = 20;
+	if(maxRange < 0) maxRange = 0;
+
+	int tuAuto = rules->getTUAuto();
+	int tuSnap = rules->getTUSnap();
+	int tuAimed = rules->getTUAimed();
 	int currentTU = _unit->getTimeUnits();
 
-	if (distance < 4)
+	if (maxRange && distance > maxRange)
+	{
+		return;
+	}
+	else if (closeRange > 0 && distance < closeRange)
+	{
+		const std::vector<std::string> &actions = (ammoRules && !ammoRules->getAiAttackPriorityClose().empty()) ? ammoRules->getAiAttackPriorityClose() :
+			((rules && !rules->getAiAttackPriorityClose().empty()) ? rules->getAiAttackPriorityClose() : 
+			_aiAttackPriorityClose);
+
+		selectRangeOption(currentTU, tuAuto, tuSnap, tuAimed, actions);
+	}
+	else if (midRange > 0 && distance < midRange)
+	{
+		const std::vector<std::string> &actions = (ammoRules && !ammoRules->getAiAttackPriorityMid().empty()) ? ammoRules->getAiAttackPriorityMid() :
+			((rules && !rules->getAiAttackPriorityMid().empty()) ? rules->getAiAttackPriorityMid() : 
+			_aiAttackPriorityMid);
+
+		selectRangeOption(currentTU, tuAuto, tuSnap, tuAimed, actions);
+	}
+	else if (longRange > 0 && distance < longRange)
+	{
+		const std::vector<std::string> &actions = (ammoRules && !ammoRules->getAiAttackPriorityLong().empty()) ? ammoRules->getAiAttackPriorityLong() :
+			((rules && !rules->getAiAttackPriorityLong().empty()) ? rules->getAiAttackPriorityLong() : 
+			_aiAttackPriorityLong);
+
+		selectRangeOption(currentTU, tuAuto, tuSnap, tuAimed, actions);
+	}
+	else if(maxRange == 0 || distance <= maxRange)
+	{
+		const std::vector<std::string> &actions = (ammoRules && !ammoRules->getAiAttackPriorityMax().empty()) ? ammoRules->getAiAttackPriorityMax() :
+			((rules && !rules->getAiAttackPriorityMax().empty()) ? rules->getAiAttackPriorityMax() : 
+			_aiAttackPriorityMax);
+
+		selectRangeOption(currentTU, tuAuto, tuSnap, tuAimed, actions);
+	}
+
+
+	////////////////
+	/*
+		0 - close:		auto, aimed, snap
+		close - mid:	snap, aimed, auto
+		mid - long:		aimed, snap, snap, aimed, auto
+		long - max:		aimed, snap, snap, aimed, auto
+	*/
+	////////////////
+
+	/*if(distance < close)
+	{
+		// if(auto) => auto
+		// if(!snap && aimed) => aimed
+		// snap
+
+		// .. equivalent
+		// auto, snap, aimed
+	}
+
+	if(distance > mid)
+	{
+		// if(aimed) => aimed
+		// if(distance < long && snap) => snap /////// WHY
+	}
+
+	// snap
+	// aimed
+	// auto
+	*/
+
+	////////////////////////////
+
+	/*if (distance < closeRange)
 	{
 		if ( tuAuto && currentTU >= _unit->getActionTUs(BA_AUTOSHOT, _attackAction->weapon) )
 		{
@@ -1723,15 +1905,14 @@ void AlienBAIState::selectFireMethod()
 		return;
 	}
 
-
-	if ( distance > 12 )
+	if ( distance > midRange )
 	{
 		if ( tuAimed && currentTU >= _unit->getActionTUs(BA_AIMEDSHOT, _attackAction->weapon) )
 		{
 			_attackAction->type = BA_AIMEDSHOT;
 			return;
 		}
-		if ( distance < 20
+		if ( distance < longRange
 			&& tuSnap
 			&& currentTU >= _unit->getActionTUs(BA_SNAPSHOT, _attackAction->weapon) )
 		{
@@ -1742,18 +1923,18 @@ void AlienBAIState::selectFireMethod()
 
 	if ( tuSnap && currentTU >= _unit->getActionTUs(BA_SNAPSHOT, _attackAction->weapon) )
 	{
-			_attackAction->type = BA_SNAPSHOT;
-			return;
+		_attackAction->type = BA_SNAPSHOT;
+		return;
 	}
 	if ( tuAimed && currentTU >= _unit->getActionTUs(BA_AIMEDSHOT, _attackAction->weapon) )
 	{
-			_attackAction->type = BA_AIMEDSHOT;
-			return;
+		_attackAction->type = BA_AIMEDSHOT;
+		return;
 	}
 	if ( tuAuto && currentTU >= _unit->getActionTUs(BA_AUTOSHOT, _attackAction->weapon) )
 	{
-			_attackAction->type = BA_AUTOSHOT;
-	}
+		_attackAction->type = BA_AUTOSHOT;
+	}*/
 }
 
 /**

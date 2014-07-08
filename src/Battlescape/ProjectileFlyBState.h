@@ -19,6 +19,7 @@
 #ifndef OPENXCOM_PROJECTILEFLYBSTATE_H
 #define OPENXCOM_PROJECTILEFLYBSTATE_H
 
+#include <vector>
 #include "BattleState.h"
 #include "Position.h"
 
@@ -28,7 +29,9 @@ namespace OpenXcom
 class BattlescapeGame;
 class BattleUnit;
 class BattleItem;
+class ExplosionBState;
 class Tile;
+class Timer;
 
 /**
  * A projectile state.
@@ -39,11 +42,18 @@ private:
 	BattleUnit *_unit;
 	BattleItem *_ammo;
 	BattleItem *_projectileItem;
-	Position _origin, _targetVoxel, _originVoxel;
-	int _projectileImpact;
+	Timer *_autoShotTimer;
+	Position _origin, _targetVoxel, _originVoxel, _originalTarget;
+	//int _projectileImpact;
 	/// Tries to create a projectile sprite.
 	bool createNewProjectile();
 	bool _initialized, _targetFloor;
+	int _autoShotsRemaining;
+
+	std::vector<ExplosionBState*> _explosionStates;
+
+	void onAutoshotTimer();
+
 public:
 	/// Creates a new ProjectileFly class
 	ProjectileFlyBState(BattlescapeGame *parent, BattleAction action);

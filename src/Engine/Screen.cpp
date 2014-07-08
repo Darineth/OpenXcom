@@ -38,6 +38,8 @@ namespace OpenXcom
 const int Screen::ORIGINAL_WIDTH = 320;
 const int Screen::ORIGINAL_HEIGHT = 200;
 
+std::stack<bool> Screen::_maximized;
+
 /**
  * Sets up all the internal display flags depending on
  * the current video settings.
@@ -587,13 +589,13 @@ int Screen::getDY()
 }
 
 /**
-* Changes a given scale, and if necessary, switch the current base resolution.
-* @param type reference to which scale option we are using, battlescape or geoscape.
-* @param selection the new scale level.
-* @param width reference to which x scale to adjust.
-* @param height reference to which y scale to adjust.
-* @param change should we change the current scale.
-*/
+ * Changes a given scale, and if necessary, switch the current base resolution.
+ * @param type reference to which scale option we are using, battlescape or geoscape.
+ * @param selection the new scale level.
+ * @param width reference to which x scale to adjust.
+ * @param height reference to which y scale to adjust.
+ * @param change should we change the current scale.
+ */
 void Screen::updateScale(int &type, int selection, int &width, int &height, bool change)
 {
 	double pixelRatioY = 1.0;
@@ -641,6 +643,48 @@ void Screen::updateScale(int &type, int selection, int &width, int &height, bool
 	{
 		Options::baseXResolution = width;
 		Options::baseYResolution = height;
+	}
+}
+
+/**
+  * Pushes a request to maximize the current screen if Maximize Info Screens option is enabled.
+  * @param battlescape Indicates if the request is coming from a battlescape view or not.
+  */
+void Screen::pushMaximizeInfoScreen(bool battlescape)
+{
+	if(Options::maximizeInfoScreens)
+	{
+		if(!_maximized.size())
+		{
+			Options::baseXResolution = Screen::ORIGINAL_WIDTH;
+			Options::baseYResolution = Screen::ORIGINAL_HEIGHT;
+			resetDisplay(false);
+		}
+		_maximized.push(battlescape);
+	}
+}
+
+/**
+ * Pops a request to maximize the current screen if Maximize Info Screens option is enabled.
+ */
+void Screen::popMaximizeInfoScreen()
+{
+	if(Options::maximizeInfoScreens)
+	{
+		bool battlescape = _maximized.top();
+		_maximized.pop();
+		if(!_maximized.size())
+		{
+			if(battlescape)
+			{
+				Screen::updateScale(Options::battlescapeScale, Options::battlescapeScale, Options::baseXBattlescape, Options::baseYBattlescape, true);
+			}
+			else
+			{
+				Screen::updateScale(Options::geoscapeScale, Options::geoscapeScale, Options::baseXGeoscape, Options::baseYGeoscape, true);
+			}
+			resetDisplay(false);
+		}
 	}
 }
 

@@ -50,6 +50,9 @@
 #include "ProjectileFlyBState.h"
 #include "../Engine/Logger.h"
 #include "../fmath.h"
+#include "../Interface/Text.h"
+#include "../Engine/LocalizedText.h"
+#include "../Engine/Game.h"
 
 namespace OpenXcom
 {
@@ -780,19 +783,45 @@ bool TileEngine::checkReactionFire(BattleUnit *unit)
 		return false;
 	}
 
-	std::vector<BattleUnit *> spotters = getSpottingUnits(unit);
 	bool result = false;
 
 	// not mind controlled, or controlled by the player
 	if (unit->getFaction() == unit->getOriginalFaction()
 		|| unit->getFaction() != FACTION_HOSTILE)
 	{
+		std::vector<BattleUnit *> overwatches = getOverwatchingUnits(unit);
 		// get the first man up to bat.
-		BattleUnit *reactor = getReactor(spotters, unit);
+		BattleUnit *reactor = getReactor(overwatches, unit, true);
 		// start iterating through the possible reactors until the current unit is the one with the highest score.
 		while (reactor != unit)
 		{
-			if (!tryReactionSnap(reactor, unit))
+			if (!tryReactionSnap(reactor, unit, true))
+			{
+				// can't make a reaction snapshot for whatever reason, boot this guy from the vector.
+				for (std::vector<BattleUnit *>::iterator i = overwatches.begin(); i != overwatches.end(); ++i)
+				{
+					if (*i == reactor)
+					{
+						overwatches.erase(i);
+						break;
+					}
+				}
+			}
+			else
+			{
+				// nice shot, kid. don't get cocky.
+				result = true;
+			}
+			reactor = getReactor(overwatches, unit);
+		}
+		
+		std::vector<BattleUnit *> spotters = getSpottingUnits(unit);
+		// get the first man up to bat.
+		reactor = getReactor(spotters, unit);
+		// start iterating through the possible reactors until the current unit is the one with the highest score.
+		while (reactor != unit)
+		{
+			if (!tryReactionSnap(reactor, unit, false))
 			{
 				// can't make a reaction snapshot for whatever reason, boot this guy from the vector.
 				for (std::vector<BattleUnit *>::iterator i = spotters.begin(); i != spotters.end(); ++i)
@@ -856,7 +885,60 @@ std::vector<BattleUnit *> TileEngine::getSpottingUnits(BattleUnit* unit)
 				(*i)->addToVisibleUnits(unit);
 				// no reaction on civilian turn.
 				if (_save->getSide() != FACTION_NEUTRAL &&
-					canMakeSnap(*i, unit))
+					canMakeReactionShot(*i, unit, false))
+				{
+					spotters.push_back(*i);
+				}
+			}
+		}
+	}
+	return spotters;
+}
+
+/**
+ * Creates a vector of units that are overwatching this unit.
+ * @param unit The unit to check for spotters of.
+ * @return A vector of units that can see this unit.
+ */
+std::vector<BattleUnit *> TileEngine::getOverwatchingUnits(BattleUnit* unit)
+{
+	//distance(unit->getPosition(), (*i)->getPosition()) <= (unit->getOverwatchWeapon()->getRules()->getOverwatchRange() ? unit->getOverwatchWeapon()->getRules()->getOverwatchRange() : MAX_VIEW_DISTANCE) &&
+	std::vector<BattleUnit*> spotters;
+	Tile *tile = unit->getTile();
+	for (std::vector<BattleUnit*>::const_iterator i = _save->getUnits()->begin(); i != _save->getUnits()->end(); ++i)
+	{
+		// not dead/unconscious
+		if (!(*i)->isOut() &&
+			// not dying
+			(*i)->getHealth() != 0 &&
+			// not about to pass out
+			(*i)->getStunlevel() < (*i)->getHealth() &&
+			// not a friend
+			(*i)->getFaction() != _save->getSide() &&
+			// closer than 20 tiles
+			(*i)->onOverwatch() &&
+			(distance(unit->getPosition(), (*i)->getOverwatchTarget()) <= (*i)->getOverwatchWeapon()->getRules()->getOverwatchRadius())) // TODO: Overwatch range by weapon
+		{
+			Position originVoxel = _save->getTileEngine()->getSightOriginVoxel(*i);
+			originVoxel.z -= 2;
+			Position targetVoxel;
+			AlienBAIState *aggro = dynamic_cast<AlienBAIState*>((*i)->getCurrentAIState());
+			bool gotHit = (aggro != 0 && aggro->getWasHit());
+				// can actually see the target Tile, or we got hit
+			if (((*i)->checkViewSector(unit->getPosition()) || gotHit) &&
+				// can actually target the unit
+				canTargetUnit(&originVoxel, tile, &targetVoxel, *i) &&
+				// can actually see the unit
+				visible(*i, tile))
+			{
+				if ((*i)->getFaction() == FACTION_PLAYER)
+				{
+					unit->setVisible(true);
+				}
+				(*i)->addToVisibleUnits(unit);
+				// no reaction on civilian turn.
+				if (_save->getSide() != FACTION_NEUTRAL &&
+					canMakeReactionShot(*i, unit, true))
 				{
 					spotters.push_back(*i);
 				}
@@ -872,21 +954,25 @@ std::vector<BattleUnit *> TileEngine::getSpottingUnits(BattleUnit* unit)
  * @param unit The unit to check scores against.
  * @return The unit with the highest reactions.
  */
-BattleUnit* TileEngine::getReactor(std::vector<BattleUnit *> spotters, BattleUnit *unit)
+BattleUnit* TileEngine::getReactor(std::vector<BattleUnit *> spotters, BattleUnit *unit, bool overwatch)
 {
 	int bestScore = -1;
+	int testScore = -1;
 	BattleUnit *bu = 0;
+
 	for (std::vector<BattleUnit *>::iterator i = spotters.begin(); i != spotters.end(); ++i)
 	{
 		if (!(*i)->isOut() &&
-		canMakeSnap(*i, unit) &&
-		(*i)->getReactionScore() > bestScore)
+			canMakeReactionShot(*i, unit, overwatch) &&
+			(testScore = (*i)->getReactionScore(overwatch)) > bestScore)
 		{
-			bestScore = (*i)->getReactionScore();
+			bestScore = testScore;
 			bu = *i;
 		}
 	}
-	if (unit->getReactionScore() <= bestScore)
+
+	// The targetted unit does not count as being on overwatch.
+	if (unit->getReactionScore(false) <= bestScore)
 	{
 		if (bu->getOriginalFaction() == FACTION_PLAYER)
 		{
@@ -906,25 +992,59 @@ BattleUnit* TileEngine::getReactor(std::vector<BattleUnit *> spotters, BattleUni
  * @param target The unit to check sight TO.
  * @return True if the target is valid.
  */
-bool TileEngine::canMakeSnap(BattleUnit *unit, BattleUnit *target)
+bool TileEngine::canMakeReactionShot(BattleUnit *unit, BattleUnit *target, bool overwatch, BattleItem *weapon)
 {
-	BattleItem *weapon = unit->getMainHandWeapon();
-	// has a weapon
-	if (weapon &&
-		// has a melee weapon and is in melee range
-		((weapon->getRules()->getBattleType() == BT_MELEE &&
-		validMeleeRange(unit, target, unit->getDirection()) &&
-		unit->getTimeUnits() > unit->getActionTUs(BA_HIT, weapon)) ||
-		// has a gun capable of snap shot with ammo
-		(weapon->getRules()->getBattleType() != BT_MELEE &&
-		weapon->getRules()->getTUSnap() &&
-		weapon->getAmmoItem() &&
-		unit->getTimeUnits() > unit->getActionTUs(BA_SNAPSHOT, weapon))) &&
+	weapon = weapon ? weapon : (overwatch ? unit->getOverwatchWeapon() : unit->getMainHandWeapon());
+	if(!weapon) { return false; }
+
+	if(weapon->getRules()->getBattleType() == BT_MELEE)
+	{
+		return target
+				&& validMeleeRange(unit, target, unit->getDirection())
+				&& unit->getTimeUnits() > unit->getActionTUs(BA_HIT, weapon);
+	}
+
+	BattleActionType action;
+	int tuRequired = 0;
+	if(overwatch)
+	{
+		action = unit->getOverwatchShotAction(weapon);
+		if(action == BA_NONE || !unit->onOverwatch())
+			return false;
+	}
+	else
+	{
+		action = BA_SNAPSHOT;
+		tuRequired = weapon->getRules()->getTUSnap();
+		if(!tuRequired) return false;
+	}
+
+	if(weapon->getAmmoItem() &&
+		(overwatch || unit->getTimeUnits() > unit->getActionTUs(action, weapon)) &&
 		(unit->getOriginalFaction() != FACTION_PLAYER ||
-		_save->getGeoscapeSave()->isResearched(weapon->getRules()->getRequirements())))
+			_save->getGeoscapeSave()->isResearched(weapon->getRules()->getRequirements())))
 	{
 		return true;
 	}
+
+	//// has a weapon
+	//if (weapon &&
+	//	// has a melee weapon and is in melee range
+	//	((weapon->getRules()->getBattleType() == BT_MELEE &&
+	//		target &&
+	//		validMeleeRange(unit, target, unit->getDirection()) &&
+	//		unit->getTimeUnits() > unit->getActionTUs(BA_HIT, weapon)) ||
+	//	// has a gun capable of snap shot with ammo
+	//	(weapon->getRules()->getBattleType() != BT_MELEE &&
+	//		weapon->getRules()->getTUSnap() &&
+	//		weapon->getAmmoItem() &&
+	//		(overwatch || unit->getTimeUnits() > unit->getActionTUs(action, weapon)))) &&
+	//		(unit->getOriginalFaction() != FACTION_PLAYER ||
+	//		_save->getGeoscapeSave()->isResearched(weapon->getRules()->getRequirements())))
+	//{
+	//	return true;
+	//}
+
 	return false;
 }
 
@@ -934,25 +1054,30 @@ bool TileEngine::canMakeSnap(BattleUnit *unit, BattleUnit *target)
  * @param target The unit to check sight TO.
  * @return True if the action should (theoretically) succeed.
  */
-bool TileEngine::tryReactionSnap(BattleUnit *unit, BattleUnit *target)
+bool TileEngine::tryReactionSnap(BattleUnit *unit, BattleUnit *target, bool overwatch)
 {
 	BattleAction action;
 	action.cameraPosition = _save->getBattleState()->getMap()->getCamera()->getMapOffset();
 	action.actor = unit;
-	action.weapon = unit->getMainHandWeapon();
-	if (!action.weapon)
+	action.weapon = overwatch ? unit->getOverwatchWeapon() : unit->getMainHandWeapon();
+	if (!action.weapon || (overwatch && !unit->onOverwatch()))
 	{
 		return false;
 	}
 	// reaction fire is ALWAYS snap shot.
-	action.type = BA_SNAPSHOT;
+	action.type = overwatch ? unit->getOverwatchShotAction(action.weapon) : BA_SNAPSHOT;
 	// unless we're a melee unit.
 	if (action.weapon->getRules()->getBattleType() == BT_MELEE)
 	{
 		action.type = BA_HIT;
 	}
 	action.target = target->getPosition();
-	action.TU = unit->getActionTUs(action.type, action.weapon);
+	action.TU = overwatch ? 0 : unit->getActionTUs(action.type, action.weapon);
+
+	if(!overwatch && !action.TU)
+	{
+		return false;
+	}
 
 	if (action.weapon->getAmmoItem() && action.weapon->getAmmoItem()->getAmmoQuantity() && unit->getTimeUnits() >= action.TU)
 	{
@@ -978,9 +1103,24 @@ bool TileEngine::tryReactionSnap(BattleUnit *unit, BattleUnit *target)
 
 		if (action.targeting && unit->spendTimeUnits(action.TU))
 		{
+			if(overwatch && unit->getFaction() == FACTION_PLAYER)
+			{
+				BattlescapeState* battleState = _save->getBattleState();
+				Language* lang = battleState->getGame()->getLanguage();
+				std::wostringstream log;
+				log << battleState->tr("STR_LOG_ACTOR").arg(unit->getName(lang)) << battleState->tr("STR_LOG_FIRING_OVERWATCH");
+				_save->getBattleState()->combatLog(log.str(), COMBAT_LOG_GREEN); 
+			}
+
 			action.TU = 0;
 			_save->getBattleGame()->statePushBack(new UnitTurnBState(_save->getBattleGame(), action));
 			_save->getBattleGame()->statePushBack(new ProjectileFlyBState(_save->getBattleGame(), action));
+
+			if(overwatch)
+			{
+				unit->clearOverwatch();
+			}
+
 			return true;
 		}
 	}
@@ -997,7 +1137,7 @@ bool TileEngine::tryReactionSnap(BattleUnit *unit, BattleUnit *target)
  * @param unit The unit that caused the explosion.
  * @return The Unit that got hit.
  */
-BattleUnit *TileEngine::hit(const Position &center, int power, ItemDamageType type, BattleUnit *unit)
+BattleUnit *TileEngine::hit(const Position &center, int power, BattleActionType action, ItemDamageType type, BattleUnit *unit)
 {
 	Tile *tile = _save->getTile(Position(center.x/16, center.y/16, center.z/24));
 	if(!tile)
@@ -1043,14 +1183,15 @@ BattleUnit *TileEngine::hit(const Position &center, int power, ItemDamageType ty
 				}
 			}
 		}
-		if (bu)
+		if (bu && bu->getStatus() != STATUS_DEAD && bu->getHealth() > 0)
 		{
 			const int sz = bu->getArmor()->getSize() * 8;
 			const Position target = bu->getPosition() * Position(16,16,24) + Position(sz,sz, bu->getFloatHeight() - tile->getTerrainLevel());
 			const Position relative = (center - target) - Position(0,0,verticaloffset);
 			const int wounds = bu->getFatalWounds();
 
-			adjustedDamage = bu->damage(relative, rndPower, type);
+			int newWounds;
+			adjustedDamage = bu->damage(relative, rndPower, type, false, &newWounds);
 
 			// if it's going to bleed to death and it's not a player, give credit for the kill.
 			if (unit && bu->getFaction() != FACTION_PLAYER && wounds < bu->getFatalWounds())
@@ -1062,6 +1203,8 @@ BattleUnit *TileEngine::hit(const Position &center, int power, ItemDamageType ty
 			const int morale_loss = 100 * (adjustedDamage * bravery / 10) / modifier;
 
 			bu->moraleChange(-morale_loss);
+
+			displayDamage(unit, bu, action, type, adjustedDamage, newWounds, false);
 
 			if (bu->getSpecialAbility() == SPECAB_EXPLODEONDEATH && !bu->isOut() && (bu->getHealth() == 0 || bu->getStunlevel() >= bu->getHealth()))
 			{
@@ -1102,7 +1245,7 @@ BattleUnit *TileEngine::hit(const Position &center, int power, ItemDamageType ty
  * @param maxRadius The maximum radius othe explosion.
  * @param unit The unit that caused the explosion.
  */
-void TileEngine::explode(const Position &center, int power, ItemDamageType type, int maxRadius, BattleUnit *unit)
+void TileEngine::explode(const Position &center, int power, BattleActionType action, ItemDamageType type, int maxRadius, int falloff, BattleUnit *unit)
 {
 	double centerZ = center.z / 24 + 0.5;
 	double centerX = center.x / 16 + 0.5;
@@ -1166,7 +1309,11 @@ void TileEngine::explode(const Position &center, int power, ItemDamageType type,
 				// blockage by terrain is deducted from the explosion power
 				if (std::abs(l) > 0) // no need to block epicentrum
 				{
-					power_ -= 10; // explosive damage decreases by 10 per tile
+					if(falloff > 0 && falloff < 255)
+						power_ -= falloff;
+					else
+						power_ -= 10; // explosive damage decreases by 10 per tile
+					
 					if (origin->getPosition().z != tileZ) power_ -= vertdec; //3d explosion factor
 					if (type == DT_IN)
 					{
@@ -1193,6 +1340,7 @@ void TileEngine::explode(const Position &center, int power, ItemDamageType type,
 						int max = power_ * (100 + dmgRng) / 100;
 						BattleUnit *bu = dest->getUnit();
 						int wounds = 0;
+						int newWounds = 0;
 						if (bu && unit)
 						{
 							wounds = bu->getFatalWounds();
@@ -1201,22 +1349,27 @@ void TileEngine::explode(const Position &center, int power, ItemDamageType type,
 						{
 						case DT_STUN:
 							// power 0 - 200%
+							int damage;
 							if (bu)
 							{
 								if (distance(dest->getPosition(), Position(centerX, centerY, centerZ)) < 2)
 								{
-									bu->damage(Position(0, 0, 0), RNG::generate(min, max), type);
+									damage = bu->damage(Position(0, 0, 0), RNG::generate(min, max), type);
 								}
 								else
 								{
-									bu->damage(Position(centerX, centerY, centerZ) - dest->getPosition(), RNG::generate(min, max), type);
+									damage = bu->damage(Position(centerX, centerY, centerZ) - dest->getPosition(), RNG::generate(min, max), type, false, &newWounds);
 								}
+
+								displayDamage(unit, bu, action, type, damage, newWounds, true);
 							}
 							for (std::vector<BattleItem*>::iterator it = dest->getInventory()->begin(); it != dest->getInventory()->end(); ++it)
 							{
 								if ((*it)->getUnit())
 								{
-									(*it)->getUnit()->damage(Position(0, 0, 0), RNG::generate(min, max), type);
+									BattleUnit *target = (*it)->getUnit();
+									damage = target->damage(Position(0, 0, 0), RNG::generate(min, max), type, false, &newWounds);
+									displayDamage(unit, target, action, type, damage, newWounds, true);
 								}
 							}
 							break;
@@ -1225,17 +1378,20 @@ void TileEngine::explode(const Position &center, int power, ItemDamageType type,
 								// power 50 - 150%
 								if (bu)
 								{
+									int damage;
 									if (distance(dest->getPosition(), Position(centerX, centerY, centerZ)) < 2)
 									{
 										// ground zero effect is in effect
-										bu->damage(Position(0, 0, 0), (int)(RNG::generate(min, max)), type);
+										damage = bu->damage(Position(0, 0, 0), (int)(RNG::generate(min, max)), type);
 									}
 									else
 									{
 										// directional damage relative to explosion position.
 										// units above the explosion will be hit in the legs, units lateral to or below will be hit in the torso
-										bu->damage(Position(centerX, centerY, centerZ + 5) - dest->getPosition(), (int)(RNG::generate(min, max)), type);
+										damage = bu->damage(Position(centerX, centerY, centerZ + 5) - dest->getPosition(), (int)(RNG::generate(min, max)), type, false, &newWounds);
 									}
+
+									displayDamage(unit, bu, action, type, damage, newWounds, false);
 								}
 								bool done = false;
 								while (!done)
@@ -2918,6 +3074,178 @@ void TileEngine::setDangerZone(Position pos, int radius, BattleUnit *unit)
 					}
 				}
 			}
+		}
+	}
+}
+
+void TileEngine::displayDamage(BattleUnit *attacker, BattleUnit *target, BattleActionType action, ItemDamageType type, int damage, int wounds, bool stun)
+{
+	BattlescapeState* battleState = _save->getBattleState();
+	if(battleState && target->getVisible())
+	{
+		static Language* lang = battleState->getGame()->getLanguage();
+
+		std::wostringstream damageWarning;
+
+		if(attacker)
+		{
+			if(attacker->getVisible())
+			{
+				switch(attacker->getFaction())
+				{
+				case FACTION_PLAYER:
+					damageWarning << battleState->tr("STR_LOG_ACTOR").arg(attacker->getName(lang));
+					break;
+				case FACTION_HOSTILE:
+					damageWarning << battleState->tr("STR_LOG_ACTOR").arg(battleState->tr("STR_HOSTILE"));
+					break;
+				default:
+					damageWarning << battleState->tr("STR_LOG_ACTOR").arg(battleState->tr("STR_NEUTRAL"));
+					break;
+				}
+			}
+			else
+			{
+				damageWarning << battleState->tr("STR_LOG_ACTOR").arg(battleState->tr("STR_UNKNOWN_UC"));
+			}
+		}
+
+		int targetMaxHealth = target->getStats()->health;
+
+		if(target->getFaction() != FACTION_PLAYER)
+		{
+			if(target->getFaction() == FACTION_HOSTILE)
+			{
+				damageWarning << battleState->tr("STR_LOG_TARGET").arg(battleState->tr("STR_HOSTILE"));
+			}
+			else
+			{
+				damageWarning << battleState->tr("STR_LOG_TARGET").arg(battleState->tr("STR_NEUTRAL"));
+			}
+
+			switch(type)
+			{
+			case DT_NONE:
+				switch(action)
+				{
+				case BA_PANIC:
+					damageWarning << battleState->tr("STR_LOG_PSIONICS").arg(battleState->tr("STR_PANIC_UNIT"));
+					break;
+				case BA_MINDCONTROL:
+					damageWarning << battleState->tr("STR_LOG_PSIONICS").arg(battleState->tr("STR_MIND_CONTROL"));
+					break;
+				default:
+					damageWarning << battleState->tr("STR_LOG_DAMAGE").arg(battleState->tr("STR_LOG_NO_DAMAGE"));
+				}
+
+				if(stun && (target->getStunlevel() >= target->getHealth()))
+				{
+					damageWarning << battleState->tr("STR_LOG_STUNNED");
+				}
+				break;
+
+			case DT_STUN:
+				if(stun && (target->getStunlevel() >= target->getHealth()))
+				{
+					damageWarning << battleState->tr("STR_LOG_STUNNED");
+				}
+				else
+				{
+					damageWarning << battleState->tr("STR_LOG_STUN");
+				}
+				break;
+
+			default:
+				float damageRatio = targetMaxHealth < 1 ? 0 : ((float)damage / (float)targetMaxHealth);
+
+				if(damageRatio > 0.5)
+				{
+					damageWarning << battleState->tr("STR_LOG_DAMAGE").arg(battleState->tr("STR_LOG_HIGH_DAMAGE"));
+				}
+				else if (damageRatio > 0)
+				{
+					damageWarning << battleState->tr("STR_LOG_DAMAGE").arg(battleState->tr("STR_LOG_LOW_DAMAGE"));
+				}
+				else
+				{
+					damageWarning << battleState->tr("STR_LOG_DAMAGE").arg(battleState->tr("STR_LOG_NO_DAMAGE"));
+				}
+
+				if(target->getHealth() == 0)
+				{
+					damageWarning << battleState->tr("STR_LOG_KILLED");
+				}
+				else
+				{
+					if(stun && (target->getStunlevel() >= target->getHealth()))
+					{
+						damageWarning << battleState->tr("STR_LOG_STUNNED");
+					}
+
+					if(wounds)
+					{
+						damageWarning << battleState->tr("STR_LOG_WOUNDED");
+					}
+				}
+			}
+		}
+		else
+		{
+			damageWarning << battleState->tr("STR_LOG_TARGET").arg(target->getName(lang));
+
+			switch(type)
+			{
+			case DT_NONE:
+				switch(action)
+				{
+				case BA_PANIC:
+					damageWarning << battleState->tr("STR_LOG_PSIONICS").arg(battleState->tr("STR_PANIC_UNIT"));
+					break;
+				case BA_MINDCONTROL:
+					damageWarning << battleState->tr("STR_LOG_PSIONICS").arg(battleState->tr("STR_MIND_CONTROL"));
+					break;
+				default:
+					damageWarning << battleState->tr("STR_LOG_DAMAGE").arg(battleState->tr("STR_LOG_NO_DAMAGE"));
+				}
+
+				break;
+
+			case DT_STUN:
+				damageWarning << battleState->tr("STR_LOG_STUN_DAMAGE").arg(Text::formatNumber(damage));
+				break;
+
+			default:
+				damageWarning << battleState->tr("STR_LOG_DAMAGE").arg(Text::formatNumber(damage));
+			}
+
+
+			if(target->getHealth() == 0)
+			{
+				damageWarning << battleState->tr("STR_LOG_KILLED");
+			}
+			else
+			{
+				if(stun && (target->getStunlevel() >= targetMaxHealth))
+				{
+					damageWarning << battleState->tr("STR_LOG_STUNNED");
+				}
+				if(wounds)
+				{
+					damageWarning << battleState->tr("STR_LOG_WOUNDS").arg(Text::formatNumber(wounds));
+				}
+			}
+		}
+
+		switch(target->getOriginalFaction())
+		{
+		case FACTION_PLAYER:
+			_save->getBattleState()->combatLog(damageWarning.str(), COMBAT_LOG_RED);
+			break;
+		case FACTION_NEUTRAL:
+			_save->getBattleState()->combatLog(damageWarning.str(), COMBAT_LOG_ORANGE);
+			break;
+		default:
+			_save->getBattleState()->combatLog(damageWarning.str(), COMBAT_LOG_GREEN);
 		}
 	}
 }

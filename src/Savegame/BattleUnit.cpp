@@ -53,7 +53,8 @@ BattleUnit::BattleUnit(Soldier *soldier, UnitFaction faction) : _faction(faction
 																_dontReselect(false), _fire(0), _currentAIState(0), _visible(false), _cacheInvalid(true),
 																_expBravery(0), _expReactions(0), _expFiring(0), _expThrowing(0), _expPsiSkill(0), _expPsiStrength(0), _expMelee(0),
 																_motionPoints(0), _kills(0), _hitByFire(false), _moraleRestored(0), _coverReserve(0), _charging(0),
-																_turnsSinceSpotted(255), _geoscapeSoldier(soldier), _unitRules(0), _rankInt(-1), _turretType(-1), _hidingForTurn(false)
+																_turnsSinceSpotted(255), _geoscapeSoldier(soldier), _unitRules(0), _rankInt(-1), _turretType(-1), _hidingForTurn(false),
+																_overwatch(false), _overwatchTarget(-1,-1,-1), _overwatchWeaponSlot(), _justKilled(false)
 {
 	_name = soldier->getName(true);
 	_id = soldier->getId();
@@ -124,7 +125,8 @@ BattleUnit::BattleUnit(Unit *unit, UnitFaction faction, int id, Armor *armor, in
 																						_expThrowing(0), _expPsiSkill(0), _expPsiStrength(0), _expMelee(0), _motionPoints(0), _kills(0), _hitByFire(false),
 																						_moraleRestored(0), _coverReserve(0), _charging(0), _turnsSinceSpotted(255),
 																						_armor(armor), _geoscapeSoldier(0),  _unitRules(unit), _rankInt(-1),
-																						_turretType(-1), _hidingForTurn(false)
+																						_turretType(-1), _hidingForTurn(false),
+																						_overwatch(false), _overwatchTarget(-1,-1,-1), _overwatchWeaponSlot()
 {
 	_type = unit->getType();
 	_rank = unit->getRank();
@@ -226,7 +228,12 @@ void BattleUnit::load(const YAML::Node &node)
 	_specab = (SpecialAbility)node["specab"].as<int>(_specab);
 	_spawnUnit = node["spawnUnit"].as<std::string>(_spawnUnit);
 	_motionPoints = node["motionPoints"].as<int>(0);
-
+	_overwatch = node["overwatch"].as<bool>(false);
+	if(_overwatch)
+	{
+		_overwatchTarget = node["overwatchTarget"].as<Position>(_overwatchTarget);
+		_overwatchWeaponSlot = node["overwatchWeaponSlot"].as<std::string>(_overwatchWeaponSlot);
+	}
 }
 
 /**
@@ -284,6 +291,14 @@ YAML::Node BattleUnit::save() const
 	if (!_spawnUnit.empty())
 		node["spawnUnit"] = _spawnUnit;
 	node["motionPoints"] = _motionPoints;
+
+	node["overwatch"] = _overwatch;
+
+	if(_overwatch)
+	{
+		node["overwatchTarget"] = _overwatchTarget;
+		node["overwatchWeaponSlot"] = _overwatchWeaponSlot;
+	}
 
 	return node;
 }
@@ -879,10 +894,15 @@ int BattleUnit::getMorale() const
  * @param ignoreArmor Should the damage ignore armor resistance?
  * @return damage done after adjustment
  */
-int BattleUnit::damage(const Position &relative, int power, ItemDamageType type, bool ignoreArmor)
+int BattleUnit::damage(const Position &relative, int power, ItemDamageType type, bool ignoreArmor, int *wounds)
 {
 	UnitSide side = SIDE_FRONT;
 	UnitBodyPart bodypart = BODYPART_TORSO;
+
+	if(wounds)
+	{
+		(*wounds) = 0;
+	}
 
 	if (power <= 0)
 	{
@@ -990,7 +1010,14 @@ int BattleUnit::damage(const Position &relative, int power, ItemDamageType type,
 				if (isWoundable())
 				{
 					if (RNG::generate(0, 10) < power)
-						_fatalWounds[bodypart] += RNG::generate(1,3);
+					{
+						int newWounds = RNG::generate(1,3);
+						if(wounds)
+						{
+							(*wounds) = newWounds;
+						}
+						_fatalWounds[bodypart] += newWounds;
+					}
 
 					if (_fatalWounds[bodypart])
 						moraleChange(-_fatalWounds[bodypart]);
@@ -1132,6 +1159,9 @@ int BattleUnit::getActionTUs(BattleActionType actionType, BattleItem *item)
 		case BA_PANIC:
 			cost = item->getRules()->getTUUse();
 			break;
+		case BA_OVERWATCH:
+			//cost = std::max(_tu, item->getRules()->getTUSnap());
+			return std::max(getActionTUs(getOverwatchShotAction(item), item), (int)(floor(getStats()->tu * 0.9f)));
 		default:
 			cost = 0;
 	}
@@ -1281,11 +1311,21 @@ void BattleUnit::clearVisibleTiles()
  * @param item
  * @return firing Accuracy
  */
-int BattleUnit::getFiringAccuracy(BattleActionType actionType, BattleItem *item)
+int BattleUnit::getFiringAccuracy(BattleActionType actionType, BattleItem *item, bool useShotgun)
 {
-
 	int weaponAcc = item->getRules()->getAccuracySnap();
-	if (actionType == BA_AIMEDSHOT || actionType == BA_LAUNCH)
+	int shotgunAcc = item->getRules()->getAccuracyShotgunSpread();
+
+	if(actionType == BA_OVERWATCH)
+	{
+		actionType = getOverwatchShotAction(item);
+	}
+
+	if(useShotgun && shotgunAcc)
+	{
+		weaponAcc = shotgunAcc;
+	}
+	else if (actionType == BA_AIMEDSHOT || actionType == BA_LAUNCH)
 		weaponAcc = item->getRules()->getAccuracyAimed();
 	else if (actionType == BA_AUTOSHOT)
 		weaponAcc = item->getRules()->getAccuracyAuto();
@@ -1300,9 +1340,11 @@ int BattleUnit::getFiringAccuracy(BattleActionType actionType, BattleItem *item)
 
 	int result = getStats()->firing * weaponAcc / 100;
 
-	if (_kneeled)
+	int kneelMod = item->getRules()->getKneelModifier();
+	// Grant aliens special kneel bonuses since they can't kneel properly themselves.
+	if (_kneeled || (getFaction() == FACTION_HOSTILE && kneelMod > 115))
 	{
-		result = result * 115 / 100;
+		result = kneelMod ? result * kneelMod / 100 : result * 115 / 100;
 	}
 
 	if (item->getRules()->isTwoHanded())
@@ -1398,11 +1440,34 @@ int BattleUnit::getFatalWounds() const
  * Little formula to calculate reaction score.
  * @return Reaction score.
  */
-double BattleUnit::getReactionScore()
+double BattleUnit::getReactionScore(bool overwatch)
 {
 	//(Reactions Stat) x (Current Time Units / Max TUs)
-	double score = ((double)getStats()->reactions * (double)getTimeUnits()) / (double)getStats()->tu;
-	return score;
+	double tuRatio = overwatch ? 1.0 : (double)getTimeUnits() / (double)getStats()->tu;
+
+	return (double)getStats()->reactions * tuRatio * getWeaponReactionsModifier(overwatch);
+	
+}
+
+/**
+ * Returns this unit's main hand weapon's reactions modifier as a multiplier.
+ * @return Reactions modifier.
+ */
+double BattleUnit::getWeaponReactionsModifier(bool overwatch)
+{
+	BattleItem *weapon = overwatch ? getOverwatchWeapon() : getMainHandWeapon();
+
+	if(weapon)
+	{
+		RuleItem *rules = weapon->getRules();
+		if(rules)
+		{
+			double modifier = overwatch ? rules->getOverwatchModifier() : rules->getReactionsModifier();
+			return modifier / 100.0;
+		}
+	}
+
+	return 1.0;
 }
 
 
@@ -1415,6 +1480,8 @@ void BattleUnit::prepareNewTurn()
 	_faction = _originalFaction;
 
 	_unitsSpottedThisTurn.clear();
+
+	clearOverwatch();
 
 	// recover TUs
 	int TURecovery = getStats()->tu;
@@ -1785,22 +1852,101 @@ BattleItem *BattleUnit::getGrenadeFromBelt() const
 }
 
 /**
+ * Find the cheapest to grab item from the inventory
+ * @return Pointer to item.
+ */
+BattleItem *BattleUnit::findQuickItem(const std::string &item, RuleInventory* destSlot, int* moveCost) const
+{
+	BattleItem *quickItem = 0;
+	int quickCost = 1000000;
+	for (std::vector<BattleItem*>::const_iterator ii = _inventory.begin(); ii != _inventory.end(); ++ii)
+	{
+		BattleItem *bi = (*ii);
+
+		int cost;
+		if(bi->getRules()->getType() == item && bi->getSlot() != destSlot && ((cost = bi->getSlot()->getCost(destSlot)) < quickCost))
+		{
+			quickItem = bi;
+			quickCost = cost; // ??
+		}
+	}
+
+	Tile* tile = getTile();
+
+	if(tile && tile->getInventory())
+	{
+		for(auto ii = tile->getInventory()->begin(); ii != tile->getInventory()->end(); ++ii)
+		{
+			BattleItem *bi = (*ii);
+
+			int cost;
+			if(bi->getRules()->getType() == item && ((cost = bi->getSlot()->getCost(destSlot)) < quickCost))
+			{
+				quickItem = bi;
+				quickCost = cost;
+			}
+		}
+	}
+
+	if(quickItem && moveCost) { (*moveCost) = quickCost; }
+
+	return quickItem;
+}
+
+/**
+ * Find the cheapest to ammo item for the specified weapon.
+ * @param weapon The weapon to find ammo for.
+ * @return Pointer to item.
+ */
+BattleItem *BattleUnit::findQuickAmmo(BattleItem *weapon, int* reloadCost) const
+{
+	BattleItem *bestAmmo = 0;
+	int bestCost = 100000;
+
+	auto ammoItems = weapon->getRules()->getCompatibleAmmo();
+
+	for(auto ii = ammoItems->begin(); ii != ammoItems->end(); ++ii)
+	{
+		int cost = 100000;
+		BattleItem *ammo = findQuickItem(*ii, weapon->getSlot(), &cost);
+		if(ammo && (Options::battleAdjustReloadCost ? cost += ammo->getAmmoReloadCost() : cost = 15) < bestCost)
+		{
+			bestAmmo = ammo;
+			bestCost = cost;
+		}
+	}
+
+	if(bestAmmo && reloadCost)
+	{
+		*reloadCost = bestCost;
+	}
+
+	return bestAmmo;
+}
+
+/**
  * Check if we have ammo and reload if needed (used for AI).
  * @return Do we have ammo?
  */
 bool BattleUnit::checkAmmo()
 {
 	BattleItem *weapon = getItem("STR_RIGHT_HAND");
-	if (!weapon || weapon->getAmmoItem() != 0 || weapon->getRules()->getBattleType() == BT_MELEE || getTimeUnits() < 15)
+	BattleItem *ammo = 0;
+	int tu = 0;
+	if (!weapon || weapon->getAmmoItem() != 0 || weapon->getRules()->getBattleType() == BT_MELEE || !(ammo = findQuickAmmo(weapon, &tu)) || !spendTimeUnits(tu))
 	{
 		weapon = getItem("STR_LEFT_HAND");
-		if (!weapon || weapon->getAmmoItem() != 0 || weapon->getRules()->getBattleType() == BT_MELEE || getTimeUnits() < 15)
+		if (!weapon || weapon->getAmmoItem() != 0 || weapon->getRules()->getBattleType() == BT_MELEE || !(ammo = findQuickAmmo(weapon, &tu)) || !spendTimeUnits(tu))
 		{
 			return false;
 		}
 	}
+
+	weapon->setAmmoItem(ammo);
+	ammo->moveToOwner(0);
+
 	// we have a non-melee weapon with no ammo and 15 or more TUs - we might need to look for ammo then
-	BattleItem *ammo = 0;
+	/*BattleItem *ammo = 0;
 	bool wrong = true;
 	for (std::vector<BattleItem*>::iterator i = getInventory()->begin(); i != getInventory()->end(); ++i)
 	{
@@ -1820,7 +1966,7 @@ bool BattleUnit::checkAmmo()
 
 	spendTimeUnits(15);
 	weapon->setAmmoItem(ammo);
-	ammo->moveToOwner(0);
+	ammo->moveToOwner(0);*/
 
 	return true;
 }
@@ -2661,6 +2807,70 @@ bool BattleUnit::isSelectable(UnitFaction faction, bool checkReselect, bool chec
 bool BattleUnit::hasInventory() const
 {
 	return (_armor->getSize() == 1 && _rank != "STR_LIVE_TERRORIST");
+}
+
+bool BattleUnit::onOverwatch() const
+{
+	return _overwatch;
+}
+
+void BattleUnit::activateOverwatch(BattleItem *weapon, const Position& target)
+{
+	_overwatch = true;
+	_overwatchWeaponSlot = getItem("STR_LEFT_HAND") == weapon ? "STR_LEFT_HAND" : "STR_RIGHT_HAND";
+	_overwatchTarget = target;
+	_tu = 0;
+}
+
+void BattleUnit::clearOverwatch()
+{
+	_overwatch = false;
+}
+
+const Position& BattleUnit::getOverwatchTarget() const
+{
+	return _overwatchTarget;
+}
+
+BattleItem *BattleUnit::getOverwatchWeapon() const
+{
+	return _overwatch ? getItem(_overwatchWeaponSlot) : 0;
+}
+
+BattleActionType BattleUnit::getOverwatchShotAction(BattleItem *weapon) const
+{
+	weapon = weapon ? weapon : getOverwatchWeapon();
+
+	if(weapon)
+	{
+		std::string shot = weapon->getRules()->getOverwatchShot();
+		if(shot.empty()) return BA_NONE;
+
+		if(shot == "snap" && weapon->getRules()->getTUSnap())
+		{
+			return BA_SNAPSHOT;
+		}
+		else if(shot == "auto" && weapon->getRules()->getTUAuto())
+		{
+			return BA_AUTOSHOT;
+		}
+		else if(shot == "aimed" && weapon->getRules()->getTUAimed())
+		{
+			return BA_AIMEDSHOT;
+		}
+	}
+
+	return BA_NONE;
+}
+
+void BattleUnit::setJustKilled(bool justKilled)
+{
+	_justKilled = justKilled;
+}
+
+bool BattleUnit::getJustKilled() const
+{
+	return _justKilled;
 }
 
 }

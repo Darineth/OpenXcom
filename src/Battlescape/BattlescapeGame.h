@@ -40,7 +40,7 @@ class Pathfinding;
 class Ruleset;
 class InfoboxOKState;
 
-enum BattleActionType { BA_NONE, BA_TURN, BA_WALK, BA_PRIME, BA_THROW, BA_AUTOSHOT, BA_SNAPSHOT, BA_AIMEDSHOT, BA_STUN, BA_HIT, BA_USE, BA_LAUNCH, BA_MINDCONTROL, BA_PANIC, BA_RETHINK };
+enum BattleActionType { BA_NONE, BA_TURN, BA_WALK, BA_PRIME, BA_THROW, BA_AUTOSHOT, BA_SNAPSHOT, BA_AIMEDSHOT, BA_STUN, BA_HIT, BA_USE, BA_LAUNCH, BA_MINDCONTROL, BA_PANIC, BA_RETHINK, BA_RELOAD, BA_OVERWATCH };
 
 struct BattleAction
 {
@@ -53,6 +53,7 @@ struct BattleAction
 	bool targeting;
 	int value;
 	std::string result;
+	std::wstring description;
 	bool strafe, run;
 	int diff;
 	int autoShotCounter;
@@ -117,7 +118,7 @@ public:
 	/// Sets state think interval.
 	void setStateInterval(Uint32 interval);
 	/// Checks for casualties in battle.
-	void checkForCasualties(BattleItem *murderweapon, BattleUnit *murderer, bool hiddenExplosion = false, bool terrainExplosion = false);
+	void checkForCasualties(BattleItem *murderweapon, BattleUnit *murderer, bool hiddenExplosion = false, bool terrainExplosion = false, bool pushDeathFront = false);
 	/// Checks if a unit panics.
 	void checkForPanic(BattleUnit *unit);
 	/// Checks reserved tu.

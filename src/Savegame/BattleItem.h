@@ -99,6 +99,8 @@ public:
 	bool needsAmmo() const;
 	/// Sets the item's ammo item.
 	int setAmmoItem(BattleItem *item);
+	/// Gets the TU cost to reload this ammo item.
+	int getAmmoReloadCost() const;
 	/// Gets the item's tile.
 	Tile *getTile() const;
 	/// Sets the tile.

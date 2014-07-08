@@ -93,7 +93,7 @@ public:
 	/// Unloads the selected weapon.
 	bool unload();
 	/// Arranges items on the ground.
-	void arrangeGround(bool alterOffset = true);
+	void arrangeGround(bool alterOffset = true, int offset = 0);
 	/// Attempts to place an item in an inventory slot.
 	bool fitItem(RuleInventory *newSlot, BattleItem *item, std::string &warning);
 	/// Checks if two items can be stacked on one another.

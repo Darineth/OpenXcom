@@ -25,6 +25,7 @@
 #include "../Engine/Language.h"
 #include "../Engine/Palette.h"
 #include "../Engine/Action.h"
+#include "../Engine/Sound.h"
 #include "../Savegame/BattleUnit.h"
 #include "../Savegame/BattleItem.h"
 #include "../Ruleset/RuleItem.h"
@@ -38,6 +39,8 @@
 #include "Pathfinding.h"
 #include "TileEngine.h"
 #include "../Interface/Text.h"
+#include "../Ruleset/RuleInventory.h"
+#include "../Ruleset/Ruleset.h"
 
 namespace OpenXcom
 {
@@ -56,7 +59,7 @@ ActionMenuState::ActionMenuState(BattleAction *action, int x, int y) : _action(a
 	// Set palette
 	_game->getSavedGame()->getSavedBattle()->setPaletteByDepth(this);
 
-	for (int i = 0; i < 6; ++i)
+	for (int i = 0; i < MAX_ACTIONS; ++i)
 	{
 		_actionMenu[i] = new ActionMenuItem(i, _game, x, y);
 		add(_actionMenu[i]);
@@ -66,48 +69,65 @@ ActionMenuState::ActionMenuState(BattleAction *action, int x, int y) : _action(a
 
 	// Build up the popup menu
 	int id = 0;
-	RuleItem *weapon = _action->weapon->getRules();
+	BattleItem *weapon = _action->weapon;
+	BattleItem *ammo = _action->weapon->getAmmoItem();
+	RuleItem *weaponRules = _action->weapon->getRules();
 
 	// throwing (if not a fixed weapon)
-	if (!weapon->isFixed())
+	if (!weaponRules->isFixed())
 	{
 		addItem(BA_THROW, "STR_THROW", &id);
 	}
 
 	// priming
-	if ((weapon->getBattleType() == BT_GRENADE || weapon->getBattleType() == BT_PROXIMITYGRENADE)
+	if ((weaponRules->getBattleType() == BT_GRENADE || weaponRules->getBattleType() == BT_PROXIMITYGRENADE)
 		&& _action->weapon->getFuseTimer() == -1)
 	{
 		addItem(BA_PRIME, "STR_PRIME_GRENADE", &id);
 	}
 
-	if (weapon->getBattleType() == BT_FIREARM)
+	if (weaponRules->getBattleType() == BT_FIREARM)
 	{
-		if (weapon->isWaypoint() || (_action->weapon->getAmmoItem() && _action->weapon->getAmmoItem()->getRules()->isWaypoint()))
+		if (weaponRules->isWaypoint() || (weapon->getAmmoItem() && weapon->getAmmoItem()->getRules()->isWaypoint()))
 		{
 			addItem(BA_LAUNCH, "STR_LAUNCH_MISSILE", &id);
 		}
 		else
 		{
-			if (weapon->getAccuracyAuto() != 0)
+			if (weaponRules->getAccuracyAuto() != 0)
 			{
 				addItem(BA_AUTOSHOT, "STR_AUTO_SHOT", &id);
 			}
-			if (weapon->getAccuracySnap() != 0)
+			if (weaponRules->getAccuracySnap() != 0)
 			{
 				addItem(BA_SNAPSHOT, "STR_SNAP_SHOT", &id);
 			}
-			if (weapon->getAccuracyAimed() != 0)
+			if (weaponRules->getAccuracyAimed() != 0)
 			{
 				addItem(BA_AIMEDSHOT, "STR_AIMED_SHOT", &id);
 			}
 		}
+
+		//if(_game->getSavedGame()->getSavedBattle()->getTileEngine()->canMakeReactionShot(_action->actor, 0, true, weapon))
+		if(_action->actor->getOverwatchShotAction(weapon) != BA_NONE)
+		{
+			addItem(BA_OVERWATCH, "STR_OVERWATCH", &id);
+		}
+
+		if(_action->actor->hasInventory()
+			&&weapon->needsAmmo()
+			&& (weapon->getAmmoItem() == 0 
+				|| (weapon->getAmmoItem()->getAmmoQuantity() < weapon->getAmmoItem()->getRules()->getClipSize())
+					&& !(weapon->getSlot()->getId() == "STR_LEFT_HAND" ? action->actor->getItem("STR_RIGHT_HAND") : action->actor->getItem("STR_LEFT_HAND"))))
+		{
+			addItem(BA_RELOAD, "STR_RELOAD", &id);
+		}
 	}
 
-	if (weapon->getTUMelee())
+	if (weaponRules->getTUMelee())
 	{
 		// stun rod
-		if (weapon->getBattleType() == BT_MELEE && weapon->getDamageType() == DT_STUN)
+		if (weaponRules->getBattleType() == BT_MELEE && weaponRules->getDamageType() == DT_STUN)
 		{
 			addItem(BA_HIT, "STR_STUN", &id);
 		}
@@ -118,24 +138,35 @@ ActionMenuState::ActionMenuState(BattleAction *action, int x, int y) : _action(a
 		}
 	}
 	// special items
-	else if (weapon->getBattleType() == BT_MEDIKIT)
+	else if (weaponRules->getBattleType() == BT_MEDIKIT)
 	{
 		addItem(BA_USE, "STR_USE_MEDI_KIT", &id);
 	}
-	else if (weapon->getBattleType() == BT_SCANNER)
+	else if (weaponRules->getBattleType() == BT_SCANNER)
 	{
 		addItem(BA_USE, "STR_USE_SCANNER", &id);
 	}
-	else if (weapon->getBattleType() == BT_PSIAMP && _action->actor->getStats()->psiSkill > 0)
+	else if (weaponRules->getBattleType() == BT_PSIAMP && _action->actor->getStats()->psiSkill > 0)
 	{
 		addItem(BA_MINDCONTROL, "STR_MIND_CONTROL", &id);
 		addItem(BA_PANIC, "STR_PANIC_UNIT", &id);
 	}
-	else if (weapon->getBattleType() == BT_MINDPROBE)
+	else if (weaponRules->getBattleType() == BT_MINDPROBE)
 	{
 		addItem(BA_USE, "STR_USE_MIND_PROBE", &id);
 	}
+	
+	_selectedItem = new Text(270, 9, x + 25, y);
+	add(_selectedItem);
+	_selectedItem->setColor(Palette::blockOffset(0)-1);
+	_selectedItem->setHighContrast(true);
+	_selectedItem->setY(y - (id*25) + 15);
+	_selectedItem->setAlign(ALIGN_CENTER);
 
+	std::wostringstream ss;
+	ss << tr(weaponRules->getName());
+	if(ammo && (ammo != weapon)) { ss << " [" << tr(ammo->getRules()->getName()) << "]"; }
+	_selectedItem->setText(ss.str());
 }
 
 /**
@@ -160,11 +191,109 @@ void ActionMenuState::addItem(BattleActionType ba, const std::string &name, int 
 		acc = (int)(_action->actor->getThrowingAccuracy());
 	int tu = _action->actor->getActionTUs(ba, _action->weapon);
 
-	if (ba == BA_THROW || ba == BA_AIMEDSHOT || ba == BA_SNAPSHOT || ba == BA_AUTOSHOT || ba == BA_LAUNCH || ba == BA_HIT)
-		s1 = tr("STR_ACCURACY_SHORT").arg(Text::formatPercentage(acc));
+	BattleItem* ammoItem = _action->weapon->getAmmoItem();
+	int ammo = ammoItem ? ammoItem->getAmmoQuantity() : 0;
+	bool ammoError;
+
+	int shots = 1;
+	int bulletsPerShot = 1;
+
+	if(ammoItem)
+	{
+		bulletsPerShot = ammoItem->getRules()->getShotgunPellets();
+	}
+
+	if(bulletsPerShot < 1) { bulletsPerShot = 1; }
+	
+
+	switch(ba)
+	{
+	case BA_AUTOSHOT:
+		shots = _action->weapon->getRules()->getAutoShots();
+		ammoError = _action->weapon->needsAmmo() && (ammo < shots);
+		break;
+
+	case BA_MINDCONTROL:
+	case BA_PANIC:
+	case BA_PRIME:
+	case BA_RETHINK:
+	case BA_STUN:
+	case BA_THROW:
+	case BA_TURN:
+	case BA_USE:
+	case BA_WALK:
+		shots = 0;
+		ammoError = false;
+		break;
+
+	case BA_RELOAD:
+		shots = 0;
+		ammoError = !_action->actor->findQuickAmmo(_action->weapon, &tu);
+
+		if(_action->weapon->getAmmoItem())
+		{
+			tu += _action->weapon->getSlot()->getCost(_game->getRuleset()->getInventory("STR_GROUND"));
+		}
+
+		break;
+
+	case BA_OVERWATCH:
+		// TODO: Calculate TUs based on overwatch shot
+
+		{
+			BattleActionType overwatchShot = _action->actor->getOverwatchShotAction(_action->weapon);
+			switch(overwatchShot)
+			{
+			case BA_AUTOSHOT:
+				shots = _action->weapon->getRules()->getAutoShots();
+				break;
+			case BA_SNAPSHOT:
+				shots = 1;
+				break;
+			case BA_AIMEDSHOT:
+				shots = 1;
+				break;
+			default:
+				shots = 1;
+			}
+		}
+
+		ammoError = ammo < shots;
+
+		break;
+
+	default:
+		shots = 1;
+		ammoError = (ammo < shots);
+	}
+
+	
+	if (ba == BA_THROW || ba == BA_AIMEDSHOT || ba == BA_SNAPSHOT || ba == BA_AUTOSHOT || ba == BA_LAUNCH || ba == BA_HIT || ba == BA_OVERWATCH)
+	{
+		if(shots > 1 && bulletsPerShot > 1)
+		{
+			s1 = tr("STR_ACCURACY_SHORT").arg(Text::formatPercentage(acc).append(L" ").append(Text::formatNumber(shots)).append(L"x").append(Text::formatNumber(bulletsPerShot)));
+		}
+		else if(shots > 1)
+		{
+			s1 = tr("STR_ACCURACY_SHORT").arg(Text::formatPercentage(acc).append(L" ").append(Text::formatNumber(shots)).append(L"x"));
+		}
+		else if(bulletsPerShot > 1)
+		{
+			s1 = tr("STR_ACCURACY_SHORT").arg(Text::formatPercentage(acc).append(L" x").append(Text::formatNumber(bulletsPerShot)));
+		}
+		else
+		{
+			s1 = tr("STR_ACCURACY_SHORT").arg(Text::formatPercentage(acc));
+		}
+	}
+
+	int key = (*id) + 1;
+
 	s2 = tr("STR_TIME_UNITS_SHORT").arg(tu);
-	_actionMenu[*id]->setAction(ba, tr(name), s1, s2, tu);
+	_actionMenu[*id]->setAction(ba, Text::formatNumber(key) + L". " + tr(name).c_str(), s1, s2, tu, ammoError, tu > _action->actor->getTimeUnits());
 	_actionMenu[*id]->setVisible(true);
+	_actionMenu[*id]->onKeyboardPress((ActionHandler)&ActionMenuState::btnActionMenuItemClick, (SDLKey)((int)SDLK_0 + key));
 	(*id)++;
 }
 
@@ -211,6 +340,7 @@ void ActionMenuState::btnActionMenuItemClick(Action *action)
 	if (btnID != -1)
 	{
 		_action->type = _actionMenu[btnID]->getAction();
+		_action->description = _actionMenu[btnID]->getDescription();
 		_action->TU = _actionMenu[btnID]->getTUs();
 		if (_action->type == BA_PRIME)
 		{
@@ -303,6 +433,35 @@ void ActionMenuState::btnActionMenuItemClick(Action *action)
 			{
 				_action->result = "STR_THERE_IS_NO_ONE_THERE";
 			}
+			_game->popState();
+		}
+		else if(_action->type == BA_RELOAD)
+		{
+			int tu = 0;
+			BattleItem *quickAmmo = _action->actor->findQuickAmmo(_action->weapon, &tu);
+
+			RuleInventory *ground = _game->getRuleset()->getInventory("STR_GROUND");
+
+			if(_action->weapon->getAmmoItem())
+			{
+				// Adjusted unload cost: Magazine weight + hand->hand
+				tu += Options::battleAdjustReloadCost ? (_action->weapon->getAmmoItem()->getRules()->getWeight() + _action->weapon->getSlot()->getCost(ground)) : 8;
+			}
+
+			if(!quickAmmo)
+			{
+				// Temporary mesage.
+				_action->result = "STR_NO_ROUNDS_LEFT";
+			}
+			else if(!_action->actor->spendTimeUnits(tu))
+			{
+				_action->result = "STR_NOT_ENOUGH_TIME_UNITS";
+			}
+			else
+			{
+				_action->TU = tu;
+			}
+
 			_game->popState();
 		}
 		else

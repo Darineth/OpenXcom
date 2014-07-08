@@ -30,6 +30,7 @@ class SavedBattleGame;
 class BattleUnit;
 class BattlescapeState;
 class Node;
+class RuleItem;
 
 /**
  * This class is used by the BattleUnit AI.
@@ -37,6 +38,9 @@ class Node;
 class AlienBAIState : public BattleAIState
 {
 protected:
+	static std::vector<std::string> _aiAttackPriorityClose, _aiAttackPriorityMid, _aiAttackPriorityLong, _aiAttackPriorityMax;
+	static std::string _attackSnap, _attackAimed, _attackAuto;
+
 	BattleUnit *_aggroTarget;
 	int _knownEnemies, _visibleEnemies, _spottingEnemies;
 	int _escapeTUs, _ambushTUs, _reserveTUs;
@@ -46,6 +50,7 @@ protected:
 	int _AIMode, _intelligence, _closestDist;
 	Node *_fromNode, *_toNode;
 	std::vector<int> _reachable, _reachableWithAttack;
+
 public:
 	/// Creates a new AlienBAIState linked to the game and a certain unit.
 	AlienBAIState(SavedBattleGame *save, BattleUnit *unit, Node *node);
@@ -106,6 +111,8 @@ public:
 	/// Performs a melee attack action.
 	void meleeAttack();
 	bool validTarget(BattleUnit* unit, bool assessDanger, bool includeCivs) const;
+	
+	bool selectRangeOption(int currentTU, int tuAuto, int tuSnap, int tuAimed, const std::vector<std::string> &actions);
 };
 
 }

@@ -921,4 +921,26 @@ bool Tile::getDangerous()
 	return _danger;
 }
 
+std::vector<TileDrawable*>& Tile::getDrawables()
+{
+	return _drawables;
+}
+
+/// Clears and cleans up the pending drawables vector.
+void Tile::clearDrawables()
+{
+	if(_drawables.size())
+	{
+		for(std::vector<TileDrawable*>::const_iterator ii = _drawables.begin(); ii != _drawables.end(); ++ii)
+		{
+			delete *ii;
+		}
+		_drawables.clear();
+	}
+}
+
+TileDrawable::TileDrawable(Surface *pSurface, int pX, int pY, int pO) : surface(pSurface), x(pX), y(pY), off(pO)
+{
+}
+
 }

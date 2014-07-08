@@ -52,6 +52,11 @@ private:
 	ItemDamageType _damageType;
 	int _accuracyAuto, _accuracySnap, _accuracyAimed, _tuAuto, _tuSnap, _tuAimed;
 	int _clipSize, _accuracyMelee, _tuMelee;
+	int _accuracyShotgunSpread, _autoDelay;
+	int _aiRangeClose, _aiRangeMid, _aiRangeLong, _aiRangeMax;
+	std::vector<std::string> _aiAttackPriorityClose, _aiAttackPriorityMid, _aiAttackPriorityLong, _aiAttackPriorityMax;
+	int _overwatchModifier, _overwatchRadius, _overwatchRange;
+	std::string _overwatchShot;
 	BattleType _battleType;
 	bool _twoHanded, _waypoint, _fixedWeapon;
 	int _invWidth, _invHeight;
@@ -68,6 +73,7 @@ private:
 	std::string _zombieUnit;
 	bool _strengthApplied, _skillApplied, _LOSRequired;
 	int _meleeSound, _meleePower, _meleeAnimation, _meleeHitSound;
+	int _kneelModifier, _reactionsModifier, _blastDropoff;
 public:
 	/// Creates a blank item ruleset.
 	RuleItem(const std::string &type);
@@ -121,6 +127,8 @@ public:
 	int getAccuracyAimed() const;
 	/// Gets the item's melee accuracy.
 	int getAccuracyMelee() const;
+	/// Gets the item's shotgun spread accuracy.
+	int getAccuracyShotgunSpread() const;
 	/// Gets the item's snapshot TU cost.
 	int getTUSnap() const;
 	/// Gets the item's autoshot TU cost.
@@ -219,6 +227,29 @@ public:
 	int getMeleeAnimation() const;
 	/// Check if LOS is required to use this item (only applies to psionic type items)
 	bool isLOSRequired() const;
+	/// Get the kneeling accuracy modifier for this weapon.
+	int getKneelModifier() const;
+	/// Get the reactions modifier for this weapon.
+	int getReactionsModifier() const;
+	/// Get the delay between auto fire shots.
+	int getAutoDelay() const;
+	/// Get the drop-off rate per tile for explosions from this ammo item.
+	int getExplosionDropoff() const;
+
+	int getAiRangeClose() const;
+	int getAiRangeMid() const;
+	int getAiRangeLong() const;
+	int getAiRangeMax() const;
+
+	const std::vector<std::string> getAiAttackPriorityClose() const;
+	const std::vector<std::string> getAiAttackPriorityMid() const;
+	const std::vector<std::string> getAiAttackPriorityLong() const;
+	const std::vector<std::string> getAiAttackPriorityMax() const;
+
+	int getOverwatchModifier() const;
+	int getOverwatchRadius() const;
+	int getOverwatchRange() const;
+	const std::string &getOverwatchShot() const;
 };
 
 }

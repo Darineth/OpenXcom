@@ -36,6 +36,14 @@ class BattleUnit;
 class BattleItem;
 class RuleInventory;
 
+struct TileDrawable
+{
+public:
+	TileDrawable(Surface *s, int x, int y, int o);
+	Surface *surface;
+	int x, y, off;
+};
+
 /**
  * Basic element of which a battle map is build.
  * @sa http://www.ufopaedia.org/index.php?title=MAPS
@@ -78,6 +86,9 @@ protected:
 	int _TUMarker;
 	int _overlaps;
 	bool _danger;
+
+	std::vector<TileDrawable*> _drawables;
+
 public:
 	/// Creates a tile.
 	Tile(const Position& pos);
@@ -232,7 +243,10 @@ public:
 	void setDangerous();
 	/// check the danger flag on this tile.
 	bool getDangerous();
-
+	/// Returns a list of pending drawable items
+	std::vector<TileDrawable*>& getDrawables();
+	/// Clears and cleans up the pending drawables vector.
+	void clearDrawables();
 };
 
 }

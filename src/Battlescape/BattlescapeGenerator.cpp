@@ -1807,7 +1807,7 @@ void BattlescapeGenerator::explodePowerSources()
 			pos.x = _save->getTiles()[i]->getPosition().x*16;
 			pos.y = _save->getTiles()[i]->getPosition().y*16;
 			pos.z = (_save->getTiles()[i]->getPosition().z*24) +12;
-			_save->getTileEngine()->explode(pos, 180+RNG::generate(0,70), DT_HE, 10);
+			_save->getTileEngine()->explode(pos, 180+RNG::generate(0,70), BA_NONE, DT_HE, 10, 0);
 		}
 	}
 	Tile *t = _save->getTileEngine()->checkForTerrainExplosions();
@@ -1815,7 +1815,7 @@ void BattlescapeGenerator::explodePowerSources()
 	{
 		Position p = Position(t->getPosition().x * 16, t->getPosition().y * 16, t->getPosition().z * 24);
 		p += Position(8,8,0);
-		_save->getTileEngine()->explode(p, t->getExplosive(), DT_HE, t->getExplosive() / 10);
+		_save->getTileEngine()->explode(p, t->getExplosive(), BA_NONE, DT_HE, t->getExplosive() / 10, 0);
 		t = _save->getTileEngine()->checkForTerrainExplosions();
 	}
 }

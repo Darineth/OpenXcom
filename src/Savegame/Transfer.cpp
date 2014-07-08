@@ -60,7 +60,7 @@ bool Transfer::load(const YAML::Node& node, Base *base, const Ruleset *rule, Sav
 	_hours = node["hours"].as<int>(_hours);
 	if (const YAML::Node &soldier = node["soldier"])
 	{
-		_soldier = new Soldier(rule->getSoldier("XCOM"), rule->getArmor("STR_NONE_UC"));
+		_soldier = new Soldier(rule->getSoldier("XCOM"), save, rule->getArmor("STR_NONE_UC"));
 		_soldier->load(soldier, rule, save);
 	}
 	if (const YAML::Node &craft = node["craft"])

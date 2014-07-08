@@ -94,6 +94,10 @@ private:
 	int _turnsSinceSpotted;
 	std::string _spawnUnit;
 	std::string _activeHand;
+	bool _overwatch;
+	Position _overwatchTarget;
+	std::string _overwatchWeaponSlot;
+	bool _justKilled;
 
 	// static data
 	std::string _type;
@@ -192,7 +196,7 @@ public:
 	/// Gets the unit's bravery.
 	int getMorale() const;
 	/// Do damage to the unit.
-	int damage(const Position &relative, int power, ItemDamageType type, bool ignoreArmor = false);
+	int damage(const Position &relative, int power, ItemDamageType type, bool ignoreArmor = false, int *wounds = 0);
 	/// Heal stun level of the unit.
 	void healStun(int power);
 	/// Gets the unit's stun level.
@@ -228,7 +232,7 @@ public:
 	/// Clear visible tiles.
 	void clearVisibleTiles();
 	/// Calculate firing accuracy.
-	int getFiringAccuracy(BattleActionType actionType, BattleItem *item);
+	int getFiringAccuracy(BattleActionType actionType, BattleItem *item, bool useShotgun = false);
 	/// Calculate accuracy modifier.
 	int getAccuracyModifier(BattleItem *item = 0);
 	/// Calculate throwing accuracy.
@@ -240,7 +244,9 @@ public:
 	/// Get total number of fatal wounds.
 	int getFatalWounds() const;
 	/// Get the current reaction score.
-	double getReactionScore();
+	double getReactionScore(bool checkOverwatch);
+	/// Get the mainhand weapon's reactions modifier.
+	double getWeaponReactionsModifier(bool overwatch);
 	/// Prepare for a new turn.
 	void prepareNewTurn();
 	/// Morale change
@@ -279,6 +285,10 @@ public:
 	BattleItem *getMainHandWeapon(bool quickest = true) const;
 	/// Gets a grenade from the belt, if any.
 	BattleItem *getGrenadeFromBelt() const;
+	/// Finds the quickest item to grab, if any.
+	BattleItem *findQuickItem(const std::string &item, RuleInventory* destSlot, int *moveCost = 0) const;
+	/// Finds the quickest ammo to reload a weapon.
+	BattleItem *findQuickAmmo(BattleItem *weapon, int *reloadCost = 0) const;
 	/// Reloads righthand weapon if needed.
 	bool checkAmmo();
 	/// Check if this unit is in the exit area
@@ -421,6 +431,16 @@ public:
 	bool isSelectable(UnitFaction faction, bool checkReselect, bool checkInventory) const;
 	/// Does this unit have an inventory?
 	bool hasInventory() const;
+
+	bool onOverwatch() const;
+	void activateOverwatch(BattleItem *weapon, const Position& target);
+	void clearOverwatch();
+	const Position& getOverwatchTarget() const;
+	BattleItem *getOverwatchWeapon() const;
+	BattleActionType getOverwatchShotAction(BattleItem *weapon = 0) const;
+
+	void setJustKilled(bool justKilled);
+	bool getJustKilled() const;
 };
 
 }

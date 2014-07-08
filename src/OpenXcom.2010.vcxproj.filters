@@ -856,6 +856,11 @@
     <ClCompile Include="Ufopaedia\ArticleStateTFTD.cpp">
       <Filter>Ufopaedia</Filter>
     </ClCompile>
+    <ClCompile Include="Battlescape\CombatLog.cpp" />
+    <ClCompile Include="Battlescape\RoleMenuState.cpp" />
+    <ClCompile Include="Battlescape\RoleChangeState.cpp" />
+    <ClCompile Include="Savegame\Role.cpp" />
+    <ClCompile Include="Ruleset\RuleRole.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h" />
@@ -1734,6 +1739,11 @@
     <ClInclude Include="Ufopaedia\ArticleStateTFTD.h">
       <Filter>Ufopaedia</Filter>
     </ClInclude>
+    <ClInclude Include="Battlescape\CombatLog.h" />
+    <ClInclude Include="Battlescape\RoleMenuState.h" />
+    <ClInclude Include="Battlescape\RoleChangeState.h" />
+    <ClInclude Include="Savegame\Role.h" />
+    <ClInclude Include="Ruleset\RuleRole.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Geoscape">

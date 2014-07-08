@@ -32,6 +32,7 @@
 #include "RuleItem.h"
 #include "RuleUfo.h"
 #include "RuleTerrain.h"
+#include "RuleRole.h"
 #include "MapDataSet.h"
 #include "RuleSoldier.h"
 #include "Unit.h"
@@ -70,7 +71,7 @@ namespace OpenXcom
 /**
  * Creates a ruleset with blank sets of rules.
  */
-Ruleset::Ruleset() : _costSoldier(0), _costEngineer(0), _costScientist(0), _timePersonnel(0), _initialFunding(0), _alienFuel(""), _startingTime(6, 1, 1, 1999, 12, 0, 0), _modIndex(0), _facilityListOrder(0), _craftListOrder(0), _itemListOrder(0), _researchListOrder(0),  _manufactureListOrder(0), _ufopaediaListOrder(0), _invListOrder(0)
+Ruleset::Ruleset() : _costSoldier(0), _costEngineer(0), _costScientist(0), _timePersonnel(0), _initialFunding(0), _alienFuel(""), _startingTime(6, 1, 1, 1999, 12, 0, 0), _modIndex(0), _facilityListOrder(0), _craftListOrder(0), _itemListOrder(0), _researchListOrder(0),  _manufactureListOrder(0), _roleListOrder(0), _ufopaediaListOrder(0), _invListOrder(0)
 {
     // Check in which data dir the folder is stored
     std::string path = CrossPlatform::getDataFolder("SoldierName/");
@@ -349,6 +350,15 @@ void Ruleset::loadFile(const std::string &filename)
 			rule->load(*i, _manufactureListOrder);
 		}
 	}
+ 	for (YAML::const_iterator i = doc["roles"].begin(); i != doc["roles"].end(); ++i)
+	{
+		RuleRole *rule = loadRule(*i, &_roles, &_rolesIndex, "name");
+		if (rule != 0)
+		{
+			_roleListOrder += 100;
+			rule->load(*i, _roleListOrder);
+		}
+	}
  	for (YAML::const_iterator i = doc["ufopaedia"].begin(); i != doc["ufopaedia"].end(); ++i)
 	{
 		if ((*i)["id"])
@@ -568,7 +578,7 @@ T *Ruleset::loadRule(const YAML::Node &node, std::map<std::string, T*> *map, std
  */
 SavedGame *Ruleset::newSave() const
 {
-	SavedGame *save = new SavedGame();
+	SavedGame *save = new SavedGame(this);
 
 	// Add countries
 	for (std::vector<std::string>::const_iterator i = _countriesIndex.begin(); i != _countriesIndex.end(); ++i)
@@ -829,6 +839,23 @@ RuleSoldier *Ruleset::getSoldier(const std::string &name) const
 {
 	std::map<std::string, RuleSoldier*>::const_iterator i = _soldiers.find(name);
 	if (_soldiers.end() != i) return i->second; else return 0;
+}
+
+/**
+ * Returns the info about a specific role.
+ * @param name Role name.
+ * @return Rules for the role.
+ */
+RuleRole *Ruleset::getRole(const std::string &name) const
+{
+	std::map<std::string, RuleRole*>::const_iterator i = _roles.find(name);
+	if (_roles.end() != i) return i->second; else return 0;
+}
+
+// Gets role list.
+const std::vector<std::string> &Ruleset::getRolesList() const
+{
+	return _rolesIndex;
 }
 
 /**
@@ -1340,7 +1367,7 @@ Soldier *Ruleset::genSoldier(SavedGame *save) const
 	for (int i = 0; i < 10 && duplicate; i++)
 	{
 		delete soldier;
-		soldier = new Soldier(getSoldier("XCOM"), getArmor("STR_NONE_UC"), &_names, newId);
+		soldier = new Soldier(getSoldier("XCOM"), save, getArmor("STR_NONE_UC"), &_names, newId);
 		duplicate = false;
 		for (std::vector<Base*>::iterator i = save->getBases()->begin(); i != save->getBases()->end() && !duplicate; ++i)
 		{

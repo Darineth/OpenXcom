@@ -41,6 +41,7 @@ class RuleUfo;
 class RuleTerrain;
 class MapDataSet;
 class ResourcePack;
+class RuleRole;
 class RuleSoldier;
 class Unit;
 class Armor;
@@ -76,6 +77,7 @@ protected:
 	std::map<std::string, RuleCraft*> _crafts;
 	std::map<std::string, RuleCraftWeapon*> _craftWeapons;
 	std::map<std::string, RuleItem*> _items;
+	std::map<std::string, RuleRole*> _roles;
 	std::map<std::string, RuleUfo*> _ufos;
 	std::map<std::string, RuleTerrain*> _terrains;
 	std::map<std::string, MapDataSet*> _mapDataSets;
@@ -99,11 +101,11 @@ protected:
 	std::string _alienFuel;
 	YAML::Node _startingBase;
 	GameTime _startingTime;
-	std::vector<std::string> _countriesIndex, _regionsIndex, _facilitiesIndex, _craftsIndex, _craftWeaponsIndex, _itemsIndex, _invsIndex, _ufosIndex;
+	std::vector<std::string> _countriesIndex, _regionsIndex, _facilitiesIndex, _craftsIndex, _craftWeaponsIndex, _itemsIndex, _invsIndex, _ufosIndex, _rolesIndex;
 	std::vector<std::string> _aliensIndex, _deploymentsIndex, _armorsIndex, _ufopaediaIndex, _researchIndex, _manufactureIndex, _MCDPatchesIndex;
 	std::vector<std::string> _alienMissionsIndex, _terrainIndex, _extraSpritesIndex, _extraSoundsIndex, _extraStringsIndex;
 	std::vector<std::vector<int> > _alienItemLevels;
-	int _modIndex, _facilityListOrder, _craftListOrder, _itemListOrder, _researchListOrder,  _manufactureListOrder, _ufopaediaListOrder, _invListOrder;
+	int _modIndex, _facilityListOrder, _craftListOrder, _itemListOrder, _researchListOrder,  _manufactureListOrder, _ufopaediaListOrder, _invListOrder, _roleListOrder;
 	std::vector<std::string> _psiRequirements; // it's a cache for psiStrengthEval
 	/// Loads a ruleset from a YAML file.
 	void loadFile(const std::string &filename);
@@ -159,6 +161,10 @@ public:
 	MapDataSet *getMapDataSet(const std::string &name);
 	/// Gets soldier unit rules.
 	RuleSoldier *getSoldier(const std::string &name) const;
+	/// Gets role rules.
+	RuleRole *getRole(const std::string &name) const;
+	// Gets role list.
+	const std::vector<std::string> &getRolesList() const;
 	/// Gets generated unit rules.
 	Unit *getUnit(const std::string &name) const;
 	/// Gets alien race rules.

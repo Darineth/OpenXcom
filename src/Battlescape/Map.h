@@ -59,7 +59,8 @@ private:
 	CursorType _cursorType;
 	int _cursorSize;
 	int _animFrame;
-	Projectile *_projectile;
+	//Projectile *_projectile;
+	std::vector<Projectile*> _projectiles;
 	bool _projectileInFOV;
 	std::list<Explosion *> _explosions;
 	bool _explosionInFOV, _launch;
@@ -114,10 +115,16 @@ public:
 	void cacheUnits();
 	/// Caches the unit.
 	void cacheUnit(BattleUnit *unit);
-	/// Sets projectile.
-	void setProjectile(Projectile *projectile);
-	/// Gets projectile.
-	Projectile *getProjectile() const;
+	/// Adds projectile.
+	void addProjectile(Projectile *projectile);
+	/// Removes a projectile.
+	void removeProjectile(Projectile *projectile);
+	/// Checks if a projectile exists.
+	bool hasProjectile() const;
+	/// Gets map projectiles.
+	const std::vector<Projectile*>& getProjectiles() const;
+	/// Deletes all projectiles.
+	const void deleteProjectiles();
 	/// Gets explosion set.
 	std::list<Explosion*> *getExplosions();
 	/// Gets the pointer to the camera.

@@ -20,6 +20,8 @@
 #define OPENXCOM_BATTLESCAPESTATE_H
 
 #include "../Engine/State.h"
+#include "WarningMessage.h"
+#include "CombatLog.h"
 #include "Position.h"
 
 #include <vector>
@@ -62,6 +64,7 @@ private:
 	NumberText *_numVisibleUnit[VISIBLE_MAX];
 	BattleUnit *_visibleUnit[VISIBLE_MAX];
 	WarningMessage *_warning;
+	CombatLog *_combatLog;
 	Text *_txtName;
 	NumberText *_numTimeUnits, *_numEnergy, *_numHealth, *_numMorale, *_numLayers, *_numAmmoLeft, *_numAmmoRight;
 	Bar *_barTimeUnits, *_barEnergy, *_barHealth, *_barMorale;
@@ -84,6 +87,8 @@ private:
 	void handleItemClick(BattleItem *item);
 	/// Shifts the red colors of the visible unit buttons backgrounds.
 	void blinkVisibleUnitButtons();
+	/// Animates grenade primer indicators.
+	void drawPrimers();
 public:
 	/// Selects the next soldier.
 	void selectNextPlayerUnit(bool checkReselect = false, bool setReselect = false, bool checkInventory = false);
@@ -172,6 +177,11 @@ public:
 	void debug(const std::wstring &message);
 	/// Show warning message.
 	void warning(const std::string &message);
+	void warning(const std::wstring &message);
+	/// Show message.
+	void message(const std::wstring &message, WarningColor color);
+	/// Add a combat log entry.
+	void combatLog(const std::wstring &message, CombatLogColor color);
 	/// Handles keypresses.
 	void handle(Action *action);
 	/// Displays a popup window.

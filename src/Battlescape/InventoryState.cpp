@@ -37,9 +37,11 @@
 #include "../Savegame/BattleUnit.h"
 #include "../Savegame/Soldier.h"
 #include "../Savegame/Tile.h"
+#include "../Savegame/Role.h"
 #include "../Ruleset/Ruleset.h"
 #include "../Ruleset/RuleItem.h"
 #include "../Ruleset/RuleInventory.h"
+#include "../Ruleset/RuleRole.h"
 #include "../Ruleset/Armor.h"
 #include "../Engine/Options.h"
 #include "UnitInfoState.h"
@@ -48,6 +50,7 @@
 #include "Map.h"
 #include "Camera.h"
 #include "Pathfinding.h"
+#include "RoleMenuState.h"
 
 namespace OpenXcom
 {
@@ -68,9 +71,7 @@ InventoryState::InventoryState(bool tu, BattlescapeState *parent) : _tu(tu), _pa
 
 	if (Options::maximizeInfoScreens)
 	{
-		Options::baseXResolution = Screen::ORIGINAL_WIDTH;
-		Options::baseYResolution = Screen::ORIGINAL_HEIGHT;
-		_game->getScreen()->resetDisplay(false);
+		_game->getScreen()->pushMaximizeInfoScreen(_parent != 0);
 	}
 	else if (!_battleGame->getTileEngine())
 	{
@@ -81,7 +82,8 @@ InventoryState::InventoryState(bool tu, BattlescapeState *parent) : _tu(tu), _pa
 	// Create objects
 	_bg = new Surface(320, 200, 0, 0);
 	_soldier = new Surface(320, 200, 0, 0);
-	_txtName = new Text(210, 17, 28, 6);
+	_txtName = new Text(210, 9, 57, 2);
+	_txtRole = new Text(210, 9, 57, 12);
 	_txtTus = new Text(40, 9, 245, Options::showMoreStatsInInventoryView ? 32 : 24);
 	_txtWeight = new Text(70, 9, 245, 24);
 	_txtFAcc = new Text(40, 9, 245, 32);
@@ -96,6 +98,7 @@ InventoryState::InventoryState(bool tu, BattlescapeState *parent) : _tu(tu), _pa
 	_btnUnload = new InteractiveSurface(32, 25, 288, 32);
 	_btnGround = new InteractiveSurface(32, 15, 289, 137);
 	_btnRank = new InteractiveSurface(26, 23, 0, 0);
+	_btnRole = new InteractiveSurface(26, 23, 29, 0);
 	_btnCreateTemplate = new InteractiveSurface(32, 22, _templateBtnX, _createTemplateBtnY);
 	_btnApplyTemplate = new InteractiveSurface(32, 22, _templateBtnX, _applyTemplateBtnY);
 	_selAmmo = new Surface(RuleInventory::HAND_W * RuleInventory::SLOT_W, RuleInventory::HAND_H * RuleInventory::SLOT_H, 272, 88);
@@ -107,22 +110,24 @@ InventoryState::InventoryState(bool tu, BattlescapeState *parent) : _tu(tu), _pa
 	add(_bg);
 	add(_soldier);
 	add(_txtName);
+	add(_txtRole);
 	add(_txtTus);
 	add(_txtWeight);
 	add(_txtFAcc);
 	add(_txtReact);
 	add(_txtPSkill);
 	add(_txtPStr);
-	add(_txtItem);
-	add(_txtAmmo);
 	add(_btnOk);
 	add(_btnPrev);
 	add(_btnNext);
 	add(_btnUnload);
 	add(_btnGround);
 	add(_btnRank);
+	add(_btnRole);
 	add(_btnCreateTemplate);
 	add(_btnApplyTemplate);
+	add(_txtItem);
+	add(_txtAmmo);
 	add(_selAmmo);
 	add(_inv);
 
@@ -132,8 +137,12 @@ InventoryState::InventoryState(bool tu, BattlescapeState *parent) : _tu(tu), _pa
 	_game->getResourcePack()->getSurface("TAC01.SCR")->blit(_bg);
 
 	_txtName->setColor(Palette::blockOffset(4));
-	_txtName->setBig();
+	_txtName->setSecondaryColor(Palette::blockOffset(1));
 	_txtName->setHighContrast(true);
+
+	_txtRole->setColor(Palette::blockOffset(1));
+	_txtRole->setBig();
+	_txtRole->setHighContrast(true);
 
 	_txtTus->setColor(Palette::blockOffset(4));
 	_txtTus->setSecondaryColor(Palette::blockOffset(1));
@@ -201,6 +210,14 @@ InventoryState::InventoryState(bool tu, BattlescapeState *parent) : _tu(tu), _pa
 	_btnRank->onMouseIn((ActionHandler)&InventoryState::txtTooltipIn);
 	_btnRank->onMouseOut((ActionHandler)&InventoryState::txtTooltipOut);
 
+	if(!_tu)
+	{
+		_btnRole->onMouseClick((ActionHandler)&InventoryState::btnRoleClick);
+		_btnRole->onMouseIn((ActionHandler)&InventoryState::txtTooltipIn);
+		_btnRole->onMouseOut((ActionHandler)&InventoryState::txtTooltipOut);
+		_btnRole->setTooltip("STR_ROLE_OPTIONS");
+	}
+
 	_btnCreateTemplate->onMouseClick((ActionHandler)&InventoryState::btnCreateTemplateClick);
 	_btnCreateTemplate->onKeyboardPress((ActionHandler)&InventoryState::btnCreateTemplateClick, Options::keyInvCreateTemplate);
 	_btnCreateTemplate->setTooltip("STR_CREATE_INVENTORY_TEMPLATE");
@@ -213,6 +230,8 @@ InventoryState::InventoryState(bool tu, BattlescapeState *parent) : _tu(tu), _pa
 	_btnApplyTemplate->onMouseIn((ActionHandler)&InventoryState::txtTooltipIn);
 	_btnApplyTemplate->onMouseOut((ActionHandler)&InventoryState::txtTooltipOut);
 
+	// The role button only becomes available when the current unit is a soldier
+	_btnRole->setVisible(false);
 
 	// only use copy/paste buttons in setup (i.e. non-tu) mode
 	_game->getResourcePack()->getSurface("InvCopy")->blit(_btnCreateTemplate);
@@ -259,8 +278,7 @@ InventoryState::~InventoryState()
 	{
 		if (Options::maximizeInfoScreens)
 		{
-			Screen::updateScale(Options::battlescapeScale, Options::battlescapeScale, Options::baseXBattlescape, Options::baseYBattlescape, true);
-			_game->getScreen()->resetDisplay(false);
+			_game->getScreen()->popMaximizeInfoScreen();
 		}
 		Tile *inventoryTile = _battleGame->getSelectedUnit()->getTile();
 		_battleGame->getTileEngine()->applyGravity(inventoryTile);
@@ -269,8 +287,9 @@ InventoryState::~InventoryState()
 	}
 	else
 	{
-		Screen::updateScale(Options::geoscapeScale, Options::geoscapeScale, Options::baseXGeoscape, Options::baseYGeoscape, true);
-		_game->getScreen()->resetDisplay(false);
+		_game->getScreen()->popMaximizeInfoScreen();
+		//Screen::updateScale(Options::geoscapeScale, Options::geoscapeScale, Options::baseXGeoscape, Options::baseYGeoscape, true);
+		//_game->getScreen()->resetDisplay(false);
 	}
 }
 
@@ -318,17 +337,51 @@ void InventoryState::init()
 	unit->setCache(0);
 	_soldier->clear();
 	_btnRank->clear();
-
-	_txtName->setBig();
+	_btnRole->clear();
+	_txtRole->setVisible(false);
+	
 	_txtName->setText(unit->getName(_game->getLanguage()));
+
+	if(Soldier *soldier = getSelectedSoldier())
+	{
+		std::wostringstream title;
+		Role *role = soldier->getRole();
+		if(role && !role->isBlank())
+		{
+			title << tr(soldier->getRole()->getName()) << " - ";
+		}
+
+		title << tr(unit->getRankString());
+
+		_txtRole->setText(title.str());
+		_txtRole->setVisible(true);
+	}
+
 	_inv->setSelectedUnit(unit);
-	Soldier *s = _game->getSavedGame()->getSoldier(unit->getId());
+
+	updateStats();
+}
+
+/**
+ * Updates the soldier stats (Weight, TU).
+ */
+void InventoryState::updateStats()
+{
+	BattleUnit *unit = getSelectedUnit();
+	Soldier *s = getSelectedSoldier();
+
 	if (s)
 	{
 		SurfaceSet *texture = _game->getResourcePack()->getSurfaceSet("BASEBITS.PCK");
 		texture->getFrame(s->getRankSprite())->setX(0);
 		texture->getFrame(s->getRankSprite())->setY(0);
 		texture->getFrame(s->getRankSprite())->blit(_btnRank);
+
+		if(Role* role = s->getRole())
+		{
+			_btnRole->setVisible(true);
+			_game->getResourcePack()->getSurface(role->getRules()->getIconSprite())->blit(_btnRole);
+		}
 
 		std::string look = s->getArmor()->getSpriteInventory();
 		if (s->getGender() == GENDER_MALE)
@@ -352,22 +405,13 @@ void InventoryState::init()
 	}
 	else
 	{
+		_btnRole->setVisible(false);
 		Surface *armorSurface = _game->getResourcePack()->getSurface(unit->getArmor()->getSpriteInventory());
 		if (armorSurface)
 		{
 			armorSurface->blit(_soldier);
 		}
 	}
-
-	updateStats();
-}
-
-/**
- * Updates the soldier stats (Weight, TU).
- */
-void InventoryState::updateStats()
-{
-	BattleUnit *unit = _battleGame->getSelectedUnit();
 
 	_txtTus->setText(tr("STR_TIME_UNITS_SHORT").arg(unit->getTimeUnits()));
 
@@ -533,7 +577,7 @@ void InventoryState::btnUnloadClick(Action *)
  */
 void InventoryState::btnGroundClick(Action *)
 {
-	_inv->arrangeGround();
+	_inv->arrangeGround(true);
 }
 
 /**
@@ -543,6 +587,14 @@ void InventoryState::btnGroundClick(Action *)
 void InventoryState::btnRankClick(Action *)
 {
 	_game->pushState(new UnitInfoState(_battleGame->getSelectedUnit(), _parent, true, false));
+}
+
+void InventoryState::btnRoleClick(Action *action)
+{
+	if(!_tu)
+	{
+		_game->pushState(new RoleMenuState(this));
+	}
 }
 
 void InventoryState::btnCreateTemplateClick(Action *action)
@@ -556,30 +608,7 @@ void InventoryState::btnCreateTemplateClick(Action *action)
 	// clear current template
 	_clearInventoryTemplate(_curInventoryTemplate);
 
-	// copy inventory instead of just keeping a pointer to it.  that way
-	// create/apply can be used as an undo button for a single unit and will
-	// also work as expected if inventory is modified after 'create' is clicked
-	std::vector<BattleItem*> *unitInv = _battleGame->getSelectedUnit()->getInventory();
-	for (std::vector<BattleItem*>::iterator j = unitInv->begin(); j != unitInv->end(); ++j)
-	{
-		std::string ammo;
-		if ((*j)->needsAmmo() && (*j)->getAmmoItem())
-		{
-			ammo = (*j)->getAmmoItem()->getRules()->getType();
-		}
-		else
-		{
-			ammo = "NONE";
-		}
-
-		_curInventoryTemplate.push_back(new EquipmentLayoutItem(
-				(*j)->getRules()->getType(),
-				(*j)->getSlot()->getId(),
-				(*j)->getSlotX(),
-				(*j)->getSlotY(),
-				ammo,
-				(*j)->getFuseTimer()));
-	}
+	getUnitEquipmentLayout(&_curInventoryTemplate);
 
 	if (_curInventoryTemplate.empty())
 	{
@@ -603,6 +632,43 @@ void InventoryState::btnApplyTemplateClick(Action *action)
 		return;
 	}
 
+	applyEquipmentLayout(_curInventoryTemplate);
+
+	// give audio feedback
+	_game->getResourcePack()->getSound("BATTLE.CAT", 38)->play();
+}
+
+/// Gets the selected unit's equipment layout.
+void InventoryState::getUnitEquipmentLayout(std::vector<EquipmentLayoutItem*> *layout) const
+{
+	// copy inventory instead of just keeping a pointer to it.  that way
+	// create/apply can be used as an undo button for a single unit and will
+	// also work as expected if inventory is modified after 'create' is clicked
+	std::vector<BattleItem*> *unitInv = _battleGame->getSelectedUnit()->getInventory();
+	for (std::vector<BattleItem*>::iterator j = unitInv->begin(); j != unitInv->end(); ++j)
+	{
+		std::string ammo;
+		if ((*j)->needsAmmo() && (*j)->getAmmoItem())
+		{
+			ammo = (*j)->getAmmoItem()->getRules()->getType();
+		}
+		else
+		{
+			ammo = "NONE";
+		}
+
+		layout->push_back(new EquipmentLayoutItem(
+				(*j)->getRules()->getType(),
+				(*j)->getSlot()->getId(),
+				(*j)->getSlotX(),
+				(*j)->getSlotY(),
+				ammo,
+				(*j)->getFuseTimer()));
+	}
+}
+
+void InventoryState::applyEquipmentLayout(const std::vector<EquipmentLayoutItem*> &layout)
+{
 	BattleUnit               *unit          = _battleGame->getSelectedUnit();
 	std::vector<BattleItem*> *unitInv       = unit->getInventory();
 	Tile                     *groundTile    = unit->getTile();
@@ -621,8 +687,8 @@ void InventoryState::btnApplyTemplateClick(Action *action)
 	// from the ground.  if any item is not found on the ground, display warning
 	// message, but continue attempting to fulfill the template as best we can
 	bool itemMissing = false;
-	std::vector<EquipmentLayoutItem*>::iterator templateIt;
-	for (templateIt = _curInventoryTemplate.begin(); templateIt != _curInventoryTemplate.end(); ++templateIt)
+	std::vector<EquipmentLayoutItem*>::const_iterator templateIt;
+	for (templateIt = layout.begin(); templateIt != layout.end(); ++templateIt)
 	{
 		// search for template item in ground inventory
 		std::vector<BattleItem*>::iterator groundItem;
@@ -661,9 +727,6 @@ void InventoryState::btnApplyTemplateClick(Action *action)
 	// refresh ui
 	_inv->arrangeGround(false);
 	updateStats();
-
-	// give audio feedback
-	_game->getResourcePack()->getSound("BATTLE.CAT", 38)->play();
 }
 
 /**
@@ -679,7 +742,7 @@ void InventoryState::invClick(Action *)
  * Shows item info.
  * @param action Pointer to an action.
  */
-void InventoryState::invMouseOver(Action *)
+void InventoryState::invMouseOver(Action *action)
 {
 	if (_inv->getSelectedItem() != 0)
 	{
@@ -741,6 +804,14 @@ void InventoryState::invMouseOver(Action *)
 	}
 	else
 	{
+		/*std::string toolTip = action->getSender()->getTooltip();
+
+		if(toolTip.length())
+		{
+			_txtItem->setText(tr(toolTip));
+		}
+		else*/
+
 		if (_currentTooltip == "")
 		{
 			_txtItem->setText(L"");
@@ -816,5 +887,32 @@ void InventoryState::txtTooltipOut(Action *action)
 			_txtItem->setText(L"");
 		}
 	}
+}
+
+/// Gets the current battle unit.
+BattleUnit *InventoryState::getSelectedUnit() const
+{
+	return _battleGame->getSelectedUnit();
+}
+
+
+/// Gets the current soldier.
+Soldier *InventoryState::getSelectedSoldier() const
+{
+	return _game->getSavedGame()->getSoldier(getSelectedUnit()->getId());
+}
+
+/// Change the current soldier's role.
+void InventoryState::setRole(const std::string &role)
+{
+	Soldier *s = getSelectedSoldier();
+	Role *r = _game->getSavedGame()->getRole(role);
+	s->setRole(r);
+
+	if(!r->isBlank() && !r->getDefaultLayout().empty())
+	{
+		applyEquipmentLayout(r->getDefaultLayout());
+	}
+	updateStats();
 }
 }

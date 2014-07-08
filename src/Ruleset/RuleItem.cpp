@@ -35,7 +35,11 @@ RuleItem::RuleItem(const std::string &type) : _type(type), _name(type), _size(0.
 											_painKiller(0), _heal(0), _stimulant(0), _woundRecovery(0), _healthRecovery(0), _stunRecovery(0), _energyRecovery(0), _tuUse(0), _recoveryPoints(0), _armor(20), _turretType(-1),
 											_recover(true), _liveAlien(false), _blastRadius(-1), _attraction(0), _flatRate(false), _arcingShot(false), _listOrder(0),
 											_maxRange(200), _aimRange(200), _snapRange(15), _autoRange(7), _minRange(0), _dropoff(2), _bulletSpeed(0), _explosionSpeed(0), _autoShots(3), _shotgunPellets(0), _zombieUnit(""),
-											_strengthApplied(false), _skillApplied(true), _LOSRequired(false), _meleeSound(39), _meleePower(0), _meleeAnimation(0), _meleeHitSound(-1)
+											_strengthApplied(false), _skillApplied(true), _LOSRequired(false), _meleeSound(39), _meleePower(0), _meleeAnimation(0), _meleeHitSound(-1),
+											_accuracyShotgunSpread(0), _autoDelay(0), _kneelModifier(0), _blastDropoff(0), _reactionsModifier(0),
+											_aiRangeClose(-1), _aiRangeMid(-1), _aiRangeLong(-1), _aiRangeMax(-1),
+											_aiAttackPriorityClose(), _aiAttackPriorityMid(), _aiAttackPriorityLong(), _aiAttackPriorityMax(),
+											_overwatchModifier(100), _overwatchRadius(2), _overwatchRange(20), _overwatchShot("snap")
 {
 }
 
@@ -138,6 +142,7 @@ void RuleItem::load(const YAML::Node &node, int modIndex, int listOrder)
 	_accuracyAuto = node["accuracyAuto"].as<int>(_accuracyAuto);
 	_accuracySnap = node["accuracySnap"].as<int>(_accuracySnap);
 	_accuracyAimed = node["accuracyAimed"].as<int>(_accuracyAimed);
+	_accuracyShotgunSpread = node["accuracyShotgunSpread"].as<int>(_accuracyShotgunSpread);
 	_tuAuto = node["tuAuto"].as<int>(_tuAuto);
 	_tuSnap = node["tuSnap"].as<int>(_tuSnap);
 	_tuAimed = node["tuAimed"].as<int>(_tuAimed);
@@ -183,6 +188,26 @@ void RuleItem::load(const YAML::Node &node, int modIndex, int listOrder)
 	_skillApplied = node["skillApplied"].as<bool>(_skillApplied);
 	_LOSRequired = node["LOSRequired"].as<bool>(_LOSRequired);
 	_meleePower = node["meleePower"].as<int>(_meleePower);
+	_autoDelay = node["autoDelay"].as<int>(_autoDelay);
+	_kneelModifier = node["kneelModifier"].as<int>(_kneelModifier);
+	_blastDropoff = node["blastDropoff"].as<int>(_blastDropoff);
+	_reactionsModifier = node["reactionsModifier"].as<int>(_reactionsModifier);
+
+	_aiRangeClose = node["aiRangeClose"].as<int>(_aiRangeClose);
+	_aiRangeMid = node["aiRangeMid"].as<int>(_aiRangeMid);
+	_aiRangeLong = node["aiRangeLong"].as<int>(_aiRangeLong);
+	_aiRangeMax = node["aiRangeMax"].as<int>(_aiRangeMax);
+
+	_aiAttackPriorityClose = node["aiAttackPriorityClose"].as< std::vector<std::string> >(_aiAttackPriorityClose);
+	_aiAttackPriorityMid = node["aiAttackPriorityMid"].as< std::vector<std::string> >(_aiAttackPriorityMid);
+	_aiAttackPriorityLong = node["aiAttackPriorityLong"].as< std::vector<std::string> >(_aiAttackPriorityLong);
+	_aiAttackPriorityMax = node["aiAttackPriorityMax"].as< std::vector<std::string> >(_aiAttackPriorityMax);
+
+	_overwatchModifier = node["overwatchModifier"].as<int>(_overwatchModifier);
+	_overwatchRadius = node["overwatchRadius"].as<int>(_overwatchRadius);
+	_overwatchRange = node["overwatchRange"].as<int>(_overwatchRange);
+	_overwatchShot = node["overwatchShot"].as<std::string>(_overwatchShot);
+
 	if (!_listOrder)
 	{
 		_listOrder = listOrder;
@@ -401,6 +426,15 @@ int RuleItem::getAccuracyAimed() const
 int RuleItem::getAccuracyMelee() const
 {
 	return _accuracyMelee;
+}
+
+/**
+ * Gets the item's shotgun spread for attacks.
+ * @return The ShotgunSpread accuracy.
+ */
+int RuleItem::getAccuracyShotgunSpread() const
+{
+	return _accuracyShotgunSpread;
 }
 
 /**
@@ -881,4 +915,108 @@ int RuleItem::getMeleeAnimation() const
 {
 	return _meleeAnimation;
 }
+
+/**
+ * What is the kneeling modifier for this weapon?
+ * @return the kneeling modifier for this weapon.
+ */
+int RuleItem::getKneelModifier() const
+{
+	return _kneelModifier;
+}
+
+/**
+ * What is the reactions modifier for this weapon?
+ * @return the reactions modifier for this weapon.
+ */
+int RuleItem::getReactionsModifier() const
+{
+	int result = _reactionsModifier;
+
+	if(result <= 0)
+		result = 100;
+	else if(result > 1000)
+		result = 1000;
+
+	return result;
+}
+
+/**
+ * What is the explosion drop-off rate for this ammo item?
+ * @return the explosion drop-off rate for this ammo item.
+ */
+int RuleItem::getExplosionDropoff() const
+{
+	return _blastDropoff;
+}
+
+/**
+ * What is the auto fire delay for this weapon?
+ * @return The auto fire delay for this weapon.
+ */
+int RuleItem::getAutoDelay() const
+{
+	return _autoDelay;
+}
+
+int RuleItem::getAiRangeClose() const
+{
+	return _aiRangeClose;
+}
+
+int RuleItem::getAiRangeMid() const
+{
+	return _aiRangeMid;
+}
+
+int RuleItem::getAiRangeLong() const
+{
+	return _aiRangeLong;
+}
+
+int RuleItem::getAiRangeMax() const
+{
+	return _aiRangeMax;
+}
+
+const std::vector<std::string> RuleItem::getAiAttackPriorityClose() const
+{
+	return _aiAttackPriorityClose;
+}
+
+const std::vector<std::string> RuleItem::getAiAttackPriorityMid() const
+{
+	return _aiAttackPriorityMid;
+}
+
+const std::vector<std::string> RuleItem::getAiAttackPriorityLong() const
+{
+	return _aiAttackPriorityLong;
+}
+
+const std::vector<std::string> RuleItem::getAiAttackPriorityMax() const
+{
+	return _aiAttackPriorityMax;
+}
+
+int RuleItem::getOverwatchModifier() const
+{
+	return _overwatchModifier;
+}
+
+int RuleItem::getOverwatchRadius() const
+{
+	return _overwatchRadius;
+}
+
+int RuleItem::getOverwatchRange() const
+{
+	return _overwatchRange;
+}
+
+const std::string &RuleItem::getOverwatchShot() const
+{
+	return _overwatchShot;
+}
+
 }

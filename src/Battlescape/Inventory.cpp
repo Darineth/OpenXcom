@@ -117,9 +117,17 @@ void Inventory::setTuMode(bool tu)
  */
 void Inventory::setSelectedUnit(BattleUnit *unit)
 {
+	bool arrange = !_selUnit;
 	_selUnit = unit;
-	_groundOffset = 999;
-	arrangeGround();
+	if(arrange)
+	{
+		_groundOffset = 999;
+		arrangeGround();
+	}
+	else
+	{
+		drawItems();
+	}
 }
 
 /**
@@ -248,7 +256,7 @@ void Inventory::drawItems()
 		for (std::vector<BattleItem*>::iterator i = _selUnit->getTile()->getInventory()->begin(); i != _selUnit->getTile()->getInventory()->end(); ++i)
 		{
 			// note that you can make items invisible by setting their width or height to 0 (for example used with tank corpse items)
-			if ((*i) == _selItem || (*i)->getSlotX() < _groundOffset || (*i)->getRules()->getInventoryHeight() == 0 || (*i)->getRules()->getInventoryWidth() == 0)
+			if ((*i) == _selItem || ((*i)->getSlotX() + (*i)->getRules()->getInventoryWidth()) <= _groundOffset || (*i)->getRules()->getInventoryHeight() == 0 || (*i)->getRules()->getInventoryWidth() == 0)
 				continue;
 			Surface *frame = texture->getFrame((*i)->getRules()->getBigSprite());
 			frame->setX((*i)->getSlot()->getX() + ((*i)->getSlotX() - _groundOffset) * RuleInventory::SLOT_W);
@@ -679,7 +687,7 @@ void Inventory::mouseClick(Action *action, State *state)
 						{
 							_warning->showMessage(_game->getLanguage()->getString("STR_WEAPON_IS_ALREADY_LOADED"));
 						}
-						else if (!_tu || _selUnit->spendTimeUnits(15))
+						else if (!_tu || (Options::battleAdjustReloadCost ? _selUnit->spendTimeUnits(_selItem->getSlot()->getCost(item->getSlot()) + _selItem->getAmmoReloadCost()) : _selUnit->spendTimeUnits(15)))
 						{
 							moveItem(_selItem, 0, 0, 0);
 							item->setAmmoItem(_selItem);
@@ -764,6 +772,7 @@ void Inventory::mouseClick(Action *action, State *state)
 								{
 									_warning->showMessage(_game->getLanguage()->getString("STR_GRENADE_IS_DEACTIVATED"));
 									item->setFuseTimer(-1);  // Unprime the grenade
+									drawItems();
 								}
 							}
 						}
@@ -784,6 +793,14 @@ void Inventory::mouseClick(Action *action, State *state)
 			// Return item to original position
 			setSelectedItem(0);
 		}
+	}
+	else if (action->getDetails()->button.button == SDL_BUTTON_WHEELUP)
+	{
+		arrangeGround(true, -1);
+	}
+	else if (action->getDetails()->button.button == SDL_BUTTON_WHEELDOWN)
+	{
+		arrangeGround(true, 1);
 	}
 	InteractiveSurface::mouseClick(action, state);
 }
@@ -821,7 +838,8 @@ bool Inventory::unload()
 		}
 	}
 
-	if (!_tu || _selUnit->spendTimeUnits(8))
+	// Adjusted unload cost: Magazine weight + hand->hand
+	if (!_tu || _selUnit->spendTimeUnits(Options::battleAdjustReloadCost ? (_selItem->getAmmoItem()->getRules()->getWeight() + _game->getRuleset()->getInventory("STR_LEFT_HAND")->getCost(_game->getRuleset()->getInventory("STR_RIGHT_HAND"))) : 8))
 	{
 		moveItem(_selItem->getAmmoItem(), _game->getRuleset()->getInventory("STR_LEFT_HAND"), 0, 0);
 		_selItem->getAmmoItem()->moveToOwner(_selUnit);
@@ -845,88 +863,105 @@ bool Inventory::unload()
  * they don't actually have permanent slot positions.
  * @param alterOffset Whether to alter the ground offset.
  */
-void Inventory::arrangeGround(bool alterOffset)
+void Inventory::arrangeGround(bool alterOffset, int offset)
 {
-	RuleInventory *ground = _game->getRuleset()->getInventory("STR_GROUND");
+	static RuleInventory *ground = _game->getRuleset()->getInventory("STR_GROUND");
+	static int slotsX = (320 - ground->getX()) / RuleInventory::SLOT_W;
+	static int slotsY = (200 - ground->getY()) / RuleInventory::SLOT_H;
 
-	int slotsX = (320 - ground->getX()) / RuleInventory::SLOT_W;
-	int slotsY = (200 - ground->getY()) / RuleInventory::SLOT_H;
-	int x = 0;
-	int y = 0;
-	bool ok = false;
-	int xMax = 0;
-	_stackLevel.clear();
-
-	if (_selUnit != 0)
+	if(offset)
 	{
-		// first move all items out of the way - a big number in X direction
-		for (std::vector<BattleItem*>::iterator i = _selUnit->getTile()->getInventory()->begin(); i != _selUnit->getTile()->getInventory()->end(); ++i)
+		int xMax = 0;
+
+		for (std::vector<BattleItem*>::iterator ii = _selUnit->getTile()->getInventory()->begin(); ii != _selUnit->getTile()->getInventory()->end(); ++ii)
 		{
-			(*i)->setSlot(ground);
-			(*i)->setSlotX(1000000);
-			(*i)->setSlotY(0);
+			BattleItem* item = *ii;
+			int width = item->getRules()->getInventoryWidth();
+			if(width) { xMax = std::max(xMax, item->getSlotX() + width); }
 		}
 
-		// now for each item, find the most topleft position that is not occupied and will fit
-		for (std::vector<BattleItem*>::iterator i = _selUnit->getTile()->getInventory()->begin(); i != _selUnit->getTile()->getInventory()->end(); ++i)
+		_groundOffset = std::max(0, std::min(_groundOffset + offset, xMax - 1));
+	}
+	else
+	{
+		int x = 0;
+		int y = 0;
+		bool ok = false;
+		int xMax = 0;
+		_stackLevel.clear();
+
+		if (_selUnit != 0)
 		{
-			x = 0;
-			y = 0;
-			ok = false;
-			while (!ok)
+			// first move all items out of the way - a big number in X direction
+			for (std::vector<BattleItem*>::iterator i = _selUnit->getTile()->getInventory()->begin(); i != _selUnit->getTile()->getInventory()->end(); ++i)
 			{
-				ok = true; // assume we can put the item here, if one of the following checks fails, we can't.
-				for (int xd = 0; xd < (*i)->getRules()->getInventoryWidth() && ok; xd++)
+				(*i)->setSlot(ground);
+				(*i)->setSlotX(1000000);
+				(*i)->setSlotY(0);
+			}
+
+			// now for each item, find the most topleft position that is not occupied and will fit
+			for (std::vector<BattleItem*>::iterator i = _selUnit->getTile()->getInventory()->begin(); i != _selUnit->getTile()->getInventory()->end(); ++i)
+			{
+				x = 0;
+				y = 0;
+				ok = false;
+				while (!ok)
 				{
-					if ((x + xd) % slotsX < x % slotsX)
+					ok = true; // assume we can put the item here, if one of the following checks fails, we can't.
+					for (int xd = 0; xd < (*i)->getRules()->getInventoryWidth() && ok; xd++)
 					{
-						ok = false;
-					}
-					else
-					{
-						for (int yd = 0; yd < (*i)->getRules()->getInventoryHeight() && ok; yd++)
+						if ((x + xd) % slotsX < x % slotsX)
 						{
-							BattleItem *item = _selUnit->getItem(ground, x + xd, y + yd);
-							ok = item == 0;
-							if (canBeStacked(item, *i))
+							ok = false;
+						}
+						else
+						{
+							for (int yd = 0; yd < (*i)->getRules()->getInventoryHeight() && ok; yd++)
 							{
-								ok = true;
+								BattleItem *item = _selUnit->getItem(ground, x + xd, y + yd);
+								ok = item == 0;
+								if (canBeStacked(item, *i))
+								{
+									ok = true;
+								}
 							}
 						}
 					}
-				}
-				if (ok)
-				{
-					(*i)->setSlotX(x);
-					(*i)->setSlotY(y);
-					// only increase the stack level if the item is actually visible.
-					if ((*i)->getRules()->getInventoryWidth())
+					if (ok)
 					{
-						_stackLevel[x][y] += 1;
+						(*i)->setSlotX(x);
+						(*i)->setSlotY(y);
+						// only increase the stack level if the item is actually visible.
+						if ((*i)->getRules()->getInventoryWidth())
+						{
+							_stackLevel[x][y] += 1;
+						}
+						xMax = std::max(xMax, x + (*i)->getRules()->getInventoryWidth());
 					}
-					xMax = std::max(xMax, x + (*i)->getRules()->getInventoryWidth());
-				}
-				else
-				{
-					y++;
-					if (y > slotsY - (*i)->getRules()->getInventoryHeight())
+					else
 					{
-						y = 0;
-						x++;
+						y++;
+						if (y > slotsY - (*i)->getRules()->getInventoryHeight())
+						{
+							y = 0;
+							x++;
+						}
 					}
 				}
 			}
 		}
-	}
-	if (alterOffset)
-	{
-		if (xMax >= _groundOffset + slotsX - 1)
+		if (alterOffset)
 		{
-			_groundOffset += slotsX - 1;
-		}
-		else
-		{
-			_groundOffset = 0;
+			if(!offset) { offset = slotsX - 1; }
+			if (xMax >= _groundOffset + offset)
+			{
+				_groundOffset += offset;
+			}
+			else
+			{
+				_groundOffset = 0;
+			}
 		}
 	}
 	drawItems();

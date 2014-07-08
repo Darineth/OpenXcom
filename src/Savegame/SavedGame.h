@@ -46,6 +46,7 @@ class AlienBase;
 class AlienStrategy;
 class AlienMission;
 class Target;
+class Role;
 class Soldier;
 
 /**
@@ -105,6 +106,8 @@ private:
 	std::string _graphCountryToggles;
 	std::string _graphFinanceToggles;
 	std::vector<const RuleResearch *> _poppedResearch;
+	std::map<std::string, Role*> _roles;
+	Role *_defaultRole;
 	std::vector<Soldier*> _deadSoldiers;
 	size_t _selectedBase;
 
@@ -114,7 +117,7 @@ public:
 	static const std::string AUTOSAVE_GEOSCAPE, AUTOSAVE_BATTLESCAPE, QUICKSAVE;
 
 	/// Creates a new saved game.
-	SavedGame();
+	SavedGame(const Ruleset *rules);
 	/// Cleans up the saved game.
 	~SavedGame();
 	/// Gets list of saves in the user directory.
@@ -271,6 +274,10 @@ public:
 	void setSelectedBase(size_t base);
 	/// Evaluate the score of a soldier based on all of his stats, missions and kills.
 	int getSoldierScore(Soldier *soldier);
+	/// Gets the named role.
+	Role* getRole(const std::string &name) const;
+	/// Gets the default role.
+	Role* getDefaultRole() const;
 };
 
 }

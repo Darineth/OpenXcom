@@ -22,12 +22,14 @@
 #include <SDL.h>
 #include "State.h"
 #include "Surface.h"
+#include "../Battlescape/BattleState.h"
 
 namespace OpenXcom
 {
 
 typedef void (State::* StateHandler)();
 typedef void (Surface::* SurfaceHandler)();
+typedef void (BattleState::* BattleStateHandler)();
 
 /**
  * Timer used to run code in fixed intervals.
@@ -48,6 +50,7 @@ private:
 	bool _frameSkipping;
 	StateHandler _state;
 	SurfaceHandler _surface;
+	BattleStateHandler _battleState;
 public:
 	/// Creates a stopped timer.
 	Timer(Uint32 interval, bool frameSkipping = false);
@@ -63,12 +66,16 @@ public:
 	bool isRunning() const;
 	/// Advances the timer.
 	void think(State* state, Surface* surface);
+	/// Advances the timer.
+	void think(State* state, Surface* surface, BattleState* battleState);
 	/// Sets the timer's interval.
 	void setInterval(Uint32 interval);
 	/// Hooks a state action handler to the timer interval.
 	void onTimer(StateHandler handler);
 	/// Hooks a surface action handler to the timer interval.
 	void onTimer(SurfaceHandler handler);
+	/// Hooks a battle state action handler to the timer interval.
+	void onTimer(BattleStateHandler handler);
 	/// Turns frame skipping on or off
 	void setFrameSkipping(bool skip);
 };

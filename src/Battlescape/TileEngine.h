@@ -22,6 +22,7 @@
 #include <vector>
 #include "Position.h"
 #include "../Ruleset/RuleItem.h"
+#include "BattlescapeGame.h"
 #include <SDL.h>
 
 namespace OpenXcom
@@ -48,6 +49,7 @@ private:
 	static const int heightFromCenter[11];
 	void addLight(const Position &center, int power, int layer);
 	int blockage(Tile *tile, const int part, ItemDamageType type, int direction = -1, bool checkingFromOrigin = false);
+	void displayDamage(BattleUnit *attacker, BattleUnit *target, BattleActionType action, ItemDamageType type, int damage, int wounds, bool stun);
 	bool _personalLighting;
 public:
 	/// Creates a new TileEngine class.
@@ -69,9 +71,9 @@ public:
 	/// Recalculates lighting of the battlescape for units.
 	void calculateUnitLighting();
 	/// Handles bullet/weapon hits.
-	BattleUnit *hit(const Position &center, int power, ItemDamageType type, BattleUnit *unit);
+	BattleUnit *hit(const Position &center, int power, BattleActionType action, ItemDamageType type, BattleUnit *unit);
 	/// Handles explosions.
-	void explode(const Position &center, int power, ItemDamageType type, int maxRadius, BattleUnit *unit = 0);
+	void explode(const Position &center, int power, BattleActionType action, ItemDamageType type, int maxRadius, int falloff, BattleUnit *unit = 0);
 	/// Checks if a destroyed tile starts an explosion.
 	Tile *checkForTerrainExplosions();
 	/// Unit opens door?
@@ -126,12 +128,14 @@ public:
 	void checkAdjacentDoors(Position pos, int part);
 	/// Creates a vector of units that can spot this unit.
 	std::vector<BattleUnit *> getSpottingUnits(BattleUnit* unit);
+	/// Creates a vector of units that are overwatching this unit.
+	std::vector<BattleUnit *> getOverwatchingUnits(BattleUnit* unit);
 	/// Given a vector of spotters, and a unit, picks the spotter with the highest reaction score.
-	BattleUnit* getReactor(std::vector<BattleUnit *> spotters, BattleUnit *unit);
+	BattleUnit* getReactor(std::vector<BattleUnit *> spotters, BattleUnit *unit, bool overwatcher = false);
 	/// Checks validity of a snap shot to this position.
-	bool canMakeSnap(BattleUnit *unit, BattleUnit *target);
+	bool canMakeReactionShot(BattleUnit *unit, BattleUnit *target, bool overwatch, BattleItem *weapon = 0);
 	/// Tries to perform a reaction snap shot to this location.
-	bool tryReactionSnap(BattleUnit *unit, BattleUnit *target);
+	bool tryReactionSnap(BattleUnit *unit, BattleUnit *target, bool overwatch);
 	/// Recalculates FOV of all units in-game.
 	void recalculateFOV();
 	/// Get direction to a certain point

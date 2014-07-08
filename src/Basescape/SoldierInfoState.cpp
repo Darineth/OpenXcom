@@ -39,6 +39,14 @@
 #include "../Engine/SurfaceSet.h"
 #include "../Ruleset/Armor.h"
 #include "../Menu/ErrorMessageState.h"
+#include "../Ruleset/RuleRole.h"
+#include "../Savegame/Role.h"
+#include "../Battlescape/InventoryState.h"
+#include "../Savegame/SavedBattleGame.h"
+#include "../Battlescape/BattlescapeGenerator.h"
+#include "../Interface/Cursor.h"
+#include "../Interface/FpsCounter.h"
+#include "../Savegame/BattleUnit.h"
 #include "SellState.h"
 #include "SoldierArmorState.h"
 #include "SackSoldierState.h"
@@ -74,18 +82,20 @@ SoldierInfoState::SoldierInfoState(Base *base, size_t soldierId) : _base(base), 
 	// Create objects
 	_bg = new Surface(320, 200, 0, 0);
 	_rank = new Surface(26, 23, 4, 4);
-	_btnPrev = new TextButton(28, 14, 0, 33);
-	_btnOk = new TextButton(48, 14, 30, 33);
-	_btnNext = new TextButton(28, 14, 80, 33);
-	_btnArmor = new TextButton(110, 14, 130, 33);
 	_edtSoldier = new TextEdit(this, 210, 16, 40, 9);
-	_btnSack = new TextButton(60, 14, 260, 33);
-	_txtRank = new Text(130, 9, 0, 48);
-	_txtMissions = new Text(100, 9, 130, 48);
-	_txtKills = new Text(100, 9, 230, 48);
-	_txtCraft = new Text(130, 9, 0, 56);
-	_txtRecovery = new Text(180, 9, 130, 56);
-	_txtPsionic = new Text(150, 9, 0, 66);
+	_btnPrev = new TextButton(20, 14, 0, 31);
+	_btnOk = new TextButton(48, 14, 21, 31);
+	_btnNext = new TextButton(20, 14, 70, 31);
+	_btnInventory = new TextButton(70, 14, 91, 31);
+	_btnArmor = new TextButton(110, 14, 162, 31);
+	_btnSack = new TextButton(47, 14, 273, 31);
+	_txtRank = new Text(130, 9, 0, 45);
+	_txtMissions = new Text(100, 9, 130, 45);
+	_txtKills = new Text(100, 9, 230, 45);
+	_txtCraft = new Text(130, 9, 0, 53);
+	_txtRole = new Text(130, 9, 0, 61);
+	_txtRecovery = new Text(180, 9, 130, 53);
+	_txtPsionic = new Text(150, 9, 0, 69);
 
 	int yPos = 80;
 	int step = 11;
@@ -153,12 +163,14 @@ SoldierInfoState::SoldierInfoState(Base *base, size_t soldierId) : _base(base), 
 	add(_btnPrev);
 	add(_btnNext);
 	add(_btnArmor);
+	add(_btnInventory);
 	add(_edtSoldier);
 	add(_btnSack);
 	add(_txtRank);
 	add(_txtMissions);
 	add(_txtKills);
 	add(_txtCraft);
+	add(_txtRole);
 	add(_txtRecovery);
 	add(_txtPsionic);
 
@@ -246,6 +258,10 @@ SoldierInfoState::SoldierInfoState(Base *base, size_t soldierId) : _base(base), 
 	_btnArmor->setText(tr("STR_ARMOR"));
 	_btnArmor->onMouseClick((ActionHandler)&SoldierInfoState::btnArmorClick);
 
+	_btnInventory->setColor(Palette::blockOffset(15)+6);
+	_btnInventory->setText(tr("STR_INVENTORY_UC"));
+	_btnInventory->onMouseClick((ActionHandler)&SoldierInfoState::btnInventoryClick);
+
 	_edtSoldier->setColor(Palette::blockOffset(13)+10);
 	_edtSoldier->setBig();
 	_edtSoldier->onChange((ActionHandler)&SoldierInfoState::edtSoldierChange);
@@ -266,6 +282,9 @@ SoldierInfoState::SoldierInfoState(Base *base, size_t soldierId) : _base(base), 
 
 	_txtCraft->setColor(Palette::blockOffset(13)+10);
 	_txtCraft->setSecondaryColor(Palette::blockOffset(13));
+
+	_txtRole->setColor(Palette::blockOffset(13)+10);
+	_txtRole->setSecondaryColor(Palette::blockOffset(13));
 
 	_txtRecovery->setColor(Palette::blockOffset(13)+10);
 	_txtRecovery->setSecondaryColor(Palette::blockOffset(13));
@@ -511,12 +530,15 @@ void SoldierInfoState::init()
 	if (_soldier->getCraft() == 0)
 	{
 		craft = tr("STR_NONE_UC");
+		_btnInventory->setVisible(false);
 	}
 	else
 	{
 		craft = _soldier->getCraft()->getName(_game->getLanguage());
+		_btnInventory->setVisible(_soldier->getCraft()->getStatus() != "STR_OUT");
 	}
 	_txtCraft->setText(tr("STR_CRAFT_").arg(craft));
+	_txtRole->setText(tr("STR_ROLE_").arg(tr(_soldier->getRole() ? _soldier->getRole()->getName() : "STR_ROLE_NONE")));
 
 	if (_soldier->getWoundRecovery() > 0)
 	{
@@ -572,6 +594,7 @@ void SoldierInfoState::init()
 	// Dead can't talk
 	if (_base == 0)
 	{
+		_btnInventory->setVisible(false);
 		_btnArmor->setVisible(false);
 		_btnSack->setVisible(false);
 		_txtCraft->setVisible(false);
@@ -640,6 +663,41 @@ void SoldierInfoState::btnNextClick(Action *)
 	if (_soldierId >= _list->size())
 		_soldierId = 0;
 	init();
+}
+
+/**
+ * Shows the Select Armor window.
+ * @param action Pointer to an action.
+ */
+void SoldierInfoState::btnInventoryClick(Action *)
+{
+	if (_soldier->getCraft() && _soldier->getCraft()->getStatus() != "STR_OUT")
+	{
+		SavedBattleGame *bgame = new SavedBattleGame();
+		_game->getSavedGame()->setBattleGame(bgame);
+
+		BattlescapeGenerator bgen = BattlescapeGenerator(_game);
+		bgen.runInventory(_soldier->getCraft());
+
+		std::vector<BattleUnit*> *units = bgame->getUnits();
+
+		for(std::vector<BattleUnit*>::const_iterator ii = units->begin(); ii != units->end(); ++ii)
+		{
+			Soldier *ss = _game->getSavedGame()->getSoldier((*ii)->getId());
+			if(ss == _soldier)
+			{
+				bgame->setSelectedUnit(*ii);
+				break;
+			}
+		}
+
+		// Fix system colors
+		_game->getCursor()->setColor(Palette::blockOffset(9));
+		_game->getFpsCounter()->setColor(Palette::blockOffset(9));
+
+		//_game->getScreen()->clear();
+		_game->pushState(new InventoryState(false, 0));
+	}
 }
 
 /**

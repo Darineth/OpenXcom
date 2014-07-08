@@ -63,11 +63,12 @@ PurchaseState::PurchaseState(Base *base) : _base(base), _crafts(), _items(), _qt
 	_txtTitle = new Text(310, 17, 5, 8);
 	_txtFunds = new Text(150, 9, 10, 24);
 	_txtPurchases = new Text(150, 9, 160, 24);
-	_txtSpaceUsed = new Text(150, 9, 160, 34);
-	_txtItem = new Text(140, 9, 10, Options::storageLimitsEnforced? 44:33);
-	_txtCost = new Text(102, 9, 152, Options::storageLimitsEnforced? 44:33);
-	_txtQuantity = new Text(60, 9, 256, Options::storageLimitsEnforced? 44:33);
-	_lstItems = new TextList(287, Options::storageLimitsEnforced? 112:120, 8, Options::storageLimitsEnforced? 55:44);
+	_txtSpaceUsed = new Text(150, 9, 10, 34);
+	_txtQuartersUsed = new Text(150, 9, 160, 34);
+	_txtItem = new Text(140, 9, 10, 44);
+	_txtCost = new Text(102, 9, 152, 44);
+	_txtQuantity = new Text(60, 9, 256, 44);
+	_lstItems = new TextList(287, 112, 8, 55);
 
 	// Set palette
 	setPalette("PAL_BASESCAPE", 0);
@@ -79,6 +80,7 @@ PurchaseState::PurchaseState(Base *base) : _base(base), _crafts(), _items(), _qt
 	add(_txtFunds);
 	add(_txtPurchases);
 	add(_txtSpaceUsed);
+	add(_txtQuartersUsed);
 	add(_txtItem);
 	add(_txtCost);
 	add(_txtQuantity);
@@ -115,11 +117,15 @@ PurchaseState::PurchaseState(Base *base) : _base(base), _crafts(), _items(), _qt
 
 	_txtSpaceUsed->setColor(Palette::blockOffset(13)+10);
 	_txtSpaceUsed->setSecondaryColor(Palette::blockOffset(13));
-	_txtSpaceUsed->setVisible(Options::storageLimitsEnforced);
 	std::wostringstream ss5;
-	ss5 << _base->getUsedStores() << ":" << _base->getAvailableStores();
+	ss5 << tr("STR_STORES") << ">\x01" << _base->getUsedStores() << "/" << _base->getAvailableStores();
 	_txtSpaceUsed->setText(ss5.str());
-	_txtSpaceUsed->setText(tr("STR_SPACE_USED").arg(ss5.str()));
+
+	_txtQuartersUsed->setColor(Palette::blockOffset(13)+10);
+	_txtQuartersUsed->setSecondaryColor(Palette::blockOffset(13));
+	std::wostringstream ss6;
+	ss6 << tr("STR_LIVING_QUARTERS_PLURAL") << ">\x01" << _base->getUsedQuarters() << "/" << _base->getAvailableQuarters();
+	_txtQuartersUsed->setText(ss6.str());
 
 	_txtItem->setColor(Palette::blockOffset(13)+10);
 	_txtItem->setText(tr("STR_ITEM"));
@@ -575,7 +581,7 @@ void PurchaseState::decreaseByValue(int change)
 void PurchaseState::updateItemStrings()
 {
 	_txtPurchases->setText(tr("STR_COST_OF_PURCHASES").arg(Text::formatFunding(_total)));
-	std::wostringstream ss, ss5;
+	std::wostringstream ss, ss5, ss6;
 	ss << _qtys[_sel];
 	_lstItems->setCellText(_sel, 3, ss.str());
 	if (_qtys[_sel] > 0)
@@ -594,7 +600,7 @@ void PurchaseState::updateItemStrings()
 			}
 		}
 	}
-	ss5 << _base->getUsedStores();
+	ss5 << tr("STR_STORES") << ">\x01"  << _base->getUsedStores();
 	if (std::abs(_iQty) > 0.05)
 	{
 		ss5 << "(";
@@ -602,8 +608,20 @@ void PurchaseState::updateItemStrings()
 			ss5 << "+";
 		ss5 << std::fixed << std::setprecision(1) << _iQty << ")";
 	}
-	ss5 << ":" << _base->getAvailableStores();
-	_txtSpaceUsed->setText(tr("STR_SPACE_USED").arg(ss5.str()));
+	ss5 << "/" << _base->getAvailableStores();
+	_txtSpaceUsed->setText(ss5.str());
+
+	ss6 << tr("STR_LIVING_QUARTERS_PLURAL") << ">\x01" << _base->getUsedQuarters();
+
+	if(_pQty >= 1)
+	{
+		ss6 << " (";
+
+		ss6 << "+" << Text::formatNumber(_pQty) << ")";
+	}
+
+	ss6 << "/" << Text::formatNumber(_base->getAvailableQuarters());
+	_txtQuartersUsed->setText(ss6.str());
 }
 
 }

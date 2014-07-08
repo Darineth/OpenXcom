@@ -46,8 +46,8 @@ private:
 	std::vector<Soldier*> *_list;
 
 	Surface *_bg, *_rank;
-	TextButton *_btnOk, *_btnPrev, *_btnNext, *_btnArmor, *_btnSack;
-	Text *_txtRank, *_txtMissions, *_txtKills, *_txtCraft, *_txtRecovery, *_txtPsionic;
+	TextButton *_btnOk, *_btnPrev, *_btnNext, *_btnArmor, *_btnSack, *_btnInventory;
+	Text *_txtRank, *_txtMissions, *_txtKills, *_txtCraft, *_txtRole, *_txtRecovery, *_txtPsionic;
 	TextEdit *_edtSoldier;
 
 	Text *_txtTimeUnits, *_txtStamina, *_txtHealth, *_txtBravery, *_txtReactions, *_txtFiring, *_txtThrowing, *_txtMelee, *_txtStrength, *_txtPsiStrength, *_txtPsiSkill;
@@ -70,6 +70,8 @@ public:
 	void btnPrevClick(Action *action);
 	/// Handler for clicking the Next button.
 	void btnNextClick(Action *action);
+	/// Handler for clicking the Inventory button.
+	void btnInventoryClick(Action *action);
 	/// Handler for clicking the Armor button.
 	void btnArmorClick(Action *action);
 	/// Handler for clicking the Sack button.

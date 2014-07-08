@@ -106,6 +106,11 @@ void BattlescapeGame::think()
 	// nothing is happening - see if we need some alien AI or units panicking or what have you
 	if (_states.empty())
 	{
+		for (std::vector<BattleUnit*>::iterator j = _save->getUnits()->begin(); j != _save->getUnits()->end(); ++j)
+		{
+			(*j)->setJustKilled(false);
+		}
+
 		// it's a non player side (ALIENS or CIVILIANS)
 		if (_save->getSide() != FACTION_PLAYER)
 		{
@@ -389,13 +394,15 @@ void BattlescapeGame::endTurn()
 	{
 		for (std::vector<BattleItem*>::iterator it = _save->getTiles()[i]->getInventory()->begin(); it != _save->getTiles()[i]->getInventory()->end(); )
 		{
-			if ((*it)->getRules()->getBattleType() == BT_GRENADE && (*it)->getFuseTimer() == 0)  // it's a grenade to explode now
+			BattleItem *grenade = *it;
+			if (grenade->getRules()->getBattleType() == BT_GRENADE && grenade->getFuseTimer() == 0)  // it's a grenade to explode now
 			{
 				p.x = _save->getTiles()[i]->getPosition().x*16 + 8;
 				p.y = _save->getTiles()[i]->getPosition().y*16 + 8;
 				p.z = _save->getTiles()[i]->getPosition().z*24 - _save->getTiles()[i]->getTerrainLevel();
-				statePushNext(new ExplosionBState(this, p, (*it), (*it)->getPreviousOwner()));
-				_save->removeItem((*it));
+
+				_save->removeItem(grenade);
+				statePushNext(new ExplosionBState(this, p, grenade, grenade->getPreviousOwner()));
 				statePushBack(0);
 				return;
 			}
@@ -484,13 +491,16 @@ void BattlescapeGame::endTurn()
  * @param hiddenExplosion Set to true for the explosions of UFO Power sources at start of battlescape.
  * @param terrainExplosion Set to true for the explosions of terrain.
  */
-void BattlescapeGame::checkForCasualties(BattleItem *murderweapon, BattleUnit *murderer, bool hiddenExplosion, bool terrainExplosion)
+void BattlescapeGame::checkForCasualties(BattleItem *murderweapon, BattleUnit *murderer, bool hiddenExplosion, bool terrainExplosion, bool pushDeathFront)
 {
 	for (std::vector<BattleUnit*>::iterator j = _save->getUnits()->begin(); j != _save->getUnits()->end(); ++j)
 	{
-		if ((*j)->getHealth() == 0 && (*j)->getStatus() != STATUS_DEAD && (*j)->getStatus() != STATUS_COLLAPSING)
+		UnitDieBState* deathState = 0;
+		BattleUnit *victim = (*j);
+
+		if (victim->getHealth() == 0 && victim->getStatus() != STATUS_DEAD && victim->getStatus() != STATUS_COLLAPSING && !victim->getJustKilled())
 		{
-			BattleUnit *victim = (*j);
+			victim->setJustKilled(true);
 
 			if (murderer)
 			{
@@ -550,35 +560,49 @@ void BattlescapeGame::checkForCasualties(BattleItem *murderweapon, BattleUnit *m
 					}
 				}
 			}
+
 			if (murderweapon)
 			{
-				statePushNext(new UnitDieBState(this, (*j), murderweapon->getRules()->getDamageType(), false));
+				deathState = new UnitDieBState(this, (*j), murderweapon->getRules()->getDamageType(), false);
 			}
 			else
 			{
 				if (hiddenExplosion)
 				{
 					// this is instant death from UFO powersources, without screaming sounds
-					statePushNext(new UnitDieBState(this, (*j), DT_HE, true));
+					deathState = new UnitDieBState(this, (*j), DT_HE, true);
 				}
 				else
 				{
 					if (terrainExplosion)
 					{
 						// terrain explosion
-						statePushNext(new UnitDieBState(this, (*j), DT_HE, false));
+						deathState = new UnitDieBState(this, (*j), DT_HE, false);
 					}
 					else
 					{
 						// no murderer, and no terrain explosion, must be fatal wounds
-						statePushNext(new UnitDieBState(this, (*j), DT_NONE, false));  // DT_NONE = STR_HAS_DIED_FROM_A_FATAL_WOUND
+						deathState = new UnitDieBState(this, (*j), DT_NONE, false);  // DT_NONE = STR_HAS_DIED_FROM_A_FATAL_WOUND
 					}
 				}
 			}
 		}
-		else if ((*j)->getStunlevel() >= (*j)->getHealth() && (*j)->getStatus() != STATUS_DEAD && (*j)->getStatus() != STATUS_UNCONSCIOUS && (*j)->getStatus() != STATUS_COLLAPSING && (*j)->getStatus() != STATUS_TURNING)
+		else if ((*j)->getStunlevel() >= (*j)->getHealth() && (*j)->getStatus() != STATUS_DEAD && (*j)->getStatus() != STATUS_UNCONSCIOUS && (*j)->getStatus() != STATUS_COLLAPSING && (*j)->getStatus() != STATUS_TURNING && !victim->getJustKilled())
 		{
-			statePushNext(new UnitDieBState(this, (*j), DT_STUN, true));
+			victim->setJustKilled(true);
+			deathState = new UnitDieBState(this, (*j), DT_STUN, true);
+		}
+
+		if(deathState)
+		{
+			if(pushDeathFront)
+			{
+				statePushFront(deathState);
+			}
+			else
+			{
+				statePushNext(deathState);
+			}
 		}
 	}
 	BattleUnit *bu = _save->getSelectedUnit();
@@ -650,8 +674,54 @@ void BattlescapeGame::handleNonTargetAction()
 				}
 			}
 		}
+		if(_currentAction.type == BA_RELOAD)
+		{
+			if(_currentAction.result.length())
+			{
+				_parentState->warning(_currentAction.result);
+				_currentAction.result = "";
+			}
+			else
+			{
+				BattleItem *quickAmmo = _currentAction.actor->findQuickAmmo(_currentAction.weapon);
+
+				RuleInventory *ground = getRuleset()->getInventory("STR_GROUND");
+
+				// Drop existing ammo item
+				BattleItem *existingAmmo;
+				if(existingAmmo = _currentAction.weapon->getAmmoItem())
+				{
+					existingAmmo->moveToOwner(0);
+					_currentAction.actor->getTile()->addItem(existingAmmo, ground);
+					existingAmmo->setSlot(ground);
+					existingAmmo->setSlotX(0);
+					existingAmmo->setSlotY(0);
+					_currentAction.weapon->setAmmoItem(0);
+				}
+
+				// Reload weapon
+				if (quickAmmo->getSlot()->getType() == INV_GROUND)
+				{
+					_currentAction.actor->getTile()->removeItem(quickAmmo);
+				}
+				quickAmmo->moveToOwner(0);
+				_currentAction.weapon->setAmmoItem(quickAmmo);
+				quickAmmo->moveToOwner(0);
+				getResourcePack()->getSound("BATTLE.CAT", 17)->play();
+
+				std::wostringstream reloadLog;
+
+				reloadLog << _currentAction.actor->getName(_parentState->getGame()->getLanguage()) << " > " << _parentState->tr("STR_RELOADED").arg(_parentState->tr(_currentAction.weapon->getRules()->getName())).arg(_parentState->tr(quickAmmo->getRules()->getName()));
+
+				_parentState->combatLog(reloadLog.str(), COMBAT_LOG_GREEN);
+			}
+		}
 		_currentAction.type = BA_NONE;
 		_parentState->updateSoldierInfo();
+	}
+	else
+	{
+		_parentState->message(_currentAction.description, WARNING_BLUE);
 	}
 
 	setupCursor();
@@ -830,6 +900,27 @@ void BattlescapeGame::popState()
 
 					cancelCurrentAction(true);
 				}
+				else if(action.type == BA_OVERWATCH && !actionFailed)
+				{
+					int tu = _currentAction.actor->getActionTUs(_currentAction.actor->getOverwatchShotAction(_currentAction.weapon), _currentAction.weapon);
+
+					if(action.actor->spendTimeUnits(tu))
+					{
+						getResourcePack()->getSound("BATTLE.CAT", 17)->play();
+						_save->getSelectedUnit()->activateOverwatch(_currentAction.weapon, _currentAction.target);
+						_parentState->updateSoldierInfo();
+						//setupCursor();
+						Game *game = _parentState->getGame();
+						std::wostringstream log;
+						log << game->getLanguage()->getString("STR_LOG_ACTOR").arg(_save->getSelectedUnit()->getName(game->getLanguage())) << game->getLanguage()->getString("STR_LOG_OVERWATCH");
+						_parentState->combatLog(log.str(), COMBAT_LOG_GREEN);
+					}
+					else
+					{
+						_parentState->warning("STR_NOT_ENOUGH_TIME_UNITS");
+					}
+					cancelCurrentAction(true);
+				}
 				_parentState->getGame()->getCursor()->setVisible(true);
 				setupCursor();
 			}
@@ -953,35 +1044,75 @@ bool BattlescapeGame::checkReservedTU(BattleUnit *bu, int tu, bool justChecking)
 
 	if (_save->getSide() != FACTION_PLAYER) // aliens reserve TUs as a percentage rather than just enough for a single action.
 	{
+		justChecking = true;
 		if (_save->getSide() == FACTION_NEUTRAL)
 		{
 			return tu <= bu->getTimeUnits();
 		}
-		switch (effectiveTuReserved)
+		/*switch (effectiveTuReserved)
 		{
 		case BA_SNAPSHOT: return tu + (bu->getStats()->tu / 3) <= bu->getTimeUnits(); break; // 33%
 		case BA_AUTOSHOT: return tu + ((bu->getStats()->tu / 5)*2) <= bu->getTimeUnits(); break; // 40%
 		case BA_AIMEDSHOT: return tu + (bu->getStats()->tu / 2) <= bu->getTimeUnits(); break; // 50%
 		default: return tu <= bu->getTimeUnits(); break;
-		}
+		}*/
 	}
 
 	// check TUs against slowest weapon if we have two weapons
 	BattleItem *slowestWeapon = bu->getMainHandWeapon(false);
-	// if the weapon has no autoshot, reserve TUs for snapshot
-	if (bu->getActionTUs(_tuReserved, slowestWeapon) == 0 && _tuReserved == BA_AUTOSHOT)
+
+	if(!slowestWeapon && _save->getSide() == FACTION_HOSTILE)
 	{
-		effectiveTuReserved = BA_SNAPSHOT;
+		switch (effectiveTuReserved)
+		{
+			case BA_SNAPSHOT: return tu + (bu->getStats()->tu / 3) <= bu->getTimeUnits(); break; // 33%
+			case BA_AUTOSHOT: return tu + ((bu->getStats()->tu / 5)*2) <= bu->getTimeUnits(); break; // 40%
+			case BA_AIMEDSHOT: return tu + (bu->getStats()->tu / 2) <= bu->getTimeUnits(); break; // 50%
+			default: return tu <= bu->getTimeUnits(); break;
+		}
 	}
-	// likewise, if we don't have a snap shot available, try aimed.
-	if (bu->getActionTUs(effectiveTuReserved, slowestWeapon) == 0 && effectiveTuReserved == BA_SNAPSHOT)
+
+	int actionTUs = bu->getActionTUs(effectiveTuReserved, slowestWeapon);
+
+	if(slowestWeapon && !actionTUs && effectiveTuReserved != BA_NONE)
 	{
-		effectiveTuReserved = BA_AIMEDSHOT;
+		int ii = 0;
+		while(!actionTUs && ii < 3)
+		{
+			switch(effectiveTuReserved)
+			{
+			case BA_AUTOSHOT:
+				effectiveTuReserved = BA_SNAPSHOT;
+				break;
+			case BA_SNAPSHOT:
+				effectiveTuReserved = BA_AIMEDSHOT;
+				break;
+			case BA_AIMEDSHOT:
+				effectiveTuReserved = BA_SNAPSHOT;
+				break;
+			}
+			actionTUs = bu->getActionTUs(effectiveTuReserved, slowestWeapon);
+			++ii;
+		}
 	}
+
+	//if(_save->getSide() == FACTION_HOSTILE)	{ actionTUs = (int)(1.05f * (float)actionTUs); }
+
+	//// if the weapon has no autoshot, reserve TUs for snapshot
+	//if (bu->getActionTUs(_tuReserved, slowestWeapon) == 0 && _tuReserved == BA_AUTOSHOT)
+	//{
+	//	effectiveTuReserved = BA_SNAPSHOT;
+	//}
+	//// likewise, if we don't have a snap shot available, try aimed.
+	//if (bu->getActionTUs(effectiveTuReserved, slowestWeapon) == 0 && effectiveTuReserved == BA_SNAPSHOT)
+	//{
+	//	effectiveTuReserved = BA_AIMEDSHOT;
+	//}
+
 	const int tuKneel = (_kneelReserved && bu->getType() == "SOLDIER") ? 4 : 0;
 	if ((effectiveTuReserved != BA_NONE || _kneelReserved) &&
-		tu + tuKneel + bu->getActionTUs(effectiveTuReserved, slowestWeapon) > bu->getTimeUnits() &&
-		(tuKneel + bu->getActionTUs(effectiveTuReserved, slowestWeapon) <= bu->getTimeUnits() || justChecking))
+		tu + tuKneel + actionTUs > bu->getTimeUnits() &&
+		(tuKneel + actionTUs <= bu->getTimeUnits() || justChecking))
 	{
 		if (!justChecking)
 		{
@@ -1097,8 +1228,8 @@ bool BattlescapeGame::handlePanickingUnit(BattleUnit *unit)
 		{
 			ba.weapon = unit->getMainHandWeapon();
 			if(ba.weapon)
-			{
-				if (ba.weapon->getRules()->getBattleType() == BT_FIREARM)
+			{	//Xusilak: Made berserking check if your weapon can actually fire snap shots.
+				if (ba.weapon->getRules()->getBattleType() == BT_FIREARM && ba.weapon->getRules()->getTUSnap() > 0)
 				{
 					ba.type = BA_SNAPSHOT;
 					int tu = ba.actor->getActionTUs(ba.type, ba.weapon);
@@ -1279,7 +1410,7 @@ void BattlescapeGame::primaryAction(const Position &pos)
 				}
 				else
 				{
-						_parentState->warning("STR_NO_LINE_OF_FIRE");
+					_parentState->warning("STR_NO_LINE_OF_FIRE");
 				}
 				if (builtinpsi)
 				{
@@ -1306,10 +1437,38 @@ void BattlescapeGame::primaryAction(const Position &pos)
 				getMap()->getWaypoints()->clear();
 			}
 
-			_parentState->getGame()->getCursor()->setVisible(false);
-			_currentAction.cameraPosition = getMap()->getCamera()->getMapOffset();
-			_states.push_back(new ProjectileFlyBState(this, _currentAction));
-			statePushFront(new UnitTurnBState(this, _currentAction)); // first of all turn towards the target
+			if(_currentAction.type == BA_OVERWATCH)
+			{
+				int distance = _save->getTileEngine()->distance(_currentAction.actor->getPosition(), _currentAction.target);
+				if(distance <= _currentAction.weapon->getRules()->getOverwatchRange())
+				{
+					int tu = _currentAction.actor->getActionTUs(_currentAction.actor->getOverwatchShotAction(_currentAction.weapon), _currentAction.weapon);
+					_currentAction.TU = tu;
+					/*getResourcePack()->getSound("BATTLE.CAT", 17)->play();
+					_save->getSelectedUnit()->activateOverwatch(_currentAction.weapon, _currentAction.target);
+					_parentState->updateSoldierInfo();
+					cancelCurrentAction();
+					setupCursor();
+					Game *game = _parentState->getGame();
+					std::wostringstream log;
+					log << game->getLanguage()->getString("STR_LOG_ACTOR").arg(_save->getSelectedUnit()->getName(game->getLanguage())) << game->getLanguage()->getString("STR_LOG_OVERWATCH");
+					_parentState->combatLog(log.str(), COMBAT_LOG_GREEN);*/
+					statePushFront(new UnitTurnBState(this, _currentAction)); // first of all turn towards the target
+				}
+				else
+				{
+					_parentState->warning("STR_OUT_OF_RANGE");
+					cancelCurrentAction();
+					setupCursor();
+				}
+			}
+			else
+			{
+				_currentAction.cameraPosition = getMap()->getCamera()->getMapOffset();
+				_parentState->getGame()->getCursor()->setVisible(false);
+				_states.push_back(new ProjectileFlyBState(this, _currentAction));
+				statePushFront(new UnitTurnBState(this, _currentAction)); // first of all turn towards the target
+			}
 		}
 	}
 	else
