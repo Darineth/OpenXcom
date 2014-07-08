@@ -92,13 +92,13 @@ Projectile::~Projectile()
  * @return The objectnumber(0-3) or unit(4) or out of map (5) or -1 (no line of fire).
  */
 
-int Projectile::calculateTrajectory(double accuracy, bool force)
+int Projectile::calculateTrajectory(double accuracy, bool force, bool ignoreAccuracy)
 {
 	Position originVoxel = _save->getTileEngine()->getOriginVoxel(_action, _save->getTile(_origin));
-	return (_impact = calculateTrajectory(accuracy, originVoxel, force));
+	return (_impact = calculateTrajectory(accuracy, originVoxel, force, ignoreAccuracy));
 }
 
-int Projectile::calculateTrajectory(double accuracy, Position originVoxel, bool force)
+int Projectile::calculateTrajectory(double accuracy, Position originVoxel, bool force, bool ignoreAccuracy)
 {
 	Tile *targetTile = _save->getTile(_action.target);
 	BattleUnit *bu = _action.actor;
@@ -157,25 +157,27 @@ int Projectile::calculateTrajectory(double accuracy, Position originVoxel, bool 
 
 	_trajectory.clear();
 
-	bool extendLine = true;
-	// even guided missiles drift, but how much is based on
-	// the shooter's faction, rather than accuracy.
-	if (_action.type == BA_LAUNCH)
-	{
-		if (_action.actor->getFaction() == FACTION_PLAYER)
-		{
-			accuracy = 0.60;
-		}
-		else
-		{
-			accuracy = 0.55;
-		}
-		extendLine = _action.waypoints.size() <= 1;
-	}
-
 	// apply some accuracy modifiers.
 	// This will results in a new target voxel
-	applyAccuracy(originVoxel, &_targetVoxel, accuracy, false, targetTile, extendLine);
+	if(!ignoreAccuracy)
+	{
+		bool extendLine = true;
+		// even guided missiles drift, but how much is based on
+		// the shooter's faction, rather than accuracy.
+		if (_action.type == BA_LAUNCH)
+		{
+			if (_action.actor->getFaction() == FACTION_PLAYER)
+			{
+				accuracy = 0.60;
+			}
+			else
+			{
+				accuracy = 0.55;
+			}
+			extendLine = _action.waypoints.size() <= 1;
+		}
+		applyAccuracy(originVoxel, &_targetVoxel, accuracy, false, targetTile, extendLine);
+	}
 
 	// finally do a line calculation and store this trajectory.
 	return (_impact = _save->getTileEngine()->calculateLine(originVoxel, _targetVoxel, true, &_trajectory, bu));
@@ -186,7 +188,7 @@ int Projectile::calculateTrajectory(double accuracy, Position originVoxel, bool 
  * @param accuracy The unit's accuracy.
  * @return True when a trajectory is possible.
  */
-int Projectile::calculateThrow(double accuracy)
+int Projectile::calculateThrow(double accuracy, bool ignoreAccuracy)
 {
 	Tile *targetTile = _save->getTile(_action.target);
 		
@@ -214,7 +216,10 @@ int Projectile::calculateThrow(double accuracy)
 		{
 			Position deltas = targetVoxel;
 			// apply some accuracy modifiers
-			applyAccuracy(originVoxel, &deltas, accuracy, true, _save->getTile(_action.target), false); //calling for best flavor
+			if(!ignoreAccuracy)
+			{
+				applyAccuracy(originVoxel, &deltas, accuracy, true, _save->getTile(_action.target), false); //calling for best flavor
+			}
 			deltas -= targetVoxel;
 			_trajectory.clear();
 			test = _save->getTileEngine()->calculateParabola(originVoxel, targetVoxel, true, &_trajectory, _action.actor, curvature, deltas);
@@ -364,14 +369,21 @@ bool Projectile::move()
 {
 	for (int i = 0; i < _speed; ++i)
 	{
-		_position++;
-		if (_position == _trajectory.size())
+		if (++_position == _trajectory.size())
 		{
-			_position--;
+			--_position;
 			return false;
 		}
 	}
 	return true;
+}
+
+/**
+ * Reset the projectile to the beginning of its trajectory.
+ */
+void Projectile::resetTrajectory()
+{
+	_position = 0;
 }
 
 /**
@@ -466,4 +478,58 @@ bool Projectile::isReversed() const
 {
 	return _reversed;
 }
+
+//static Position& determineTargetVoxel(BattlescapeGame *game, BattleAction &action, const Position &target, TileEngine *tileEngine)
+//{
+//	BattleUnit *actor = action.actor;
+//	Tile *targetTile = game->getSave()->getTile(target);
+//	Position origin = action.actor->getPosition();
+//	Position originVoxel = tileEngine->getOriginVoxel(action, game->getSave()->getTile(origin));
+//	Position tempTarget;
+//	if (targetTile->getUnit() != 0)
+//	{
+//		if (origin == action.target || targetTile->getUnit() == actor)
+//		{
+//			// don't shoot at yourself but shoot at the floor
+//			return Position(action.target.x*16 + 8, action.target.y*16 + 8, action.target.z*24);
+//		}
+//		else
+//		{
+//			Position target;
+//			tileEngine->canTargetUnit(&originVoxel, targetTile, &target, actor);
+//			return target;
+//		}
+//	}
+//	else if (targetTile->getMapData(MapData::O_OBJECT) != 0)
+//	{
+//		if (!tileEngine->canTargetTile(&originVoxel, targetTile, MapData::O_OBJECT, &tempTarget, actor))
+//		{
+//			return Position(action.target.x*16 + 8, action.target.y*16 + 8, action.target.z*24 + 10);
+//		}
+//	}
+//	else if (targetTile->getMapData(MapData::O_NORTHWALL) != 0)
+//	{
+//		if (!tileEngine->canTargetTile(&originVoxel, targetTile, MapData::O_NORTHWALL, &tempTarget, actor))
+//		{
+//			return Position(action.target.x*16 + 8, action.target.y*16, action.target.z*24 + 9);
+//		}
+//	}
+//	else if (targetTile->getMapData(MapData::O_WESTWALL) != 0)
+//	{
+//		if (!tileEngine->canTargetTile(&originVoxel, targetTile, MapData::O_WESTWALL, &tempTarget, actor))
+//		{
+//			return Position(action.target.x*16, action.target.y*16 + 8, action.target.z*24 + 9);
+//		}
+//	}
+//	else if (targetTile->getMapData(MapData::O_FLOOR) != 0)
+//	{
+//		if (!tileEngine->canTargetTile(&originVoxel, targetTile, MapData::O_FLOOR, &tempTarget, actor))
+//		{
+//			return Position(action.target.x*16 + 8, action.target.y*16 + 8, action.target.z*24 + 2);
+//		}
+//	}
+//
+//	// target nothing, targets the middle of the tile
+//	return Position(action.target.x*16 + 8, action.target.y*16 + 8, action.target.z*24 + 12);
+//}
 }

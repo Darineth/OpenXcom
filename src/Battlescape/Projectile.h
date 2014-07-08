@@ -31,6 +31,8 @@ class BattleItem;
 class SavedBattleGame;
 class Surface;
 class Tile;
+class TileEngine;
+class BattleUnit;
 
 /**
  * A class that represents a projectile. Map is the owner of an instance of this class during its short life.
@@ -58,12 +60,14 @@ public:
 	/// Cleans up the Projectile.
 	~Projectile();
 	/// Calculates the trajectory for a straight path.
-	int calculateTrajectory(double accuracy, bool force = false);
-	int calculateTrajectory(double accuracy, Position originVoxel, bool force = false);
+	int calculateTrajectory(double accuracy, bool force = false, bool ignoreAccuracy = false);
+	int calculateTrajectory(double accuracy, Position originVoxel, bool force = false, bool ignoreAccuracy = false);
 	/// Calculates the trajectory for a curved path.
-	int calculateThrow(double accuracy);
+	int calculateThrow(double accuracy, bool ignoreAccuracy = false);
 	/// Moves the projectile one step in its trajectory.
 	bool move();
+	// Reset the projectile to the beginning of its trajectory.
+	void resetTrajectory();
 	/// Gets the current position in voxel space.
 	Position getPosition(int offset = 0) const;
 	/// Gets a particle from the particle array.
@@ -81,6 +85,8 @@ public:
 	/// Returns the last calculated impact for the projectile.
 	int getImpact() const;
 	bool isReversed() const;
+
+	//static Position& determineTargetVoxel(BattlescapeGame *game, BattleAction &action, Position &target, TileEngine *tileEngine);
 };
 
 }

@@ -939,7 +939,7 @@ void Tile::clearDrawables()
 	}
 }
 
-TileDrawable::TileDrawable(Surface *pSurface, int pX, int pY, int pO) : surface(pSurface), x(pX), y(pY), off(pO)
+TileDrawable::TileDrawable(Surface *pSurface, int pX, int pY, int pO, bool topMost) : surface(pSurface), x(pX), y(pY), off(pO), topMost(topMost)
 {
 }
 

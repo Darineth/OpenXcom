@@ -79,7 +79,7 @@ namespace OpenXcom
  * @param y Y position in pixels.
  * @param visibleMapHeight Current visible map height.
  */
-Map::Map(Game *game, int width, int height, int x, int y, int visibleMapHeight) : InteractiveSurface(width, height, x, y), _game(game), _arrow(0), _selectorX(0), _selectorY(0), _mouseX(0), _mouseY(0), _cursorType(CT_NORMAL), _cursorSize(1), _animFrame(0), _projectiles(10), _projectileInFOV(false), _explosionInFOV(false), _launch(false), _visibleMapHeight(visibleMapHeight), _unitDying(false), _smoothingEngaged(false)
+Map::Map(Game *game, int width, int height, int x, int y, int visibleMapHeight) : InteractiveSurface(width, height, x, y), _game(game), _arrow(0), _selectorX(0), _selectorY(0), _mouseX(0), _mouseY(0), _cursorType(CT_NORMAL), _cursorSize(1), _animFrame(0), _projectiles(10), _projectileInFOV(false), _explosionInFOV(false), _launch(false), _visibleMapHeight(visibleMapHeight), _unitDying(false), _smoothingEngaged(false), _targetingTarget(-1,-1,-1), _targetingProjectile(0)
 {
 	_previewSetting = Options::battleNewPreviewPath;
 	_smoothCamera = Options::battleSmoothCamera;
@@ -243,6 +243,8 @@ void Map::setPalette(SDL_Color *colors, int firstcolor, int ncolors)
  */
 void Map::drawTerrain(Surface *surface)
 {
+	static const int arrowBob[8] = {0,1,2,1,0,1,2,1};
+
 	int frameNumber = 0;
 	Surface *tmpSurface;
 	Tile *tile;
@@ -255,9 +257,8 @@ void Map::drawTerrain(Surface *surface)
 	BattleUnit *unit = 0;
 	bool invalid;
 	int tileShade, wallShade, tileColor;
-	static const int arrowBob[8] = {0,1,2,1,0,1,2,1};
-	
 	NumberText *_numWaypid = 0;
+	BattleAction *currentAction = _save->getBattleGame() ? _save->getBattleGame()->getCurrentAction() : 0;
 
 	// if we got bullet, get the highest x and y tiles to draw it on
 	if (_projectiles.size() /*&& _explosions.empty()*/)
@@ -450,7 +451,7 @@ void Map::drawTerrain(Surface *surface)
 						if(tile = _save->getTile(tilePos))
 						{
 							_camera->convertVoxelToScreen(pos, &bulletPositionScreen);
-							tile->getDrawables().push_back(new TileDrawable(tmpSurface, bulletPositionScreen.x - 16, bulletPositionScreen.y - 26, 16));
+							tile->getDrawables().push_back(new TileDrawable(tmpSurface, bulletPositionScreen.x - 16, bulletPositionScreen.y - 26, 0));
 						}
 					}
 				}
@@ -517,12 +518,116 @@ void Map::drawTerrain(Surface *surface)
 			}
 		}
 	}
-
-	BattleAction *currentAction;
-
-	if(_save->getBattleGame())
+	else if(currentAction && (_cursorType == CT_AIM || _cursorType == CT_THROW))
 	{
-		currentAction = _save->getBattleGame()->getCurrentAction();
+		Position cursorPos;
+		getSelectorPosition(&cursorPos);
+
+		if(_targetingTarget != cursorPos)
+		{
+			_targetingTarget = cursorPos;
+			Tile *targetTile = _save->getTile(_targetingTarget);
+			currentAction->target = cursorPos;
+
+			if(targetTile)
+			{
+				Position targetVoxel = _save->getTileEngine()->getTargetVoxel(currentAction, _targetingTarget);
+
+				switch(currentAction->type)
+				{
+				case BA_THROW:
+				case BA_SNAPSHOT:
+				case BA_AIMEDSHOT:
+				case BA_AUTOSHOT:
+					if(_targetingProjectile)
+					{
+						delete _targetingProjectile;
+					}
+					_targetingProjectile = new Projectile(_res, _save, *currentAction, currentAction->actor->getPosition(), targetVoxel, 0, false);
+					break;
+				default:
+					if(_targetingProjectile)
+					{
+						_targetingTarget = Position(-1,-1,-1);
+						_targetingProjectile = 0;
+						delete _targetingProjectile;
+					}
+				}
+
+				if(_targetingProjectile)
+				{
+					//Position originVoxel = _save->getTileEngine()->getOriginVoxel(*currentAction, 0);
+					int hit = currentAction->type != BA_THROW ? _targetingProjectile->calculateTrajectory(100, true, true) : _targetingProjectile->calculateThrow(100, true);
+					if(hit == V_OUTOFBOUNDS)
+					{
+						delete _targetingProjectile;
+						_targetingProjectile = 0;
+					}
+				}
+			}
+		}
+
+		if(_targetingProjectile)
+		{
+			Surface *surfaceTracer = _res->getSurfaceSet("Projectiles")->getFrame(35);
+			Surface *surfaceImpact = _res->getSurfaceSet("Projectiles")->getFrame(280);
+
+			int offsetX = 0;
+			int offsetY = 0;
+
+			if(_targetingProjectile->getItem())
+			{
+				Surface *floorSprite = _res->getSurfaceSet("FLOOROB.PCK")->getFrame(_targetingProjectile->getItem()->getRules()->getFloorSprite());
+				if(floorSprite)
+				{
+					offsetX = floorSprite->getWidth() / 2;
+					offsetY = floorSprite->getHeight() / 2;
+				}
+			}
+
+			if(surface)
+			{
+				_targetingProjectile->resetTrajectory();
+				bool impact = false;
+				do
+				{
+					Position pos = _targetingProjectile->getPosition();
+					int posX = pos.x / 16;
+					int posY = pos.y / 16;
+
+					if (posX >= beginX && posX <= endX
+						&& posY >= beginY && posY <= endY
+						&& _save->getTileEngine()->isVoxelVisible(pos))
+					{
+						Position tilePos(posX, posY, pos.z / 24);
+						Tile *displayTile = _save->getTile(tilePos);
+
+						if(displayTile)
+						{				
+							_camera->convertVoxelToScreen(pos, &bulletPositionScreen);
+							if(_targetingProjectile->getItem())
+							{
+								displayTile->getDrawables().push_back(new TileDrawable(impact ? surfaceImpact : surfaceTracer, bulletPositionScreen.x - 16 + offsetX, bulletPositionScreen.y - 26 + offsetY, 0, true));
+							}
+							else
+							{
+								displayTile->getDrawables().push_back(new TileDrawable(impact ? surfaceImpact : surfaceTracer, bulletPositionScreen.x, bulletPositionScreen.y, 0, true));
+							}
+						}
+					}
+				}
+				while(_targetingProjectile->move() || ((!impact) && (impact = true)));
+			}
+		}
+	}
+	else
+	{
+		if(_targetingProjectile)
+		{
+			_targetingTarget = Position(-1,-1,-1);
+			_targetingProjectile = 0;
+			delete _targetingProjectile;
+		}
 	}
 
 	Position selectorPosition;
@@ -592,7 +697,8 @@ void Map::drawTerrain(Surface *surface)
 									frameNumber = (_animFrame % 2); // yellow box
 								else
 									frameNumber = 0; // red box
-							}else
+							}
+							else
 							{
 								if (unit && (unit->getVisible() || _save->getDebugMode()))
 									frameNumber = 7 + (_animFrame / 2); // yellow animated crosshairs
@@ -902,6 +1008,7 @@ void Map::drawTerrain(Surface *surface)
 
 					}
 
+					bool topMostDrawables = false;
 					std::vector<TileDrawable*> &drawables = tile->getDrawables();
 
 					if(drawables.size())
@@ -909,10 +1016,18 @@ void Map::drawTerrain(Surface *surface)
 						for(std::vector<TileDrawable*>::const_iterator ii = drawables.begin(); ii != drawables.end(); ++ii)
 						{
 							TileDrawable *td = *ii;
-							td->surface->blitNShade(surface, td->x, td->y, td->off);
+							if(td->topMost)
+							{
+								topMostDrawables = true;
+							}
+							else
+							{
+								td->surface->blitNShade(surface, td->x, td->y, td->off);
+							}
 						}
 
-						tile->clearDrawables();
+						if(!topMostDrawables)
+							tile->clearDrawables();
 					}
 
 			        unit = tile->getUnit();
@@ -1023,8 +1138,6 @@ void Map::drawTerrain(Surface *surface)
 					{
 						if (_camera->getViewLevel() == itZ)
 						{
-							BattleAction *action = _save->getBattleGame()->getCurrentAction();
-
 							if (_cursorType != CT_AIM)
 							{
 								if (unit && (unit->getVisible() || _save->getDebugMode()))
@@ -1034,7 +1147,7 @@ void Map::drawTerrain(Surface *surface)
 							}
 							else
 							{
-								if(action->actor && action->TU && action->actor->getTimeUnits() < action->TU)
+								if(currentAction->actor && currentAction->TU && currentAction->actor->getTimeUnits() < currentAction->TU)
 									frameNumber = _animFrame % 2 ? 6 : 7;
 								else if (unit && (unit->getVisible() || _save->getDebugMode()))
 									frameNumber = 7 + (_animFrame / 2); // yellow animated crosshairs
@@ -1047,17 +1160,17 @@ void Map::drawTerrain(Surface *surface)
 							// UFO extender accuracy: display adjusted accuracy value on crosshair in real-time.
 							if (_cursorType == CT_AIM)
 							{
-								RuleItem *weapon = action->weapon->getRules();
-								int distance = _save->getTileEngine()->distance(Position (itX, itY,itZ), action->actor->getPosition());
+								RuleItem *weapon = currentAction->weapon->getRules();
+								int distance = _save->getTileEngine()->distance(Position (itX, itY,itZ), currentAction->actor->getPosition());
 
 								std::ostringstream ss;
-								int accuracy = action->actor->getFiringAccuracy(action->type, action->weapon);
+								int accuracy = currentAction->actor->getFiringAccuracy(currentAction->type, currentAction->weapon);
 								int upperLimit = 200;
 								int lowerLimit = weapon->getMinRange();
 
 								if(Options::battleUFOExtenderAccuracy)
 								{
-									switch (action->type)
+									switch (currentAction->type)
 									{
 									case BA_AIMEDSHOT:
 										upperLimit = weapon->getAimRange();
@@ -1100,7 +1213,7 @@ void Map::drawTerrain(Surface *surface)
 									_txtAccuracy->draw();
 									_txtAccuracy->blitNShade(surface, screenPosition.x, screenPosition.y, 0);
 								}
-								else if (action->type != BA_THROW && action->type != BA_HIT)
+								else if (currentAction->type != BA_THROW && currentAction->type != BA_HIT)
 								{
 									double modifier = 0.0;
 									int upperLimit = weapon->getAimRange();
@@ -1192,6 +1305,20 @@ void Map::drawTerrain(Surface *surface)
 							}
 						}
 						waypid++;
+					}
+
+					if(topMostDrawables)
+					{
+						for(std::vector<TileDrawable*>::const_iterator ii = drawables.begin(); ii != drawables.end(); ++ii)
+						{
+							TileDrawable *td = *ii;
+							if(td->topMost)
+							{
+								td->surface->blitNShade(surface, td->x, td->y, td->off);
+							}
+						}
+
+						tile->clearDrawables();
 					}
 				}
 			}
@@ -1618,6 +1745,15 @@ void Map::cacheUnit(BattleUnit *unit)
 	unit->getCache(&invalid);
 	if (invalid)
 	{
+		if(_targetingProjectile)
+		{
+			delete _targetingProjectile;
+			_targetingProjectile = 0;
+			_targetingTarget.x = -1;
+			_targetingTarget.y = -1;
+			_targetingTarget.z = -1;
+		}
+
 		// 1 or 4 iterations, depending on unit size
 		for (int i = 0; i < numOfParts; i++)
 		{

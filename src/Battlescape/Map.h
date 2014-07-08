@@ -71,6 +71,8 @@ private:
 	bool _unitDying, _smoothCamera, _smoothingEngaged;
 	PathPreview _previewSetting;
 	Text *_txtAccuracy;
+	Position _targetingTarget;
+	Projectile *_targetingProjectile;
 
 	void drawTerrain(Surface *surface);
 	int getTerrainLevel(Position pos, int size);

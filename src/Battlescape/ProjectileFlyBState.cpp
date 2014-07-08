@@ -224,7 +224,6 @@ void ProjectileFlyBState::init()
 		// if there is no LOF to the center, try elsewhere (more outward).
 		// Store this target voxel.
 		Tile *targetTile = _parent->getSave()->getTile(_action.target);
-		Position hitPos;
 		Position originVoxel = _parent->getTileEngine()->getOriginVoxel(_action, _parent->getSave()->getTile(_origin));
 		if (targetTile->getUnit() != 0)
 		{

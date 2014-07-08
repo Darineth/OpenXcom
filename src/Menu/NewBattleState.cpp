@@ -316,6 +316,9 @@ void NewBattleState::load(const std::string &filename)
 				const Ruleset *rule = _game->getRuleset();
 				SavedGame *save = new SavedGame();
 
+				// Load Roles
+				save->loadRoles(rule);
+
 				Base *base = new Base(rule);
 				base->load(doc["base"], save, false);
 				save->getBases()->push_back(base);
@@ -358,9 +361,6 @@ void NewBattleState::load(const std::string &filename)
 						}
 					}
 				}
-
-				// Load Roles
-				save->loadRoles(rule);
 
 				_game->setSavedGame(save);
 			}
@@ -415,6 +415,10 @@ void NewBattleState::initSave()
 {
 	const Ruleset *rule = _game->getRuleset();
 	SavedGame *save = new SavedGame();
+
+	// Load Roles
+	save->loadRoles(rule);
+
 	Base *base = new Base(rule);
 	const YAML::Node &starter = _game->getRuleset()->getStartingBase();
 	base->load(starter, save, true, true);
@@ -429,9 +433,6 @@ void NewBattleState::initSave()
 
 	_craft = new Craft(rule->getCraft(_crafts[_cbxCraft->getSelected()]), base, 1);
 	base->getCrafts()->push_back(_craft);
-
-	// Load Roles
-	save->loadRoles(rule);
 
 	// Generate soldiers
 	for (int i = 0; i < 30; ++i)
