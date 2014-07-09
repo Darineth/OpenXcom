@@ -213,7 +213,7 @@ void BattlescapeGenerator::nextStage()
 			{
 				(*j)->convertToFaction(FACTION_PLAYER);
 				(*j)->setTurnsSinceSpotted(255);
-				(*j)->getVisibleTiles()->clear();
+				(*j)->getVisibleUnitTiles()->clear();
 				if (!selectedFirstSoldier && (*j)->getGeoscapeSoldier())
 				{
 					_save->setSelectedUnit(*j);

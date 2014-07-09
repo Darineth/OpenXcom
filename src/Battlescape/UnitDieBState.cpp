@@ -76,8 +76,9 @@ UnitDieBState::UnitDieBState(BattlescapeGame *parent, BattleUnit *unit, ItemDama
 		}
 	}
 
-	_unit->clearVisibleTiles();
+	_unit->clearVisibleUnitTiles();
 	_unit->clearVisibleUnits();
+	unit->clearVisibleTiles();
 
     if (_unit->getFaction() == FACTION_HOSTILE)
     {

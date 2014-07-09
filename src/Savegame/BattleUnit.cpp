@@ -54,7 +54,8 @@ BattleUnit::BattleUnit(Soldier *soldier, UnitFaction faction) : _faction(faction
 																_expBravery(0), _expReactions(0), _expFiring(0), _expThrowing(0), _expPsiSkill(0), _expPsiStrength(0), _expMelee(0),
 																_motionPoints(0), _kills(0), _hitByFire(false), _moraleRestored(0), _coverReserve(0), _charging(0),
 																_turnsSinceSpotted(255), _geoscapeSoldier(soldier), _unitRules(0), _rankInt(-1), _turretType(-1), _hidingForTurn(false),
-																_overwatch(false), _overwatchTarget(-1,-1,-1), _overwatchWeaponSlot(), _justKilled(false)
+																_overwatch(false), _overwatchTarget(-1,-1,-1), _overwatchWeaponSlot(), _justKilled(false),
+																_visibleTiles()
 {
 	_name = soldier->getName(true);
 	_id = soldier->getId();
@@ -1276,9 +1277,9 @@ void BattleUnit::clearVisibleUnits()
  * @param tile
  * @return
  */
-bool BattleUnit::addToVisibleTiles(Tile *tile)
+bool BattleUnit::addToVisibleUnitTiles(Tile *tile)
 {
-	_visibleTiles.push_back(tile);
+	_visibleUnitTiles.push_back(tile);
 	return true;
 }
 
@@ -1286,21 +1287,34 @@ bool BattleUnit::addToVisibleTiles(Tile *tile)
  * Get the pointer to the vector of visible tiles.
  * @return pointer to vector.
  */
-std::vector<Tile*> *BattleUnit::getVisibleTiles()
+std::vector<Tile*> *BattleUnit::getVisibleUnitTiles()
 {
-	return &_visibleTiles;
+	return &_visibleUnitTiles;
 }
 
 /**
  * Clear visible tiles.
  */
-void BattleUnit::clearVisibleTiles()
+void BattleUnit::clearVisibleUnitTiles()
 {
-	for (std::vector<Tile*>::iterator j = _visibleTiles.begin(); j != _visibleTiles.end(); ++j)
+	for (std::vector<Tile*>::iterator j = _visibleUnitTiles.begin(); j != _visibleUnitTiles.end(); ++j)
 	{
 		(*j)->setVisible(-1);
 	}
 
+	_visibleUnitTiles.clear();
+}
+
+/**
+ * Get the tiles the unit can see.
+ */
+std::set<Tile*> *BattleUnit::getVisibleTiles()
+{
+	return &_visibleTiles;
+}
+
+void BattleUnit::clearVisibleTiles()
+{
 	_visibleTiles.clear();
 }
 

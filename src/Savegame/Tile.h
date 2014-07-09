@@ -39,9 +39,9 @@ class RuleInventory;
 struct TileDrawable
 {
 public:
-	TileDrawable(Surface *s, int x, int y, int o, bool topMost = false);
+	TileDrawable(Surface *s, int x, int y, int o, int color = 0, bool topMost = false);
 	Surface *surface;
-	int x, y, off;
+	int x, y, off, color;
 	bool topMost;
 };
 
@@ -225,7 +225,7 @@ public:
 	/// Get the tile marker color.
 	int getMarkerColor();
 	/// Set the tile visible flag.
-	void setVisible(int visibility);
+	void setTileVisible(int visibility);
 	/// Get the tile visible flag.
 	int getVisible();
 	/// set the direction (used for path previewing)

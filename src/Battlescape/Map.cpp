@@ -614,7 +614,7 @@ void Map::drawTerrain(Surface *surface)
 						if(displayTile)
 						{				
 							_camera->convertVoxelToScreen(pos, &bulletPositionScreen);
-							displayTile->getDrawables().push_back(new TileDrawable(impact ? surfaceImpact : surfaceTracer, bulletPositionScreen.x, bulletPositionScreen.y, 0, true));
+							displayTile->getDrawables().push_back(new TileDrawable(impact ? surfaceImpact : surfaceTracer, bulletPositionScreen.x, bulletPositionScreen.y, 0, 0, true));
 						}
 					}
 				}
@@ -651,6 +651,21 @@ void Map::drawTerrain(Surface *surface)
 		unitOverwatchPosition = selectedUnit->getOverwatchTarget();
 	}
 
+	SurfaceSet *pathfinding = _res->getSurfaceSet("Pathfinding");
+
+	if(selectedUnit)
+	{
+		_save->getTileEngine()->calculateFOV(selectedUnit);
+		std::set<Tile*> *tiles = selectedUnit->getVisibleTiles();
+		Surface *fovIndicator = pathfinding->getFrame(10);
+		for(std::set<Tile*>::const_iterator ii = tiles->begin(); ii != tiles->end(); ++ii)
+		{
+			_camera->convertMapToScreen((*ii)->getPosition(), &screenPosition);
+			screenPosition += _camera->getMapOffset();
+			(*ii)->getDrawables().push_back(new TileDrawable(fovIndicator, screenPosition.x, screenPosition.y+2, 0, 9, false));
+		}
+	}
+
 	surface->lock();
 	for (int itZ = beginZ; itZ <= endZ; itZ++)
 	{
@@ -672,7 +687,14 @@ void Map::drawTerrain(Surface *surface)
 
 					if (tile->isDiscovered(2))
 					{
-						tileShade = tile->getShade();
+						if(!tile->getVisible())
+						{
+							tileShade = 10;
+						}
+						else
+						{
+							tileShade = tile->getShade();
+						}
 					}
 					else
 					{
@@ -687,6 +709,15 @@ void Map::drawTerrain(Surface *surface)
 					if (tmpSurface)
 						tmpSurface->blitNShade(surface, screenPosition.x, screenPosition.y - tile->getMapData(MapData::O_FLOOR)->getYOffset(), tileShade, false);
 					unit = tile->getUnit();
+
+					/*if(tile->getVisible())
+					{
+						tmpSurface = pathfinding->getFrame(11);
+						if (tmpSurface)
+						{
+							tmpSurface->blitNShade(surface, screenPosition.x, screenPosition.y+2, 0, false, 4);
+						}
+					}*/
 
 					// Draw cursor back
 					if (_cursorType != CT_NONE && _selectorX > itX - _cursorSize && _selectorY > itY - _cursorSize && _selectorX < itX+1 && _selectorY < itY+1 && !_save->getBattleState()->getMouseOverIcons())
@@ -833,7 +864,7 @@ void Map::drawTerrain(Surface *surface)
 									tmpSurface = tileSouthWest->getSprite(MapData::O_OBJECT);
 									if (tmpSurface)
 									{
-											tmpSurface->blitNShade(surface, screenPosition.x - tileOffset.x * 2, screenPosition.y - tileSouthWest->getMapData(MapData::O_OBJECT)->getYOffset(), tileSouthWestShade, true);
+										tmpSurface->blitNShade(surface, screenPosition.x - tileOffset.x * 2, screenPosition.y - tileSouthWest->getMapData(MapData::O_OBJECT)->getYOffset(), tileSouthWestShade, true);
 									}
 								}
 
@@ -1024,7 +1055,7 @@ void Map::drawTerrain(Surface *surface)
 							}
 							else
 							{
-								td->surface->blitNShade(surface, td->x, td->y, td->off);
+								td->surface->blitNShade(surface, td->x, td->y, td->off, false, td->color);
 							}
 						}
 
@@ -1316,7 +1347,7 @@ void Map::drawTerrain(Surface *surface)
 							TileDrawable *td = *ii;
 							if(td->topMost)
 							{
-								td->surface->blitNShade(surface, td->x, td->y, td->off);
+								td->surface->blitNShade(surface, td->x, td->y, td->off, false, td->color);
 							}
 						}
 

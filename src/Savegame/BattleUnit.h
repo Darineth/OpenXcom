@@ -20,6 +20,7 @@
 #define OPENXCOM_BATTLEUNIT_H
 
 #include <vector>
+#include <set>
 #include <string>
 #include "../Battlescape/Position.h"
 #include "../Battlescape/BattlescapeGame.h"
@@ -71,7 +72,8 @@ private:
 	UnitStatus _status;
 	int _walkPhase, _fallPhase;
 	std::vector<BattleUnit *> _visibleUnits, _unitsSpottedThisTurn;
-	std::vector<Tile *> _visibleTiles;
+	std::vector<Tile *> _visibleUnitTiles;
+	std::set<Tile *> _visibleTiles;
 	int _tu, _energy, _health, _morale, _stunlevel;
 	bool _kneeled, _floating, _dontReselect;
 	int _currentArmor[5];
@@ -225,11 +227,14 @@ public:
 	std::vector<BattleUnit*> *getVisibleUnits();
 	/// Clear visible units.
 	void clearVisibleUnits();
-	/// Add unit to visible tiles.
-	bool addToVisibleTiles(Tile *tile);
+	/// Add unit to visible unit tiles.
+	bool addToVisibleUnitTiles(Tile *tile);
+	/// Get the list of visible unit tiles.
+	std::vector<Tile*> *getVisibleUnitTiles();
+	/// Clear visible unit tiles.
+	void clearVisibleUnitTiles();
 	/// Get the list of visible tiles.
-	std::vector<Tile*> *getVisibleTiles();
-	/// Clear visible tiles.
+	std::set<Tile*> *getVisibleTiles();
 	void clearVisibleTiles();
 	/// Calculate firing accuracy.
 	int getFiringAccuracy(BattleActionType actionType, BattleItem *item, bool useShotgun = false);

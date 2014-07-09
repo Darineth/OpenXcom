@@ -248,6 +248,7 @@ bool TileEngine::calculateFOV(BattleUnit *unit)
 	int y1, y2;
 
 	unit->clearVisibleUnits();
+	unit->clearVisibleUnitTiles();
 	unit->clearVisibleTiles();
 
 	if (unit->isOut())
@@ -294,7 +295,7 @@ bool TileEngine::calculateFOV(BattleUnit *unit)
 								|| (visibleUnit->getFaction() != FACTION_HOSTILE && unit->getFaction() == FACTION_HOSTILE))
 							{
 								unit->addToVisibleUnits(visibleUnit);
-								unit->addToVisibleTiles(visibleUnit->getTile());
+								unit->addToVisibleUnitTiles(visibleUnit->getTile());
 
 								if (unit->getFaction() == FACTION_HOSTILE && visibleUnit->getFaction() != FACTION_HOSTILE)
 								{
@@ -303,7 +304,7 @@ bool TileEngine::calculateFOV(BattleUnit *unit)
 							}
 						}
 
-						if (unit->getFaction() == FACTION_PLAYER)
+						if (unit->getFaction() == FACTION_PLAYER || _save->getDebugMode())
 						{
 							// this sets tiles to discovered if they are in LOS - tile visibility is not calculated in voxelspace but in tilespace
 							// large units have "4 pair of eyes"
@@ -322,8 +323,12 @@ bool TileEngine::calculateFOV(BattleUnit *unit)
 										Position posi = _trajectory.at(i); 
 										//mark every tile of line as visible (as in original)
 										//this is needed because of bresenham narrow stroke. 
-										_save->getTile(posi)->setVisible(+1);
-										_save->getTile(posi)->setDiscovered(true, 2);
+										Tile *visible = _save->getTile(posi);
+
+										unit->getVisibleTiles()->insert(visible);
+
+										visible->setVisible(+1);
+										visible->setDiscovered(true, 2);
 										// walls to the east or south of a visible tile, we see that too
 										Tile* t = _save->getTile(Position(posi.x + 1, posi.y, posi.z));
 										if (t) t->setDiscovered(true, 0);
@@ -395,6 +400,15 @@ bool TileEngine::visible(BattleUnit *currentUnit, Tile *tile)
 	{
 		return false;
 	}
+
+	// Check distance 
+	/*for (int xo = 0; xo < size; xo++)
+	{
+		for (int yo = 0; yo < size; yo++)
+		{
+			Position poso = pos + Position(xo,yo,0);
+		}
+	}*/
 
 	// aliens can see in the dark, xcom can see at a distance of 9 or less, further if there's enough light.
 	if (currentUnit->getFaction() == FACTION_PLAYER &&
@@ -2253,8 +2267,11 @@ int TileEngine::calculateLine(const Position& origin, const Position& target, bo
 		}
 		else
 		{
-            int temp_res = verticalBlockage(_save->getTile(lastPoint), _save->getTile(Position(cx, cy, cz)), DT_NONE);
-			result = horizontalBlockage(_save->getTile(lastPoint), _save->getTile(Position(cx, cy, cz)), DT_NONE);
+			Tile *lastTile = _save->getTile(lastPoint);
+			Position cPos(cx, cy, cz);
+			Tile *cTile = _save->getTile(cPos);
+            int temp_res = verticalBlockage(lastTile, cTile, DT_NONE);
+			result = horizontalBlockage(lastTile, cTile, DT_NONE);
             if (result == -1)
             {
                 if (temp_res > 127)

@@ -48,7 +48,7 @@ Tile::SerializationKey Tile::serializationKey =
 * constructor
 * @param pos Position.
 */
-Tile::Tile(const Position& pos): _smoke(0), _fire(0), _explosive(0), _pos(pos), _unit(0), _animationOffset(0), _markerColor(0), _visible(false), _preview(-1), _TUMarker(-1), _overlaps(0), _danger(false)
+Tile::Tile(const Position& pos): _smoke(0), _fire(0), _explosive(0), _pos(pos), _unit(0), _animationOffset(0), _markerColor(0), _visible(0), _preview(-1), _TUMarker(-1), _overlaps(0), _danger(false)
 {
 	for (int i = 0; i < 4; ++i)
 	{
@@ -837,7 +837,7 @@ int Tile::getMarkerColor()
  * Set the tile visible flag.
  * @param visibility
  */
-void Tile::setVisible(int visibility)
+void Tile::setTileVisible(int visibility)
 {
 	_visible += visibility;
 }
@@ -939,7 +939,7 @@ void Tile::clearDrawables()
 	}
 }
 
-TileDrawable::TileDrawable(Surface *pSurface, int pX, int pY, int pO, bool topMost) : surface(pSurface), x(pX), y(pY), off(pO), topMost(topMost)
+TileDrawable::TileDrawable(Surface *pSurface, int pX, int pY, int pO, int color, bool topMost) : surface(pSurface), x(pX), y(pY), off(pO), color(color), topMost(topMost)
 {
 }
 

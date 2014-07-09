@@ -222,6 +222,7 @@ void ActionMenuState::addItem(BattleActionType ba, const std::string &name, int 
 	case BA_TURN:
 	case BA_USE:
 	case BA_WALK:
+	case BA_HIT:
 		shots = 0;
 		ammoError = false;
 		break;
