@@ -213,6 +213,7 @@ void ActionMenuState::addItem(BattleActionType ba, const std::string &name, int 
 		ammoError = _action->weapon->needsAmmo() && (ammo < shots);
 		break;
 
+	case BA_HIT:
 	case BA_MINDCONTROL:
 	case BA_PANIC:
 	case BA_PRIME:
