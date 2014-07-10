@@ -280,10 +280,12 @@ bool TileEngine::calculateFOV(BattleUnit *unit)
 				{
 					test.x = center.x + signX[direction]*(swap?y:x);
 					test.y = center.y + signY[direction]*(swap?x:y);
-					if (_save->getTile(test))
+
+					Tile *testTile = _save->getTile(test);
+					if (testTile)
 					{
-						BattleUnit *visibleUnit = _save->getTile(test)->getUnit();
-						if (visibleUnit && !visibleUnit->isOut() && visible(unit, _save->getTile(test)))
+						BattleUnit *visibleUnit = testTile->getUnit();
+						if (visibleUnit && !visibleUnit->isOut() && visible(unit, testTile))
 						{
 							if (unit->getFaction() == FACTION_PLAYER)
 							{
@@ -314,7 +316,7 @@ bool TileEngine::calculateFOV(BattleUnit *unit)
 								{
 									Position poso = pos + Position(xo,yo,0);
 									_trajectory.clear();
-									int tst = calculateLine(poso, test, true, &_trajectory, unit, false);
+									int tst = calculateLine(poso, test, true, &_trajectory, unit, false, false, 0);
 									size_t tsize = _trajectory.size();
 									if (tst>127) --tsize; //last tile is blocked thus must be cropped
 									for (size_t i = 0; i < tsize; i++)
@@ -322,8 +324,12 @@ bool TileEngine::calculateFOV(BattleUnit *unit)
 										Position posi = _trajectory.at(i); 
 										//mark every tile of line as visible (as in original)
 										//this is needed because of bresenham narrow stroke. 
-										_save->getTile(posi)->setVisible(+1);
-										_save->getTile(posi)->setDiscovered(true, 2);
+										Tile *visible = _save->getTile(posi);
+
+										//unit->getVisibleTiles()->insert(visible);
+
+										visible->setVisible(+1);
+										visible->setDiscovered(true, 2);
 										// walls to the east or south of a visible tile, we see that too
 										Tile* t = _save->getTile(Position(posi.x + 1, posi.y, posi.z));
 										if (t) t->setDiscovered(true, 0);
@@ -428,10 +434,11 @@ bool TileEngine::visible(BattleUnit *currentUnit, Tile *tile)
 		size_t visibleDistance = _trajectory.size();
 		for (size_t i = 0; i < _trajectory.size(); i++)
 		{
-			if (t != _save->getTile(Position(_trajectory.at(i).x/16,_trajectory.at(i).y/16, _trajectory.at(i).z/24)))
-			{
-				t = _save->getTile(Position(_trajectory.at(i).x/16,_trajectory.at(i).y/16, _trajectory.at(i).z/24));
-			}
+			/*if (t != _save->getTile(Position(_trajectory.at(i).x/16,_trajectory.at(i).y/16, _trajectory.at(i).z/24)))
+			{*/
+			const Position &posi = _trajectory.at(i);
+			t = _save->getTile(Position(posi.x/16,posi.y/16, posi.z/24));
+			//}
 			if (t->getFire() == 0)
 			{
 				visibleDistance += t->getSmoke() / 3;
@@ -851,20 +858,24 @@ bool TileEngine::checkReactionFire(BattleUnit *unit)
  */
 std::vector<BattleUnit *> TileEngine::getSpottingUnits(BattleUnit* unit)
 {
+	const int MAX_DISTANCE_SQR = MAX_VIEW_DISTANCE*MAX_VIEW_DISTANCE;
+
 	std::vector<BattleUnit*> spotters;
 	Tile *tile = unit->getTile();
 	for (std::vector<BattleUnit*>::const_iterator i = _save->getUnits()->begin(); i != _save->getUnits()->end(); ++i)
 	{
+		BattleUnit *spotter = *i;
+		int ddSqr = 0;
 			// not dead/unconscious
-		if (!(*i)->isOut() &&
+		if (!spotter->isOut() &&
 			// not dying
-			(*i)->getHealth() != 0 &&
+			spotter->getHealth() != 0 &&
 			// not about to pass out
-			(*i)->getStunlevel() < (*i)->getHealth() &&
+			spotter->getStunlevel() < spotter->getHealth() &&
 			// not a friend
-			(*i)->getFaction() != _save->getSide() &&
+			spotter->getFaction() != _save->getSide() &&
 			// closer than 20 tiles
-			distance(unit->getPosition(), (*i)->getPosition()) <= MAX_VIEW_DISTANCE)
+			(ddSqr = distanceSq(unit->getPosition(), spotter->getPosition(), false) <= MAX_DISTANCE_SQR))
 		{
 			Position originVoxel = _save->getTileEngine()->getSightOriginVoxel(*i);
 			originVoxel.z -= 2;
@@ -1935,6 +1946,7 @@ int TileEngine::blockage(Tile *tile, const int part, ItemDamageType type, int di
 	if (tile->isUfoDoorOpen(part))
 		blockage = 0;
 
+
 	return blockage;
 }
 
@@ -2171,9 +2183,10 @@ int TileEngine::closeUfoDoors()
  * @param doVoxelCheck Check against voxel or tile blocking? (first one for units visibility and line of fire, second one for terrain visibility).
  * @param onlyVisible Skip invisible units? used in FPS view.
  * @param excludeAllBut [Optional] The only unit to be considered for ray hits.
+ * @param checkSmoke [Optional] Allow smoke to block the trajectory.
  * @return the objectnumber(0-3) or unit(4) or out of map (5) or -1(hit nothing).
  */
-int TileEngine::calculateLine(const Position& origin, const Position& target, bool storeTrajectory, std::vector<Position> *trajectory, BattleUnit *excludeUnit, bool doVoxelCheck, bool onlyVisible, BattleUnit *excludeAllBut)
+int TileEngine::calculateLine(const Position& origin, const Position& target, bool storeTrajectory, std::vector<Position> *trajectory, BattleUnit *excludeUnit, bool doVoxelCheck, bool onlyVisible, BattleUnit *excludeAllBut, int *smokeEncountered)
 {
 	int x, x0, x1, delta_x, step_x;
 	int y, y0, y1, delta_y, step_y;
@@ -2225,6 +2238,9 @@ int TileEngine::calculateLine(const Position& origin, const Position& target, bo
 	z = z0;
 
 	//step through longest delta (which we have swapped to x)
+
+	//if(type == DT_NONE && type == MapData::O_FLOOR) blockage += (3 * tile->getSmoke());
+	int smokeCrossed = 0;
 	for (x = x0; x != (x1+step_x); x += step_x)
 	{
 		//copy position
@@ -2234,27 +2250,32 @@ int TileEngine::calculateLine(const Position& origin, const Position& target, bo
 		if (swap_xz) std::swap(cx, cz);
 		if (swap_xy) std::swap(cx, cy);
 
+		Position cc(cx, cy, cz);
+
 		if (storeTrajectory && trajectory)
 		{
-			trajectory->push_back(Position(cx, cy, cz));
+			trajectory->push_back(cc);
 		}
 		//passes through this point?
 		if (doVoxelCheck)
 		{
-			result = voxelCheck(Position(cx, cy, cz), excludeUnit, false, onlyVisible, excludeAllBut);
+			result = voxelCheck(cc, excludeUnit, false, onlyVisible, excludeAllBut, smokeEncountered);
 			if (result != V_EMPTY)
 			{
 				if (trajectory)
 				{ // store the position of impact
-					trajectory->push_back(Position(cx, cy, cz));
+					trajectory->push_back(cc);
 				}
 				return result;
 			}
 		}
 		else
 		{
-            int temp_res = verticalBlockage(_save->getTile(lastPoint), _save->getTile(Position(cx, cy, cz)), DT_NONE);
-			result = horizontalBlockage(_save->getTile(lastPoint), _save->getTile(Position(cx, cy, cz)), DT_NONE);
+			Tile *lastTile = _save->getTile(lastPoint);
+			Position cPos(cx, cy, cz);
+			Tile *cTile = _save->getTile(cPos);
+            int temp_res = verticalBlockage(lastTile, cTile, DT_NONE);
+			result = horizontalBlockage(lastTile, cTile, DT_NONE);
             if (result == -1)
             {
                 if (temp_res > 127)
@@ -2270,7 +2291,17 @@ int TileEngine::calculateLine(const Position& origin, const Position& target, bo
 				return result;
 			}
 
-			lastPoint = Position(cx, cy, cz);
+			lastPoint = cc;
+
+			if(smokeEncountered)
+			{
+				smokeCrossed += lastTile->getSmoke();
+				(*smokeEncountered) = smokeCrossed;
+				/*if(smokeCrossed > 50)
+				{
+					return -1;
+				}*/
+			}
 		}
 		//update progress in other planes
 		drift_xy = drift_xy - delta_y;
@@ -2288,12 +2319,12 @@ int TileEngine::calculateLine(const Position& origin, const Position& target, bo
 				cx = x;	cz = z; cy = y;
 				if (swap_xz) std::swap(cx, cz);
 				if (swap_xy) std::swap(cx, cy);
-				result = voxelCheck(Position(cx, cy, cz), excludeUnit, false, onlyVisible, excludeAllBut);
+				result = voxelCheck(cc, excludeUnit, false, onlyVisible, excludeAllBut);
 				if (result != V_EMPTY)
 				{
 					if (trajectory != 0)
 					{ // store the position of impact
-						trajectory->push_back(Position(cx, cy, cz));
+						trajectory->push_back(cc);
 					}
 					return result;
 				}
@@ -2312,12 +2343,12 @@ int TileEngine::calculateLine(const Position& origin, const Position& target, bo
 				cx = x;	cz = z; cy = y;
 				if (swap_xz) std::swap(cx, cz);
 				if (swap_xy) std::swap(cx, cy);
-				result = voxelCheck(Position(cx, cy, cz), excludeUnit, false, onlyVisible,  excludeAllBut);
+				result = voxelCheck(cc, excludeUnit, false, onlyVisible,  excludeAllBut);
 				if (result != V_EMPTY)
 				{
 					if (trajectory != 0)
 					{ // store the position of impact
-						trajectory->push_back(Position(cx, cy, cz));
+						trajectory->push_back(cc);
 					}
 					return result;
 				}
@@ -2456,7 +2487,7 @@ bool TileEngine::isVoxelVisible(const Position& voxel)
  * @param excludeAllBut If set, the only unit to be considered for ray hits.
  * @return The objectnumber(0-3) or unit(4) or out of map (5) or -1 (hit nothing).
  */
-int TileEngine::voxelCheck(const Position& voxel, BattleUnit *excludeUnit, bool excludeAllUnits, bool onlyVisible, BattleUnit *excludeAllBut)
+int TileEngine::voxelCheck(const Position& voxel, BattleUnit *excludeUnit, bool excludeAllUnits, bool onlyVisible, BattleUnit *excludeAllBut, int *smokeEncountered)
 {
 	Tile *tile = _save->getTile(voxel / Position(16, 16, 24));
 	// check if we are not out of the map
@@ -2464,6 +2495,12 @@ int TileEngine::voxelCheck(const Position& voxel, BattleUnit *excludeUnit, bool 
 	{
 		return V_OUTOFBOUNDS;
 	}
+
+	if(smokeEncountered)
+	{
+		(*smokeEncountered) += tile->getSmoke();
+	}
+
 	Tile *tileBelow = _save->getTile(tile->getPosition() + Position(0,0,-1));
 	if (tile->isVoid() && tile->getUnit() == 0 && (!tileBelow || tileBelow->getUnit() == 0))
 	{

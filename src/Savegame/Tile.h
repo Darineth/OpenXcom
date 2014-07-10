@@ -39,9 +39,9 @@ class RuleInventory;
 struct TileDrawable
 {
 public:
-	TileDrawable(Surface *s, int x, int y, int o, bool topMost = false);
+	TileDrawable(Surface *s, int x, int y, int o, int color = 0, bool topMost = false);
 	Surface *surface;
-	int x, y, off;
+	int x, y, off, color;
 	bool topMost;
 };
 
