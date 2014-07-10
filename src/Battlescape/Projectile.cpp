@@ -49,7 +49,7 @@ namespace OpenXcom
  * @param origin Position the projectile originates from.
  * @param targetVoxel Position the projectile is targeting.
  */
-Projectile::Projectile(ResourcePack *res, SavedBattleGame *save, BattleAction action, Position origin, Position targetVoxel, int bulletSprite, bool shotgun) : _res(res), _save(save), _action(action), _origin(origin), _targetVoxel(targetVoxel), _position(0), _bulletSprite(bulletSprite), _reversed(false), _impact(0), _shotgun(shotgun)
+Projectile::Projectile(ResourcePack *res, SavedBattleGame *save, BattleAction action, Position origin, Position targetVoxel, int bulletSprite, bool shotgun) : _res(res), _save(save), _action(action), _origin(origin), _targetVoxel(targetVoxel), _position(0), _bulletSprite(bulletSprite), _reversed(false), _impact(0), _shotgun(shotgun), _calculatedAccuracy(1.0)
 {
 	// this is the number of pixels the sprite will move between frames
 	_speed = Options::battleFireSpeed;
@@ -109,7 +109,31 @@ int Projectile::calculateTrajectory(double accuracy, Position originVoxel, bool 
 		return V_EMPTY;
 	}
 	
-	int test = _save->getTileEngine()->calculateLine(originVoxel, _targetVoxel, false, &_trajectory, bu);
+	int smoke = 0;
+	int test = _save->getTileEngine()->calculateLine(originVoxel, _targetVoxel, false, &_trajectory, bu, true, false, 0, &smoke);
+
+	if(smoke > 0)
+	{
+		double smokePower = (double)smoke / 3.0;
+
+		if(smokePower > TileEngine::MAX_VOXEL_VIEW_DISTANCE)
+		{
+			accuracy = 0;
+		}
+		else if(smokePower > (TileEngine::MAX_VOXEL_VIEW_DISTANCE / 2.0))
+		{
+			double smokeAccuracyReduction = (smokePower - (TileEngine::MAX_VOXEL_VIEW_DISTANCE / 2.0)) / (TileEngine::MAX_VOXEL_VIEW_DISTANCE / 2.0);
+			accuracy *= (1.0 - smokeAccuracyReduction);
+		}
+	}
+
+	_calculatedAccuracy = accuracy;
+
+	/*if(smoke > 0)
+	{
+		int a = 5 + smoke;
+	}*/
+
 	if (test != V_EMPTY &&
 		!_trajectory.empty() &&
 		_action.actor->getFaction() == FACTION_PLAYER &&
@@ -485,57 +509,8 @@ bool Projectile::isReversed() const
 	return _reversed;
 }
 
-//static Position& determineTargetVoxel(BattlescapeGame *game, BattleAction &action, const Position &target, TileEngine *tileEngine)
-//{
-//	BattleUnit *actor = action.actor;
-//	Tile *targetTile = game->getSave()->getTile(target);
-//	Position origin = action.actor->getPosition();
-//	Position originVoxel = tileEngine->getOriginVoxel(action, game->getSave()->getTile(origin));
-//	Position tempTarget;
-//	if (targetTile->getUnit() != 0)
-//	{
-//		if (origin == action.target || targetTile->getUnit() == actor)
-//		{
-//			// don't shoot at yourself but shoot at the floor
-//			return Position(action.target.x*16 + 8, action.target.y*16 + 8, action.target.z*24);
-//		}
-//		else
-//		{
-//			Position target;
-//			tileEngine->canTargetUnit(&originVoxel, targetTile, &target, actor);
-//			return target;
-//		}
-//	}
-//	else if (targetTile->getMapData(MapData::O_OBJECT) != 0)
-//	{
-//		if (!tileEngine->canTargetTile(&originVoxel, targetTile, MapData::O_OBJECT, &tempTarget, actor))
-//		{
-//			return Position(action.target.x*16 + 8, action.target.y*16 + 8, action.target.z*24 + 10);
-//		}
-//	}
-//	else if (targetTile->getMapData(MapData::O_NORTHWALL) != 0)
-//	{
-//		if (!tileEngine->canTargetTile(&originVoxel, targetTile, MapData::O_NORTHWALL, &tempTarget, actor))
-//		{
-//			return Position(action.target.x*16 + 8, action.target.y*16, action.target.z*24 + 9);
-//		}
-//	}
-//	else if (targetTile->getMapData(MapData::O_WESTWALL) != 0)
-//	{
-//		if (!tileEngine->canTargetTile(&originVoxel, targetTile, MapData::O_WESTWALL, &tempTarget, actor))
-//		{
-//			return Position(action.target.x*16, action.target.y*16 + 8, action.target.z*24 + 9);
-//		}
-//	}
-//	else if (targetTile->getMapData(MapData::O_FLOOR) != 0)
-//	{
-//		if (!tileEngine->canTargetTile(&originVoxel, targetTile, MapData::O_FLOOR, &tempTarget, actor))
-//		{
-//			return Position(action.target.x*16 + 8, action.target.y*16 + 8, action.target.z*24 + 2);
-//		}
-//	}
-//
-//	// target nothing, targets the middle of the tile
-//	return Position(action.target.x*16 + 8, action.target.y*16 + 8, action.target.z*24 + 12);
-//}
+double Projectile::getCalculatedAccuracy() const
+{
+	return _calculatedAccuracy;
+}
 }

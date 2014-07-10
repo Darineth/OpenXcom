@@ -73,6 +73,7 @@ protected:
 	int _mapDataSetID[4];
 	int _currentFrame[4];
 	bool _discovered[3];
+	bool _currentlyVisible;
 	int _light[LIGHTLAYERS], _lastLight[LIGHTLAYERS];
 	int _smoke;
 	int _fire;
@@ -225,7 +226,7 @@ public:
 	/// Get the tile marker color.
 	int getMarkerColor();
 	/// Set the tile visible flag.
-	void setTileVisible(int visibility);
+	void setVisible(int visibility);
 	/// Get the tile visible flag.
 	int getVisible();
 	/// set the direction (used for path previewing)
@@ -248,6 +249,9 @@ public:
 	std::vector<TileDrawable*>& getDrawables();
 	/// Clears and cleans up the pending drawables vector.
 	void clearDrawables();
+
+	void setCurrentlyVisible(bool visible);
+	bool getCurrentlyVisible() const;
 };
 
 }

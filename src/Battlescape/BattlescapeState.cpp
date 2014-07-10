@@ -1620,9 +1620,13 @@ inline void BattlescapeState::handle(Action *action)
 				else if (_save->getDebugMode() && action->getDetails()->key.keysym.sym == SDLK_k && (SDL_GetModState() & KMOD_CTRL) != 0)
 				{
 					debug(L"Influenza bacterium dispersed");
+
+					Position cursorPos;
+					_map->getSelectorPosition(&cursorPos);
+
 					for (std::vector<BattleUnit*>::iterator i = _save->getUnits()->begin(); i !=_save->getUnits()->end(); ++i)
 					{
-						if ((*i)->getOriginalFaction() == FACTION_HOSTILE)
+						if ((*i)->getOriginalFaction() == FACTION_HOSTILE && (*i)->getPosition() != cursorPos)
 						{
 							(*i)->instaKill();
 							if ((*i)->getTile())
@@ -1631,6 +1635,48 @@ inline void BattlescapeState::handle(Action *action)
 							}
 						}
 					}
+				}
+				else if (_save->getDebugMode() && action->getDetails()->key.keysym.sym == SDLK_a && (SDL_GetModState() & KMOD_CTRL) != 0)
+				{
+					_save->resetTiles();
+					for (std::vector<BattleUnit*>::iterator i = _save->getUnits()->begin(); i !=_save->getUnits()->end(); ++i)
+					{
+						(*i)->setVisible((*i)->getOriginalFaction() == FACTION_HOSTILE);
+
+					}
+					for (std::vector<BattleUnit*>::iterator i = _save->getUnits()->begin(); i !=_save->getUnits()->end(); ++i)
+					{
+						if ((*i)->getOriginalFaction() == FACTION_HOSTILE)
+						{
+							_save->getTileEngine()->calculateFOV(*i);
+						}
+					}
+				}
+				else if (_save->getDebugMode() && action->getDetails()->key.keysym.sym == SDLK_x && (SDL_GetModState() & KMOD_CTRL) != 0)
+				{
+					_save->resetTiles();
+					for (std::vector<BattleUnit*>::iterator i = _save->getUnits()->begin(); i !=_save->getUnits()->end(); ++i)
+					{
+						(*i)->setVisible((*i)->getOriginalFaction() == FACTION_PLAYER);
+
+					}
+					for (std::vector<BattleUnit*>::iterator i = _save->getUnits()->begin(); i !=_save->getUnits()->end(); ++i)
+					{
+						if ((*i)->getOriginalFaction() == FACTION_PLAYER)
+						{
+							_save->getTileEngine()->calculateFOV(*i);
+						}
+					}
+				}
+				else if (_save->getDebugMode() && action->getDetails()->key.keysym.sym == SDLK_t && (SDL_GetModState() & KMOD_CTRL) != 0)
+				{
+					_save->getSelectedUnit()->setTimeUnits(_save->getSelectedUnit()->getStats()->tu);
+					_save->getSelectedUnit()->setEnergy(_save->getSelectedUnit()->getStats()->stamina);
+				}
+				else if (_save->getDebugMode() && action->getDetails()->key.keysym.sym == SDLK_h && (SDL_GetModState() & KMOD_CTRL) != 0)
+				{
+					_save->getSelectedUnit()->getHealth();
+					_save->getSelectedUnit()->setEnergy(_save->getSelectedUnit()->getStats()->stamina);
 				}
 				// f11 - voxel map dump
 				else if (action->getDetails()->key.keysym.sym == SDLK_F11)

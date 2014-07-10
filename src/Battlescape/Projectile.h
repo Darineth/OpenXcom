@@ -52,6 +52,7 @@ private:
 	int _bulletSprite;
 	bool _reversed;
 	int _impact;
+	double _calculatedAccuracy;
 	bool _shotgun;
 	void applyAccuracy(const Position& origin, Position *target, double accuracy, bool keepRange, Tile *targetTile, bool extendLine);
 public:
@@ -85,7 +86,7 @@ public:
 	/// Returns the last calculated impact for the projectile.
 	int getImpact() const;
 	bool isReversed() const;
-
+	double getCalculatedAccuracy() const;
 	//static Position& determineTargetVoxel(BattlescapeGame *game, BattleAction &action, Position &target, TileEngine *tileEngine);
 };
 

@@ -868,10 +868,10 @@ void SavedBattleGame::endTurn()
  */
 void SavedBattleGame::setDebugMode()
 {
-	for (int i = 0; i < _mapsize_z * _mapsize_y * _mapsize_x; ++i)
+	/*for (int i = 0; i < _mapsize_z * _mapsize_y * _mapsize_x; ++i)
 	{
 		_tiles[i]->setDiscovered(true, 2);
-	}
+	}*/
 
 	_debugMode = true;
 }

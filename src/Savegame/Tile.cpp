@@ -837,7 +837,7 @@ int Tile::getMarkerColor()
  * Set the tile visible flag.
  * @param visibility
  */
-void Tile::setTileVisible(int visibility)
+void Tile::setVisible(int visibility)
 {
 	_visible += visibility;
 }
@@ -943,4 +943,13 @@ TileDrawable::TileDrawable(Surface *pSurface, int pX, int pY, int pO, int color,
 {
 }
 
+void Tile::setCurrentlyVisible(bool visible)
+{
+	_currentlyVisible = visible;
+}
+
+bool Tile::getCurrentlyVisible() const
+{
+	return _currentlyVisible;
+}
 }

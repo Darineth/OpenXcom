@@ -102,7 +102,7 @@ Map::Map(Game *game, int width, int height, int x, int y, int visibleMapHeight) 
 	_scrollKeyTimer->onTimer((SurfaceHandler)&Map::scrollKey);
 	_camera->setScrollTimer(_scrollMouseTimer, _scrollKeyTimer);
 	
-	_txtAccuracy = new Text(24, 9, 0, 0);
+	_txtAccuracy = new Text(50, 9, 0, 0);
 	_txtAccuracy->setSmall();
 	_txtAccuracy->setPalette(_game->getScreen()->getPalette());
 	_txtAccuracy->setHighContrast(true);
@@ -259,6 +259,8 @@ void Map::drawTerrain(Surface *surface)
 	int tileShade, wallShade, tileColor;
 	NumberText *_numWaypid = 0;
 	BattleAction *currentAction = _save->getBattleGame() ? _save->getBattleGame()->getCurrentAction() : 0;
+
+	double calculatedAccuracy = -1.0;
 
 	// if we got bullet, get the highest x and y tiles to draw it on
 	if (_projectiles.size() /*&& _explosions.empty()*/)
@@ -557,11 +559,15 @@ void Map::drawTerrain(Surface *surface)
 
 				if(_targetingProjectile)
 				{
-					int hit = currentAction->type != BA_THROW ? _targetingProjectile->calculateTrajectory(100, true, true) : _targetingProjectile->calculateThrow(100, true);
+					int hit = currentAction->type != BA_THROW ? _targetingProjectile->calculateTrajectory(1.0, true, true) : _targetingProjectile->calculateThrow(100, true);
 					if(hit == V_OUTOFBOUNDS)
 					{
 						delete _targetingProjectile;
 						_targetingProjectile = 0;
+					}
+					else
+					{
+						calculatedAccuracy = _targetingProjectile->getCalculatedAccuracy();
 					}
 				}
 			}
@@ -569,6 +575,8 @@ void Map::drawTerrain(Surface *surface)
 
 		if(_targetingProjectile)
 		{
+			calculatedAccuracy = _targetingProjectile->getCalculatedAccuracy();
+
 			Surface *surfaceTracer = _res->getSurfaceSet("Projectiles")->getFrame(35);
 			Surface *surfaceImpact = _res->getSurfaceSet("Projectiles")->getFrame(280);
 
@@ -653,7 +661,7 @@ void Map::drawTerrain(Surface *surface)
 
 	SurfaceSet *pathfinding = _res->getSurfaceSet("Pathfinding");
 
-	if(selectedUnit)
+	/*if(selectedUnit)
 	{
 		_save->getTileEngine()->calculateFOV(selectedUnit);
 		std::set<Tile*> *tiles = selectedUnit->getVisibleTiles();
@@ -664,7 +672,7 @@ void Map::drawTerrain(Surface *surface)
 			screenPosition += _camera->getMapOffset();
 			(*ii)->getDrawables().push_back(new TileDrawable(fovIndicator, screenPosition.x, screenPosition.y+2, 0, 9, false));
 		}
-	}
+	}*/
 
 	surface->lock();
 	for (int itZ = beginZ; itZ <= endZ; itZ++)
@@ -687,14 +695,14 @@ void Map::drawTerrain(Surface *surface)
 
 					if (tile->isDiscovered(2))
 					{
-						if(!tile->getVisible())
+						/*if(selectedUnit && selectedUnit->getVisibleTiles()->find(tile) == selectedUnit->getVisibleTiles()->end())
 						{
-							tileShade = 10;
+							tileShade = std::min(tile->getShade() + 3, 16);
 						}
 						else
-						{
+						{*/
 							tileShade = tile->getShade();
-						}
+						//}
 					}
 					else
 					{
@@ -709,15 +717,6 @@ void Map::drawTerrain(Surface *surface)
 					if (tmpSurface)
 						tmpSurface->blitNShade(surface, screenPosition.x, screenPosition.y - tile->getMapData(MapData::O_FLOOR)->getYOffset(), tileShade, false);
 					unit = tile->getUnit();
-
-					/*if(tile->getVisible())
-					{
-						tmpSurface = pathfinding->getFrame(11);
-						if (tmpSurface)
-						{
-							tmpSurface->blitNShade(surface, screenPosition.x, screenPosition.y+2, 0, false, 4);
-						}
-					}*/
 
 					// Draw cursor back
 					if (_cursorType != CT_NONE && _selectorX > itX - _cursorSize && _selectorY > itY - _cursorSize && _selectorX < itX+1 && _selectorY < itY+1 && !_save->getBattleState()->getMouseOverIcons())
@@ -1251,17 +1250,7 @@ void Map::drawTerrain(Surface *surface)
 									double modifier = 0.0;
 									int upperLimit = weapon->getAimRange();
 									int lowerLimit = weapon->getMinRange();
-									/*if (Options::battleUFOExtenderAccuracy)
-									{
-										if (action->type == BA_AUTOSHOT)
-										{
-											upperLimit = weapon->getAutoRange();
-										}
-										else if (action->type == BA_SNAPSHOT)
-										{
-											upperLimit = weapon->getSnapRange();
-										}
-									}*/
+
 									if (distance < lowerLimit)
 									{
 										modifier = (weapon->getDropoff() * (lowerLimit - distance));
@@ -1280,6 +1269,11 @@ void Map::drawTerrain(Surface *surface)
 
 									ss << accuracy;
 									ss << "%";
+
+									if(calculatedAccuracy >= 0.0 && calculatedAccuracy < 1.0)
+									{
+										ss << "=>" << (int)((double)accuracy * calculatedAccuracy) << "%";
+									}
 									_txtAccuracy->setText(Language::utf8ToWstr(ss.str().c_str()).c_str());
 									_txtAccuracy->draw();
 									_txtAccuracy->blitNShade(surface, screenPosition.x, screenPosition.y, 0);
@@ -1339,6 +1333,28 @@ void Map::drawTerrain(Surface *surface)
 						}
 						waypid++;
 					}
+
+					/*if(BattleUnit *testUnit = tile->getUnit())
+					{
+						tmpSurface = pathfinding->getFrame(11);
+						if (tmpSurface)
+						{
+							switch(testUnit->getFaction())
+							{
+							case FACTION_HOSTILE:
+								tmpSurface->blitNShade(surface, screenPosition.x, screenPosition.y, 0, false, 3);
+								tmpSurface->blitNShade(surface, screenPosition.x, screenPosition.y-24, 0, false, 3);
+								break;
+							case FACTION_PLAYER:
+								tmpSurface->blitNShade(surface, screenPosition.x, screenPosition.y, 0, false, 4);
+								tmpSurface->blitNShade(surface, screenPosition.x, screenPosition.y-24, 0, false, 4);
+								break;
+							default:
+								tmpSurface->blitNShade(surface, screenPosition.x, screenPosition.y, 0, false, 10);
+								tmpSurface->blitNShade(surface, screenPosition.x, screenPosition.y-24, 0, false, 10);
+							}
+						}
+					}*/
 
 					if(topMostDrawables)
 					{

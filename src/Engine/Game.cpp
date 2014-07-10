@@ -245,7 +245,7 @@ void Game::run()
 						}
 						else if (Options::debug)
 						{
-							if (action.getDetails()->key.keysym.sym == SDLK_t && (SDL_GetModState() & KMOD_CTRL) != 0)
+							/*if (action.getDetails()->key.keysym.sym == SDLK_t && (SDL_GetModState() & KMOD_CTRL) != 0)
 							{
 								setState(new TestState);
 							}
@@ -254,7 +254,7 @@ void Game::run()
 							{
 								Options::debugUi = !Options::debugUi;
 								_states.back()->redrawText();
-							}
+							}*/
 						}
 					}
 					break;

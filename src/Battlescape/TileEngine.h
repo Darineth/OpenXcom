@@ -41,9 +41,6 @@ struct BattleAction;
 class TileEngine
 {
 private:
-	static const int MAX_VIEW_DISTANCE = 20;
-	static const int MAX_VOXEL_VIEW_DISTANCE = MAX_VIEW_DISTANCE * 16;
-	static const int MAX_DARKNESS_TO_SEE_UNITS = 9;
 	SavedBattleGame *_save;
 	std::vector<Uint16> *_voxelData;
 	static const int heightFromCenter[11];
@@ -52,6 +49,9 @@ private:
 	void displayDamage(BattleUnit *attacker, BattleUnit *target, BattleActionType action, ItemDamageType type, int damage, int wounds, bool stun);
 	bool _personalLighting;
 public:
+	static const int MAX_VIEW_DISTANCE = 20;
+	static const int MAX_VOXEL_VIEW_DISTANCE = MAX_VIEW_DISTANCE * 16;
+	static const int MAX_DARKNESS_TO_SEE_UNITS = 9;
 	/// Creates a new TileEngine class.
 	TileEngine(SavedBattleGame *save, std::vector<Uint16> *voxelData);
 	/// Cleans up the TileEngine.
@@ -81,7 +81,7 @@ public:
 	/// Closes ufo doors.
 	int closeUfoDoors();
 	/// Calculates a line trajectory.
-	int calculateLine(const Position& origin, const Position& target, bool storeTrajectory, std::vector<Position> *trajectory, BattleUnit *excludeUnit, bool doVoxelCheck = true, bool onlyVisible = false, BattleUnit *excludeAllBut = 0);
+	int calculateLine(const Position& origin, const Position& target, bool storeTrajectory, std::vector<Position> *trajectory, BattleUnit *excludeUnit, bool doVoxelCheck = true, bool onlyVisible = false, BattleUnit *excludeAllBut = 0, int *smokeEncountered = 0);
 	/// Calculates a parabola trajectory.
 	int calculateParabola(const Position& origin, const Position& target, bool storeTrajectory, std::vector<Position> *trajectory, BattleUnit *excludeUnit, double curvature, const Position delta);
 	/// Gets the origin voxel of a unit's eyesight.
@@ -119,7 +119,7 @@ public:
 	/// Checks the visibility of a given voxel.
 	bool isVoxelVisible(const Position& voxel);
 	/// Checks what type of voxel occupies this space.
-	int voxelCheck(const Position& voxel, BattleUnit *excludeUnit, bool excludeAllUnits = false, bool onlyVisible = false, BattleUnit *excludeAllBut = 0);
+	int voxelCheck(const Position& voxel, BattleUnit *excludeUnit, bool excludeAllUnits = false, bool onlyVisible = false, BattleUnit *excludeAllBut = 0, int *smokeEncountered = 0);
 	/// Blows this tile up.
 	bool detonate(Tile* tile);
 	/// Validates a throwing action.
