@@ -49,7 +49,7 @@ namespace OpenXcom
  * @param tile Tile the explosion is on.
  * @param lowerWeapon Whether the unit causing this explosion should now lower their weapon.
  */
-ExplosionBState::ExplosionBState(BattlescapeGame *parent, Position center, BattleItem *item, BattleUnit *unit, Tile *tile, bool lowerWeapon, bool subState) : BattleState(parent), _unit(unit), _center(center), _item(item), _tile(tile), _power(0), _areaOfEffect(false), _lowerWeapon(lowerWeapon), _pistolWhip(false), _hit(false), _subState(subState), _explosions(), _finished(false)
+ExplosionBState::ExplosionBState(BattlescapeGame *parent, Position center, BattleItem *item, BattleUnit *unit, Tile *tile, bool lowerWeapon, bool subState) : BattleState(parent), _unit(unit), _center(center), _item(item), _tile(tile), _power(0), _areaOfEffect(false), _lowerWeapon(lowerWeapon), _pistolWhip(false), _hit(false), _subState(subState), _explosions(), _finished(false), _delayExplosion(false)
 {
 }
 
@@ -68,12 +68,13 @@ ExplosionBState::~ExplosionBState()
  */
 void ExplosionBState::init()
 {
+	BattleActionType actionType = _parent->getCurrentAction()->type;
 	if (_item)
 	{
 		_power = _item->getRules()->getPower();
 		// getCurrentAction() only works for player actions: aliens cannot melee attack with rifle butts.
 		_pistolWhip = (_item->getRules()->getBattleType() != BT_MELEE &&
-			_parent->getCurrentAction()->type == BA_HIT);
+			actionType == BA_HIT);
 		if (_pistolWhip)
 		{
 			_power = _item->getRules()->getMeleePower();
@@ -184,7 +185,14 @@ void ExplosionBState::init()
 		}
 	}
 
-	explode();
+	if(actionType != BA_MINDCONTROL && actionType != BA_PANIC)
+	{
+		explode();
+	}
+	else
+	{
+		_delayExplosion = true;
+	}
 }
 
 /**
@@ -209,11 +217,14 @@ void ExplosionBState::think()
 
 			delete (*ii);
 			ii = _explosions.erase(ii);
+
+
+
 			if (_explosions.empty())
 			{
 				_finished = true;
 				if(!_subState) _parent->popState();
-				//explode();
+				if(_delayExplosion) explode();
 				return;
 			}
 		}
@@ -239,7 +250,8 @@ void ExplosionBState::explode()
 	bool terrainExplosion = false;
 	SavedBattleGame *save = _parent->getSave();
 	// last minute adjustment: determine if we actually 
-	if (_hit)
+	
+	if (_hit && save->getBattleGame()->getCurrentAction()->type != BA_MINDCONTROL && save->getBattleGame()->getCurrentAction()->type != BA_PANIC)
 	{
 		save->getBattleGame()->getCurrentAction()->type = BA_NONE;
 		BattleUnit *targetUnit = save->getTile(_center / Position(16, 16, 24))->getUnit();

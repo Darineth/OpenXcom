@@ -45,7 +45,7 @@ private:
 	BattleItem *_item;
 	Tile *_tile;
 	int _power;
-	bool _areaOfEffect, _lowerWeapon, _pistolWhip, _hit, _subState, _finished;
+	bool _areaOfEffect, _lowerWeapon, _pistolWhip, _hit, _subState, _finished, _delayExplosion;
 	std::vector<Explosion*> _explosions;
 	/// Calculates the effects of the explosion.
 	void explode();

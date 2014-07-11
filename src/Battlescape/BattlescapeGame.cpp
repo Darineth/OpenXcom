@@ -1393,14 +1393,15 @@ void BattlescapeGame::primaryAction(const Position &pos)
 				if (!_currentAction.weapon->getRules()->isLOSRequired() ||
 					std::find(_currentAction.actor->getVisibleUnits()->begin(), _currentAction.actor->getVisibleUnits()->end(), _save->selectUnit(pos)) != _currentAction.actor->getVisibleUnits()->end())
 				{
-					// get the sound/animation started
-					getMap()->setCursorType(CT_NONE);
-					_parentState->getGame()->getCursor()->setVisible(false);
-					_currentAction.cameraPosition = getMap()->getCamera()->getMapOffset();
-					statePushBack(new ProjectileFlyBState(this, _currentAction));
 					if (_currentAction.TU <= _currentAction.actor->getTimeUnits())
 					{
-						if (getTileEngine()->psiAttack(&_currentAction))
+						// get the sound/animation started
+						getMap()->setCursorType(CT_NONE);
+						_parentState->getGame()->getCursor()->setVisible(false);
+						_currentAction.cameraPosition = getMap()->getCamera()->getMapOffset();
+
+						bool success;
+						if (success = getTileEngine()->psiAttack(&_currentAction))
 						{
 							// show a little infobox if it's successful
 							Game *game = _parentState->getGame();
@@ -1410,6 +1411,16 @@ void BattlescapeGame::primaryAction(const Position &pos)
 								game->pushState(new InfoboxState(game->getLanguage()->getString("STR_MIND_CONTROL_SUCCESSFUL")));
 							_parentState->updateSoldierInfo();
 						}
+
+						Tile *targetTile = _save->getTile(_currentAction.target);
+						BattleUnit *unit = targetTile ? targetTile->getUnit() : 0;
+						_save->getTileEngine()->displayDamage(_currentAction.actor, unit, _currentAction.type, DT_NONE, success ? 1 : 0, 0, false);
+
+						statePushBack(new ProjectileFlyBState(this, _currentAction));
+					}
+					else
+					{
+						_parentState->warning("STR_NOT_ENOUGH_TIME_UNITS");
 					}
 				}
 				else

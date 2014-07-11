@@ -1215,7 +1215,7 @@ BattleUnit *TileEngine::hit(const Position &center, int power, BattleActionType 
 
 			bu->moraleChange(-morale_loss);
 
-			displayDamage(unit, bu, action, type, adjustedDamage, newWounds, false);
+			if(action != BA_MINDCONTROL && action != BA_PANIC) { displayDamage(unit, bu, action, type, adjustedDamage, newWounds, false); }
 
 			if (bu->getSpecialAbility() == SPECAB_EXPLODEONDEATH && !bu->isOut() && (bu->getHealth() == 0 || bu->getStunlevel() >= bu->getHealth()))
 			{

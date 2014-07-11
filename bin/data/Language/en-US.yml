@@ -338,7 +338,7 @@ en-US:
   STR_ROLE_HEAVY: "Heavy Weapons"
   STR_ROLE_GRENADIER: "Grenadier"
   STR_ROLE_MEDIC: "Medic"
-  STR_ROLE_PSIONICS: "Psionics"
+  STR_ROLE_PSIONICS: "Psion"
   STR_ROLE_DEMOLITIONS: "Demolitions"
   STR_ROLE_SPECIALIST: "Specialist"
   STR_SELECT_SQUAD_FOR_CRAFT: "Select Squad for {0}"
