@@ -46,7 +46,6 @@ private:
 	static const int heightFromCenter[11];
 	void addLight(const Position &center, int power, int layer);
 	int blockage(Tile *tile, const int part, ItemDamageType type, int direction = -1, bool checkingFromOrigin = false);
-	void displayDamage(BattleUnit *attacker, BattleUnit *target, BattleActionType action, ItemDamageType type, int damage, int wounds, bool stun);
 	bool _personalLighting;
 public:
 	static const int MAX_VIEW_DISTANCE = 20;
@@ -145,6 +144,7 @@ public:
 	/// mark a region of the map as "dangerous" for a turn.
 	void setDangerZone(Position pos, int radius, BattleUnit *unit);
 
+	void displayDamage(BattleUnit *attacker, BattleUnit *target, BattleActionType action, ItemDamageType type, int damage, int wounds, bool stun);
 	void getTargetVoxel(BattleAction *action, const Position &target, Position &targetVoxel);
 };
 

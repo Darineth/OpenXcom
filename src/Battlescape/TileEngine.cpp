@@ -3167,9 +3167,21 @@ void TileEngine::displayDamage(BattleUnit *attacker, BattleUnit *target, BattleA
 				{
 				case BA_PANIC:
 					damageWarning << battleState->tr("STR_LOG_PSIONICS").arg(battleState->tr("STR_PANIC_UNIT"));
+
+					if(damage)
+					{
+						damageWarning << battleState->tr("STR_LOG_SUCCESS");
+					}
+
 					break;
 				case BA_MINDCONTROL:
 					damageWarning << battleState->tr("STR_LOG_PSIONICS").arg(battleState->tr("STR_MIND_CONTROL"));
+
+					if(damage)
+					{
+						damageWarning << battleState->tr("STR_LOG_SUCCESS");
+					}
+
 					break;
 				default:
 					damageWarning << battleState->tr("STR_LOG_DAMAGE").arg(battleState->tr("STR_LOG_NO_DAMAGE"));
@@ -3237,9 +3249,17 @@ void TileEngine::displayDamage(BattleUnit *attacker, BattleUnit *target, BattleA
 				{
 				case BA_PANIC:
 					damageWarning << battleState->tr("STR_LOG_PSIONICS").arg(battleState->tr("STR_PANIC_UNIT"));
+					if(damage)
+					{
+						damageWarning << battleState->tr("STR_LOG_SUCCESS");
+					}
 					break;
 				case BA_MINDCONTROL:
 					damageWarning << battleState->tr("STR_LOG_PSIONICS").arg(battleState->tr("STR_MIND_CONTROL"));
+					if(damage)
+					{
+						damageWarning << battleState->tr("STR_LOG_SUCCESS");
+					}
 					break;
 				default:
 					damageWarning << battleState->tr("STR_LOG_DAMAGE").arg(battleState->tr("STR_LOG_NO_DAMAGE"));

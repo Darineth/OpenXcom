@@ -299,6 +299,10 @@ void BattlescapeGame::handleAI(BattleUnit *unit)
 		if (action.type == BA_MINDCONTROL || action.type == BA_PANIC)
 		{
 			bool success = _save->getTileEngine()->psiAttack(&action);
+			Tile *targetTile = _save->getTile(action.target);
+            BattleUnit *unit = targetTile ? targetTile->getUnit() : 0;
+			_save->getTileEngine()->displayDamage(action.actor, unit, action.type, DT_NONE, success ? 1 : 0, 0, false);
+
 			if (success && action.type == BA_MINDCONTROL)
 			{
 				// show a little infobox with the name of the unit and "... is under alien control"

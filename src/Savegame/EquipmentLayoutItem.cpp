@@ -144,7 +144,7 @@ YAML::Node EquipmentLayoutItem::save() const
 	{
 		node["ammoItem"] = _ammoItem;
 	}
-	if (_fuseTimer >= 0)
+	if (_fuseTimer != -1)
 	{
 		node["fuseTimer"] = _fuseTimer;
 	}
