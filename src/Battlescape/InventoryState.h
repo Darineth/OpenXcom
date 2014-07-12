@@ -44,7 +44,7 @@ class InventoryState : public State
 {
 private:
 	Surface *_bg, *_soldier;
-	Text *_txtName, *_txtRole, *_txtItem, *_txtAmmo, *_txtWeight, *_txtTus, *_txtFAcc, *_txtReact, *_txtPSkill, *_txtPStr;
+	Text *_txtName, *_txtRole, *_txtItem, *_txtAmmo, *_txtWeight, *_txtTus, *_txtReact, *_txtFAcc, *_txtTAcc, *_txtPSkill, *_txtPStr;
 	InteractiveSurface *_btnOk, *_btnPrev, *_btnNext, *_btnUnload, *_btnGround, *_btnRank, *_btnRole;
 	InteractiveSurface *_btnCreateTemplate, *_btnApplyTemplate;
 	Surface *_selAmmo;
