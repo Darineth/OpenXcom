@@ -69,6 +69,11 @@ CraftInfoState::CraftInfoState(Base *base, size_t craftId) : _base(base), _craft
 	_edtCraft = new TextEdit(this, 140, 16, 80, 8);
 	_txtDamage = new Text(100, 17, 14, 24);
 	_txtFuel = new Text(82, 17, 228, 24);
+
+	_txtMaxDamage = new Text(110, 8, 100, 24);
+	_txtAcceleration = new Text(110, 8, 100, 32);
+	_txtMaxSpeed = new Text(110, 8, 100, 40);
+
 	_txtW1Name = new Text(75, 16, 46, 48);
 	_txtW1Ammo = new Text(75, 24, 46, 64);
 	_txtW2Name = new Text(75, 16, 204, 48);
@@ -92,6 +97,9 @@ CraftInfoState::CraftInfoState(Base *base, size_t craftId) : _base(base), _craft
 	add(_edtCraft);
 	add(_txtDamage);
 	add(_txtFuel);
+	add(_txtMaxDamage);
+	add(_txtAcceleration);
+	add(_txtMaxSpeed);
 	add(_txtW1Name);
 	add(_txtW1Ammo);
 	add(_txtW2Name);
@@ -144,6 +152,15 @@ CraftInfoState::CraftInfoState(Base *base, size_t craftId) : _base(base), _craft
 	_txtFuel->setColor(Palette::blockOffset(13)+10);
 	_txtFuel->setSecondaryColor(Palette::blockOffset(13));
 
+	_txtMaxDamage->setColor(Palette::blockOffset(13)+10);
+	_txtMaxDamage->setSecondaryColor(Palette::blockOffset(13));
+
+	_txtAcceleration->setColor(Palette::blockOffset(13)+10);
+	_txtAcceleration->setSecondaryColor(Palette::blockOffset(13));
+
+	_txtMaxSpeed->setColor(Palette::blockOffset(13)+10);
+	_txtMaxSpeed->setSecondaryColor(Palette::blockOffset(13));
+
 	_txtW1Name->setColor(Palette::blockOffset(13)+5);
 	_txtW1Name->setWordWrap(true);
 
@@ -178,9 +195,10 @@ void CraftInfoState::init()
 	_edtCraft->setText(_craft->getName(_game->getLanguage()));
 
 	SurfaceSet *texture = _game->getResourcePack()->getSurfaceSet("BASEBITS.PCK");
-	texture->getFrame(_craft->getRules()->getSprite() + 33)->setX(0);
-	texture->getFrame(_craft->getRules()->getSprite() + 33)->setY(0);
-	texture->getFrame(_craft->getRules()->getSprite() + 33)->blit(_sprite);
+	Surface *sprite = texture->getFrame(_craft->getRules()->getSprite() + 33);
+	sprite->setX(0);
+	sprite->setY(0);
+	sprite->blit(_sprite);
 
 	std::wostringstream ss;
 	ss << tr("STR_DAMAGE_UC_").arg(Text::formatPercentage(_craft->getDamagePercentage()));
@@ -199,6 +217,10 @@ void CraftInfoState::init()
 		ss2 << formatTime(fuelHours);
 	}
 	_txtFuel->setText(ss2.str());
+
+	_txtMaxDamage->setText(tr("STR_DAMAGE_CAPACITY_UC").arg(_craft->getRules()->getMaxDamage()));
+	_txtMaxSpeed->setText(tr("STR_MAXIMUM_SPEED_UC").arg(_craft->getRules()->getMaxSpeed()));
+	_txtAcceleration->setText(tr("STR_ACCELERATION").arg(_craft->getRules()->getAcceleration()));
 
 	if (_craft->getRules()->getSoldiers() > 0)
 	{

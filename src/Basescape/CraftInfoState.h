@@ -47,7 +47,7 @@ private:
 	TextButton *_btnOk, *_btnW1, *_btnW2, *_btnCrew, *_btnEquip, *_btnArmor;
 	Window *_window;
 	TextEdit *_edtCraft;
-	Text *_txtDamage, *_txtFuel;
+	Text *_txtDamage, *_txtFuel, *_txtMaxDamage, *_txtAcceleration, *_txtMaxSpeed;
 	Text *_txtW1Name, *_txtW1Ammo, *_txtW2Name, *_txtW2Ammo;
 	Surface *_sprite, *_weapon1, *_weapon2, *_crew, *_equip;
 	/// Formats an amount of time.
