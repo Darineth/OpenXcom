@@ -827,4 +827,22 @@ bool Ufo::getInterceptionProcessed() const
 	return _processedIntercept;
 }
 
+/**
+ * Sets a flag indicating that this UFO is retreating, abandoning its mission.
+ * @param retreating whether or not we're retreating.
+ */
+void Ufo::setRetreating(bool retreating)
+{
+	_retreating = retreating;
+}
+
+/**
+ * Gets if the UFO is retreating, abandoning its mission.
+ * @return If the UFO is retreating.
+ */
+bool Ufo::getRetreating() const
+{
+	return _retreating;
+}
+
 }

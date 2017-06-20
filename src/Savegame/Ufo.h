@@ -53,7 +53,7 @@ private:
 	AlienMission *_mission;
 	const UfoTrajectory *_trajectory;
 	size_t _trajectoryPoint;
-	bool _detected, _hyperDetected, _processedIntercept;
+	bool _detected, _hyperDetected, _processedIntercept, _retreating;
 	int _shootingAt, _hitFrame, _fireCountdown, _escapeCountdown;
 	/// Calculates a new speed vector to the destination.
 	void calculateSpeed();
@@ -165,7 +165,8 @@ public:
 	int getEscapeCountdown() const;
 	void setInterceptionProcessed(bool processed);
 	bool getInterceptionProcessed() const;
-
+	bool getRetreating() const;
+	void setRetreating(bool retreating);
 };
 
 }

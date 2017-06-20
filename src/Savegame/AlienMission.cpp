@@ -432,7 +432,7 @@ void AlienMission::ufoReachedWaypoint(Ufo &ufo, Game &engine, const Globe &globe
 	}
 
 	const MissionWave &wave = _rule.getWave(waveNumber);
-	if (nextWaypoint >= trajectory.getWaypointCount())
+	if (ufo.getRetreating() || nextWaypoint >= trajectory.getWaypointCount())
 	{
 		ufo.setDetected(false);
 		ufo.setStatus(Ufo::DESTROYED);
