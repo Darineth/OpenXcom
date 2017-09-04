@@ -17,6 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <vector>
 #include "BattleState.h"
 #include "Position.h"
 
@@ -26,7 +27,9 @@ namespace OpenXcom
 class BattlescapeGame;
 class BattleUnit;
 class BattleItem;
+class ExplosionBState;
 class Tile;
+class Timer;
 
 /**
  * A projectile state.
@@ -36,12 +39,32 @@ class ProjectileFlyBState : public BattleState
 private:
 	BattleUnit *_unit;
 	BattleItem *_ammo;
+	BattleItem *_weapon;
 	BattleItem *_projectileItem;
-	Position _origin, _targetVoxel, _originVoxel;
-	int _projectileImpact;
+	Timer *_autoShotTimer;
+	Timer *_dualFireTimer;
+	Position _origin, _targetVoxel, _originVoxel, _originalTarget;
+	ProjectileFlyBState *_dualState;
+	bool _subState;
+	bool _subStateFinished;
+	//int _projectileImpact;
 	/// Tries to create a projectile sprite.
 	bool createNewProjectile();
 	bool _initialized, _targetFloor;
+	int _autoShotsRemaining;
+	bool _firstProjectile;
+
+	std::vector<ExplosionBState*> _explosionStates;
+
+	void onAutoshotTimer();
+	void onDualFireTimer();
+
+	void popParentState();
+
+	void onNewExplosionState(ExplosionBState *subState);
+
+	ProjectileFlyBState(BattlescapeGame *parent, BattleAction action, Position origin, bool subState);
+
 public:
 	/// Creates a new ProjectileFly class
 	ProjectileFlyBState(BattlescapeGame *parent, BattleAction action);

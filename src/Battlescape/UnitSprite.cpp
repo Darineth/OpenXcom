@@ -27,6 +27,7 @@
 #include "../Engine/ShaderDraw.h"
 #include "../Engine/ShaderMove.h"
 #include "../Engine/Options.h"
+#include "../Savegame/BattleEffect.h"
 #include "../fmath.h"
 
 namespace OpenXcom
@@ -103,7 +104,7 @@ void UnitSprite::setBattleUnit(BattleUnit *unit, int part)
 }
 
 
-namespace
+/*namespace
 {
 
 struct ColorReplace
@@ -115,7 +116,40 @@ struct ColorReplace
 	{
 		if ((src & ColorGroup) == face_color.first)
 		{
-			dest = face_color.second + (src & ColorShade);
+			switch (face_color.second & ColorShade)
+			{
+			case 1:
+				switch (src & ColorShade)
+				{
+				case 0:
+				case 1:
+					dest = 0;
+					break;
+				case 2:
+				case 3:
+					dest = 1;
+					break;
+				case 4:
+				case 5:
+					dest = 2;
+					break;
+				case 6:
+				case 7:
+					dest = 3;
+					break;
+				default:
+					dest = (src & ColorShade) - 4;
+				}
+
+				dest = (src & ColorGroup) ? (dest + (src & ColorGroup)) : dest + 1;
+				break;
+			case 15:
+				dest = (face_color.second & ColorGroup) + ((src & ColorShade) >> 1) + 8;
+				break;
+			default:
+				dest = face_color.second + (src & ColorShade);
+				dest = dest > 0 ? dest : 1;
+			}
 			return true;
 		}
 		else
@@ -140,14 +174,20 @@ struct ColorReplace
 	}
 };
 
-}
+}*/
 
 void UnitSprite::drawRecolored(Surface *src)
 {
-	if (_colorSize)
+	if (_unit->getEffectComponent(EC_STEALTH))
 	{
 		lock();
-		ShaderDraw<ColorReplace>(ShaderSurface(this), ShaderSurface(src), ShaderScalar(_color), ShaderScalar(_colorSize));
+		ShaderDraw<RecolorStealth>(ShaderSurface(this), ShaderSurface(src), ShaderScalar(_color), ShaderScalar(_colorSize), ShaderCurrentPixel());
+		unlock();
+	}
+	else if (_colorSize)
+	{
+		lock();
+		ShaderDraw<Recolor>(ShaderSurface(this), ShaderSurface(src), ShaderScalar(_color), ShaderScalar(_colorSize));
 		unlock();
 	}
 	else
@@ -799,7 +839,6 @@ void UnitSprite::drawRoutine2()
 		s->setY(turretOffsetY);
 		drawRecolored(s);
 	}
-
 }
 
 /**

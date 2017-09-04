@@ -25,7 +25,7 @@
 namespace OpenXcom
 {
 
-enum SoldierRank { RANK_ROOKIE, RANK_SQUADDIE, RANK_SERGEANT, RANK_CAPTAIN, RANK_COLONEL, RANK_COMMANDER};
+enum SoldierRank { RANK_ROOKIE, RANK_SQUADDIE, RANK_SERGEANT, RANK_CAPTAIN, RANK_COLONEL, RANK_COMMANDER, RANK_NONE };
 enum SoldierGender { GENDER_MALE, GENDER_FEMALE };
 enum SoldierLook { LOOK_BLONDE, LOOK_BROWNHAIR, LOOK_ORIENTAL, LOOK_AFRICAN };
 
@@ -39,6 +39,7 @@ class EquipmentLayoutItem;
 class SoldierDeath;
 class SoldierDiary;
 class SavedGame;
+class Role;
 
 /**
  * Represents a soldier hired by the player.
@@ -49,7 +50,7 @@ class Soldier
 {
 private:
 	std::wstring _name;
-	int _id, _improvement, _psiStrImprovement;
+	int _id, _vehicleId, _improvement, _psiStrImprovement;
 	RuleSoldier *_rules;
 	UnitStats _initialStats, _currentStats;
 	SoldierRank _rank;
@@ -57,15 +58,26 @@ private:
 	SoldierGender _gender;
 	SoldierLook _look;
 	int _missions, _kills, _recovery;
-	bool _recentlyPromoted, _psiTraining;
+	bool _recentlyPromoted, _psiTraining, _isVehicle;
 	Armor *_armor;
+	Role *_role;
 	std::vector<EquipmentLayoutItem*> _equipmentLayout;
 	SoldierDeath *_death;
 	SoldierDiary *_diary;
 	std::wstring _statString;
+	std::string _type;
+	std::string _inventoryLayout;
+	std::string _armorColor;
+	int _experience;
+	int _level;
+	int _talentPoints;
+	int _spentTalentPoints;
+
+	bool deriveLevel();
+
 public:
 	/// Creates a new soldier.
-	Soldier(RuleSoldier *rules, Armor *armor, int id = 0);
+	Soldier(RuleSoldier *rules, SavedGame *save, Armor *armor, int id = 0, Language *lang = 0, int vehicleId = -1);
 	/// Cleans up the soldier.
 	~Soldier();
 	/// Loads the soldier from YAML.
@@ -144,6 +156,25 @@ public:
 	SoldierDiary *getDiary();
 	/// Calculate statString.
 	void calcStatString(const std::vector<StatString *> &statStrings, bool psiStrengthEval);
+	/// Sets the soldier's role.
+	void setRole(Role *role);
+	/// Gets the soldier's role.
+	Role *getRole() const;
+	/// Gets if the soldier is a vehicle.
+	bool isVehicle() const;
+	/// Gets the size of the soldier in tiles.
+	int getSize() const;
+	/// Gets the inventory layout for the soldier.
+	const std::string &getInventoryLayout() const;
+	const std::string &getArmorColor() const;
+	void setArmorColor(const std::string &color);
+
+	int getExperience() const;
+	int getNextLevelExperience() const;
+	bool addExperience(int experience);
+	int getLevel() const;
+	int getTalentPoints() const;
+	bool spendTalentPoints(int points);
 };
 
 }

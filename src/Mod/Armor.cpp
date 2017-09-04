@@ -17,6 +17,7 @@
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "Armor.h"
+#include "Mod.h"
 
 namespace OpenXcom
 {
@@ -31,9 +32,9 @@ const std::string Armor::NONE = "STR_NONE";
 Armor::Armor(const std::string &type) :
 	_type(type), _frontArmor(0), _sideArmor(0), _rearArmor(0), _underArmor(0),
 	_drawingRoutine(0), _movementType(MT_WALK), _size(1), _weight(0),
-	_deathFrames(3), _constantAnimation(false), _canHoldWeapon(false), _hasInventory(true),
+	_deathFrames(3), _constantAnimation(false), _canHoldWeapon(false), _hasInventory(true), _vehicleItem(false),
 	_forcedTorso(TORSO_USE_GENDER),
-	_faceColorGroup(0), _hairColorGroup(0), _utileColorGroup(0), _rankColorGroup(0)
+	_faceColorGroup(0), _hairColorGroup(0), _utileColorGroup(0), _rankColorGroup(0), _utileDefault(0), _moveSound(-1), _deathSound(-1), _storeItem(), _equippedEffects(), _inventoryLayout()
 {
 	for (int i=0; i < DAMAGE_TYPES; i++)
 		_damageModifier[i] = 1.0f;
@@ -51,7 +52,7 @@ Armor::~Armor()
  * Loads the armor from a YAML file.
  * @param node YAML node.
  */
-void Armor::load(const YAML::Node &node)
+void Armor::load(const YAML::Node &node, Mod *mod)
 {
 	_type = node["type"].as<std::string>(_type);
 	_spriteSheet = node["spriteSheet"].as<std::string>(_spriteSheet);
@@ -80,6 +81,7 @@ void Armor::load(const YAML::Node &node)
 	_size = node["size"].as<int>(_size);
 	_weight = node["weight"].as<int>(_weight);
 	_stats.merge(node["stats"].as<UnitStats>(_stats));
+	_statModifiers.merge(node["statModifiers"].as<UnitStats>(_statModifiers));
 	if (const YAML::Node &dmg = node["damageModifier"])
 	{
 		for (size_t i = 0; i < dmg.size() && i < (size_t)DAMAGE_TYPES; ++i)
@@ -115,11 +117,29 @@ void Armor::load(const YAML::Node &node)
 	_hairColorGroup = node["spriteHairGroup"].as<int>(_hairColorGroup);
 	_rankColorGroup = node["spriteRankGroup"].as<int>(_rankColorGroup);
 	_utileColorGroup = node["spriteUtileGroup"].as<int>(_utileColorGroup);
+	_utileDefault = node["spriteUtileDefault"].as<int>(_utileDefault);
 	_faceColor = node["spriteFaceColor"].as<std::vector<int> >(_faceColor);
 	_hairColor = node["spriteHairColor"].as<std::vector<int> >(_hairColor);
 	_rankColor = node["spriteRankColor"].as<std::vector<int> >(_rankColor);
 	_utileColor = node["spriteUtileColor"].as<std::vector<int> >(_utileColor);
 	_units = node["units"].as< std::vector<std::string> >(_units);
+
+	if (_utileColorGroup > 0 && !_utileColor.size() && mod->getSoldierUtileColors().size())
+	{
+		auto index = mod->getSoldierUtileColorIndex();
+		auto colors = mod->getSoldierUtileColors();
+		for (auto ii = index.cbegin(); ii != index.cend(); ++ii)
+		{
+			_utileColor.push_back(colors[*ii]);
+		}
+	}
+
+	_vehicleItem = node["vehicleItem"].as<bool>(_vehicleItem);
+	_deathSound = node["deathSound"].as<int>(_deathSound);
+	_moveSound = node["moveSound"].as<int>(_moveSound);
+
+	_equippedEffects = node["equippedEffects"].as<std::vector<std::string> >(_equippedEffects);
+	_inventoryLayout = node["inventoryLayout"].as<std::string>(_inventoryLayout);
 }
 
 /**
@@ -185,7 +205,6 @@ int Armor::getUnderArmor() const
 {
 	return _underArmor;
 }
-
 
 /**
  * Gets the corpse item used in the Geoscape.
@@ -284,6 +303,15 @@ const UnitStats *Armor::getStats() const
 }
 
 /**
+* Gets pointer to the armor's stat modifiers.
+* @return stats Pointer to the armor's stat modifiers.
+*/
+UnitStats *Armor::getStatModifiers()
+{
+	return &_statModifiers;
+}
+
+/**
  * Gets the armor's weight.
  * @return the weight of the armor.
  */
@@ -376,7 +404,7 @@ int Armor::getFaceColor(int i) const
 	}
 	else
 	{
-		return 0;
+		return -1;
 	}
 }
 
@@ -392,7 +420,7 @@ int Armor::getHairColor(int i) const
 	}
 	else
 	{
-		return 0;
+		return -1;
 	}
 }
 
@@ -402,13 +430,13 @@ int Armor::getHairColor(int i) const
  */
 int Armor::getUtileColor(int i) const
 {
-	if ((size_t)i < _utileColor.size())
+	if (i >= 0 && (size_t)i < _utileColor.size())
 	{
 		return _utileColor[i];
 	}
 	else
 	{
-		return 0;
+		return -1;
 	}
 }
 
@@ -424,8 +452,18 @@ int Armor::getRankColor(int i) const
 	}
 	else
 	{
-		return 0;
+		return -1;
 	}
+}
+
+int Armor::getUtileColorCount() const
+{
+	return _utileColor.size();
+}
+
+int Armor::getDefaultUtileColor() const
+{
+	return _utileDefault;
 }
 
 /**
@@ -446,4 +484,44 @@ const std::vector<std::string> &Armor::getUnits() const
 	return _units;
 }
 
+/**
+ * Gets if armor is for vehicles.
+ * @return True if the armor is for vehicles only.
+ */
+bool Armor::getIsVehicleItem() const
+{
+	return _vehicleItem;
+}
+
+/**
+ * Gets the death sound for the armor.
+ * @return The death sound.
+ */
+int Armor::getDeathSound() const
+{
+	return _deathSound;
+}
+
+/**
+ * Gets the movement sound for the armor.
+ * @return The movement sound.
+ */
+int Armor::getMoveSound() const
+{
+	return _moveSound;
+}
+
+/**
+ * Gets the effects that should be applied when equipping the armor.
+ * @return A vector of all the effects that should be applied by wearing the armor.
+ */
+const std::vector<std::string> &Armor::getEquippedEffects() const
+{
+	return _equippedEffects;
+}
+
+const std::string &Armor::getInventoryLayout() const
+{
+	return _inventoryLayout;
+}
 }

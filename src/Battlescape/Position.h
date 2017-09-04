@@ -55,6 +55,13 @@ public:
 
 	Position operator/(const int v) const { return Position(x / v, y / v, z / v); }
 
+	float distance(const Position& pos) const {
+		int dx = x - pos.x;
+		int dy = y - pos.y;
+		int dz = z - pos.z;
+		return sqrt(float(dx*dx + dy*dy + dz*dz));
+	}
+
 	/// == operator
 	bool operator== (const Position& pos) const
 	{

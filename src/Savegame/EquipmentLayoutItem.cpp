@@ -43,6 +43,10 @@ EquipmentLayoutItem::EquipmentLayoutItem(const std::string &itemType, const std:
 {
 }
 
+EquipmentLayoutItem::EquipmentLayoutItem(const EquipmentLayoutItem &item) : _itemType(item._itemType), _slot(item._slot), _slotX(item._slotX), _slotY(item._slotY), _ammoItem(item._ammoItem), _fuseTimer(item._fuseTimer)
+{
+}
+
 /**
  *
  */
@@ -140,7 +144,7 @@ YAML::Node EquipmentLayoutItem::save() const
 	{
 		node["ammoItem"] = _ammoItem;
 	}
-	if (_fuseTimer >= 0)
+	if (_fuseTimer != -1)
 	{
 		node["fuseTimer"] = _fuseTimer;
 	}

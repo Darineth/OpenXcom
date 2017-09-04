@@ -78,7 +78,7 @@ void MedikitView::draw()
 	{
 		int wound = _unit->getFatalWound(i);
 		Surface * surface = set->getFrame (i);
-		int baseColor = wound ? red : green;
+		int baseColor = wound || _unit->getBleedingOut() ? red : 0;
 		surface->blitNShade(this, Surface::getX(), Surface::getY(), 0, false, baseColor);
 	}
 	this->unlock();

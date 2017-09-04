@@ -238,6 +238,12 @@ void SavedBattleGame::load(const YAML::Node &node, Mod *mod, SavedGame* savedGam
 			}
 		}
 	}
+
+	for(std::vector<BattleUnit*>::const_iterator ii = _units.begin(); ii != _units.end(); ++ii)
+	{
+		(*ii)->initLoaded(this);
+	}
+
 	// matches up tiles and units
 	resetUnitTiles();
 
@@ -887,22 +893,23 @@ void SavedBattleGame::endTurn()
 			{
 				(*i)->setTurnsSinceSpotted((*i)->getTurnsSinceSpotted() +	1);
 			}
-			if (_cheating && (*i)->getFaction() == FACTION_PLAYER && !(*i)->isOut())
+			/*if (_cheating && (*i)->getFaction() == FACTION_PLAYER && !(*i)->isOut())
 			{
 				(*i)->setTurnsSinceSpotted(0);
-			}
+			}*/
 		}
 	}
 	// hide all aliens (VOF calculations below will turn them visible again)
 	for (std::vector<BattleUnit*>::iterator i = _units.begin(); i != _units.end(); ++i)
 	{
-		if ((*i)->getFaction() == _side)
+		BattleUnit *bu = *i;
+		if (bu->getFaction() == _side)
 		{
-			(*i)->prepareNewTurn();
+			bu->prepareNewTurn(getTileEngine());
 		}
-		if ((*i)->getFaction() != FACTION_PLAYER)
+		if (bu->getFaction() != FACTION_PLAYER)
 		{
-			(*i)->setVisible(false);
+			bu->setVisible(false);
 		}
 	}
 
@@ -918,10 +925,10 @@ void SavedBattleGame::endTurn()
  */
 void SavedBattleGame::setDebugMode()
 {
-	for (int i = 0; i < _mapsize_z * _mapsize_y * _mapsize_x; ++i)
+	/*for (int i = 0; i < _mapsize_z * _mapsize_y * _mapsize_x; ++i)
 	{
 		_tiles[i]->setDiscovered(true, 2);
-	}
+	}*/
 
 	_debugMode = true;
 }
@@ -969,16 +976,17 @@ void SavedBattleGame::resetUnitTiles()
 {
 	for (std::vector<BattleUnit*>::iterator i = _units.begin(); i != _units.end(); ++i)
 	{
-		if (!(*i)->isOut())
+		BattleUnit *bu = *i;
+		if (!bu->isOut())
 		{
-			int size = (*i)->getArmor()->getSize() - 1;
-			if ((*i)->getTile() && (*i)->getTile()->getUnit() == (*i))
+			int size = bu->getArmor()->getSize() - 1;
+			if (bu->getTile() && bu->getTile()->getUnit() == bu)
 			{
 				for (int x = size; x >= 0; x--)
 				{
 					for (int y = size; y >= 0; y--)
 					{
-						getTile((*i)->getTile()->getPosition() + Position(x,y,0))->setUnit(0);
+						getTile(bu->getTile()->getPosition() + Position(x,y,0))->setUnit(0);
 					}
 				}
 			}
@@ -986,15 +994,15 @@ void SavedBattleGame::resetUnitTiles()
 			{
 				for (int y = size; y >= 0; y--)
 				{
-					Tile *t = getTile((*i)->getPosition() + Position(x,y,0));
-					t->setUnit((*i), getTile(t->getPosition() + Position(0,0,-1)));
+					Tile *t = getTile(bu->getPosition() + Position(x,y,0));
+					t->setUnit(bu, getTile(t->getPosition() + Position(0,0,-1)));
 				}
 			}
 
 		}
-		if ((*i)->getFaction() == FACTION_PLAYER)
+		if (bu->getFaction() == FACTION_PLAYER)
 		{
-			(*i)->setVisible(true);
+			bu->setVisible(true);
 		}
 	}
 	_beforeGame = false;
@@ -1287,16 +1295,22 @@ Node *SavedBattleGame::getPatrolNode(bool scout, BattleUnit *unit, Node *fromNod
  */
 void SavedBattleGame::prepareNewTurn()
 {
+	Tile **tiles = getTiles();
+
 	std::vector<Tile*> tilesOnFire;
 	std::vector<Tile*> tilesOnSmoke;
+
+	bool hiddenUnits = false;
 
 	// prepare a list of tiles on fire
 	for (int i = 0; i < _mapsize_x * _mapsize_y * _mapsize_z; ++i)
 	{
-		if (getTiles()[i]->getFire() > 0)
+		if (tiles[i]->getFire() > 0)
 		{
-			tilesOnFire.push_back(getTiles()[i]);
+			tilesOnFire.push_back(tiles[i]);
 		}
+
+		tiles[i]->setKnownHiddenUnit(false);
 	}
 
 	// first: fires spread
@@ -1362,9 +1376,9 @@ void SavedBattleGame::prepareNewTurn()
 	// prepare a list of tiles on fire/with smoke in them (smoke acts as fire intensity)
 	for (int i = 0; i < _mapsize_x * _mapsize_y * _mapsize_z; ++i)
 	{
-		if (getTiles()[i]->getSmoke() > 0)
+		if (tiles[i]->getSmoke() > 0)
 		{
-			tilesOnSmoke.push_back(getTiles()[i]);
+			tilesOnSmoke.push_back(tiles[i]);
 		}
 		getTiles()[i]->setDangerous(false);
 	}
@@ -1426,8 +1440,8 @@ void SavedBattleGame::prepareNewTurn()
 		// do damage to units, average out the smoke, etc.
 		for (int i = 0; i < _mapsize_x * _mapsize_y * _mapsize_z; ++i)
 		{
-			if (getTiles()[i]->getSmoke() != 0)
-				getTiles()[i]->prepareNewTurn(getDepth() == 0);
+			if (tiles()[i]->getSmoke() != 0)
+				tiles()[i]->prepareNewTurn(getDepth() == 0);
 		}
 		// fires could have been started, stopped or smoke could reveal/conceal units.
 		getTileEngine()->calculateTerrainLighting();
@@ -1532,12 +1546,21 @@ bool SavedBattleGame::setUnitPosition(BattleUnit *bu, Position position, bool te
 		}
 	}
 
-	if (size > 0)
+	Pathfinding *pf = getPathfinding();
+
+	if (size > 0 && pf)
 	{
-		getPathfinding()->setUnit(bu);
+		/* OXP Logic?
+		pf->setUnit(bu);
 		for (int dir = 2; dir <= 4; ++dir)
 		{
-			if (getPathfinding()->isBlocked(getTile(position + zOffset), 0, dir, 0))
+			if (pf->isBlocked(getTile(position), 0, dir, 0))
+				return false;
+		}*/
+		pf->setUnit(bu);
+		for (int dir = 2; dir <= 4; ++dir)
+		{
+			if (pf->isBlocked(getTile(position + zOffset), 0, dir, 0))
 				return false;
 		}
 	}

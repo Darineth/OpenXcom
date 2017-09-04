@@ -18,6 +18,7 @@
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <string>
+#include <vector>
 #include <yaml-cpp/yaml.h>
 #include "Unit.h"
 
@@ -42,6 +43,10 @@ private:
 	int _costBuy, _costSalary, _standHeight, _kneelHeight, _floatHeight, _femaleFrequency;
 	std::vector<int> _deathSoundMale, _deathSoundFemale;
 	std::vector<SoldierNamePool*> _names;
+
+	bool _isVehicle;
+	std::string _inventoryLayout;
+	std::vector<int> _levelExperience;
 
 	void addSoldierNamePool(const std::string &namFile);
 public:
@@ -81,6 +86,12 @@ public:
 	const std::vector<int> &getFemaleDeathSounds() const;
 	/// Gets the pool list for soldier names.
 	const std::vector<SoldierNamePool*> &getNames() const;
+	/// Gets if the soldier is a vehicle.
+	bool isVehicle() const;
+	const std::string &getInventoryLayout() const;
+	const std::vector<int> &getLevelExperience() const;
+	int getMaxLevel() const;
+	int getMaxLevelExperience() const;
 };
 
 }

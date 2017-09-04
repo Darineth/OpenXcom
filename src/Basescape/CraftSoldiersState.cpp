@@ -35,6 +35,7 @@
 #include "../Savegame/SavedGame.h"
 #include "SoldierInfoState.h"
 #include "../Mod/RuleInterface.h"
+#include "../Savegame/Role.h"
 
 namespace OpenXcom
 {
@@ -98,7 +99,7 @@ GET_SOLDIER_STAT_FN(woundRecovery, WoundRecovery)
  * @param craft ID of the selected craft.
  */
 CraftSoldiersState::CraftSoldiersState(Base *base, size_t craft)
-		:  _base(base), _craft(craft), _otherCraftColor(0), _origSoldierOrder(*_base->getSoldiers())
+		:  _base(base), _craft(craft), _otherCraftColor(0), _origSoldierOrder(*_base->getSoldiers()), _craftOut(false)
 {
 	// Create objects
 	_window = new Window(this, 320, 200, 0, 0);
@@ -139,6 +140,7 @@ CraftSoldiersState::CraftSoldiersState(Base *base, size_t craft)
 
 	_txtTitle->setBig();
 	Craft *c = _base->getCrafts()->at(_craft);
+	_craftOut = c->getStatus() == "STR_OUT";
 	_txtTitle->setText(tr("STR_SELECT_SQUAD_FOR_CRAFT").arg(c->getName(_game->getLanguage())));
 
 	_txtName->setText(tr("STR_NAME_UC"));
@@ -204,6 +206,7 @@ CraftSoldiersState::CraftSoldiersState(Base *base, size_t craft)
 	_lstSoldiers->setSelectable(true);
 	_lstSoldiers->setBackground(_window);
 	_lstSoldiers->setMargin(8);
+
 	_lstSoldiers->onLeftArrowClick((ActionHandler)&CraftSoldiersState::lstItemsLeftArrowClick);
 	_lstSoldiers->onRightArrowClick((ActionHandler)&CraftSoldiersState::lstItemsRightArrowClick);
 	_lstSoldiers->onMouseClick((ActionHandler)&CraftSoldiersState::lstSoldiersClick, 0);
@@ -280,14 +283,28 @@ void CraftSoldiersState::initList()
 	Craft *c = _base->getCrafts()->at(_craft);
 	for (std::vector<Soldier*>::iterator i = _base->getSoldiers()->begin(); i != _base->getSoldiers()->end(); ++i)
 	{
-		_lstSoldiers->addRow(3, (*i)->getName(true, 19).c_str(), tr((*i)->getRankString()).c_str(), (*i)->getCraftString(_game->getLanguage()).c_str());
+		Soldier *ss = *i;
+		std::wostringstream rank;
+
+		Role *role;
+		if ((role = ss->getRole()) && !role->isBlank())
+		{
+			rank << tr(ss->getRole()->getName() + "_SHORT") << "-";
+		}
+
+		rank << tr(ss->getRankString());
+
+		_lstSoldiers->addRow(3,
+			ss->getName(true, 19).c_str(),
+			rank.str().c_str(),
+			ss->getCraftString(_game->getLanguage()).c_str());
 
 		Uint8 color;
-		if ((*i)->getCraft() == c)
+		if (ss->getCraft() == c)
 		{
 			color = _lstSoldiers->getSecondaryColor();
 		}
-		else if ((*i)->getCraft() != 0)
+		else if (ss->getCraft() != 0)
 		{
 			color = _otherCraftColor;
 		}
@@ -307,8 +324,8 @@ void CraftSoldiersState::initList()
 }
 
 /**
- * Shows the soldiers in a list.
- */
+* Shows the soldiers in a list.
+*/
 void CraftSoldiersState::init()
 {
 	State::init();
@@ -316,9 +333,9 @@ void CraftSoldiersState::init()
 }
 
 /**
- * Reorders a soldier up.
- * @param action Pointer to an action.
- */
+* Reorders a soldier up.
+* @param action Pointer to an action.
+*/
 void CraftSoldiersState::lstItemsLeftArrowClick(Action *action)
 {
 	unsigned int row = _lstSoldiers->getSelectedRow();
@@ -338,11 +355,11 @@ void CraftSoldiersState::lstItemsLeftArrowClick(Action *action)
 }
 
 /**
- * Moves a soldier up on the list.
- * @param action Pointer to an action.
- * @param row Selected soldier row.
- * @param max Move the soldier to the top?
- */
+* Moves a soldier up on the list.
+* @param action Pointer to an action.
+* @param row Selected soldier row.
+* @param max Move the soldier to the top?
+*/
 void CraftSoldiersState::moveSoldierUp(Action *action, unsigned int row, bool max)
 {
 	Soldier *s = _base->getSoldiers()->at(row);
@@ -368,9 +385,9 @@ void CraftSoldiersState::moveSoldierUp(Action *action, unsigned int row, bool ma
 }
 
 /**
- * Reorders a soldier down.
- * @param action Pointer to an action.
- */
+* Reorders a soldier down.
+* @param action Pointer to an action.
+*/
 void CraftSoldiersState::lstItemsRightArrowClick(Action *action)
 {
 	unsigned int row = _lstSoldiers->getSelectedRow();
@@ -391,11 +408,11 @@ void CraftSoldiersState::lstItemsRightArrowClick(Action *action)
 }
 
 /**
- * Moves a soldier down on the list.
- * @param action Pointer to an action.
- * @param row Selected soldier row.
- * @param max Move the soldier to the bottom?
- */
+* Moves a soldier down on the list.
+* @param action Pointer to an action.
+* @param row Selected soldier row.
+* @param max Move the soldier to the bottom?
+*/
 void CraftSoldiersState::moveSoldierDown(Action *action, unsigned int row, bool max)
 {
 	Soldier *s = _base->getSoldiers()->at(row);
@@ -421,9 +438,9 @@ void CraftSoldiersState::moveSoldierDown(Action *action, unsigned int row, bool 
 }
 
 /**
- * Shows the selected soldier's info.
- * @param action Pointer to an action.
- */
+* Shows the selected soldier's info.
+* @param action Pointer to an action.
+*/
 void CraftSoldiersState::lstSoldiersClick(Action *action)
 {
 	double mx = action->getAbsoluteXMouse();
@@ -446,7 +463,7 @@ void CraftSoldiersState::lstSoldiersClick(Action *action)
 		{
 			color = _otherCraftColor;
 		}
-		else if (c->getSpaceAvailable() > 0 && s->getWoundRecovery() == 0)
+		else if (c->getSpaceAvailable() >= s->getSize() && s->getWoundRecovery() == 0)
 		{
 			s->setCraft(c);
 			_lstSoldiers->setCellText(row, 2, c->getName(_game->getLanguage()));
@@ -464,9 +481,9 @@ void CraftSoldiersState::lstSoldiersClick(Action *action)
 }
 
 /**
- * Handles the mouse-wheels on the arrow-buttons.
- * @param action Pointer to an action.
- */
+* Handles the mouse-wheels on the arrow-buttons.
+* @param action Pointer to an action.
+*/
 void CraftSoldiersState::lstSoldiersMousePress(Action *action)
 {
 	if (Options::changeValueByMouseWheel == 0)
@@ -483,7 +500,7 @@ void CraftSoldiersState::lstSoldiersMousePress(Action *action)
 		}
 	}
 	else if (action->getDetails()->button.button == SDL_BUTTON_WHEELDOWN &&
-			 0 < numSoldiers && INT_MAX >= numSoldiers && row < numSoldiers - 1)
+		0 < numSoldiers && INT_MAX >= numSoldiers && row < numSoldiers - 1)
 	{
 		if (action->getAbsoluteXMouse() >= _lstSoldiers->getArrowsLeftEdge() &&
 			action->getAbsoluteXMouse() <= _lstSoldiers->getArrowsRightEdge())

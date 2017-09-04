@@ -152,7 +152,7 @@ void LoadGameState::think()
 		_game->popState();
 
 		// Load the game
-		SavedGame *s = new SavedGame();
+		SavedGame *s = new SavedGame(_game->getMod());
 		try
 		{
 			s->load(_filename, _game->getMod());

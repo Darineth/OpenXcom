@@ -18,6 +18,8 @@
  * along with OpenXcom.  If not, see <http:///www.gnu.org/licenses/>.
  */
 #include "../Engine/State.h"
+#include "WarningMessage.h"
+#include "CombatLog.h"
 #include "Position.h"
 
 #include <vector>
@@ -47,7 +49,7 @@ class BattlescapeGame;
 class BattlescapeState : public State
 {
 private:
-	Surface *_rank;
+	Surface *_rank, *_role;
 	InteractiveSurface *_icons;
 	Map *_map;
 	BattlescapeButton *_btnUnitUp, *_btnUnitDown, *_btnMapUp, *_btnMapDown, *_btnShowMap, *_btnKneel;
@@ -55,18 +57,22 @@ private:
 	BattlescapeButton *_btnEndTurn, *_btnAbort, *_btnLaunch, *_btnPsi, *_reserve;
 	InteractiveSurface *_btnStats;
 	BattlescapeButton *_btnReserveNone, *_btnReserveSnap, *_btnReserveAimed, *_btnReserveAuto, *_btnReserveKneel, *_btnZeroTUs;
-	InteractiveSurface *_btnLeftHandItem, *_btnRightHandItem;
+	InteractiveSurface *_btnLeftHandItem, *_btnRightHandItem, *_btnUtilityItem;
 	static const int VISIBLE_MAX = 10;
 	InteractiveSurface *_btnVisibleUnit[VISIBLE_MAX];
 	NumberText *_numVisibleUnit[VISIBLE_MAX];
 	BattleUnit *_visibleUnit[VISIBLE_MAX];
+	NumberText *_numBleeding;
+	Surface *_bleedingIcon;
+	bool _visibleUnitSpotted[VISIBLE_MAX];
 	WarningMessage *_warning;
+	CombatLog *_combatLog;
 	Text *_txtName;
-	NumberText *_numTimeUnits, *_numEnergy, *_numHealth, *_numMorale, *_numLayers, *_numAmmoLeft, *_numAmmoRight;
-	Bar *_barTimeUnits, *_barEnergy, *_barHealth, *_barMorale;
+	NumberText *_numTimeUnits, *_numEnergy, *_numHealth, *_numMorale, *_numLayers, *_numAmmoLeft, *_numAmmoRight, *_numAmmoUtility;
+	Bar *_barTimeUnits, *_barEnergy, *_barHealth, *_barMorale, *_barExperience;
 	Timer *_animTimer, *_gameTimer;
 	SavedBattleGame *_save;
-	Text *_txtDebug, *_txtTooltip;
+	Text *_txtDebug, *_txtTooltip, *_txtEffects;
 	std::vector<State*> _popups;
 	BattlescapeGame *_battleGame;
 	bool _firstInit;
@@ -81,6 +87,7 @@ private:
 	Position _cursorPosition;
 	Uint8 _barHealthColor;
 	bool _autosave;
+	int _unitButtonColor, _unitButtonFlashColor, _unitButtonBorder;
 	/// Popups a context sensitive list of actions the user can choose from.
 	void handleItemClick(BattleItem *item);
 	/// Shifts the red colors of the visible unit buttons backgrounds.
@@ -89,6 +96,8 @@ private:
 	void blinkHealthBar();
 	/// Shows the unit kneel state.
 	void toggleKneelButton(BattleUnit* unit);
+	/// Animates grenade primer indicators.
+	void drawPrimers();
 public:
 	/// Selects the next soldier.
 	void selectNextPlayerUnit(bool checkReselect = false, bool setReselect = false, bool checkInventory = false);
@@ -101,6 +110,8 @@ public:
 	~BattlescapeState();
 	/// Initializes the battlescapestate.
 	void init();
+	/// Does pre-battle unit initialization.
+	void initUnits();
 	/// Runs the timers and handles popups.
 	void think();
 	/// Handler for moving mouse over the map.
@@ -147,6 +158,8 @@ public:
 	void btnLeftHandItemClick(Action *action);
 	/// Handler for clicking the right hand item button.
 	void btnRightHandItemClick(Action *action);
+	/// Handler for clicking the utility item button.
+	void BattlescapeState::btnUtilityItemClick(Action *action);
 	/// Handler for clicking a visible unit button.
 	void btnVisibleUnitClick(Action *action);
 	/// Handler for clicking the launch rocket button.
@@ -177,6 +190,11 @@ public:
 	void debug(const std::wstring &message);
 	/// Show warning message.
 	void warning(const std::string &message);
+	void warning(const std::wstring &message);
+	/// Show message.
+	void message(const std::wstring &message, WarningColor color);
+	/// Add a combat log entry.
+	void combatLog(const std::wstring &message, CombatLogColor color);
 	/// Handles keypresses.
 	void handle(Action *action);
 	/// Displays a popup window.
@@ -219,6 +237,7 @@ public:
 	void stopScrolling(Action *action);
 	/// Autosave next turn.
 	void autosave();
+	CombatLog *getCombatLog() const;
 };
 
 }

@@ -30,10 +30,14 @@ namespace OpenXcom
  * @param type String defining the type.
  */
 RuleItem::RuleItem(const std::string &type) : _type(type), _name(type), _size(0.0), _costBuy(0), _costSell(0), _transferTime(24), _weight(3), _bigSprite(-1), _floorSprite(-1), _handSprite(120), _bulletSprite(-1), _fireSound(-1), _hitSound(-1), _hitAnimation(-1), _power(0), _damageType(DT_NONE),
-											_accuracyAuto(0), _accuracySnap(0), _accuracyAimed(0), _tuAuto(0), _tuSnap(0), _tuAimed(0), _clipSize(0), _accuracyMelee(0), _tuMelee(0), _battleType(BT_NONE), _twoHanded(false), _fixedWeapon(false), _waypoints(0), _invWidth(1), _invHeight(1),
+											_baseAccuracy(75), _accuracyAuto(0), _accuracySnap(0), _accuracyAimed(0), _accuracyBurst(0), _tuAuto(0), _tuSnap(0), _tuAimed(0), _tuBurst(0), _clipSize(0), _accuracyMelee(0), _tuMelee(0), _battleType(BT_NONE), _twoHanded(false), _fixedWeapon(false), _waypoints(0), _invWidth(1), _invHeight(1),
 											_painKiller(0), _heal(0), _stimulant(0), _woundRecovery(0), _healthRecovery(0), _stunRecovery(0), _energyRecovery(0), _tuUse(0), _recoveryPoints(0), _armor(20), _turretType(-1), _recover(true), _liveAlien(false), _blastRadius(-1), _attraction(0),
-											_flatRate(false), _arcingShot(false), _listOrder(0), _maxRange(200), _aimRange(200), _snapRange(15), _autoRange(7), _minRange(0), _dropoff(2), _bulletSpeed(0), _explosionSpeed(0), _autoShots(3), _shotgunPellets(0), _strengthApplied(false), _skillApplied(true),
-											_LOSRequired(false), _underwaterOnly(false), _landOnly(false), _meleeSound(39), _meleePower(0), _meleeAnimation(0), _meleeHitSound(-1), _specialType(-1), _vaporColor(-1), _vaporDensity(0), _vaporProbability(15)
+											_flatRate(false), _arcingShot(false), _listOrder(0), _maxRange(200), _aimRange(200), _snapRange(15), _autoRange(7), _burstRange(8), _minRange(0), _dropoff(2), _bulletSpeed(0), _explosionSpeed(0), _autoShots(3), _shotgunPellets(0), _burstShots(0), _strengthApplied(false), _skillApplied(true), 
+											_LOSRequired(false), _underwaterOnly(false), _landOnly(false), _meleeSound(39), _meleePower(0), _meleeAnimation(0), _meleeHitSound(-1), _specialType(-1), _vaporColor(-1), _vaporDensity(0), _vaporProbability(15),
+											_accuracyShotgunSpread(0), _autoDelay(0), _kneelModifier(0), _blastDropoff(0), _reactionsModifier(0),
+											_aiRangeClose(-1), _aiRangeMid(-1), _aiRangeLong(-1), _aiRangeMax(-1), _aiAttackPriorityClose(), _aiAttackPriorityMid(), _aiAttackPriorityLong(), _aiAttackPriorityMax(),
+											_overwatchModifier(100), _overwatchRadius(2), _overwatchRange(20), _overwatchShot("snap"), _psiCostPanic(0), _psiCostMindControl(0), _psiCostClairvoyance(0), _psiCostMindBlast(0), _twoHandedModifier(80), _vehicleItem(false), _battleClipSize(0),
+											_frontArmor(0), _sideArmor(0), _rearArmor(0), _underArmor(0), _validSlots(), _checkValidSlots(false), _hitEffect(), _equippedEffect()
 {
 }
 
@@ -106,12 +110,16 @@ void RuleItem::load(const YAML::Node &node, Mod *mod, int listOrder)
 	_power = node["power"].as<int>(_power);
 	_compatibleAmmo = node["compatibleAmmo"].as< std::vector<std::string> >(_compatibleAmmo);
 	_damageType = (ItemDamageType)node["damageType"].as<int>(_damageType);
+	_baseAccuracy = node["baseAccuracy"].as<int>(_baseAccuracy);
 	_accuracyAuto = node["accuracyAuto"].as<int>(_accuracyAuto);
 	_accuracySnap = node["accuracySnap"].as<int>(_accuracySnap);
 	_accuracyAimed = node["accuracyAimed"].as<int>(_accuracyAimed);
+	_accuracyBurst = node["accuracyBurst"].as<int>(_accuracyBurst);
+	_accuracyShotgunSpread = node["accuracyShotgunSpread"].as<int>(_accuracyShotgunSpread);
 	_tuAuto = node["tuAuto"].as<int>(_tuAuto);
 	_tuSnap = node["tuSnap"].as<int>(_tuSnap);
 	_tuAimed = node["tuAimed"].as<int>(_tuAimed);
+	_tuBurst = node["tuBurst"].as<int>(_tuBurst);
 	_clipSize = node["clipSize"].as<int>(_clipSize);
 	_accuracyMelee = node["accuracyMelee"].as<int>(_accuracyMelee);
 	_tuMelee = node["tuMelee"].as<int>(_tuMelee);
@@ -143,11 +151,13 @@ void RuleItem::load(const YAML::Node &node, Mod *mod, int listOrder)
 	_aimRange = node["aimRange"].as<int>(_aimRange);
 	_snapRange = node["snapRange"].as<int>(_snapRange);
 	_autoRange = node["autoRange"].as<int>(_autoRange);
+	_burstRange = node["burstRange"].as<int>(_burstRange);
 	_minRange = node["minRange"].as<int>(_minRange);
 	_dropoff = node["dropoff"].as<int>(_dropoff);
 	_bulletSpeed = node["bulletSpeed"].as<int>(_bulletSpeed);
 	_explosionSpeed = node["explosionSpeed"].as<int>(_explosionSpeed);
 	_autoShots = node["autoShots"].as<int>(_autoShots);
+	_burstShots = node["burstShots"].as<int>(_burstShots);
 	_shotgunPellets = node["shotgunPellets"].as<int>(_shotgunPellets);
 	_zombieUnit = node["zombieUnit"].as<std::string>(_zombieUnit);
 	_strengthApplied = node["strengthApplied"].as<bool>(_strengthApplied);
@@ -160,6 +170,57 @@ void RuleItem::load(const YAML::Node &node, Mod *mod, int listOrder)
 	_vaporColor = node["vaporColor"].as<int>(_vaporColor);
 	_vaporDensity = node["vaporDensity"].as<int>(_vaporDensity);
 	_vaporProbability = node["vaporProbability"].as<int>(_vaporProbability);
+	_autoDelay = node["autoDelay"].as<int>(_autoDelay);
+	_kneelModifier = node["kneelModifier"].as<int>(_kneelModifier);
+	_blastDropoff = node["blastDropoff"].as<int>(_blastDropoff);
+	_reactionsModifier = node["reactionsModifier"].as<int>(_reactionsModifier);
+
+	_aiRangeClose = node["aiRangeClose"].as<int>(_aiRangeClose);
+	_aiRangeMid = node["aiRangeMid"].as<int>(_aiRangeMid);
+	_aiRangeLong = node["aiRangeLong"].as<int>(_aiRangeLong);
+	_aiRangeMax = node["aiRangeMax"].as<int>(_aiRangeMax);
+
+	_aiAttackPriorityClose = node["aiAttackPriorityClose"].as< std::vector<std::string> >(_aiAttackPriorityClose);
+	_aiAttackPriorityMid = node["aiAttackPriorityMid"].as< std::vector<std::string> >(_aiAttackPriorityMid);
+	_aiAttackPriorityLong = node["aiAttackPriorityLong"].as< std::vector<std::string> >(_aiAttackPriorityLong);
+	_aiAttackPriorityMax = node["aiAttackPriorityMax"].as< std::vector<std::string> >(_aiAttackPriorityMax);
+
+	_overwatchModifier = node["overwatchModifier"].as<int>(_overwatchModifier);
+	_overwatchRadius = node["overwatchRadius"].as<int>(_overwatchRadius);
+	_overwatchRange = node["overwatchRange"].as<int>(_overwatchRange);
+	_overwatchShot = node["overwatchShot"].as<std::string>(_overwatchShot);
+
+	_psiCostPanic = node["psiCostPanic"].as<int>(_psiCostPanic);
+	_psiCostMindControl = node["psiCostMindControl"].as<int>(_psiCostMindControl);
+	_psiCostClairvoyance = node["psiCostClairvoyance"].as<int>(_psiCostClairvoyance);
+	_psiCostMindBlast = node["psiCostMindBlast"].as<int>(_psiCostMindBlast);
+
+	_twoHandedModifier = node["twoHandedModifier"].as<int>(_twoHandedModifier);
+
+	_vehicleItem = node["vehicleItem"].as<bool>(_vehicleItem);
+
+	_stats.merge(node["stats"].as<UnitStats>(_stats));
+	_statModifiers.merge(node["statModifiers"].as<UnitStats>(_statModifiers));
+	_hasStats = !_stats.isZero() || !_statModifiers.isZero();
+
+	_frontArmor = node["frontArmor"].as<int>(_frontArmor);
+	_sideArmor = node["sideArmor"].as<int>(_sideArmor);
+	_rearArmor = node["rearArmor"].as<int>(_rearArmor);
+	_underArmor = node["underArmor"].as<int>(_rearArmor);
+	
+	_validSlots = node["validSlots"].as< std::vector<std::string> >(_validSlots);
+	_checkValidSlots = _validSlots.size() > 0;
+
+	if(_battleClipSize = node["battleClipSize"].as<int>(_battleClipSize))
+	{
+		_clipSize = 0;
+	}
+
+	_hitEffect = node["hitEffect"].as<std::string>(_hitEffect);
+	_equippedEffect = node["equippedEffect"].as<std::string>(_equippedEffect);
+
+	_ammoRegen = node["ammoRegen"].as<int>(_ammoRegen);
+
 	if (!_listOrder)
 	{
 		_listOrder = listOrder;
@@ -281,6 +342,15 @@ bool RuleItem::isTwoHanded() const
 }
 
 /**
+ * Returns the two handed accuracy modifier.
+ * @return The percentage of accuracy to apply when the weapon is not wielded single-handedly.
+ */
+int RuleItem::getTwoHandedModifier() const
+{
+	return _twoHandedModifier;
+}
+
+/**
  * Returns whether this item uses waypoints.
  * @return True if it uses waypoints.
  */
@@ -345,6 +415,15 @@ int RuleItem::getPower() const
 }
 
 /**
+ * Gets the item's base accuracy.
+ * @return The item's base accuracy.
+ */
+int RuleItem::getBaseAccuracy() const
+{
+	return _baseAccuracy;
+}
+
+/**
  * Gets the item's accuracy for snapshots.
  * @return The snapshot accuracy.
  */
@@ -372,12 +451,30 @@ int RuleItem::getAccuracyAimed() const
 }
 
 /**
+* Gets the item's accuracy for Burstshots.
+* @return The Burstshot accuracy.
+*/
+int RuleItem::getAccuracyBurst() const
+{
+	return _accuracyBurst;
+}
+
+/**
  * Gets the item's accuracy for melee attacks.
  * @return The melee accuracy.
  */
 int RuleItem::getAccuracyMelee() const
 {
 	return _accuracyMelee;
+}
+
+/**
+ * Gets the item's shotgun spread for attacks.
+ * @return The ShotgunSpread accuracy.
+ */
+int RuleItem::getAccuracyShotgunSpread() const
+{
+	return _accuracyShotgunSpread;
 }
 
 /**
@@ -405,6 +502,15 @@ int RuleItem::getTUAuto() const
 int RuleItem::getTUAimed() const
 {
 	return _tuAimed;
+}
+
+/**
+* Gets the item's time unit percentage for Burstshots.
+* @return The Burstshot TU percentage.
+*/
+int RuleItem::getTUBurst() const
+{
+	return _tuBurst;
 }
 
 /**
@@ -471,16 +577,33 @@ int RuleItem::getClipSize() const
 }
 
 /**
+ * Gets the item's ammo battle clip size.
+ * @return The ammo battle clip size.
+ */
+int RuleItem::getBattleClipSize() const
+{
+	return _battleClipSize;
+}
+
+/**
  * Draws and centers the hand sprite on a surface
  * according to its dimensions.
  * @param texture Pointer to the surface set to get the sprite from.
  * @param surface Pointer to the surface to draw to.
  */
-void RuleItem::drawHandSprite(SurfaceSet *texture, Surface *surface) const
+void RuleItem::drawHandSprite(SurfaceSet *texture, Surface *surface, int maxW, int maxH, bool utilitySlot) const
 {
 	Surface *frame = texture->getFrame(this->getBigSprite());
-	frame->setX((RuleInventory::HAND_W - this->getInventoryWidth()) * RuleInventory::SLOT_W/2);
-	frame->setY((RuleInventory::HAND_H - this->getInventoryHeight()) * RuleInventory::SLOT_H/2);
+	if (utilitySlot)
+	{
+		frame->setX(((maxW ? maxW : RuleInventory::UTILITY_W) - this->getInventoryWidth()) * RuleInventory::SLOT_W / 2);
+		frame->setY(((maxH ? maxH : RuleInventory::UTILITY_H) - this->getInventoryHeight()) * RuleInventory::SLOT_H / 2);
+	}
+	else
+	{
+		frame->setX(((maxW ? maxW : RuleInventory::HAND_W) - this->getInventoryWidth()) * RuleInventory::SLOT_W / 2);
+		frame->setY(((maxH ? maxH : RuleInventory::HAND_H) - this->getInventoryHeight()) * RuleInventory::SLOT_H / 2);
+	}
 	texture->getFrame(this->getBigSprite())->blit(surface);
 }
 
@@ -715,6 +838,15 @@ int RuleItem::getAutoRange() const
 }
 
 /**
+* Gets the maximim effective range of this weapon for Burst Shot.
+* @return The maximum range.
+*/
+int RuleItem::getBurstRange() const
+{
+	return _burstRange;
+}
+
+/**
  * Gets the minimum effective range of this weapon.
  * @return The minimum effective range.
  */
@@ -757,6 +889,15 @@ int RuleItem::getExplosionSpeed() const
 int RuleItem::getAutoShots() const
 {
 	return _autoShots;
+}
+
+/**
+* Gets the amount of burst shots fired by this weapon.
+* @return The shots.
+*/
+int RuleItem::getBurstShots() const
+{
+	return _burstShots;
 }
 
 /**
@@ -878,6 +1019,15 @@ bool RuleItem::isLandOnly() const
 }
 
 /**
+ * What is the kneeling modifier for this weapon?
+ * @return the kneeling modifier for this weapon.
+ */
+int RuleItem::getKneelModifier() const
+{
+	return _kneelModifier;
+}
+
+/**
  * Gets the associated special type of this item.
  * note that type 14 is the alien brain, and types
  * 0 and 1 are "regular tile" and "starting point"
@@ -916,4 +1066,204 @@ int RuleItem::getVaporProbability() const
 	return _vaporProbability;
 }
 
+/**
+ * What is the reactions modifier for this weapon?
+ * @return the reactions modifier for this weapon.
+ */
+int RuleItem::getReactionsModifier() const
+{
+	int result = _reactionsModifier;
+
+	if(result <= 0)
+		result = 100;
+	else if(result > 1000)
+		result = 1000;
+
+	return result;
+}
+
+/**
+ * What is the explosion drop-off rate for this ammo item?
+ * @return the explosion drop-off rate for this ammo item.
+ */
+int RuleItem::getExplosionDropoff() const
+{
+	return _blastDropoff;
+}
+
+/**
+ * What is the auto fire delay for this weapon?
+ * @return The auto fire delay for this weapon.
+ */
+int RuleItem::getAutoDelay() const
+{
+	return _autoDelay;
+}
+
+int RuleItem::getAiRangeClose() const
+{
+	return _aiRangeClose;
+}
+
+int RuleItem::getAiRangeMid() const
+{
+	return _aiRangeMid;
+}
+
+int RuleItem::getAiRangeLong() const
+{
+	return _aiRangeLong;
+}
+
+int RuleItem::getAiRangeMax() const
+{
+	return _aiRangeMax;
+}
+
+const std::vector<std::string> RuleItem::getAiAttackPriorityClose() const
+{
+	return _aiAttackPriorityClose;
+}
+
+const std::vector<std::string> RuleItem::getAiAttackPriorityMid() const
+{
+	return _aiAttackPriorityMid;
+}
+
+const std::vector<std::string> RuleItem::getAiAttackPriorityLong() const
+{
+	return _aiAttackPriorityLong;
+}
+
+const std::vector<std::string> RuleItem::getAiAttackPriorityMax() const
+{
+	return _aiAttackPriorityMax;
+}
+
+int RuleItem::getOverwatchModifier() const
+{
+	return _overwatchModifier;
+}
+
+int RuleItem::getOverwatchRadius() const
+{
+	return _overwatchRadius;
+}
+
+int RuleItem::getOverwatchRange() const
+{
+	return _overwatchRange;
+}
+
+const std::string &RuleItem::getOverwatchShot() const
+{
+	return _overwatchShot;
+}
+
+bool RuleItem::isAmmo() const
+{
+	return _battleType == BT_AMMO || _clipSize > 0;
+}
+
+int RuleItem::getPsiCostPanic() const
+{
+	return _psiCostPanic;
+}
+
+int RuleItem::getPsiCostMindControl() const
+{
+	return _psiCostMindControl;
+}
+
+int RuleItem::getPsiCostClairvoyance() const
+{
+	return _psiCostClairvoyance;
+}
+
+int RuleItem::getPsiCostMindBlast() const
+{
+	return _psiCostMindBlast;
+}
+
+bool RuleItem::isVehicleItem() const
+{
+	return _vehicleItem;
+}
+
+bool RuleItem::hasStats() const
+{
+	return _hasStats;
+}
+
+UnitStats *RuleItem::getStats()
+{
+	return &_stats;
+}
+
+UnitStats *RuleItem::getStatModifiers()
+{
+	return &_statModifiers;
+}
+
+/**
+ * Gets the front armor level.
+ * @return The front armor level.
+ */
+int RuleItem::getFrontArmor() const
+{
+	return _frontArmor;
+}
+
+/**
+ * Gets the side armor level.
+ * @return The side armor level.
+ */
+int RuleItem::getSideArmor() const
+{
+	return _sideArmor;
+}
+
+/**
+ * Gets the rear armor level.
+ * @return The rear armor level.
+ */
+int RuleItem::getRearArmor() const
+{
+	return _rearArmor;
+}
+
+/**
+ * Gets the under armor level.
+ * @return The under armor level.
+ */
+int RuleItem::getUnderArmor() const
+{
+	return _underArmor;
+}
+
+
+/**
+ * Gets the ammo regen per turn.
+ * @return The amount regenerated per turn.
+ */
+int RuleItem::getAmmoRegen() const
+{
+	return _ammoRegen;
+}
+
+bool RuleItem::isValidSlot(const RuleInventory* slot) const
+{
+	return (slot->getBattleType() == BT_NONE || _battleType == slot->getBattleType())
+		&& (_checkValidSlots ? std::find(_validSlots.begin(), _validSlots.end(), slot->getId()) != _validSlots.end() : slot->getAllowGenericItems());
+}
+
+const std::string &RuleItem::getHitEffect() const
+{
+	return _hitEffect;
+}
+
+const std::string &RuleItem::getEquippedEffect() const
+{
+	return _equippedEffect;
+}
 }

@@ -44,7 +44,7 @@ private:
 	Base *_baseFrom, *_baseTo;
 	TextButton *_btnOk, *_btnCancel;
 	Window *_window;
-	Text *_txtTitle, *_txtQuantity, *_txtAmountTransfer, *_txtAmountDestination;
+	Text *_txtTitle, *_txtQuantity, *_txtAmountTransfer, *_txtAmountDestination, *_txtSpaceUsed;
 	ComboBox *_cbxCategory;
 	TextList *_lstItems;
 	std::vector<TransferRow> _items;
@@ -56,6 +56,7 @@ private:
 	double _iQty;
 	double _distance;
 	Uint8 _ammoColor;
+	double _spaceChange;
 	Timer *_timerInc, *_timerDec;
 	/// Gets the category of the current selection.
 	std::string getCategory(int sel) const;

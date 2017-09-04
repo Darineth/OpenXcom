@@ -103,6 +103,8 @@
 #include "../Engine/Exception.h"
 #include "../Mod/AlienDeployment.h"
 #include "../Mod/RuleInterface.h"
+#include "../Savegame/CraftWeapon.h"
+#include "../Mod/RuleCraftWeapon.h"
 #include "../fmath.h"
 
 namespace OpenXcom
@@ -134,12 +136,12 @@ GeoscapeState::GeoscapeState() : _pause(false), _zoomInEffectDone(false), _zoomO
 	_btnOptions = new TextButton(63, 11, screenWidth-63, screenHeight/2-52);
 	_btnFunding = new TextButton(63, 11, screenWidth-63, screenHeight/2-40);
 
-	_btn5Secs = new TextButton(31, 13, screenWidth-63, screenHeight/2+12);
-	_btn1Min = new TextButton(31, 13, screenWidth-31, screenHeight/2+12);
-	_btn5Mins = new TextButton(31, 13, screenWidth-63, screenHeight/2+26);
-	_btn30Mins = new TextButton(31, 13, screenWidth-31, screenHeight/2+26);
-	_btn1Hour = new TextButton(31, 13, screenWidth-63, screenHeight/2+40);
-	_btn1Day = new TextButton(31, 13, screenWidth-31, screenHeight/2+40);
+	_btn5Secs = new TextButton(31, 11, screenWidth-63, screenHeight/2+18);
+	_btn1Min = new TextButton(31, 11, screenWidth-31, screenHeight/2+18);
+	_btn5Mins = new TextButton(31, 11, screenWidth-63, screenHeight/2+30);
+	_btn30Mins = new TextButton(31, 11, screenWidth-31, screenHeight/2+30);
+	_btn1Hour = new TextButton(31, 11, screenWidth-63, screenHeight/2+42);
+	_btn1Day = new TextButton(31, 11, screenWidth-31, screenHeight/2+42);
 
 	_btnRotateLeft = new InteractiveSurface(12, 10, screenWidth-61, screenHeight/2+76);
 	_btnRotateRight = new InteractiveSurface(12, 10, screenWidth-37, screenHeight/2+76);
@@ -150,18 +152,21 @@ GeoscapeState::GeoscapeState() : _pause(false), _zoomInEffectDone(false), _zoomO
 
 	int height = (screenHeight - Screen::ORIGINAL_HEIGHT) / 2 + 10;
 	_sideTop = new TextButton(63, height, screenWidth-63, _sidebar->getY() - height - 1);
+	_sideInfo = new TextButton(63, 45, screenWidth - 63, screenHeight / 2 - 28);
 	_sideBottom = new TextButton(63, height, screenWidth-63, _sidebar->getY() + _sidebar->getHeight() + 1);
 
-	_txtHour = new Text(20, 16, screenWidth-61, screenHeight/2-26);
-	_txtHourSep = new Text(4, 16, screenWidth-41, screenHeight/2-26);
-	_txtMin = new Text(20, 16, screenWidth-37, screenHeight/2-26);
-	_txtMinSep = new Text(4, 16, screenWidth-17, screenHeight/2-26);
-	_txtSec = new Text(11, 8, screenWidth-13, screenHeight/2-20);
-	_txtWeekday = new Text(59, 8, screenWidth-61, screenHeight/2-13);
-	_txtDay = new Text(29, 8, screenWidth-61, screenHeight/2-6);
-	_txtMonth = new Text(29, 8, screenWidth-32, screenHeight/2-6);
-	_txtYear = new Text(59, 8, screenWidth-61, screenHeight/2+1);
+	_txtHour = new Text(20, 16, screenWidth-61, screenHeight/2-13);
+	_txtHourSep = new Text(4, 16, screenWidth-41, screenHeight/2-13);
+	_txtMin = new Text(20, 16, screenWidth-37, screenHeight/2-13);
+	_txtMinSep = new Text(4, 16, screenWidth-27, screenHeight/2-13);
+	_txtSec = new Text(11, 8, screenWidth-23, screenHeight/2-13);
+	_txtWeekday = new Text(59, 8, screenWidth-61, screenHeight/2-6);
+	_txtDay = new Text(29, 8, screenWidth-61, screenHeight/2+1);
+	_txtMonth = new Text(29, 8, screenWidth-32, screenHeight/2+1);
+	_txtYear = new Text(59, 8, screenWidth-61, screenHeight/2+8);
 	_txtFunds = new Text(59, 8, screenWidth-61, screenHeight/2-27);
+	_txtScore = new Text(59, 8, screenWidth - 61, screenHeight / 2 - 20);
+	_txtActivity = new Text(screenWidth - _sidebar->getWidth(), screenHeight, 0, 0);
 
 	_timeSpeed = _btn5Secs;
 	_gameTimer = new Timer(Options::geoClockSpeed);
@@ -203,9 +208,11 @@ GeoscapeState::GeoscapeState() : _pause(false), _zoomInEffectDone(false), _zoomO
 	add(_btnZoomOut);
 
 	add(_sideTop, "button", "geoscape");
+	add(_sideInfo, "button", "geoscape");
 	add(_sideBottom, "button", "geoscape");
 
 	add(_txtFunds, "text", "geoscape");
+	add(_txtScore, "text", "geoscape");
 	add(_txtHour, "text", "geoscape");
 	add(_txtHourSep, "text", "geoscape");
 	add(_txtMin, "text", "geoscape");
@@ -215,6 +222,7 @@ GeoscapeState::GeoscapeState() : _pause(false), _zoomInEffectDone(false), _zoomO
 	add(_txtDay, "text", "geoscape");
 	add(_txtMonth, "text", "geoscape");
 	add(_txtYear, "text", "geoscape");
+	add(_txtActivity, "activity", "geoscape");
 
 	add(_txtDebug, "text", "geoscape");
 
@@ -223,6 +231,7 @@ GeoscapeState::GeoscapeState() : _pause(false), _zoomInEffectDone(false), _zoomO
 	geobord->setX(_sidebar->getX() - geobord->getWidth() + _sidebar->getWidth());
 	geobord->setY(_sidebar->getY());
 	_sidebar->copy(geobord);
+	_sidebar->drawRect(0, 0, 63, 150, 0);
 	_game->getMod()->getSurface("ALTGEOBORD.SCR")->blit(_bg);
 
 	_sideLine->drawRect(0, 0, _sideLine->getWidth(), _sideLine->getHeight(), 15);
@@ -306,6 +315,7 @@ GeoscapeState::GeoscapeState() : _pause(false), _zoomInEffectDone(false), _zoomO
 	_btn1Day->setGeoscapeButton(true);
 
 	_sideBottom->setGeoscapeButton(true);
+	_sideInfo->setGeoscapeButton(true);
 	_sideTop->setGeoscapeButton(true);
 
 	_btnRotateLeft->onMousePress((ActionHandler)&GeoscapeState::btnRotateLeftPress);
@@ -336,18 +346,19 @@ GeoscapeState::GeoscapeState() : _pause(false), _zoomInEffectDone(false), _zoomO
 	_btnZoomOut->onMouseClick((ActionHandler)&GeoscapeState::btnZoomOutRightClick, SDL_BUTTON_RIGHT);
 	_btnZoomOut->onKeyboardPress((ActionHandler)&GeoscapeState::btnZoomOutLeftClick, Options::keyGeoZoomOut);
 
-	_txtFunds->setAlign(ALIGN_CENTER);
-	_txtFunds->setVisible(Options::showFundsOnGeoscape);
+	_txtScore->setAlign(ALIGN_CENTER);
 
-	_txtHour->setBig();
+	_txtFunds->setAlign(ALIGN_CENTER);
+
+	//_txtHour->setBig();
 	_txtHour->setAlign(ALIGN_RIGHT);
 
-	_txtHourSep->setBig();
+	//_txtHourSep->setBig();
 	_txtHourSep->setText(L":");
 
-	_txtMin->setBig();
+	//_txtMin->setBig();
 
-	_txtMinSep->setBig();
+	//_txtMinSep->setBig();
 	_txtMinSep->setText(L":");
 
 	_txtWeekday->setAlign(ALIGN_CENTER);
@@ -358,7 +369,7 @@ GeoscapeState::GeoscapeState() : _pause(false), _zoomInEffectDone(false), _zoomO
 
 	_txtYear->setAlign(ALIGN_CENTER);
 
-	if (Options::showFundsOnGeoscape)
+	/*if (Options::showFundsOnGeoscape)
 	{
 		_txtHour->setY(_txtHour->getY()+6);
 		_txtHour->setSmall();
@@ -370,7 +381,7 @@ GeoscapeState::GeoscapeState() : _pause(false), _zoomInEffectDone(false), _zoomO
 		_txtMinSep->setY(_txtMinSep->getY()+6);
 		_txtMinSep->setSmall();
 		_txtSec->setX(_txtSec->getX()-10);
-	}
+	}*/
 
 	_gameTimer->onTimer((StateHandler)&GeoscapeState::timeAdvance);
 	_gameTimer->start();
@@ -587,10 +598,23 @@ void GeoscapeState::think()
  */
 void GeoscapeState::timeDisplay()
 {
-	if (Options::showFundsOnGeoscape)
+	_txtFunds->setText(Text::formatFunding(_game->getSavedGame()->getFunds()));
+
+	int score = 0;
+	
+	if (_game->getSavedGame()->getResearchScores().size() > 0)
 	{
-		_txtFunds->setText(Text::formatFunding(_game->getSavedGame()->getFunds()));
+		int month = _game->getSavedGame()->getResearchScores().size() - 1;
+
+		score = _game->getSavedGame()->getResearchScores().at(month);
+
+		for (std::vector<Region*>::iterator iter = _game->getSavedGame()->getRegions()->begin(); iter != _game->getSavedGame()->getRegions()->end(); ++iter)
+		{
+			score += (*iter)->getActivityXcom().at(month) - (*iter)->getActivityAlien().at(month);
+		}
 	}
+
+	_txtScore->setText(Text::formatNumber(score));
 
 	std::wostringstream ss;
 	ss << std::setfill(L'0') << std::setw(2) << _game->getSavedGame()->getTime()->getSecond();
@@ -615,6 +639,150 @@ void GeoscapeState::timeDisplay()
 	std::wostringstream ss5;
 	ss5 << _game->getSavedGame()->getTime()->getYear();
 	_txtYear->setText(ss5.str());
+
+	std::wostringstream ssActivity;
+	int baseNum = 1;
+
+	ssActivity << tr("STR_ACTIVITY_RESOURCES") << "\n";
+	for (std::vector<Base*>::const_iterator ii = _game->getSavedGame()->getBases()->cbegin(); ii != _game->getSavedGame()->getBases()->cend(); ++ii)
+	{
+		Base *bb = *ii;
+		if (int fuel = bb->getStorageItems()->getItem(_game->getMod()->getAlienFuelName()))
+		{
+			ssActivity << "[" << baseNum << "] " << Text::formatNumber(fuel) << " " << tr(_game->getMod()->getAlienFuelName()) << "\n";
+		}
+		++baseNum;
+	}
+
+	baseNum = 1;
+	ssActivity << tr("STR_ACTIVITY_RESEARCH") << "\n";
+	for (std::vector<Base*>::const_iterator ii = _game->getSavedGame()->getBases()->cbegin(); ii != _game->getSavedGame()->getBases()->cend(); ++ii)
+	{
+		Base *bb = *ii;
+		if (bb->getResearch().size())
+		{
+			for (std::vector<ResearchProject*>::const_iterator jj = bb->getResearch().cbegin(); jj != bb->getResearch().cend(); ++jj)
+			{
+				ResearchProject *pp = *jj;
+				ssActivity << "[" << baseNum << "] " << tr(pp->getRules()->getName()) << ": " << tr(pp->getResearchProgress()) << "\n";
+			}
+		}
+		else if (bb->getScientists())
+		{
+			ssActivity << L'\x01' << "[" << baseNum << "] " << tr("STR_ACTIVITY_NO_RESEARCH") << L"\x01\n";
+		}
+
+		++baseNum;
+	}
+
+	baseNum = 1;
+	ssActivity << tr("STR_ACTIVITY_MANUFACTURING") << "\n";
+	for (std::vector<Base*>::const_iterator ii = _game->getSavedGame()->getBases()->cbegin(); ii != _game->getSavedGame()->getBases()->cend(); ++ii)
+	{
+		Base *bb = *ii;
+		if (bb->getProductions().size())
+		{
+			for (std::vector<Production*>::const_iterator jj = bb->getProductions().cbegin(); jj != bb->getProductions().cend(); ++jj)
+			{
+				Production *pp = *jj;
+				if (pp->getAssignedEngineers())
+				{
+					ssActivity << "[" << baseNum << "] " << tr(pp->getRules()->getName()) << ": " << pp->getAmountProduced();
+					if (!pp->getInfiniteAmount())
+					{
+						int timeLeft = pp->getAmountTotal() * pp->getRules()->getManufactureTime() - pp->getTimeSpent();
+						int numEffectiveEngineers = pp->getAssignedEngineers();
+						// ensure we round up since it takes an entire hour to manufacture any part of that hour's capacity
+						int hoursLeft = (timeLeft + numEffectiveEngineers - 1) / numEffectiveEngineers;
+
+						ssActivity << "/" << pp->getAmountTotal() << " (" << formatTime(hoursLeft) << ")";
+					}
+					if (pp->getSellItems())
+					{
+						ssActivity << " $";
+					}
+
+					ssActivity << "\n";
+				}
+			}
+		}
+		else if (bb->getEngineers())
+		{
+			ssActivity << L'\x01' << "[" << baseNum << "] " << tr("STR_ACTIVITY_NO_MANUFACTURING") << L"\x01\n";
+		}
+
+		++baseNum;
+	}
+
+	baseNum = 1;
+	bool craftActivity = false;
+	for (std::vector<Base*>::const_iterator ii = _game->getSavedGame()->getBases()->cbegin(); ii != _game->getSavedGame()->getBases()->cend(); ++ii)
+	{
+		Base *bb = *ii;
+		if (bb->getCrafts()->size())
+		{
+			for (std::vector<Craft*>::const_iterator jj = bb->getCrafts()->cbegin(); jj != bb->getCrafts()->cend(); ++jj)
+			{
+				Craft *cc = *jj;
+				if (cc->getStatus() != "STR_OUT")
+				{
+					CraftWeapon *cw = 0;
+					int maintenanceTime = 0;
+					if (cc->getDamage() > 0)
+					{
+						maintenanceTime += (int)ceil((double)cc->getDamage() / cc->getRules()->getRepairRate());
+					}
+					if (cc->getRules()->getMaxFuel() - cc->getFuel() > 0)
+					{
+						maintenanceTime += (int)ceil((double)(cc->getRules()->getMaxFuel() - cc->getFuel()) / cc->getRules()->getRefuelRate() / 2.0);
+					}
+					if (cc->getNumWeapons() > 0 && (cw = cc->getWeapons()->at(0)) && cw->getAmmo() < cw->getRules()->getAmmoMax())
+					{
+						maintenanceTime += (int)ceil((double)(cw->getRules()->getAmmoMax() - cw->getAmmo()) / cw->getRules()->getRearmRate());
+					}
+					if (cc->getNumWeapons() > 1 && (cw = cc->getWeapons()->at(1)) && cw->getAmmo() < cw->getRules()->getAmmoMax())
+					{
+						maintenanceTime += (int)ceil((double)(cw->getRules()->getAmmoMax() - cw->getAmmo()) / cw->getRules()->getRearmRate());
+					}
+
+					if (maintenanceTime)
+					{
+						if (!craftActivity)
+						{
+							craftActivity = true;
+							ssActivity << tr("STR_ACTIVITY_CRAFT") << "\n";
+						}
+
+						ssActivity << L'\x01' << "[" << baseNum << "] " << cc->getName(_game->getLanguage()) << ": " << tr(cc->getStatus()) << " (" << formatTime(maintenanceTime) << L")\x01\n";
+
+					}
+				}
+			}
+		}
+	}
+
+	_txtActivity->setText(ssActivity.str());
+}
+
+/**
+* Turns an amount of time into a
+* day/hour string.
+* @param total
+*/
+std::wstring GeoscapeState::formatTime(int total)
+{
+	std::wostringstream ss;
+	if (total > 24)
+	{
+		//ss << tr("STR_DAY", days) << L"/";
+		ss << Text::formatNumber((int)ceil(total / 24.0)) << tr("STR_ACTIVITY_DAYS");
+	}
+	else if (total > 0)
+	{
+		//ss << tr("STR_HOUR", hours);
+		ss << Text::formatNumber(total) << tr("STR_ACTIVITY_HOURS");
+	}
+	return ss.str();
 }
 
 /**
@@ -1439,6 +1607,7 @@ void GeoscapeState::time1Hour()
 	{
 		popup(new ItemsArrivingState(this));
 	}
+
 	// Handle Production
 	for (std::vector<Base*>::iterator i = _game->getSavedGame()->getBases()->begin(); i != _game->getSavedGame()->getBases()->end(); ++i)
 	{
@@ -1462,6 +1631,7 @@ void GeoscapeState::time1Hour()
 			popup(new SellState((*i)));
 		}
 	}
+
 	for (std::vector<MissionSite*>::iterator i = _game->getSavedGame()->getMissionSites()->begin(); i != _game->getSavedGame()->getMissionSites()->end(); ++i)
 	{
 		if (!(*i)->getDetected())

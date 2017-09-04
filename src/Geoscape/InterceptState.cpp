@@ -37,6 +37,15 @@
 namespace OpenXcom
 {
 
+CraftSorter::CraftSorter(Target *target) : _target(target)
+{
+}
+
+bool CraftSorter::operator() (Craft* c1, Craft* c2)
+{
+	return c1->getDistance(_target) < c2->getDistance(_target);
+}
+
 /**
  * Initializes all the elements in the Intercept window.
  * @param game Pointer to the core game.
@@ -112,41 +121,56 @@ InterceptState::InterceptState(Globe *globe, Base *base, Target *target) : _glob
 			continue;
 		for (std::vector<Craft*>::iterator j = (*i)->getCrafts()->begin(); j != (*i)->getCrafts()->end(); ++j)
 		{
-			std::wostringstream ss;
-			if ((*j)->getNumWeapons() > 0)
-			{
-				ss << L'\x01' << (*j)->getNumWeapons() << L'\x01';
-			}
-			else
-			{
-				ss << 0;
-			}
-			ss << "/";
-			if ((*j)->getNumSoldiers() > 0)
-			{
-				ss << L'\x01' << (*j)->getNumSoldiers() << L'\x01';
-			}
-			else
-			{
-				ss << 0;
-			}
-			ss << "/";
-			if ((*j)->getNumVehicles() > 0)
-			{
-				ss << L'\x01' << (*j)->getNumVehicles() << L'\x01';
-			}
-			else
-			{
-				ss << 0;
-			}
 			_crafts.push_back(*j);
-			_lstCrafts->addRow(4, (*j)->getName(_game->getLanguage()).c_str(), tr((*j)->getStatus()).c_str(), (*i)->getName().c_str(), ss.str().c_str());
-			if ((*j)->getStatus() == "STR_READY")
-			{
-				_lstCrafts->setCellColor(row, 1, _lstCrafts->getSecondaryColor());
-			}
-			row++;
 		}
+	}
+
+	if(target)
+	{
+		CraftSorter sorter(target);
+		std::sort(_crafts.begin(), _crafts.end(), sorter);
+	}
+
+	for(std::vector<Craft*>::const_iterator ii = _crafts.begin(); ii != _crafts.end(); ++ii)
+	{
+		Craft *cc = *ii;
+		Base *bb = cc->getBase();
+
+		std::wostringstream ss;
+
+		if (cc->getNumWeapons() > 0)
+		{
+			ss << L'\x01' << cc->getNumWeapons() << L'\x01';
+		}
+		else
+		{
+			ss << 0;
+		}
+		ss << "/";
+		if (cc->getNumSoldiers() > 0)
+		{
+			ss << L'\x01' << cc->getNumSoldiers() << L'\x01';
+		}
+		else
+		{
+			ss << 0;
+		}
+		ss << "/";
+		if (cc->getNumVehicles() > 0)
+		{
+			ss << L'\x01' << cc->getNumVehicles() << L'\x01';
+		}
+		else
+		{
+			ss << 0;
+		}
+
+		_lstCrafts->addRow(4, cc->getName(_game->getLanguage()).c_str(), tr(cc->getStatus()).c_str(), bb->getName().c_str(), ss.str().c_str());
+		if (cc->getStatus() == "STR_READY")
+		{
+			_lstCrafts->setCellColor(row, 1, _lstCrafts->getSecondaryColor());
+		}
+		row++;
 	}
 }
 

@@ -29,9 +29,10 @@ namespace OpenXcom
 class NumberText : public Surface
 {
 private:
-	unsigned int _value;
-	Surface *_chars[10];
-	Surface *_borderedChars[10];
+	static const int MAX_CHARS = 11;
+	int _value;
+	Surface *_chars[MAX_CHARS];
+	Surface *_borderedChars[MAX_CHARS];
 	bool _bordered;
 	Uint8 _color;
 public:
@@ -40,9 +41,9 @@ public:
 	/// Cleans up the number text.
 	~NumberText();
 	/// Sets the number text's value.
-	void setValue(unsigned int value);
+	void setValue(int value);
 	/// Gets the number text's value.
-	unsigned int getValue() const;
+	int getValue() const;
 	/// Sets the number text's color.
 	void setColor(Uint8 color);
 	/// Gets the number text's color.

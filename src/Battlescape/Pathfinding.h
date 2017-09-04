@@ -21,6 +21,7 @@
 #include "Position.h"
 #include "PathfindingNode.h"
 #include "../Mod/MapData.h"
+#include <SDL.h>
 
 namespace OpenXcom
 {
@@ -28,6 +29,8 @@ namespace OpenXcom
 class SavedBattleGame;
 class Tile;
 class BattleUnit;
+
+enum MovementAction { MV_WALK, MV_SPRINT, MV_SNEAK, MV_STRAFE };
 
 /**
  * A utility class that calculates the shortest path between two points on the battlescape map.
@@ -40,9 +43,8 @@ private:
 	int _size;
 	BattleUnit *_unit;
 	bool _pathPreviewed;
-	bool _strafeMove;
 	int _totalTUCost;
-	bool _modifierUsed;
+	SDLMod _modifierUsed;
 	MovementType _movementType;
 	/// Gets the node at certain position.
 	PathfindingNode *getNode(Position pos);
@@ -57,6 +59,7 @@ private:
 	/// Determines whether a unit can fall down from this tile.
 	bool canFallDown(Tile *destinationTile, int size) const;
 	std::vector<int> _path;
+	MovementAction _movementAction;
 public:
 	/// Determines whether the unit is going up a stairs.
 	bool isOnStairs(Position startPosition, Position endPosition) const;
@@ -69,6 +72,8 @@ public:
 	static int red;
 	static int green;
 	static int yellow;
+	static int blue;
+	static int purple;
 	/// Creates a new Pathfinding class.
 	Pathfinding(SavedBattleGame *save);
 	/// Cleans up the Pathfinding.
@@ -87,8 +92,6 @@ public:
 	int getTUCost(Position startPosition, int direction, Position *endPosition, BattleUnit *unit, BattleUnit *target, bool missile);
 	/// Aborts the current path.
 	void abortPath();
-	/// Gets the strafe move setting.
-	bool getStrafeMove() const;
 	/// Checks, for the up/down button, if the movement is valid.
 	bool validateUpDown(BattleUnit *bu, const Position& startPosition, const int direction, bool missile = false) const;
 	/// Previews the path.
@@ -104,11 +107,14 @@ public:
 	/// Gets the path preview setting.
 	bool isPathPreviewed() const;
 	/// Gets the modifier setting.
-	bool isModifierUsed() const;
+	SDLMod getModifierUsed() const;
 	/// Gets a reference to the path.
 	const std::vector<int> &getPath() const;
 	/// Makes a copy to the path.
 	std::vector<int> copyPath() const;
+
+	/// Returns the calculated path's movement action type.
+	MovementAction getMovementAction() const;
 };
 
 }

@@ -1,0 +1,46 @@
+roles:
+  - name: STR_ROLE_NONE
+    iconSprite: RoleIconNone
+    isBlank: true
+  - name: STR_ROLE_RIFLEMAN
+    iconSprite: RoleIconRifleman
+    smallIconSprite: RoleIconRiflemanSimple
+    defaultArmorColor: STR_COLOR_BLUE
+  - name: STR_ROLE_SNIPER
+    iconSprite: RoleIconSniper
+    smallIconSprite: RoleIconSniperSimple
+    defaultArmorColor: STR_COLOR_BLACK
+  - name: STR_ROLE_SCOUT
+    iconSprite: RoleIconScout
+    smallIconSprite: RoleIconScoutSimple
+    defaultArmorColor: STR_COLOR_YELLOW
+  - name: STR_ROLE_ROCKETEER
+    iconSprite: RoleIconRocketeer
+    smallIconSprite: RoleIconRocketeerSimple
+    defaultArmorColor: STR_COLOR_RED
+  - name: STR_ROLE_ASSAULT
+    iconSprite: RoleIconAssault
+    smallIconSprite: RoleIconAssaultSimple
+    defaultArmorColor: STR_COLOR_LIGHT_PURPLE
+  - name: STR_ROLE_HEAVY
+    iconSprite: RoleIconHeavy
+    smallIconSprite: RoleIconHeavySimple
+    defaultArmorColor: STR_COLOR_BROWN
+  - name: STR_ROLE_GRENADIER
+    iconSprite: RoleIconGrenadier
+    smallIconSprite: RoleIconGrenadierSimple
+    defaultArmorColor: STR_COLOR_ORANGE
+  - name: STR_ROLE_MEDIC
+    iconSprite: RoleIconMedic
+    smallIconSprite: RoleIconMedicSimple
+    defaultArmorColor: STR_COLOR_WHITE
+  - name: STR_ROLE_PSIONICS
+    iconSprite: RoleIconPsionics
+    smallIconSprite: RoleIconPsionicsSimple
+    defaultArmorColor: STR_COLOR_PURPLE
+  - name: STR_ROLE_DEMOLITIONS
+    iconSprite: RoleIconDemolitions
+    smallIconSprite: RoleIconDemolitionsSimple
+  - name: STR_ROLE_SPECIALIST
+    iconSprite: RoleIconSpecialist
+    smallIconSprite: RoleIconSpecialistSimple

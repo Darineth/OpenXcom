@@ -229,6 +229,7 @@ void BaseDefenseState::btnOkClick(Action *)
 	else
 	{
 		_base->cleanupDefenses(true);
+		_base->setRetaliationTarget(false);
 	}
 }
 

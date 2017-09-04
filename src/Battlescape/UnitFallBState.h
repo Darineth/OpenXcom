@@ -37,9 +37,9 @@ private:
 	std::vector<Tile*> tilesToFallInto;
 	std::vector<BattleUnit*> unitsToMove;
 public:
-	/// Creates a new UnitWalkBState class
+	/// Creates a new UnitFallBState class
 	UnitFallBState(BattlescapeGame *parent);
-	/// Cleans up the UnitWalkBState.
+	/// Cleans up the UnitFallBState.
 	~UnitFallBState();
 	/// Initializes the state.
 	void init();

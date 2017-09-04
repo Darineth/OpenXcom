@@ -18,6 +18,7 @@
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "../Engine/Surface.h"
+#include "../Engine/ShaderDrawHelper.h"
 
 namespace OpenXcom
 {
@@ -92,6 +93,179 @@ public:
 	void setAnimationFrame(int frame);
 	/// Draws the unit.
 	void draw();
+};
+
+/**
+* This is scalar argument to `ShaderDraw`.
+* when used in `ShaderDraw` return value of `t` to `ColorFunc::func` for every pixel
+*/
+class CurrentPixel
+{
+public:
+	int x;
+	int y;
+	inline CurrentPixel() : x(0), y(0)
+	{
+	}
+};
+
+namespace helper
+{
+	/// implementation for current pixel type
+	template<>
+	struct controler<CurrentPixel>
+	{
+		CurrentPixel _pixel;
+		int yMin, yMax, xMin, xMax;
+
+		inline controler(const CurrentPixel& pixel) : _pixel()
+		{
+		}
+
+		//cant use this function
+		//inline GraphSubset get_range()
+
+		inline void mod_range(GraphSubset&)
+		{
+			//nothing
+		}
+		inline void set_range(const GraphSubset&)
+		{
+			//nothing
+		}
+
+		inline void mod_y(int&, int&)
+		{
+			//nothing
+		}
+		inline void set_y(const int& begin, const int& end)
+		{
+			yMin = begin;
+			yMax = end;
+			_pixel.y = yMin;
+		}
+		inline void inc_y()
+		{
+			++_pixel.y;
+			if (_pixel.y > yMax) _pixel.y = yMin;
+		}
+
+
+		inline void mod_x(int&, int&)
+		{
+			//nothing
+		}
+		inline void set_x(const int& begin, const int& end)
+		{
+			xMin = begin;
+			xMax = end;
+			_pixel.x = xMin;
+		}
+		inline void inc_x()
+		{
+			++_pixel.x;
+			if (_pixel.x > xMax) _pixel.x = xMin;
+		}
+
+		inline CurrentPixel& get_ref()
+		{
+			return _pixel;
+		}
+	};
+}
+
+static inline CurrentPixel ShaderCurrentPixel()
+{
+	return CurrentPixel();
+}
+
+struct Recolor
+{
+	static const Uint8 ColorGroup = 15 << 4;
+	static const Uint8 ColorShade = 15;
+
+	static inline bool loop(Uint8& dest, const Uint8& src, const std::pair<Uint8, Uint8>& face_color)
+	{
+		if ((src & ColorGroup) == face_color.first)
+		{
+			switch (face_color.second & ColorShade)
+			{
+			case 1:
+				switch (src & ColorShade)
+				{
+				case 0:
+				case 1:
+					dest = 0;
+					break;
+				case 2:
+				case 3:
+					dest = 1;
+					break;
+				case 4:
+				case 5:
+					dest = 2;
+					break;
+				case 6:
+				case 7:
+					dest = 3;
+					break;
+				default:
+					dest = (src & ColorShade) - 4;
+				}
+
+				dest = (face_color.second & ColorGroup) ? (dest + (face_color.second & ColorGroup)) : dest + 1;
+				break;
+			case 15:
+				dest = (face_color.second & ColorGroup) + ((src & ColorShade) >> 1) + 8;
+				break;
+			default:
+				dest = face_color.second + (src & ColorShade);
+				dest = dest > 0 ? dest : 1;
+			}
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+	static inline void func(Uint8& dest, const Uint8& src, const std::pair<Uint8, Uint8> *color, int size, const int&)
+	{
+		if (src)
+		{
+			for (int i = 0; i < size; ++i)
+			{
+				if (loop(dest, src, color[i]))
+				{
+					return;
+				}
+			}
+			dest = src;
+		}
+	}
+};
+
+struct RecolorStealth
+{
+	static inline void func(Uint8& dest, const Uint8& src, const std::pair<Uint8, Uint8> *color, int size, CurrentPixel &pixel)
+	{
+		if ((pixel.y) % 2 == 1)
+		{
+			dest = 0;
+		}
+		else if (src)
+		{
+			for (int i = 0; i < size; ++i)
+			{
+				if (Recolor::loop(dest, src, color[i]))
+				{
+					return;
+				}
+			}
+			dest = src;
+		}
+	}
 };
 
 }

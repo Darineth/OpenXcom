@@ -85,6 +85,15 @@ int RuleCountry::generateFunding() const
 }
 
 /**
+* Gets the country's base funding.
+* @return The country's base funding, in thousands.
+*/
+int RuleCountry::getBaseFunding() const
+{
+	return _fundingBase;
+}
+
+/**
  * Gets the country's funding cap.
  * Country funding can never exceed this.
  * @return The funding cap, in thousands.

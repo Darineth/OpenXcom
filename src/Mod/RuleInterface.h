@@ -27,7 +27,7 @@ namespace OpenXcom
 struct Element
 {
 	/// basic rect info, and 3 colors.
-	int x, y, w, h, color, color2, border;
+	int x, y, w, h, color, color2, color3, color4, border;
 	/// defines inversion behaviour
 	bool TFTDMode;
 };

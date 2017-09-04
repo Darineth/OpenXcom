@@ -47,11 +47,14 @@ PrimeGrenadeState::PrimeGrenadeState(BattleAction *action, bool inInventoryView,
 	// Create objects
 	_title = new Text(192, 24, 65, 44);
 	_frame = new Frame(192, 27, 65, 37);
-	_bg = new Surface(192, 93, 65, 45);
+	_bg = new Surface(192, 118, 65, 45);
+
+	_btnInstant = new InteractiveSurface(190, 22, 66, 65);
+	_txtInstant = new Text(188, 20, 67, 66);
 
 	int x = 67;
-	int y = 68;
-	for (int i = 0; i < 24; ++i)
+	int y = 94;
+	for (int i = 0; i < MAX_PRIMER_DELAY; ++i)
 	{
 		_button[i] = new InteractiveSurface(22, 22, x-1+((i%8)*24), y-4+((i/8)*25));
 		_number[i] = new Text(20, 20, x+((i%8)*24), y-1+((i/8)*25));
@@ -83,9 +86,29 @@ PrimeGrenadeState::PrimeGrenadeState(BattleAction *action, bool inInventoryView,
 	_title->setText(tr("STR_SET_TIMER"));
 	_title->setHighContrast(true);
 
-	for (int i = 0; i < 24; ++i)
+	add(_btnInstant);
+	_btnInstant->onMouseClick((ActionHandler)&PrimeGrenadeState::btnInstantClick);
+	SDL_Rect square;
+	square.x = 0;
+	square.y = 0;
+	square.w = _btnInstant->getWidth();
+	square.h = _btnInstant->getHeight();
+	_btnInstant->drawRect(&square, grenadeBackground->border);
+	square.x++;
+	square.y++;
+	square.w -= 2;
+	square.h -= 2;
+	_btnInstant->drawRect(&square, grenadeBackground->color2);
+
+	add(_txtInstant, "grenadeMenu", "battlescape");
+	_txtInstant->setBig();
+	_txtInstant->setText(tr("STR_INSTANT"));
+	_txtInstant->setHighContrast(true);
+	_txtInstant->setAlign(ALIGN_CENTER);
+	_txtInstant->setVerticalAlign(ALIGN_MIDDLE);
+
+	for (int i = 0; i < MAX_PRIMER_DELAY; ++i)
 	{
-		SDL_Rect square;
 		add(_button[i]);
 		_button[i]->onMouseClick((ActionHandler)&PrimeGrenadeState::btnClick);
 		square.x = 0;
@@ -152,7 +175,7 @@ void PrimeGrenadeState::btnClick(Action *action)
 	}
 
 	// got to find out which button was pressed
-	for (int i = 0; i < 24 && btnID == -1; ++i)
+	for (int i = 0; i < MAX_PRIMER_DELAY && btnID == -1; ++i)
 	{
 		if (action->getSender() == _button[i])
 		{
@@ -167,6 +190,17 @@ void PrimeGrenadeState::btnClick(Action *action)
 		_game->popState();
 		if (!_inInventoryView) _game->popState();
 	}
+}
+
+void PrimeGrenadeState::btnInstantClick(Action *action)
+{
+	if (_inInventoryView)
+		_grenadeInInventory->setFuseTimer(BattleItem::GRENADE_INSTANT_FUSE);
+	else
+		_action->value = BattleItem::GRENADE_INSTANT_FUSE;
+	_game->popState();
+	if (!_inInventoryView)
+		_game->popState();
 }
 
 }

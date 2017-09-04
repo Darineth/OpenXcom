@@ -27,6 +27,7 @@
 #include "../Engine/Options.h"
 #include "../Mod/Mod.h"
 #include "../Mod/RuleManufacture.h"
+#include "../Mod/RuleItem.h"
 #include "../Savegame/Base.h"
 #include "../Savegame/ItemContainer.h"
 #include "ManufactureInfoState.h"
@@ -47,20 +48,22 @@ ManufactureStartState::ManufactureStartState(Base *base, RuleManufacture *item) 
 {
 	_screen = false;
 
-	_window = new Window(this, 320, 160, 0, 20);
-	_btnCancel = new TextButton(136, 16, 16, 155);
+	_window = new Window(this, 320, 180, 0, 20);
+	_btnCancel = new TextButton(136, 16, 16, 175);
 	_txtTitle = new Text(320, 17, 0, 30);
 	_txtManHour = new Text(290, 9, 16, 50);
 	_txtCost = new Text(290, 9, 16, 60);
+	_txtSell = new Text(290, 9, 16, 80);
+	_txtCurrent = new Text(290, 9, 16, 90);
 	_txtWorkSpace = new Text(290, 9, 16, 70);
 
-	_txtRequiredItemsTitle = new Text(290, 9, 16, 84);
-	_txtItemNameColumn = new Text(60, 16, 30, 92);
-	_txtUnitRequiredColumn = new Text(60, 16, 155, 92);
-	_txtUnitAvailableColumn = new Text(60, 16, 230, 92);
-	_lstRequiredItems = new TextList(270, 40, 30, 108);
+	_txtRequiredItemsTitle = new Text(290, 9, 16, 104);
+	_txtItemNameColumn = new Text(60, 16, 30, 112);
+	_txtUnitRequiredColumn = new Text(60, 16, 155, 112);
+	_txtUnitAvailableColumn = new Text(60, 16, 230, 112);
+	_lstRequiredItems = new TextList(270, 40, 30, 128);
 
-	_btnStart = new TextButton(136, 16, 168, 155);
+	_btnStart = new TextButton(136, 16, 168, 175);
 
 	// Set palette
 	setInterface("allocateManufacture");
@@ -69,6 +72,8 @@ ManufactureStartState::ManufactureStartState(Base *base, RuleManufacture *item) 
 	add(_txtTitle, "text", "allocateManufacture");
 	add(_txtManHour, "text", "allocateManufacture");
 	add(_txtCost, "text", "allocateManufacture");
+	add(_txtSell, "text", "allocateManufacture");
+	add(_txtCurrent, "text", "allocateManufacture");
 	add(_txtWorkSpace, "text", "allocateManufacture");
 	add(_btnCancel, "button", "allocateManufacture");
 
@@ -92,7 +97,59 @@ ManufactureStartState::ManufactureStartState(Base *base, RuleManufacture *item) 
 
 	_txtCost->setText(tr("STR_COST_PER_UNIT_").arg(Text::formatFunding(_item->getManufactureCost())));
 
+	int sellPrice = 0;
+
+	Mod *mod = _game->getMod();
+
+	bool singleItem = false;
+	std::string singleItemId;
+
+	const std::map<std::string, int> &producedItems = _item ? _item->getProducedItems() : _item->getProducedItems();
+	for(std::map<std::string, int>::const_iterator ii = producedItems.begin(); ii != producedItems.end(); ++ii)
+	{
+		RuleItem* item = mod->getItem(ii->first);
+		if(item)
+		{
+			if(singleItem)
+			{
+				singleItem = false;
+			}
+			else if(singleItemId.size() == 0)
+			{
+				singleItem = true;
+				singleItemId = ii->first;
+			}
+
+			sellPrice += item->getSellCost() * ii->second;
+		}
+	}
+
+	_txtSell->setText(tr("STR_SELL_PER_UNIT").arg(Text::formatFunding(sellPrice)));
+
+	if(singleItem)
+	{
+		_txtCurrent->setText(tr("STR_CURRENT_STORES").arg(Text::formatNumber(_base->getStorageItems()->getItem(singleItemId))));
+	}
+	else
+	{
+		_txtCurrent->setVisible(false);
+	}
+
+	if(singleItem)
+	{
+		_txtCurrent->setText(LocalizedText(L"Current Stores>\x01{0}").arg(Text::formatNumber(_base->getStorageItems()->getItem(singleItemId))));
+	}
+	else
+	{
+		_txtCurrent->setVisible(false);
+	}
+
 	_txtWorkSpace->setText(tr("STR_WORK_SPACE_REQUIRED").arg(_item->getRequiredSpace()));
+
+	/*	CONFIRM: 
+	_txtCost->setColor(Palette::blockOffset(13)+10);
+	_txtCost->setSecondaryColor(Palette::blockOffset(13));*/
+	_txtCost->setText(tr("STR_COST_PER_UNIT_").arg(Text::formatFunding(_item->getManufactureCost())));
 
 	_btnCancel->setText(tr("STR_CANCEL_UC"));
 	_btnCancel->onMouseClick((ActionHandler)&ManufactureStartState::btnCancelClick);
@@ -101,7 +158,7 @@ ManufactureStartState::ManufactureStartState(Base *base, RuleManufacture *item) 
 	const std::map<std::string, int> & requiredItems (_item->getRequiredItems());
 	int availableWorkSpace = _base->getFreeWorkshops();
 	bool productionPossible = _game->getSavedGame()->getFunds() > _item->getManufactureCost();
-	productionPossible &= (availableWorkSpace > 0);
+	//productionPossible &= (availableWorkSpace > 0);
 
 	_txtRequiredItemsTitle->setText(tr("STR_SPECIAL_MATERIALS_REQUIRED"));
 	_txtRequiredItemsTitle->setAlign(ALIGN_CENTER);
@@ -171,10 +228,15 @@ void ManufactureStartState::btnStartClick(Action *)
 	{
 		_game->pushState(new ErrorMessageState(tr("STR_NO_FREE_HANGARS_FOR_CRAFT_PRODUCTION"), _palette, _game->getMod()->getInterface("basescape")->getElement("errorMessage")->color, "BACK17.SCR", _game->getMod()->getInterface("basescape")->getElement("errorPalette")->color));
 	}
-	else if (_item->getRequiredSpace() > _base->getFreeWorkshops())
+	else if (_item->getCategory() == "STR_VEHICLE" && _base->getAvailableQuarters() - _base->getUsedQuarters() <= 0)
+	{
+		// TODO: Vehicle storage space requirement?
+		//_game->pushState(new ErrorMessageState(tr("STR_NOT_ENOUGH_LIVING_SPACE"), _palette, _game->getMod()->getInterface("basescape")->getElement("errorMessage")->color, "BACK17.SCR", _game->getMod()->getInterface("basescape")->getElement("errorPalette")->color));
+	}
+/*	else if (_item->getRequiredSpace() > _base->getFreeWorkshops())
 	{
 		_game->pushState(new ErrorMessageState(tr("STR_NOT_ENOUGH_WORK_SPACE"), _palette, _game->getMod()->getInterface("basescape")->getElement("errorMessage")->color, "BACK17.SCR", _game->getMod()->getInterface("basescape")->getElement("errorPalette")->color));
-	}
+	}*/
 	else
 	{
 		_game->pushState(new ManufactureInfoState(_base, _item));

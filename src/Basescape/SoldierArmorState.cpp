@@ -87,34 +87,48 @@ SoldierArmorState::SoldierArmorState(Base *base, size_t soldier) : _base(base), 
 	_lstArmor->setBackground(_window);
 	_lstArmor->setMargin(8);
 
-	const std::vector<std::string> &armors = _game->getMod()->getArmorsList();
-	for (std::vector<std::string>::const_iterator i = armors.begin(); i != armors.end(); ++i)
+	if(!s->isVehicle())
 	{
-		Armor *a = _game->getMod()->getArmor(*i);
-		if (!a->getUnits().empty() &&
-			std::find(a->getUnits().begin(), a->getUnits().end(), s->getRules()->getType()) == a->getUnits().end())
-			continue;
-		if (_base->getStorageItems()->getItem(a->getStoreItem()) > 0)
+
+		const std::vector<std::string> &armors = _game->getMod()->getArmorsList();
+		for (std::vector<std::string>::const_iterator i = armors.begin(); i != armors.end(); ++i)
 		{
-			_armors.push_back(a);
-			std::wostringstream ss;
-			if (_game->getSavedGame()->getMonthsPassed() > -1)
+			Armor *a = _game->getMod()->getArmor(*i);
+			if (a->getIsVehicleItem() ||
+				(!a->getUnits().empty() &&
+				std::find(a->getUnits().begin(), a->getUnits().end(), s->getRules()->getType()) == a->getUnits().end()))
+				continue;
+			if (_base->getStorageItems()->getItem(a->getStoreItem()) > 0)
 			{
-				ss << _base->getStorageItems()->getItem(a->getStoreItem());
+				Armor *a = _game->getMod()->getArmor(*i);
+				if (_base->getStorageItems()->getItem(a->getStoreItem()) > 0)
+				{
+					_armors.push_back(a);
+					std::wostringstream ss;
+					if (_game->getSavedGame()->getMonthsPassed() > -1)
+					{
+						ss << _base->getStorageItems()->getItem(a->getStoreItem());
+					}
+					else
+					{
+						ss << "-";
+					}
+					_lstArmor->addRow(2, tr(a->getType()).c_str(), ss.str().c_str());
+				}
+				else if (a->getStoreItem() == "STR_NONE")
+				{
+					_armors.push_back(a);
+					_lstArmor->addRow(1, tr(a->getType()).c_str());
+				}
 			}
-			else
+			else if (a->getStoreItem() == Armor::NONE)
 			{
-				ss << "-";
+				_armors.push_back(a);
+				_lstArmor->addRow(1, tr(a->getType()).c_str());
 			}
-			_lstArmor->addRow(2, tr(a->getType()).c_str(), ss.str().c_str());
 		}
-		else if (a->getStoreItem() == Armor::NONE)
-		{
-			_armors.push_back(a);
-			_lstArmor->addRow(1, tr(a->getType()).c_str());
-		}
+		_lstArmor->onMouseClick((ActionHandler)&SoldierArmorState::lstArmorClick);
 	}
-	_lstArmor->onMouseClick((ActionHandler)&SoldierArmorState::lstArmorClick);
 }
 
 /**

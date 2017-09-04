@@ -47,6 +47,8 @@ public:
 	LocalizedText(const std::wstring &);
 	/// Create the empty string.
 	LocalizedText() : _nextArg(1) { /* Empty by design. */ }
+	/// Copy a LocalizedText string.
+	LocalizedText(const LocalizedText &text);
 	/// Return constant wide string.
 	operator std::wstring const&() const OX_REQUIRED_RESULT;
 	/// Return the UTF-8 representation of this string.
@@ -73,6 +75,15 @@ private:
  */
 inline LocalizedText::LocalizedText(const std::wstring &text)
   : _text(text), _nextArg(0)
+{
+	// Empty by design.
+}
+
+/**
+* Copy a LocalizedText string.
+*/
+inline LocalizedText::LocalizedText(const LocalizedText &text)
+	: _text(text._text), _nextArg(text._nextArg)
 {
 	// Empty by design.
 }

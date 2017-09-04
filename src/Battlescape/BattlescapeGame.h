@@ -18,6 +18,7 @@
  * along with OpenXcom.  If not, see <http:///www.gnu.org/licenses/>.
  */
 #include "Position.h"
+#include "Pathfinding.h"
 #include <SDL.h>
 #include <string>
 #include <list>
@@ -38,7 +39,7 @@ class Mod;
 class InfoboxOKState;
 class SoldierDiary;
 
-enum BattleActionType { BA_NONE, BA_TURN, BA_WALK, BA_PRIME, BA_THROW, BA_AUTOSHOT, BA_SNAPSHOT, BA_AIMEDSHOT, BA_HIT, BA_USE, BA_LAUNCH, BA_MINDCONTROL, BA_PANIC, BA_RETHINK };
+enum BattleActionType { BA_NONE, BA_TURN, BA_WALK, BA_PRIME, BA_THROW, BA_AUTOSHOT, BA_SNAPSHOT, BA_AIMEDSHOT, BA_HIT, BA_USE, BA_LAUNCH, BA_MINDCONTROL, BA_PANIC, BA_RETHINK, BA_RELOAD, BA_OVERWATCH, BA_CLAIRVOYANCE, BA_MINDBLAST, BA_DUALFIRE, BA_EFFECT_NEGATIVE, BA_EFFECT_POSITIVE, BA_BURSTSHOT };
 
 struct BattleAction
 {
@@ -51,7 +52,7 @@ struct BattleAction
 	bool targeting;
 	int value;
 	std::string result;
-	bool strafe, run;
+	std::wstring description;
 	int diff;
 	int autoShotCounter;
 	Position cameraPosition;
@@ -59,7 +60,11 @@ struct BattleAction
 	int finalFacing;
 	bool finalAction;
 	int number; // first action of turn, second, etc.?
-	BattleAction() : type(BA_NONE), actor(0), weapon(0), TU(0), targeting(false), value(0), strafe(false), run(false), diff(0), autoShotCounter(0), cameraPosition(0, 0, -1), desperate(false), finalFacing(-1), finalAction(false), number(0) { }
+	bool dualFiring;
+	bool overwatch;
+	bool targetSprinting;
+	MovementAction movementAction;
+	BattleAction() : type(BA_NONE), actor(0), weapon(0), TU(0), targeting(false), value(0), diff(0), autoShotCounter(0), cameraPosition(0, 0, -1), desperate(false), finalFacing(-1), finalAction(false), number(0), dualFiring(false), overwatch(false), targetSprinting(false), movementAction(MV_WALK) {}
 };
 
 /**
@@ -117,7 +122,7 @@ public:
 	/// Sets state think interval.
 	void setStateInterval(Uint32 interval);
 	/// Checks for casualties in battle.
-	void checkForCasualties(BattleItem *murderweapon, BattleUnit *origMurderer, bool hiddenExplosion = false, bool terrainExplosion = false);
+	void checkForCasualties(BattleItem *murderweapon, BattleUnit *origMurderer, bool hiddenExplosion = false, bool terrainExplosion = false, bool pushDeathFront = false);
 	/// Checks reserved tu.
 	bool checkReservedTU(BattleUnit *bu, int tu, bool justChecking = false);
 	/// Handles unit AI.

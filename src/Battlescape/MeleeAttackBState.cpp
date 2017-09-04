@@ -125,6 +125,12 @@ void MeleeAttackBState::init()
 	_voxel = _action.target * Position(16, 16, 24) + Position(8, 8, height);
 
 	performMeleeAttack();
+
+	_unit->addBattleExperience("STR_MELEE");
+
+	_unit->cancelEffects(ECT_ACTIVATE);
+	_unit->cancelEffects(ECT_ATTACK);
+	_unit->cancelEffects(ECT_MELEE);
 }
 
 /**
@@ -231,6 +237,7 @@ void MeleeAttackBState::resolveHit()
 			&& _ammo
 			&& !_ammo->getRules()->getZombieUnit().empty()
 			&& _target
+			&& !_target->isVehicle()
 			&& (_target->getGeoscapeSoldier() || _target->getUnitRules()->getRace() == "STR_CIVILIAN")
 			&& _target->getSpawnUnit().empty())
 		{
@@ -268,7 +275,7 @@ void MeleeAttackBState::resolveHit()
 
 		Position damagePosition = _voxel + difference;
 		// damage the unit.
-		_parent->getSave()->getTileEngine()->hit(damagePosition, power, type, _unit);
+		_parent->getSave()->getTileEngine()->hit(damagePosition, power, BA_HIT, type, _unit);
 		// now check for new casualties
 		_parent->checkForCasualties(_ammo, _unit);
 	}

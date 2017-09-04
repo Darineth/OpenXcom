@@ -169,7 +169,9 @@ CraftEquipmentState::CraftEquipmentState(Base *base, size_t craft) : _sel(0), _c
 			std::wstring s = tr(*i);
 			if (rule->getBattleType() == BT_AMMO)
 			{
+				s = tr("STR_AMMO_COUNT_", rule->getClipSize()).arg(s);
 				s.insert(0, L"  ");
+				//s.append(L"(x" + std::to_wstring((long long)(std::max(1, rule->getClipSize()))) + L")");
 			}
 			_lstEquipment->addRow(3, s.c_str(), ss.str().c_str(), ss2.str().c_str());
 
@@ -530,20 +532,16 @@ void CraftEquipmentState::moveRightByValue(int change)
 		if (room > 0)
 		{
 			change = std::min(room, change);
+			int vehicleClipSize = item->getBattleClipSize() > 0 ? item->getBattleClipSize() : item->getClipSize();
 			if (!item->getCompatibleAmmo()->empty())
 			{
 				// And now let's see if we can add the total number of vehicles.
 				RuleItem *ammo = _game->getMod()->getItem(item->getCompatibleAmmo()->front(), true);
-				int ammoPerVehicle, clipSize;
-				if (ammo->getClipSize() > 0 && item->getClipSize() > 0)
+				int ammoClipSize = ammo->getBattleClipSize() > 0 ? ammo->getBattleClipSize() : ammo->getClipSize();
+				int ammoPerVehicle = ammoClipSize;
+				if (ammoPerVehicle > 0 && vehicleClipSize > 0)
 				{
-					clipSize = item->getClipSize();
-					ammoPerVehicle = clipSize / ammo->getClipSize();
-				}
-				else
-				{
-					clipSize = ammo->getClipSize();
-					ammoPerVehicle = clipSize;
+					ammoPerVehicle = vehicleClipSize / ammoClipSize;
 				}
 
 				int baseQty = _base->getStorageItems()->getItem(ammo->getType()) / ammoPerVehicle;
@@ -559,7 +557,7 @@ void CraftEquipmentState::moveRightByValue(int change)
 							_base->getStorageItems()->removeItem(ammo->getType(), ammoPerVehicle);
 							_base->getStorageItems()->removeItem(_items[_sel]);
 						}
-						c->getVehicles()->push_back(new Vehicle(item, clipSize, size));
+						c->getVehicles()->push_back(new Vehicle(item, ammoPerVehicle, size));
 					}
 				}
 				else
@@ -571,14 +569,16 @@ void CraftEquipmentState::moveRightByValue(int change)
 				}
 			}
 			else
+			{
 				for (int i = 0; i < change; ++i)
 				{
-					c->getVehicles()->push_back(new Vehicle(item, item->getClipSize(), size));
+					c->getVehicles()->push_back(new Vehicle(item, vehicleClipSize, size));
 					if (_game->getSavedGame()->getMonthsPassed() != -1)
 					{
 						_base->getStorageItems()->removeItem(_items[_sel]);
 					}
 				}
+			}
 		}
 	}
 	else
@@ -603,11 +603,38 @@ void CraftEquipmentState::moveRightByValue(int change)
 /**
  * Empties the contents of the craft, moving all of the items back to the base.
  */
-void CraftEquipmentState::btnClearClick(Action *)
+void CraftEquipmentState::btnClearClick(Action *action)
 {
-	for (_sel = 0; _sel != _items.size(); ++_sel)
+	if (SDL_GetModState() & KMOD_SHIFT)
 	{
-		moveLeftByValue(INT_MAX);
+		for (_sel = 0; _sel != _items.size(); ++_sel)
+		{
+			moveLeftByValue(INT_MAX);
+			RuleItem *item = _game->getMod()->getItem(_items[_sel]);
+
+			if (item->getBattleType() == BT_AMMO)
+			{
+				if (item->getBattleClipSize() > 0)
+				{
+					moveRightByValue(50 * item->getBattleClipSize());
+				}
+				else
+				{
+					moveRightByValue(50);
+				}
+			}
+			else
+			{
+				moveRightByValue(20);
+			}
+		}
+	}
+	else
+	{
+		for (_sel = 0; _sel != _items.size(); ++_sel)
+		{
+			moveLeftByValue(INT_MAX);
+		}
 	}
 }
 

@@ -41,13 +41,15 @@ class FpsCounter;
 class Game
 {
 private:
+	static Game *_game;
 	SDL_Event _event;
 	Screen *_screen;
 	Cursor *_cursor;
-	Language *_lang;
+	static Language *_lang;
 	std::list<State*> _states, _deleted;
-	SavedGame *_save;
-	Mod *_mod;
+	
+	static SavedGame *_save;
+	static Mod *_mod;
 	bool _quit, _init;
 	FpsCounter *_fpsCounter;
 	bool _mouseActive;
@@ -60,6 +62,8 @@ public:
 	Game(const std::string &title);
 	/// Cleans up all the game's resources and shuts down SDL.
 	~Game();
+	/// Gets the current Game instance.
+	static Game *getGame();
 	/// Starts the game's state machine.
 	void run();
 	/// Quits the game.
@@ -81,15 +85,15 @@ public:
 	/// Pops the last state from the state stack.
 	void popState();
 	/// Gets the currently loaded language.
-	Language *getLanguage() const;
+	static Language *getLanguage();
 	/// Loads a new language for the game.
 	void loadLanguage(const std::string &filename);
 	/// Gets the currently loaded saved game.
-	SavedGame *getSavedGame() const;
+	static SavedGame *getSavedGame();
 	/// Sets a new saved game for the game.
 	void setSavedGame(SavedGame *save);
 	/// Gets the currently loaded mod.
-	Mod *getMod() const;
+	static Mod *getMod();
 	/// Loads the mods specified in the game options.
 	void loadMods();
 	/// Sets whether the mouse cursor is activated.

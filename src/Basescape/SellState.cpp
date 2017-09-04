@@ -46,6 +46,7 @@
 #include "../Engine/Timer.h"
 #include "../Engine/Options.h"
 #include "../Mod/RuleInterface.h"
+#include "../Mod/RuleResearch.h"
 
 namespace OpenXcom
 {
@@ -119,10 +120,10 @@ SellState::SellState(Base *base, OptionsOrigin origin) : _base(base), _sel(0), _
 
 	_txtFunds->setText(tr("STR_FUNDS").arg(Text::formatFunding(_game->getSavedGame()->getFunds())));
 
-	_txtSpaceUsed->setVisible(Options::storageLimitsEnforced);
+	//_txtSpaceUsed->setVisible(Options::storageLimitsEnforced);
 
 	std::wostringstream ss;
-	ss << _base->getUsedStores() << ":" << _base->getAvailableStores();
+	ss << " " << _base->getUsedStores() << "/" << _base->getAvailableStores();
 	_txtSpaceUsed->setText(ss.str());
 	_txtSpaceUsed->setText(tr("STR_SPACE_USED").arg(ss.str()));
 
@@ -207,6 +208,16 @@ SellState::SellState(Base *base, OptionsOrigin origin) : _base(base), _sel(0), _
 			_cats.push_back(cat);
 		}
 	}
+
+	const std::vector<std::string> allResearchIds = _game->getMod()->getResearchList();
+	std::vector<RuleResearch*> allResearch;
+	allResearch.reserve(allResearchIds.size());
+
+	for (size_t ii = 0; ii < allResearchIds.size(); ++ii)
+	{
+		allResearch.push_back(_game->getMod()->getResearch(allResearchIds[ii]));
+	}
+
 	const std::vector<std::string> &items = _game->getMod()->getItemsList();
 	for (std::vector<std::string>::const_iterator i = items.begin(); i != items.end(); ++i)
 	{
@@ -228,7 +239,32 @@ SellState::SellState(Base *base, OptionsOrigin origin) : _base(base), _sel(0), _
 		RuleItem *rule = _game->getMod()->getItem(*i, true);
 		if (qty > 0 && (Options::canSellLiveAliens || !rule->isAlien()))
 		{
-			TransferRow row = { TRANSFER_ITEM, rule, tr(*i), rule->getSellCost(), qty, 0, 0 };
+			const std::string &itemName = *i;
+			bool needsResearch = false;
+			for (std::vector<RuleResearch*>::const_iterator jj = allResearch.begin(); jj != allResearch.end(); ++jj)
+			{
+				RuleResearch *rr = *jj;
+				if (!_game->getSavedGame()->isResearched(rr->getName()))
+				{
+					if (rr->needItem() && rr->getName() == itemName)
+					{
+						needsResearch = true;
+						break;
+					}
+					else if (std::find(rr->getNeededItemsAll().begin(), rr->getNeededItemsAll().end(), itemName) != rr->getNeededItemsAll().end())
+					{
+						needsResearch = true;
+						break;
+					}
+					else if (std::find(rr->getNeededItemsAny().begin(), rr->getNeededItemsAny().end(), itemName) != rr->getNeededItemsAny().end())
+					{
+						needsResearch = true;
+						break;
+					}
+				}
+			}
+
+			TransferRow row = { TRANSFER_ITEM, rule, tr(itemName), rule->getSellCost(), qty, 0, 0, needsResearch };
 			_items.push_back(row);
 			std::string cat = getCategory(_items.size() - 1);
 			if (std::find(_cats.begin(), _cats.end(), cat) == _cats.end())
@@ -315,6 +351,7 @@ void SellState::updateList()
 {
 	_lstItems->clearList();
 	_rows.clear();
+
 	for (size_t i = 0; i < _items.size(); ++i)
 	{
 		std::string cat = _cats[_cbxCategory->getSelected()];
@@ -323,6 +360,7 @@ void SellState::updateList()
 			continue;
 		}
 		std::wstring name = _items[i].name;
+
 		bool ammo = false;
 		if (_items[i].type == TRANSFER_ITEM)
 		{
@@ -333,6 +371,12 @@ void SellState::updateList()
 				name.insert(0, L"  ");
 			}
 		}
+
+		if (_items[i].needsResearch)
+		{
+			name.append(tr("STR_NOT_RESEARCHED"));
+		}
+
 		std::wostringstream ssQty, ssAmount;
 		ssQty << _items[i].qtySrc - _items[i].amount;
 		ssAmount << _items[i].amount;
@@ -703,7 +747,7 @@ void SellState::updateItemStrings()
 			ss3 << "+";
 		ss3 << std::fixed << std::setprecision(1) << _spaceChange << ")";
 	}
-	ss3 << ":" << _base->getAvailableStores();
+	ss3 << "/" << _base->getAvailableStores();
 	_txtSpaceUsed->setText(tr("STR_SPACE_USED").arg(ss3.str()));
 	if (Options::storageLimitsEnforced)
 	{

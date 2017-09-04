@@ -18,6 +18,7 @@
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <climits>
+#include <vector>
 #include "BattleState.h"
 #include "BattlescapeGame.h"
 #include "Position.h"
@@ -39,6 +40,8 @@ private:
 	BattleUnit *_unit;
 	Pathfinding *_pf;
 	TileEngine *_terrain;
+	std::vector<BattleUnit*> _spottedUnits;
+	std::vector<BattleUnit*> _preSpottedUnits;
 	bool _falling;
 	bool _beforeFirstStep;
 	/// Handles some calculations when the path is finished.
@@ -49,6 +52,7 @@ private:
 	void playMovementSound();
 	std::size_t _numUnitsSpotted;
 	int _preMovementCost;
+	void checkSpottedUnits();
 public:
 	/// Creates a new UnitWalkBState class.
 	UnitWalkBState(BattlescapeGame *parent, BattleAction _action);

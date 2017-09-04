@@ -145,7 +145,7 @@ void Base::load(const YAML::Node &node, SavedGame *save, bool newGame, bool newB
 		std::string type = (*i)["type"].as<std::string>(_mod->getSoldiersList().front());
 		if (_mod->getSoldier(type))
 		{
-			Soldier *s = new Soldier(_mod->getSoldier(type), 0);
+			Soldier *s = new Soldier(_mod->getSoldier(type), save, 0);
 			s->load(*i, _mod, save);
 			s->setCraft(0);
 			if (const YAML::Node &craft = (*i)["craft"])
@@ -485,12 +485,46 @@ int Base::getAvailableSoldiers(bool checkCombatReadiness) const
  */
 int Base::getTotalSoldiers() const
 {
-	size_t total = _soldiers.size();
+	size_t total = 0; //_soldiers.size();
+	for(std::vector<Soldier*>::const_iterator ii = _soldiers.begin(); ii != _soldiers.end(); ++ii)
+	{
+		if(!(*ii)->isVehicle())
+		{
+			++total;
+		}
+	}
+
 	for (std::vector<Transfer*>::const_iterator i = _transfers.begin(); i != _transfers.end(); ++i)
 	{
-		if ((*i)->getType() == TRANSFER_SOLDIER)
+		if ((*i)->getType() == TRANSFER_SOLDIER && !(*i)->getSoldier()->isVehicle())
 		{
-			total += (*i)->getQuantity();
+			++total;
+		}
+	}
+	return total;
+}
+
+/**
+ * Returns the total amount of vehicles contained
+ * in the base.
+ * @return Number of vehicles.
+ */
+int Base::getTotalVehicles() const
+{
+	size_t total = 0; //_soldiers.size();
+	for(std::vector<Soldier*>::const_iterator ii = _soldiers.begin(); ii != _soldiers.end(); ++ii)
+	{
+		if((*ii)->isVehicle())
+		{
+			++total;
+		}
+	}
+
+	for (std::vector<Transfer*>::const_iterator i = _transfers.begin(); i != _transfers.end(); ++i)
+	{
+		if ((*i)->getType() == TRANSFER_SOLDIER && (*i)->getSoldier()->isVehicle())
+		{
+			++total;
 		}
 	}
 	return total;
@@ -736,8 +770,15 @@ int Base::getUsedWorkshops() const
 {
 	int usedWorkShop = 0;
 	for (std::vector<Production *>::const_iterator iter = _productions.begin(); iter != _productions.end(); ++iter)
-	{
-		usedWorkShop += ((*iter)->getAssignedEngineers() + (*iter)->getRules()->getRequiredSpace());
+	{	
+		int assignedEngineers = (*iter)->getAssignedEngineers();
+		int reqSpace = (*iter)->getRules()->getRequiredSpace();
+		if (assignedEngineers == 0)
+		{
+			reqSpace = 0;
+		}
+		
+		usedWorkShop += assignedEngineers + reqSpace;
 	}
 	return usedWorkShop;
 }
@@ -1103,11 +1144,29 @@ void Base::removeResearch(ResearchProject * project)
  */
 void Base::removeProduction (Production * p)
 {
-	_engineers += p->getAssignedEngineers();
+	int oldAssignedEngineers = p->getAssignedEngineers();
+	_engineers += oldAssignedEngineers;
 	std::vector<Production *>::iterator iter = std::find (_productions.begin(), _productions.end(), p);
 	if (iter != _productions.end())
 	{
 		_productions.erase(iter);
+	}
+
+	if (_productions.size() > 0)
+	{
+		Production* topItem = _productions.front();
+		int reqSpace = topItem->getRules()->getRequiredSpace();
+		int topAssignedEngineers = topItem->getAssignedEngineers();
+
+		int addedEngineers = oldAssignedEngineers;
+
+		if (topAssignedEngineers == 0 && getFreeWorkshops() - reqSpace < oldAssignedEngineers)
+		{
+			addedEngineers = getFreeWorkshops() - reqSpace;
+		}
+
+		topItem->setAssignedEngineers(topAssignedEngineers + addedEngineers);
+		_engineers -= addedEngineers;
 	}
 }
 
@@ -1115,7 +1174,7 @@ void Base::removeProduction (Production * p)
  * Get the list of Base Production's
  * @return the list of Base Production's
  */
-const std::vector<Production *> & Base::getProductions() const
+std::vector<Production *> & Base::getProductions()
 {
 	return _productions;
 }

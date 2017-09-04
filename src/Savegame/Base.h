@@ -107,6 +107,8 @@ public:
 	int getAvailableSoldiers(bool checkCombatReadiness = false) const;
 	/// Gets the base's total soldiers.
 	int getTotalSoldiers() const;
+	/// Gets the base's total vehicles.
+	int getTotalVehicles() const;
 	/// Gets the base's available scientists.
 	int getAvailableScientists() const;
 	/// Gets the base's total scientists.
@@ -174,7 +176,7 @@ public:
 	/// Remove a Base Production's
 	void removeProduction (Production * p);
 	/// Get the list of Base Production's
-	const std::vector<Production *> & getProductions() const;
+	std::vector<Production *> & getProductions();
 	/// Checks if this base is hyper-wave equipped.
 	bool getHyperDetection() const;
 	/// Gets the base's used psi lab space.

@@ -39,12 +39,7 @@ namespace OpenXcom
  */
 ScannerState::ScannerState (BattleAction *action) : _action(action)
 {
-	if (Options::maximizeInfoScreens)
-	{
-		Options::baseXResolution = Screen::ORIGINAL_WIDTH;
-		Options::baseYResolution = Screen::ORIGINAL_HEIGHT;
-		_game->getScreen()->resetDisplay(false);
-	}
+	_game->getScreen()->pushMaximizeInfoScreen(true);
 	_bg = new InteractiveSurface(320, 200);
 	_scan = new Surface(320, 200);
 	_scannerView = new ScannerView(152, 152, 56, 24, _game, _action->actor);
@@ -124,11 +119,7 @@ void ScannerState::think()
  */
 void ScannerState::exitClick(Action *)
 {
-	if (Options::maximizeInfoScreens)
-	{
-		Screen::updateScale(Options::battlescapeScale, Options::battlescapeScale, Options::baseXBattlescape, Options::baseYBattlescape, true);
-		_game->getScreen()->resetDisplay(false);
-	}
+	_game->getScreen()->popMaximizeInfoScreen();
 	_game->popState();
 }
 

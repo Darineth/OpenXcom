@@ -31,6 +31,7 @@ class BattleItem;
 class BattleUnit;
 class NumberText;
 class Timer;
+class RuleInventoryLayout;
 
 /**
  * Interactive view of an inventory.
@@ -50,12 +51,13 @@ private:
 	std::map<int, std::map<int, int> > _stackLevel;
 	std::vector<std::pair<int, int> > _grenadeIndicators;
 	NumberText *_stackNumber;
+	NumberText *_ammoNumber;
 	Timer *_animTimer;
 	int _depth;
-	/// Moves an item to a specified slot.
-	void moveItem(BattleItem *item, RuleInventory *slot, int x, int y);
+	bool _locked;
 	/// Gets the slot in the specified position.
 	RuleInventory *getSlotInPosition(int *x, int *y) const;
+	RuleInventoryLayout *_inventoryLayout;
 public:
 	/// Creates a new inventory view at the specified position and size.
 	Inventory(Game *game, int width, int height, int x = 0, int y = 0, bool base = false);
@@ -92,17 +94,15 @@ public:
 	/// Unloads the selected weapon.
 	bool unload();
 	/// Arranges items on the ground.
-	void arrangeGround(bool alterOffset = true);
-	/// Attempts to place an item in an inventory slot.
-	bool fitItem(RuleInventory *newSlot, BattleItem *item, std::string &warning);
+	void arrangeGround(bool alterOffset = true, int offset = 0);
 	/// Checks if two items can be stacked on one another.
 	bool canBeStacked(BattleItem *itemA, BattleItem *itemB);
-	/// Checks for item overlap.
-	static bool overlapItems(BattleUnit *unit, BattleItem *item, RuleInventory *slot, int x = 0, int y = 0);
 	/// Shows a warning message.
 	void showWarning(const std::wstring &msg);
 	/// Show priming warnings on grenades.
 	void drawPrimers();
+	void setLocked(bool locked);
+	bool getLocked() const;
 };
 
 }

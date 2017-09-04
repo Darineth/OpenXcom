@@ -1,0 +1,28 @@
+actionExperience:
+  STR_SNAP_SHOT: 30
+  STR_AUTO_SHOT: 50
+  STR_BURST_SHOT: 50
+  STR_AIMED_SHOT: 50
+  STR_DUAL_FIRE: 50
+  STR_THROW: 30
+  STR_MELEE: 30
+  STR_WALK: 1
+  STR_SNEAK: 2
+  STR_SPRINT: 2
+  STR_REACTION_FIRE: 30
+  STR_HEAL: 30
+  STR_STUN: 100
+  STR_KILL: 75
+  STR_PSIONICS: 30
+damageDropoff:
+  # AP
+  1: 0.5
+  # Laser
+  4: 0.5
+  # Plasma
+  5: 0.8
+baseMissionExperience: 50
+# increase the damage range to 50%-150%
+constants:
+  - damageRange: 50
+  - encumbranceMultipler: 2

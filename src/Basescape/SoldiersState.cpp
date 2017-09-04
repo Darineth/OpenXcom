@@ -28,6 +28,8 @@
 #include "../Interface/TextList.h"
 #include "../Savegame/Base.h"
 #include "../Savegame/Soldier.h"
+#include "../Savegame/Role.h"
+#include "../Mod/RuleCraft.h"
 #include "SoldierInfoState.h"
 #include "SoldierMemorialState.h"
 
@@ -128,8 +130,18 @@ void SoldiersState::init()
 	_lstSoldiers->clearList();
 	for (std::vector<Soldier*>::iterator i = _base->getSoldiers()->begin(); i != _base->getSoldiers()->end(); ++i)
 	{
-		_lstSoldiers->addRow(3, (*i)->getName(true).c_str(), tr((*i)->getRankString()).c_str(), (*i)->getCraftString(_game->getLanguage()).c_str());
-		if ((*i)->getCraft() == 0)
+		Soldier *ss = *i;
+
+		std::wostringstream rank;
+		rank << tr(ss->getRankString());
+		Role *role;
+		if((role = ss->getRole()) && !role->isBlank())
+		{
+			rank << "-" << tr(ss->getRole()->getName() + "_SHORT");
+		}
+
+		_lstSoldiers->addRow(3, ss->getName(true).c_str(), rank.str().c_str(), ss->getCraftString(_game->getLanguage()).c_str());
+		if (ss->getCraft() == 0)
 		{
 			_lstSoldiers->setRowColor(row, _lstSoldiers->getSecondaryColor());
 		}

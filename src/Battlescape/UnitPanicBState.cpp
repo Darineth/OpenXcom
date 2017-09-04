@@ -73,6 +73,8 @@ void UnitPanicBState::think()
 				// make autoshots if possible.
 				if (ba.weapon->getRules()->getTUAuto())
 					ba.type = BA_AUTOSHOT;
+				else if(ba.weapon->getRules()->getTUBurst())
+					ba.type = BA_BURSTSHOT;
 				else
 					ba.type = BA_SNAPSHOT;
 				

@@ -19,6 +19,7 @@
  */
 #include "BattleState.h"
 #include "Position.h"
+#include <vector>
 
 namespace OpenXcom
 {
@@ -27,6 +28,8 @@ class BattlescapeGame;
 class BattleUnit;
 class BattleItem;
 class Tile;
+class Explosion;
+class Timer;
 
 /**
  * Explosion state not only handles explosions, but also bullet impacts!
@@ -39,13 +42,17 @@ private:
 	Position _center;
 	BattleItem *_item;
 	Tile *_tile;
+	Timer *_animationTimer;
 	int _power;
-	bool _areaOfEffect, _lowerWeapon, _cosmetic;
+	float _dropoffDistance;
+	bool _areaOfEffect, _lowerWeapon, _cosmetic, _subState, _finished, _delayExplosion;
+	std::vector<Explosion*> _explosions;
 	/// Calculates the effects of the explosion.
 	void explode();
+	ExplosionBState *_terrainExplosion;
 public:
 	/// Creates a new ExplosionBState class.
-	ExplosionBState(BattlescapeGame *parent, Position center, BattleItem *item, BattleUnit *unit, Tile *tile = 0, bool lowerWeapon = false, bool cosmetic = false);
+	ExplosionBState(BattlescapeGame *parent, Position center, BattleItem *item, BattleUnit *unit, Tile *tile = 0, bool lowerWeapon = false, bool cosmetic = false, bool subState = false, float dropoffDistance = -1);
 	/// Cleans up the ExplosionBState.
 	~ExplosionBState();
 	/// Initializes the state.
@@ -54,7 +61,16 @@ public:
 	void cancel();
 	/// Runs state functionality every cycle.
 	void think();
-
+	/// Runs state functionality every cycle.
+	void thinkTimer();
+	/// Returns if the current explosion is AoE.
+	bool getAreaOfEffect() const;
+	/// Returns if the state is finished.
+	bool getFinished() const;
+	/// Returns the new terrain explosion if one was created during explode().
+	ExplosionBState *getTerrainExplosion() const;
+	/// Clears the current terrain explosion.
+	void clearTerrainExplosion();
 };
 
 }

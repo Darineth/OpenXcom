@@ -178,7 +178,14 @@ NumberText::NumberText(int width, int height, int x, int y) : Surface(width, hei
 	_chars[9]->setPixel(2, 4, 1);
 	_chars[9]->unlock();
 
-	for (int i = 0; i < 10; ++i)
+	_chars[10] = new Surface(3, 5);
+	_chars[10]->lock();
+	_chars[10]->setPixel(0, 2, 1);
+	_chars[10]->setPixel(1, 2, 1);
+	_chars[10]->setPixel(2, 2, 1);
+	_chars[10]->unlock();
+
+	for (int i = 0; i < MAX_CHARS; ++i)
 	{
 		_borderedChars[i] = new Surface(5, 7);
 		// give it a border
@@ -206,7 +213,7 @@ NumberText::NumberText(int width, int height, int x, int y) : Surface(width, hei
  */
 NumberText::~NumberText()
 {
-	for (int i = 0; i < 10; ++i)
+	for (int i = 0; i < MAX_CHARS; ++i)
 	{
 		delete _chars[i];
 		delete _borderedChars[i];
@@ -217,7 +224,7 @@ NumberText::~NumberText()
  * Changes the value used to render the number.
  * @param value Number value.
  */
-void NumberText::setValue(unsigned int value)
+void NumberText::setValue(int value)
 {
 	_value = value;
 	_redraw = true;
@@ -227,7 +234,7 @@ void NumberText::setValue(unsigned int value)
  * Returns the value used to render the number.
  * @return Number value.
  */
-unsigned int NumberText::getValue() const
+int NumberText::getValue() const
 {
 	return _value;
 }
@@ -260,7 +267,7 @@ Uint8 NumberText::getColor() const
 void NumberText::setPalette(SDL_Color *colors, int firstcolor, int ncolors)
 {
 	Surface::setPalette(colors, firstcolor, ncolors);
-	for (int i = 0; i < 10; ++i)
+	for (int i = 0; i < MAX_CHARS; ++i)
 	{
 		_chars[i]->setPalette(colors, firstcolor, ncolors);
 		_borderedChars[i]->setPalette(colors, firstcolor, ncolors);
@@ -281,20 +288,22 @@ void NumberText::draw()
 	{
 		for (std::string::iterator i = s.begin(); i != s.end(); ++i)
 		{
-			_chars[*i - '0']->setX(x);
-			_chars[*i - '0']->setY(0);
-			_chars[*i - '0']->blit(this);
-			x += _chars[*i - '0']->getWidth() + 1;
+			int chr = (*i) == '-' ? 10 : (*i - '0');
+			_chars[chr]->setX(x);
+			_chars[chr]->setY(0);
+			_chars[chr]->blit(this);
+			x += _chars[chr]->getWidth() + 1;
 		}
 	}
 	else
 	{
 		for (std::string::iterator i = s.begin(); i != s.end(); ++i)
 		{
-			_borderedChars[*i - '0']->setX(x);
-			_borderedChars[*i - '0']->setY(0);
-			_borderedChars[*i - '0']->blit(this);
-			x += _chars[*i - '0']->getWidth() + 1; // no this isn't a typo, i want to use the same spacing regardless.
+			int chr = (*i) == '-' ? 10 : (*i - '0');
+			_borderedChars[chr]->setX(x);
+			_borderedChars[chr]->setY(0);
+			_borderedChars[chr]->blit(this);
+			x += _chars[chr]->getWidth() + 1; // no this isn't a typo, i want to use the same spacing regardless.
 		}
 	}
 

@@ -42,7 +42,7 @@ namespace OpenXcom
  * @param parent Pointer to the Battlescape.
  * @param action Pointer to an action.
  */
-UnitWalkBState::UnitWalkBState(BattlescapeGame *parent, BattleAction action) : BattleState(parent, action), _unit(0), _pf(0), _terrain(0), _falling(false), _beforeFirstStep(false), _numUnitsSpotted(0), _preMovementCost(0)
+UnitWalkBState::UnitWalkBState(BattlescapeGame *parent, BattleAction action) : BattleState(parent, action), _unit(0), _pf(0), _terrain(0), _falling(false), _beforeFirstStep(false), _numUnitsSpotted(0), _preMovementCost(0), _spottedUnits(), _preSpottedUnits()
 {
 
 }
@@ -68,9 +68,30 @@ void UnitWalkBState::init()
 	_target = _action.target;
 	if (Options::traceAI) { Log(LOG_INFO) << "Walking from: " << _unit->getPosition() << "," << " to " << _target;}
 	int dir = _pf->getStartDirection();
-	if (!_action.strafe && dir != -1 && dir != _unit->getDirection())
+	if (_action.movementAction != MV_STRAFE && dir != -1 && dir != _unit->getDirection())
 	{
 		_beforeFirstStep = true;
+	}
+
+	const std::vector<BattleUnit*> &spotted = _unit->getUnitsSpottedThisTurn();
+	_preSpottedUnits.insert(_preSpottedUnits.begin(), spotted.begin(), spotted.end());
+
+	_unit->cancelEffects(ECT_MOVE);
+	switch (_action.movementAction)
+	{
+	case MV_WALK:
+	case MV_STRAFE:
+		_unit->addBattleExperience("STR_WALK");
+		_unit->cancelEffects(ECT_WALK);
+		break;
+	case MV_SNEAK:
+		_unit->addBattleExperience("STR_SNEAK");
+		_unit->cancelEffects(ECT_SNEAK);
+		break;
+	case MV_SPRINT:
+		_unit->addBattleExperience("STR_SPRINT");
+		_unit->cancelEffects(ECT_SPRINT);
+		break;
 	}
 }
 
@@ -182,7 +203,7 @@ void UnitWalkBState::think()
 				_unit->getTile()->ignite(1);
 				Position posHere = _unit->getPosition();
 				Position voxelHere = (posHere * Position(16,16,24)) + Position(8,8,-(_unit->getTile()->getTerrainLevel()));
-				_parent->getTileEngine()->hit(voxelHere, _unit->getBaseStats()->strength, DT_IN, _unit);
+				_parent->getTileEngine()->hit(voxelHere, _unit->getBaseStats()->strength, BA_NONE, DT_IN, _unit);
 				
 				if (_unit->getStatus() != STATUS_STANDING) // ie: we burned a hole in the floor and fell through it
 				{
@@ -200,12 +221,30 @@ void UnitWalkBState::think()
 			_terrain->calculateFOV(_unit->getPosition());
 			unitSpotted = (!_falling && !_action.desperate && _parent->getPanicHandled() && _numUnitsSpotted != _unit->getUnitsSpottedThisTurn().size());
 
+			if(unitSpotted)
+			{
+				checkSpottedUnits();
+			}
+
+			bool reactionFire = false;
+			// check for reaction fire
+			if (!_falling)
+			{
+				if ((reactionFire = _terrain->checkReactionFire(_unit, &_spottedUnits)))
+				{
+					// unit got fired upon - stop walking
+					_unit->setCache(0);
+					_parent->getMap()->cacheUnit(_unit);
+					_pf->abortPath();
+				}
+			}
+
 			if (_parent->checkForProximityGrenades(_unit))
 			{
 				_parent->popState();
 				return;
 			}
-			if (unitSpotted)
+			if (unitSpotted && _action.movementAction != MV_SPRINT)
 			{
 				_unit->setCache(0);
 				_parent->getMap()->cacheUnit(_unit);
@@ -213,24 +252,25 @@ void UnitWalkBState::think()
 				_parent->popState();
 				return;
 			}
+
 			// check for reaction fire
-			if (!_falling)
+			if (reactionFire && _action.movementAction != MV_SPRINT)
 			{
-				if (_terrain->checkReactionFire(_unit))
-				{
-					// unit got fired upon - stop walking
-					_unit->setCache(0);
-					_parent->getMap()->cacheUnit(_unit);
-					_pf->abortPath();
-					_parent->popState();
-					return;
-				}
+				_parent->popState();
+				return;
+			}
+
+			if(_spottedUnits.size())
+			{
+				// Move any newly spotted units over to the pre-spotted vector so they are no longer considered valid for surprise.
+				_preSpottedUnits.insert(_preSpottedUnits.begin(), _spottedUnits.begin(), _spottedUnits.end());
+				_spottedUnits.clear();
 			}
 		}
 		else if (onScreen)
 		{
 			// make sure the unit sprites are up to date
-			if (_pf->getStrafeMove())
+			if (_action.movementAction == MV_STRAFE)
 			{
 				// This is where we fake out the strafe movement direction so the unit "moonwalks"
 				int dirTemp = _unit->getDirection();
@@ -254,8 +294,11 @@ void UnitWalkBState::think()
 			if (Options::traceAI) { Log(LOG_INFO) << "Uh-oh! Company!"; }
 			_unit->setHiding(false); // clearly we're not hidden now
 			_parent->getMap()->cacheUnit(_unit);
-			postPathProcedures();
-			return;
+			if (_action.movementAction != MV_SPRINT)
+			{
+				postPathProcedures();
+				return;
+			}
 		}
 
 		if (onScreen || _parent->getSave()->getDebugMode())
@@ -274,13 +317,22 @@ void UnitWalkBState::think()
 
 		if (dir != -1)
 		{
-			if (_pf->getStrafeMove())
+			if (_action.movementAction == MV_STRAFE)
 			{
 				_unit->setFaceDirection(_unit->getDirection());
 			}
 
 			Position destination;
 			int tu = _pf->getTUCost(_unit->getPosition(), dir, &destination, _unit, 0, false); // gets tu cost, but also gets the destination position.
+			if (!_parent->getSave()->getTile(destination))
+			{
+				_pf->abortPath();
+				_unit->setCache(0);
+				_parent->getMap()->cacheUnit(_unit);
+				_parent->popState();
+				return;
+			}
+
 			if (_unit->getFaction() != FACTION_PLAYER &&
 				_unit->getSpecialAbility() < SPECAB_BURNFLOOR &&
 				_parent->getSave()->getTile(destination) &&
@@ -293,16 +345,20 @@ void UnitWalkBState::think()
 				tu = 0;
 			}
 			int energy = tu;
+			if (_action.movementAction == MV_SPRINT)
+			{
+				tu *= 0.5;
+				energy *= 2.0;
+			}
+			else if (_action.movementAction == MV_SNEAK)
+			{
+				tu *= 2.0;
+			}
 			if (dir >= Pathfinding::DIR_UP)
 			{
 				energy = 0;
 			}
-			else if (_action.run)
-			{
-				tu *= 0.75;
-				energy *= 1.5;
-			}
-			if (tu > _unit->getTimeUnits())
+			if (tu > _unit->getAvailableTimeUnits(true))
 			{
 				if (_parent->getPanicHandled() && tu < 255)
 				{
@@ -338,7 +394,7 @@ void UnitWalkBState::think()
 
 			// we are looking in the wrong way, turn first (unless strafing)
 			// we are not using the turn state, because turning during walking costs no tu
-			if (dir != _unit->getDirection() && dir < Pathfinding::DIR_UP && !_pf->getStrafeMove())
+			if (dir != _unit->getDirection() && dir < Pathfinding::DIR_UP && _pf->getMovementAction() != MV_STRAFE)
 			{
 				_unit->lookAt(dir);
 				_unit->setCache(0);
@@ -398,7 +454,7 @@ void UnitWalkBState::think()
 				dir = Pathfinding::DIR_DOWN;
 			}
 
-			if (_unit->spendTimeUnits(tu))
+			if (_unit->spendTimeUnits(tu, true))
 			{
 				if (_unit->spendEnergy(energy))
 				{
@@ -410,7 +466,7 @@ void UnitWalkBState::think()
 			// make sure the unit sprites are up to date
 			if (onScreen)
 			{
-				if (_pf->getStrafeMove())
+				if (_pf->getMovementAction() == MV_STRAFE)
 				{
 					// This is where we fake out the strafe movement direction so the unit "moonwalks"
 					int dirTemp = _unit->getDirection();
@@ -451,11 +507,11 @@ void UnitWalkBState::think()
 		_unit->setCache(0);
 		_parent->getMap()->cacheUnit(_unit);
 
-		if (unitSpotted && !_action.desperate && !_unit->getCharging() && !_falling)
+		if (unitSpotted && !_action.desperate && !_unit->getCharging() && !_falling && _action.movementAction != MV_SPRINT)
 		{
 			if (_beforeFirstStep)
 			{
-				_unit->spendTimeUnits(_preMovementCost);
+				_unit->spendTimeUnits(_preMovementCost, true);
 			}
 			if (Options::traceAI) { Log(LOG_INFO) << "Egads! A turn reveals new units! I must pause!"; }
 			_unit->setHiding(false); // not hidden, are we...
@@ -473,8 +529,10 @@ void UnitWalkBState::think()
  */
 void UnitWalkBState::cancel()
 {
-	if (_parent->getSave()->getSide() == FACTION_PLAYER && _parent->getPanicHandled())
-	_pf->abortPath();
+	if (_parent->getSave()->getSide() == FACTION_PLAYER && _parent->getPanicHandled() && _action.movementAction != MV_SPRINT)
+	{
+		_pf->abortPath();
+	}
 }
 
 /**
@@ -545,10 +603,21 @@ void UnitWalkBState::postPathProcedures()
  */
 void UnitWalkBState::setNormalWalkSpeed()
 {
+	double modifier = 1.0;
+	switch (_action.movementAction)
+	{
+	case MV_SPRINT:
+		modifier = 0.5;
+		break;
+	case MV_SNEAK:
+		modifier = 2.0;
+		break;
+	}
+
 	if (_unit->getFaction() == FACTION_PLAYER)
-		_parent->setStateInterval(Options::battleXcomSpeed);
+		_parent->setStateInterval(Options::battleXcomSpeed * modifier);
 	else
-		_parent->setStateInterval(Options::battleAlienSpeed);
+		_parent->setStateInterval(Options::battleAlienSpeed * modifier);
 }
 
 
@@ -602,4 +671,17 @@ void UnitWalkBState::playMovementSound()
 	}
 }
 
+void UnitWalkBState::checkSpottedUnits()
+{
+	const std::vector<BattleUnit*> &spotted = _unit->getUnitsSpottedThisTurn();
+
+	for(std::vector<BattleUnit*>::const_iterator ii = spotted.begin(); ii != spotted.end(); ++ii)
+	{
+		BattleUnit *bu = *ii;
+		if((std::find(_spottedUnits.begin(), _spottedUnits.end(), bu) == _spottedUnits.end()) && (std::find(_preSpottedUnits.begin(), _preSpottedUnits.end(), bu) == _preSpottedUnits.end()))
+		{
+			_spottedUnits.push_back(bu);
+		}
+	}
+}
 }

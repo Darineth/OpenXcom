@@ -20,6 +20,7 @@
 #include <vector>
 #include "Position.h"
 #include "../Mod/RuleItem.h"
+#include "BattlescapeGame.h"
 #include <SDL.h>
 
 namespace OpenXcom
@@ -37,17 +38,20 @@ struct BattleAction;
 class TileEngine
 {
 private:
+	SavedBattleGame *_save;
+	std::vector<Uint16> *_voxelData;
+	static const int heightFromCenter[11];
+	static const int _directionSignX[8];
+	static const int _directionSignY[8];
+	void addLight(Position center, int power, int layer);
+	void addDirectionalLight(const Position &center, int power, int layer, int direction);
+	int blockage(Tile *tile, const int part, ItemDamageType type, int direction = -1, bool checkingFromOrigin = false);
+	bool _personalLighting;
+public:
 	static const int MAX_VIEW_DISTANCE = 20;
 	static const int MAX_VIEW_DISTANCE_SQR = MAX_VIEW_DISTANCE * MAX_VIEW_DISTANCE;
 	static const int MAX_VOXEL_VIEW_DISTANCE = MAX_VIEW_DISTANCE * 16;
 	static const int MAX_DARKNESS_TO_SEE_UNITS = 9;
-	SavedBattleGame *_save;
-	std::vector<Uint16> *_voxelData;
-	static const int heightFromCenter[11];
-	void addLight(Position center, int power, int layer);
-	int blockage(Tile *tile, const int part, ItemDamageType type, int direction = -1, bool checkingFromOrigin = false);
-	bool _personalLighting;
-public:
 	/// Creates a new TileEngine class.
 	TileEngine(SavedBattleGame *save, std::vector<Uint16> *voxelData);
 	/// Cleans up the TileEngine.
@@ -61,15 +65,15 @@ public:
 	/// Calculates the field of view within range of a certain position.
 	void calculateFOV(Position position);
 	/// Checks reaction fire.
-	bool checkReactionFire(BattleUnit *unit);
+	bool checkReactionFire(BattleUnit *unit, std::vector<BattleUnit*> *ignoredReactors = 0);
 	/// Recalculates lighting of the battlescape for terrain.
 	void calculateTerrainLighting();
 	/// Recalculates lighting of the battlescape for units.
 	void calculateUnitLighting();
 	/// Handles bullet/weapon hits.
-	BattleUnit *hit(Position center, int power, ItemDamageType type, BattleUnit *unit);
+	BattleUnit *hit(Position center, int power, BattleActionType action, ItemDamageType type, BattleUnit *unit, BattleItem *item = 0);
 	/// Handles explosions.
-	void explode(Position center, int power, ItemDamageType type, int maxRadius, BattleUnit *unit = 0);
+	void explode(Position center, int power, BattleActionType action, ItemDamageType type, int maxRadius, int falloff, BattleUnit *unit = 0);
 	/// Checks if a destroyed tile starts an explosion.
 	Tile *checkForTerrainExplosions();
 	/// Unit opens door?
@@ -77,13 +81,15 @@ public:
 	/// Closes ufo doors.
 	int closeUfoDoors();
 	/// Calculates a line trajectory.
-	int calculateLine(Position origin, Position target, bool storeTrajectory, std::vector<Position> *trajectory, BattleUnit *excludeUnit, bool doVoxelCheck = true, bool onlyVisible = false, BattleUnit *excludeAllBut = 0);
+	int calculateLine(Position origin, Position target, bool storeTrajectory, std::vector<Position> *trajectory, BattleUnit *excludeUnit, bool doVoxelCheck = true, bool onlyVisible = false, BattleUnit *excludeAllBut = 0, int *smokeEncountered = 0);
+	/// Calculates a line trajectory from a vector.
+	int calculateLineFromVector(Position origin, Position directionVector, bool storeTrajectory, std::vector<Position> *trajectory, BattleUnit *excludeUnit, bool doVoxelCheck = true, bool onlyVisible = false, BattleUnit *excludeAllBut = 0, int *smokeEncountered = 0, BattleUnit *targetUnit = 0, Tile *targetTile = 0);
 	/// Calculates a parabola trajectory.
 	int calculateParabola(Position origin, Position target, bool storeTrajectory, std::vector<Position> *trajectory, BattleUnit *excludeUnit, double curvature, const Position delta);
 	/// Gets the origin voxel of a unit's eyesight.
 	Position getSightOriginVoxel(BattleUnit *currentUnit);
 	/// Checks visibility of a unit on this tile.
-	bool visible(BattleUnit *currentUnit, Tile *tile);
+	bool visible(BattleUnit *currentUnit, Tile *tile, bool checkTrajectory = true);
 	/// Turn XCom soldier's personal lighting on or off.
 	void togglePersonalLighting();
 	/// Checks the distance between two positions.
@@ -94,6 +100,8 @@ public:
 	int horizontalBlockage(Tile *startTile, Tile *endTile, ItemDamageType type, bool skipObject = false);
 	/// Checks the vertical blockage of a tile.
 	int verticalBlockage(Tile *startTile, Tile *endTile, ItemDamageType type, bool skipObject = false);
+	/// Highlight targets detected with motion scanner.
+	void detectMotion(BattleAction *action);
 	/// Applies gravity to anything that occupy this tile.
 	Tile *applyGravity(Tile *t);
 	/// Returns melee validity between two units.
@@ -113,7 +121,7 @@ public:
 	/// Checks the visibility of a given voxel.
 	bool isVoxelVisible(Position voxel);
 	/// Checks what type of voxel occupies this space.
-	int voxelCheck(Position voxel, BattleUnit *excludeUnit, bool excludeAllUnits = false, bool onlyVisible = false, BattleUnit *excludeAllBut = 0);
+	int voxelCheck(Position voxel, BattleUnit *excludeUnit, bool excludeAllUnits = false, bool onlyVisible = false, BattleUnit *excludeAllBut = 0, int *smokeEncountered = 0);
 	/// Blows this tile up.
 	bool detonate(Tile* tile);
 	/// Validates a throwing action.
@@ -122,12 +130,14 @@ public:
 	void checkAdjacentDoors(const Position& pos, int part);
 	/// Creates a vector of units that can spot this unit.
 	std::vector<std::pair<BattleUnit *, int> > getSpottingUnits(BattleUnit* unit);
+	/// Creates a vector of units that are overwatching this unit.
+	std::vector<std::pair<BattleUnit *, int> > getOverwatchingUnits(BattleUnit* unit);
 	/// Given a vector of spotters, and a unit, picks the spotter with the highest reaction score.
-	BattleUnit* getReactor(std::vector<std::pair<BattleUnit *, int> > spotters, int &attackType, BattleUnit *unit);
+	BattleUnit* getReactor(const std::vector<std::pair<BattleUnit *, int> > &spotters, int &attackType, BattleUnit *unit, bool overwatch = false);
 	/// Checks validity of a snap shot to this position.
-	int determineReactionType(BattleUnit *unit, BattleUnit *target);
+	int determineReactionType(BattleUnit *unit, BattleUnit *target, bool overwatch, BattleItem *weapon = 0);
 	/// Tries to perform a reaction snap shot to this location.
-	bool tryReaction(BattleUnit *unit, BattleUnit *target, int attackType);
+	bool tryReaction(BattleUnit *unit, BattleUnit *target, int attackType, bool overwatch);
 	/// Recalculates FOV of all units in-game.
 	void recalculateFOV();
 	/// Get direction to a certain point
@@ -137,6 +147,8 @@ public:
 	/// mark a region of the map as "dangerous" for a turn.
 	void setDangerZone(const Position& pos, int radius, BattleUnit *unit);
 
+	void displayDamage(BattleUnit *attacker, BattleUnit *target, BattleActionType action, ItemDamageType type, int damage, int wounds, int additionalStun, const std::string &source = "");
+	void getTargetVoxel(BattleAction *action, const Position &target, Position &targetVoxel);
 };
 
 }

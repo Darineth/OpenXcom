@@ -33,6 +33,7 @@ struct TransferRow
 	int cost;
 	int qtySrc, qtyDst;
 	int amount;
+	bool needsResearch;
 };
 
 class Soldier;

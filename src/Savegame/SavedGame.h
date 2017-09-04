@@ -48,6 +48,7 @@ class AlienBase;
 class AlienStrategy;
 class AlienMission;
 class Target;
+class Role;
 class Soldier;
 class Craft;
 struct MissionStatistics;
@@ -126,6 +127,8 @@ private:
 	std::string _graphCountryToggles;
 	std::string _graphFinanceToggles;
 	std::vector<const RuleResearch*> _poppedResearch;
+	std::map<std::string, Role*> _roles;
+	Role *_defaultRole;
 	std::vector<Soldier*> _deadSoldiers;
 	size_t _selectedBase;
 	std::string _lastselectedArmor; //contains the last selected armour
@@ -135,7 +138,7 @@ private:
 public:
 	static const std::string AUTOSAVE_GEOSCAPE, AUTOSAVE_BATTLESCAPE, QUICKSAVE;
 	/// Creates a new saved game.
-	SavedGame();
+	SavedGame(const Mod *mod);
 	/// Cleans up the saved game.
 	~SavedGame();
 	/// Gets list of saves in the user directory.
@@ -316,6 +319,12 @@ public:
 	std::vector<MissionStatistics*> *getMissionStatistics();
 	/// Handles a soldier's death.
 	std::vector<Soldier*>::iterator killSoldier(Soldier *soldier, BattleUnitKills *cause = 0);
+	/// Gets the named role.
+	Role* getRole(const std::string &name) const;
+	/// Gets the default role.
+	Role* getDefaultRole() const;
+	/// Loads the roles from the ruleset.
+	void loadRoles(const Mod *rule);
 };
 
 }

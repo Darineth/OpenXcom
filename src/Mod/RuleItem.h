@@ -20,16 +20,18 @@
 #include <string>
 #include <vector>
 #include <yaml-cpp/yaml.h>
+#include "Unit.h"
 
 namespace OpenXcom
 {
 
-enum ItemDamageType { DT_NONE, DT_AP, DT_IN, DT_HE, DT_LASER, DT_PLASMA, DT_STUN, DT_MELEE, DT_ACID, DT_SMOKE };
-enum BattleType { BT_NONE, BT_FIREARM, BT_AMMO, BT_MELEE, BT_GRENADE, BT_PROXIMITYGRENADE, BT_MEDIKIT, BT_SCANNER, BT_MINDPROBE, BT_PSIAMP, BT_FLARE, BT_CORPSE };
+enum ItemDamageType { DT_NONE, DT_AP, DT_IN, DT_HE, DT_LASER, DT_PLASMA, DT_STUN, DT_MELEE, DT_ACID, DT_SMOKE, DT_PSYCHIC, DT_TELEPORT };
+enum BattleType { BT_NONE, BT_FIREARM, BT_AMMO, BT_MELEE, BT_GRENADE, BT_PROXIMITYGRENADE, BT_MEDIKIT, BT_SCANNER, BT_MINDPROBE, BT_PSIAMP, BT_FLARE, BT_CORPSE, BT_ARMOR, BT_EQUIPMENT };
 
 class SurfaceSet;
 class Surface;
 class Mod;
+class RuleInventory;
 
 /**
  * Represents a specific type of item.
@@ -49,8 +51,13 @@ private:
 	int _power;
 	std::vector<std::string> _compatibleAmmo;
 	ItemDamageType _damageType;
-	int _accuracyAuto, _accuracySnap, _accuracyAimed, _tuAuto, _tuSnap, _tuAimed;
+	int _baseAccuracy, _accuracyAuto, _accuracySnap, _accuracyAimed, _accuracyBurst, _tuAuto, _tuSnap, _tuAimed, _tuBurst;
 	int _clipSize, _accuracyMelee, _tuMelee;
+	int _accuracyShotgunSpread, _autoDelay;
+	int _aiRangeClose, _aiRangeMid, _aiRangeLong, _aiRangeMax;
+	std::vector<std::string> _aiAttackPriorityClose, _aiAttackPriorityMid, _aiAttackPriorityLong, _aiAttackPriorityMax;
+	int _overwatchModifier, _overwatchRadius, _overwatchRange;
+	std::string _overwatchShot;
 	BattleType _battleType;
 	bool _twoHanded, _fixedWeapon;
 	int _waypoints, _invWidth, _invHeight;
@@ -63,10 +70,22 @@ private:
 	bool _recover, _liveAlien;
 	int _blastRadius, _attraction;
 	bool _flatRate, _arcingShot;
-	int _listOrder, _maxRange, _aimRange, _snapRange, _autoRange, _minRange, _dropoff, _bulletSpeed, _explosionSpeed, _autoShots, _shotgunPellets;
+	int _listOrder, _maxRange, _aimRange, _snapRange, _autoRange, _burstRange, _minRange, _dropoff, _bulletSpeed, _explosionSpeed, _autoShots, _shotgunPellets, _burstShots;
 	std::string _zombieUnit;
 	bool _strengthApplied, _skillApplied, _LOSRequired, _underwaterOnly, _landOnly;
 	int _meleeSound, _meleePower, _meleeAnimation, _meleeHitSound, _specialType, _vaporColor, _vaporDensity, _vaporProbability;
+	int _kneelModifier, _reactionsModifier, _blastDropoff;
+	int _psiCostPanic, _psiCostMindControl, _psiCostClairvoyance, _psiCostMindBlast;
+	int _twoHandedModifier, _battleClipSize;
+	bool _vehicleItem;
+	UnitStats _stats, _statModifiers;
+	bool _hasStats;
+	int _frontArmor, _sideArmor, _rearArmor, _underArmor, _armorSide;
+	std::vector<std::string> _validSlots;
+	bool _checkValidSlots;
+	std::string _hitEffect;
+	std::string _equippedEffect;
+	int _ammoRegen;
 public:
 	/// Creates a blank item ruleset.
 	RuleItem(const std::string &type);
@@ -98,6 +117,8 @@ public:
 	int getHandSprite() const;
 	/// Gets if the item is two-handed.
 	bool isTwoHanded() const;
+	/// Gets the item's two-handed modifier.
+	int getTwoHandedModifier() const;
 	/// Gets if the item is fixed.
 	bool isFixed() const;
 	/// Gets if the item is a launcher.
@@ -112,20 +133,28 @@ public:
 	int getHitAnimation() const;
 	/// Gets the item's power.
 	int getPower() const;
+	/// Gets the item's base accuracy.
+	int getBaseAccuracy() const;
 	/// Gets the item's snapshot accuracy.
 	int getAccuracySnap() const;
 	/// Gets the item's autoshot accuracy.
 	int getAccuracyAuto() const;
 	/// Gets the item's aimed shot accuracy.
 	int getAccuracyAimed() const;
+	/// Gets the item's burstshot accuracy.
+	int getAccuracyBurst() const;
 	/// Gets the item's melee accuracy.
 	int getAccuracyMelee() const;
+	/// Gets the item's shotgun spread accuracy.
+	int getAccuracyShotgunSpread() const;
 	/// Gets the item's snapshot TU cost.
 	int getTUSnap() const;
 	/// Gets the item's autoshot TU cost.
 	int getTUAuto() const;
 	/// Gets the item's aimed shot TU cost.
 	int getTUAimed() const;
+	/// Gets the item's burstshot TU cost.
+	int getTUBurst() const;
 	/// Gets the item's melee TU cost.
 	int getTUMelee() const;
 	/// Gets list of compatible ammo.
@@ -140,8 +169,10 @@ public:
 	int getInventoryHeight() const;
 	/// Gets the ammo amount.
 	int getClipSize() const;
+	/// Gets the battlescape ammo amount.
+	int getBattleClipSize() const;
 	/// Draws the item's hand sprite onto a surface.
-	void drawHandSprite(SurfaceSet *texture, Surface *surface) const;
+	void drawHandSprite(SurfaceSet *texture, Surface *surface, int maxW = 0, int maxH = 0, bool utilitySlot = false) const;
 	/// Gets the medikit heal quantity.
 	int getHealQuantity() const;
 	/// Gets the medikit pain killer quantity.
@@ -184,6 +215,8 @@ public:
 	int getExplosionSpeed() const;
 	/// How many auto shots does this weapon fire.
 	int getAutoShots() const;
+	/// How many burst shots does this weapon fire.
+	int getBurstShots() const;
 	/// is this item a 2 handed weapon?
 	bool isRifle() const;
 	/// is this item a single handed weapon?
@@ -196,6 +229,8 @@ public:
 	int getSnapRange() const;
 	/// Get the max range of auto shots with this weapon.
 	int getAutoRange() const;
+	/// Get the max range of burst shots with this weapon.
+	int getBurstRange() const;
 	/// Get the minimum effective range of this weapon.
 	int getMinRange() const;
 	/// Get the accuracy dropoff of this weapon.
@@ -231,6 +266,57 @@ public:
 	/// Gets the vapor cloud probability.
 	int getVaporProbability() const;
 
+	/// Get the kneeling accuracy modifier for this weapon.
+	int getKneelModifier() const;
+	/// Get the reactions modifier for this weapon.
+	int getReactionsModifier() const;
+	/// Get the delay between auto fire shots.
+	int getAutoDelay() const;
+	/// Get the drop-off rate per tile for explosions from this ammo item.
+	int getExplosionDropoff() const;
+
+	int getAiRangeClose() const;
+	int getAiRangeMid() const;
+	int getAiRangeLong() const;
+	int getAiRangeMax() const;
+
+	const std::vector<std::string> getAiAttackPriorityClose() const;
+	const std::vector<std::string> getAiAttackPriorityMid() const;
+	const std::vector<std::string> getAiAttackPriorityLong() const;
+	const std::vector<std::string> getAiAttackPriorityMax() const;
+
+	int getOverwatchModifier() const;
+	int getOverwatchRadius() const;
+	int getOverwatchRange() const;
+	const std::string &getOverwatchShot() const;
+	bool isAmmo() const;
+
+	int getPsiCostPanic() const;
+	int getPsiCostMindControl() const;
+	int getPsiCostClairvoyance() const;
+	int getPsiCostMindBlast() const;
+
+	bool isVehicleItem() const;
+
+	bool hasStats() const;
+	UnitStats *getStats();
+	UnitStats *getStatModifiers();
+
+	/// Gets the front armor level.
+	int getFrontArmor() const;
+	/// Gets the side armor level.
+	int getSideArmor() const;
+	/// Gets the rear armor level.
+	int getRearArmor() const;
+	/// Gets the under armor level.
+	int getUnderArmor() const;
+	/// Gets the ammo regen per turn.
+	int getAmmoRegen() const;
+
+	bool isValidSlot(const RuleInventory* slot) const;
+
+	const std::string &getHitEffect() const;
+	const std::string &getEquippedEffect() const;
 };
 
 }

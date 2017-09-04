@@ -95,7 +95,18 @@ StoresState::StoresState(Base *base) : _base(base)
 			std::wostringstream ss, ss2;
 			ss << qty;
 			ss2 << qty * rule->getSize();
-			_lstStores->addRow(3, tr(*i).c_str(), ss.str().c_str(), ss2.str().c_str());
+			std::wstring itemName = tr(*i);
+			if (rule->getBattleType() == BT_AMMO || (rule->getBattleType() == BT_NONE && rule->getClipSize() > 0))
+			{
+				//itemName.append(L"(x" + std::to_wstring((long long)rule->getClipSize()) + L")");
+				itemName = tr("STR_AMMO_COUNT_", rule->getClipSize()).arg(itemName);
+
+				_lstStores->addRow(3, itemName.c_str(), ss.str().c_str(), ss2.str().c_str());
+			}
+			else
+			{
+				_lstStores->addRow(3, tr(*i).c_str(), ss.str().c_str(), ss2.str().c_str());
+			}
 		}
 	}
 }

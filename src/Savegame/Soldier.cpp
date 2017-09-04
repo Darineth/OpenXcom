@@ -29,6 +29,9 @@
 #include "../Mod/Armor.h"
 #include "../Mod/Mod.h"
 #include "../Mod/StatString.h"
+#include "../Interface/Text.h"
+#include "SavedGame.h"
+#include "Role.h"
 
 namespace OpenXcom
 {
@@ -39,7 +42,7 @@ namespace OpenXcom
  * @param armor Soldier armor.
  * @param id Unique soldier id for soldier generation.
  */
-Soldier::Soldier(RuleSoldier *rules, Armor *armor, int id) : _id(id), _improvement(0), _psiStrImprovement(0), _rules(rules), _rank(RANK_ROOKIE), _craft(0), _gender(GENDER_MALE), _look(LOOK_BLONDE), _missions(0), _kills(0), _recovery(0), _recentlyPromoted(false), _psiTraining(false), _armor(armor), _death(0), _diary(new SoldierDiary())
+Soldier::Soldier(RuleSoldier *rules, SavedGame *save, Armor *armor, int id, Language *lang, int vehicleId) : _id(id), _improvement(0), _psiStrImprovement(0), _rules(rules), _rank(RANK_ROOKIE), _craft(0), _gender(GENDER_MALE), _look(LOOK_BLONDE), _missions(0), _kills(0), _recovery(0), _recentlyPromoted(false), _psiTraining(false), _armor(armor), _death(0), _diary(new SoldierDiary()), _initialStats(), _equipmentLayout(), _role(save->getDefaultRole()), _isVehicle(rules->isVehicle()), _vehicleId(vehicleId), _type(rules->getType()), _inventoryLayout(rules->getInventoryLayout()), _armorColor("STR_NONE"), _experience(0), _level(0), _talentPoints(0), _spentTalentPoints(0)
 {
 	if (id != 0)
 	{
@@ -61,7 +64,17 @@ Soldier::Soldier(RuleSoldier *rules, Armor *armor, int id) : _id(id), _improveme
 		_currentStats = _initialStats;
 
 		const std::vector<SoldierNamePool*> &names = rules->getNames();
-		if (!names.empty())
+
+		if (_isVehicle)
+		{
+			std::wostringstream ss;
+			ss << lang->getString(rules->getType()) << "-" << _vehicleId;
+			_name = ss.str();
+			_gender = GENDER_MALE;
+			_look = LOOK_BROWNHAIR;
+			_rank = RANK_NONE;
+		}
+		else if (!names.empty())
 		{
 			size_t nationality = RNG::generate(0, names.size() - 1);
 			_name = names.at(nationality)->genName(&_gender, rules->getFemaleFrequency());
@@ -75,6 +88,8 @@ Soldier::Soldier(RuleSoldier *rules, Armor *armor, int id) : _id(id), _improveme
 			_name = (_gender == GENDER_FEMALE) ? L"Jane" : L"John";
 			_name += L" Doe";
 		}
+
+		deriveLevel();
 	}
 }
 
@@ -100,6 +115,8 @@ Soldier::~Soldier()
 void Soldier::load(const YAML::Node& node, const Mod *mod, SavedGame *save)
 {
 	_id = node["id"].as<int>(_id);
+	_type = node["type"].as<std::string>(_rules->getType());
+	_vehicleId = node["vehicleId"].as<int>(_vehicleId);
 	_name = Language::utf8ToWstr(node["name"].as<std::string>());
 	_initialStats = node["initialStats"].as<UnitStats>(_initialStats);
 	_currentStats = node["currentStats"].as<UnitStats>(_currentStats);
@@ -144,6 +161,27 @@ void Soldier::load(const YAML::Node& node, const Mod *mod, SavedGame *save)
 		_diary->load(node["diary"]);
 	}
 	calcStatString(mod->getStatStrings(), (Options::psiStrengthEval && save->isResearched(mod->getPsiRequirements())));
+
+	if(const YAML::Node &role = node["role"])
+	{
+		_role = save->getRole(role.as<std::string>());
+	}
+
+	if(!_role)
+	{
+		_role = save->getDefaultRole();
+	}
+
+	_isVehicle = node["isVehicle"].as<bool>(_isVehicle);
+	_armorColor = node["armorColor"].as<std::string>(_armorColor);
+
+	_experience = node["experience"].as<int>(_experience);
+	_level = node["level"].as<int>(_level);
+	_talentPoints = node["talentPoints"].as<int>(_talentPoints);
+	_spentTalentPoints = node["spentTalentPoints"].as<int>(_spentTalentPoints);
+
+	deriveLevel();
+	calcStatString(mod->getStatStrings(), (Options::psiStrengthEval && save->isResearched(mod->getPsiRequirements())));
 }
 
 /**
@@ -155,6 +193,8 @@ YAML::Node Soldier::save() const
 	YAML::Node node;
 	node["type"] = _rules->getType();
 	node["id"] = _id;
+	node["type"] = _type;
+	node["vehicleId"] = _vehicleId;
 	node["name"] = Language::wstrToUtf8(_name);
 	node["initialStats"] = _initialStats;
 	node["currentStats"] = _currentStats;
@@ -187,6 +227,18 @@ YAML::Node Soldier::save() const
 	{
 		node["diary"] = _diary->save();
 	}
+
+	if(_role)
+	{
+		node["role"] = _role->getName();
+	}
+	node["isVehicle"] = _isVehicle;
+	node["armorColor"] = _armorColor;
+
+	node["experience"] = _experience;
+	node["level"] = _level;
+	node["talentPoints"] = _talentPoints;
+	node["spentTalentPoints"] = _spentTalentPoints;
 
 	return node;
 }
@@ -256,6 +308,7 @@ std::wstring Soldier::getCraftString(Language *lang) const
 	if (_recovery > 0)
 	{
 		s = lang->getString("STR_WOUNDED");
+		s = s.append(L": ").append(Text::formatNumber(_recovery));
 	}
 	else if (_craft == 0)
 	{
@@ -290,7 +343,7 @@ std::string Soldier::getRankString() const
 	case RANK_COMMANDER:
 		return "STR_COMMANDER";
 	default:
-		return "";
+		return isVehicle() ? _type : "";
 	}
 }
 
@@ -304,7 +357,6 @@ int Soldier::getRankSprite() const
 {
 	return 42 + _rank;
 }
-
 
 /**
  * Returns the soldier's military rank.
@@ -642,7 +694,149 @@ SoldierDiary *Soldier::getDiary()
  */
 void Soldier::calcStatString(const std::vector<StatString *> &statStrings, bool psiStrengthEval)
 {
-	_statString = StatString::calcStatString(_currentStats, statStrings, psiStrengthEval, _psiTraining);
+	_statString = StatString::calcStatString(_currentStats, statStrings, psiStrengthEval && !_isVehicle, _psiTraining);
 }
 
+/**
+ * Sets the soldier's role.
+ * @param The new role for the soldier.
+ */
+void Soldier::setRole(Role *role)
+{
+	_role = role;
+}
+
+/**
+ * Gets the soldier's role.
+ * @return The soldier's current role.
+ */
+Role *Soldier::getRole() const
+{
+	return _role;
+}
+
+/**
+ * Gets if the soldier is a vehicle.
+ * @return If the soldier is a vehicle.
+ */
+bool Soldier::isVehicle() const
+{
+	return _isVehicle;
+}
+
+int Soldier::getSize() const
+{
+	int size = _armor ? _armor->getSize() : 1;
+	return size * size;
+}
+
+const std::string &Soldier::getInventoryLayout() const
+{
+	return _inventoryLayout;
+}
+
+const std::string &Soldier::getArmorColor() const
+{
+	return _armorColor;
+}
+
+void Soldier::setArmorColor(const std::string &color)
+{
+	_armorColor = color;
+}
+
+bool Soldier::deriveLevel()
+{
+	if (_rules->getMaxLevel())
+	{
+		if (!_level) { _level = 1; }
+
+		int newLevel = 1;
+
+		for (auto ii = _rules->getLevelExperience().cbegin(); ii != _rules->getLevelExperience().cend(); ++ii)
+		{
+			if (_experience >= (*ii))
+			{
+				++newLevel;
+			}
+			else
+			{
+				break;
+			}
+		}
+
+		if (_level != newLevel)
+		{
+			int levelChange = newLevel - _level;
+			_talentPoints += levelChange;
+			_level = newLevel;
+			return true;
+		}
+	}
+	else
+	{
+		_level = 0;
+		_talentPoints = 0;
+		_spentTalentPoints = 0;
+	}
+
+	return false;
+}
+
+int Soldier::getExperience() const
+{
+	return _experience;
+}
+
+int Soldier::getNextLevelExperience() const
+{
+	if (int maxLevel =_rules->getMaxLevel())
+	{
+		int level = _level;
+
+		if (_level < maxLevel)
+		{
+			return _rules->getLevelExperience()[level - 1];
+		}
+		else
+		{
+			return _rules->getLevelExperience()[maxLevel - 1];
+		}
+	}
+
+	return 0;
+}
+
+bool Soldier::addExperience(int experience)
+{
+	if (_rules->getMaxLevel())
+	{
+		_experience += experience;
+		return deriveLevel();
+	}
+
+	return false;
+}
+
+int Soldier::getLevel() const
+{
+	return _level;
+}
+
+int Soldier::getTalentPoints() const
+{
+	return _talentPoints;
+}
+
+bool Soldier::spendTalentPoints(int points)
+{
+	if (points <= _talentPoints)
+	{
+		_talentPoints -= points;
+		_spentTalentPoints += points;
+		return true;
+	}
+
+	return false;
+}
 }

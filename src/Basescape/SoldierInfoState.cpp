@@ -38,12 +38,23 @@
 #include "../Engine/SurfaceSet.h"
 #include "../Mod/Armor.h"
 #include "../Menu/ErrorMessageState.h"
+#include "../Mod/RuleRole.h"
+#include "../Savegame/Role.h"
+#include "../Battlescape/InventoryState.h"
+#include "../Savegame/SavedBattleGame.h"
+#include "../Battlescape/BattlescapeGenerator.h"
+#include "../Interface/Cursor.h"
+#include "../Interface/FpsCounter.h"
+#include "../Savegame/BattleUnit.h"
 #include "SellState.h"
 #include "SoldierArmorState.h"
 #include "SackSoldierState.h"
 #include "../Mod/RuleInterface.h"
 #include "../Mod/RuleSoldier.h"
 #include "../Savegame/SoldierDeath.h"
+#include "../Savegame/EquipmentLayoutItem.h"
+#include "../Mod/RuleInventory.h"
+#include "../Interface/BattlescapeButton.h"
 
 namespace OpenXcom
 {
@@ -75,20 +86,25 @@ SoldierInfoState::SoldierInfoState(Base *base, size_t soldierId) : _base(base), 
 
 	// Create objects
 	_bg = new Surface(320, 200, 0, 0);
-	_rank = new Surface(26, 23, 4, 4);
-	_btnPrev = new TextButton(28, 14, 0, 33);
-	_btnOk = new TextButton(48, 14, 30, 33);
-	_btnNext = new TextButton(28, 14, 80, 33);
-	_btnArmor = new TextButton(110, 14, 130, 33);
-	_edtSoldier = new TextEdit(this, 210, 16, 40, 9);
-	_btnSack = new TextButton(60, 14, 260, 33);
-	_btnDiary = new TextButton(60, 14, 260, 48);
-	_txtRank = new Text(130, 9, 0, 48);
-	_txtMissions = new Text(100, 9, 130, 48);
-	_txtKills = new Text(100, 9, 200, 48);
-	_txtCraft = new Text(130, 9, 0, 56);
-	_txtRecovery = new Text(180, 9, 130, 56);
-	_txtPsionic = new Text(150, 9, 0, 66);
+	_btnRank = new BattlescapeButton(26, 23, 4, 4);
+	_btnRole = new BattlescapeButton(26, 23, 35, 4);
+	//_edtSoldier = new TextEdit(this, 210, 16, 40, 9);
+	_txtRank = new Text(130, 9, 61, 4);
+	_edtSoldier = new TextEdit(this, 180, 16, 61, 12);
+	_btnPrev = new TextButton(20, 14, 0, 31);
+	_btnOk = new TextButton(48, 14, 21, 31);
+	_btnNext = new TextButton(20, 14, 70, 31);
+	_btnDiary = new TextButton(70, 14, 91, 31);
+	_btnArmor = new TextButton(110, 14, 161, 31);
+	_btnSack = new TextButton(47, 14, 273, 31);
+	_txtLevel = new Text(100, 9, 0, 59);
+	_txtExperience = new Text(100, 9, 0, 68);
+	_txtMissions = new Text(100, 9, 91, 59);
+	_txtKills = new Text(100, 9, 191, 59);
+	_btnCraft = new TextButton(90, 14, 0, 45);
+	_btnInventory = new TextButton(70, 14, 91, 45);
+	_txtRecovery = new Text(180, 9, 130, 61);
+	_txtPsionic = new Text(150, 9, 0, 69);
 	_txtDead = new Text(150, 9, 130, 33);
 
 	int yPos = 80;
@@ -152,18 +168,22 @@ SoldierInfoState::SoldierInfoState(Base *base, size_t soldierId) : _base(base), 
 	setInterface("soldierInfo");
 
 	add(_bg);
-	add(_rank);
+	add(_btnRank);
+	add(_btnRole);
 	add(_btnOk, "button", "soldierInfo");
 	add(_btnPrev, "button", "soldierInfo");
 	add(_btnNext, "button", "soldierInfo");
 	add(_btnArmor, "button", "soldierInfo");
+	add(_btnInventory, "button", "soldierInfo");
 	add(_edtSoldier, "text1", "soldierInfo");
 	add(_btnSack, "button", "soldierInfo");
 	add(_btnDiary, "button", "soldierInfo");
 	add(_txtRank, "text1", "soldierInfo");
 	add(_txtMissions, "text1", "soldierInfo");
+	add(_txtLevel, "text1", "soldierInfo");
+	add(_txtExperience, "text1", "soldierInfo");
 	add(_txtKills, "text1", "soldierInfo");
-	add(_txtCraft, "text1", "soldierInfo");
+	add(_btnCraft, "button", "soldierInfo");
 	add(_txtRecovery, "text1", "soldierInfo");
 	add(_txtPsionic, "text2", "soldierInfo");
 	add(_txtDead, "text2", "soldierInfo");
@@ -248,6 +268,8 @@ SoldierInfoState::SoldierInfoState(Base *base, size_t soldierId) : _base(base), 
 	_btnArmor->setText(tr("STR_ARMOR"));
 	_btnArmor->onMouseClick((ActionHandler)&SoldierInfoState::btnArmorClick);
 
+	_btnInventory->setText(tr("STR_INVENTORY_UC"));
+	_btnInventory->onMouseClick((ActionHandler)&SoldierInfoState::btnInventoryClick);
 	_edtSoldier->setBig();
 	_edtSoldier->onChange((ActionHandler)&SoldierInfoState::edtSoldierChange);
 	_edtSoldier->onMousePress((ActionHandler)&SoldierInfoState::edtSoldierPress);
@@ -257,6 +279,8 @@ SoldierInfoState::SoldierInfoState(Base *base, size_t soldierId) : _base(base), 
 
 	_btnDiary->setText(tr("STR_DIARY"));
 	_btnDiary->onMouseClick((ActionHandler)&SoldierInfoState::btnDiaryClick);
+	
+	_btnCraft->onMouseClick((ActionHandler)&SoldierInfoState::btnCraftClick);
 
 	_txtPsionic->setText(tr("STR_IN_PSIONIC_TRAINING"));
 
@@ -320,6 +344,7 @@ SoldierInfoState::~SoldierInfoState()
 void SoldierInfoState::init()
 {
 	State::init();
+
 	if (_list->empty())
 	{
 		_game->popState();
@@ -330,18 +355,73 @@ void SoldierInfoState::init()
 		_soldierId = 0;
 	}
 	_soldier = _list->at(_soldierId);
+
+	if (_soldier->getCraft() && _soldier->getCraft()->getStatus() != "STR_OUT")
+	{
+		_soldier->getCraft()->setInBattlescape(false);
+		_game->getSavedGame()->setBattleGame(0);
+	}
+
 	_edtSoldier->setBig();
 	_edtSoldier->setText(_soldier->getName());
 	UnitStats *initial = _soldier->getInitStats();
 	UnitStats *current = _soldier->getCurrentStats();
 
+	/*if(_soldier->isVehicle() && _soldier->getArmor()->getIsVehicleItem())
+	{
+		current = _soldier->getArmor()->getStats();
+	}*/
+
 	UnitStats withArmor(*current);
+
+	UnitStats modifiers(*_soldier->getArmor()->getStatModifiers());
+
 	withArmor += *(_soldier->getArmor()->getStats());
 
-	SurfaceSet *texture = _game->getMod()->getSurfaceSet("BASEBITS.PCK");
-	texture->getFrame(_soldier->getRankSprite())->setX(0);
-	texture->getFrame(_soldier->getRankSprite())->setY(0);
-	texture->getFrame(_soldier->getRankSprite())->blit(_rank);
+	std::vector<EquipmentLayoutItem*> *inventory = _soldier->getEquipmentLayout();
+	Mod *mod = _game->getMod();
+	if(inventory && inventory->size())
+	{
+		for(std::vector<EquipmentLayoutItem*>::const_iterator ii = inventory->begin(); ii != inventory->end(); ++ii)
+		{
+			EquipmentLayoutItem *item = *ii;
+			RuleInventory *slot = mod->getInventory(item->getSlot());
+			if(slot && slot->getCountStats())
+			{
+				RuleItem *rule = mod->getItem(item->getItemType());
+				if(rule->hasStats())
+				{
+					withArmor += *rule->getStats();
+					modifiers += *rule->getStatModifiers();
+				}
+			}
+		}
+	}
+
+	withArmor *= modifiers;
+
+	if(!_soldier->isVehicle())
+	{
+		SurfaceSet *texture = _game->getMod()->getSurfaceSet("BASEBITS.PCK");
+		texture->getFrame(_soldier->getRankSprite())->setX(0);
+		texture->getFrame(_soldier->getRankSprite())->setY(0);
+		texture->getFrame(_soldier->getRankSprite())->blit(_btnRank);
+
+		if (Role *role = _soldier->getRole())
+		{
+			_btnRole->setVisible(true);
+			_game->getMod()->getSurface(role->getRules()->getIconSprite())->blit(_btnRole);
+		}
+		else
+		{
+			_btnRole->clear();
+		}
+	}
+	else
+	{
+		_btnRank->clear();
+		_btnRole->clear();
+	}
 
 	std::wostringstream ss;
 	ss << withArmor.tu;
@@ -418,25 +498,43 @@ void SoldierInfoState::init()
 	}
 
 	_btnArmor->setText(wsArmor);
+	_btnArmor->setVisible(!_soldier->isVehicle());
 
 	_btnSack->setVisible(_game->getSavedGame()->getMonthsPassed() > -1 && !(_soldier->getCraft() && _soldier->getCraft()->getStatus() == "STR_OUT"));
-
-	_txtRank->setText(tr("STR_RANK_").arg(tr(_soldier->getRankString())));
-
-	_txtMissions->setText(tr("STR_MISSIONS").arg(_soldier->getMissions()));
-
-	_txtKills->setText(tr("STR_KILLS").arg(_soldier->getKills()));
 
 	std::wstring craft;
 	if (_soldier->getCraft() == 0)
 	{
-		craft = tr("STR_NONE_UC");
+		craft = tr("STR_NO_CRAFT");
+		_btnInventory->setVisible(false);
 	}
 	else
 	{
 		craft = _soldier->getCraft()->getName(_game->getLanguage());
+		_btnInventory->setVisible(_soldier->getCraft()->getStatus() != "STR_OUT");
 	}
-	_txtCraft->setText(tr("STR_CRAFT_").arg(craft));
+	_btnCraft->setVisible(!(_soldier->getCraft() && _soldier->getCraft()->getStatus() == "STR_OUT"));
+	_btnCraft->setText(craft);
+
+	_txtRank->setText(tr("STR_RANK_").arg(tr(_soldier->getRankString())));
+
+	if (_soldier->getRules()->getMaxLevel())
+	{
+		_txtLevel->setVisible(true);
+		_txtExperience->setVisible(true);
+		_txtLevel->setText(tr("STR_LEVEL_").arg(_soldier->getLevel()));
+		_txtExperience->setText(tr("STR_EXP_").arg(_soldier->getExperience()).arg(_soldier->getNextLevelExperience()));
+	}
+	else
+	{
+		_txtLevel->setVisible(false);
+		_txtExperience->setVisible(false);
+	}
+
+	_txtMissions->setText(tr("STR_MISSIONS").arg(_soldier->getMissions()));
+
+	_txtKills->setText(tr("STR_KILLS").arg(_soldier->getKills()));
+	//_txtRole->setText(tr("STR_ROLE_").arg(tr(_soldier->getRole() ? _soldier->getRole()->getName() : "STR_ROLE_NONE")));
 
 	if (_soldier->getWoundRecovery() > 0)
 	{
@@ -492,9 +590,10 @@ void SoldierInfoState::init()
 	// Dead can't talk
 	if (_base == 0)
 	{
+		_btnInventory->setVisible(false);
 		_btnArmor->setVisible(false);
 		_btnSack->setVisible(false);
-		_txtCraft->setVisible(false);
+		_btnCraft->setVisible(false);
 		_txtDead->setVisible(true);
 		if (_soldier->getDeath() && _soldier->getDeath()->getCause())
 		{
@@ -584,6 +683,41 @@ void SoldierInfoState::btnNextClick(Action *)
  * Shows the Select Armor window.
  * @param action Pointer to an action.
  */
+void SoldierInfoState::btnInventoryClick(Action *)
+{
+	if (_soldier->getCraft() && _soldier->getCraft()->getStatus() != "STR_OUT")
+	{
+		SavedBattleGame *bgame = new SavedBattleGame();
+		_game->getSavedGame()->setBattleGame(bgame);
+
+		BattlescapeGenerator bgen = BattlescapeGenerator(_game);
+		bgen.runInventory(_soldier->getCraft());
+
+		std::vector<BattleUnit*> *units = bgame->getUnits();
+
+		for(std::vector<BattleUnit*>::const_iterator ii = units->begin(); ii != units->end(); ++ii)
+		{
+			Soldier *ss = _game->getSavedGame()->getSoldier((*ii)->getId());
+			if(ss == _soldier)
+			{
+				bgame->setSelectedUnit(*ii);
+				break;
+			}
+		}
+
+		// Fix system colors
+		//_game->getCursor()->setColor(Palette::blockOffset(9));
+		//_game->getFpsCounter()->setColor(Palette::blockOffset(9));
+
+		//_game->getScreen()->clear();
+		_game->pushState(new InventoryState(false, 0));
+	}
+}
+
+/**
+ * Shows the Select Armor window.
+ * @param action Pointer to an action.
+ */
 void SoldierInfoState::btnArmorClick(Action *)
 {
 	if (!_soldier->getCraft() || (_soldier->getCraft() && _soldier->getCraft()->getStatus() != "STR_OUT"))
@@ -608,6 +742,53 @@ void SoldierInfoState::btnSackClick(Action *)
 void SoldierInfoState::btnDiaryClick(Action *)
 {
 	_game->pushState(new SoldierDiaryOverviewState(_base, _soldierId, this));
+}
+
+/// Handler for clicking the Craft button.
+void SoldierInfoState::btnCraftClick(Action *action)
+{
+	std::vector<Craft*>::const_iterator cc = std::find(_base->getCrafts()->begin(), _base->getCrafts()->end(), _soldier->getCraft());
+	
+	if (cc == _base->getCrafts()->end())
+	{
+		cc = _base->getCrafts()->begin();
+	}
+	else
+	{
+		++cc;
+	}
+
+	Craft *newCraft = 0;
+
+	for (; cc != _base->getCrafts()->end(); ++cc)
+	{
+		if ((*cc)->getSpaceAvailable() >= _soldier->getSize())
+		{
+			newCraft = *cc;
+			break;
+		}
+	}
+	
+	_soldier->setCraft(newCraft);
+
+	init();
+}
+
+/// Handler for clicking the Rank button.
+void SoldierInfoState::btnRankClick(Action *action)
+{
+}
+
+/// Handler for clicking the Role button.
+void SoldierInfoState::btnRoleClick(Action *action)
+{
+	if (action->isMouseAction() && action->getDetails()->button.button == SDL_BUTTON_LEFT)
+	{
+		/*if (!_tu)
+		{
+			_game->pushState(new RoleMenuState(this));
+		}*/
+	}
 }
 
 }

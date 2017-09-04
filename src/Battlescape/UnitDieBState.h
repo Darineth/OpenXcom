@@ -52,6 +52,8 @@ public:
 	void convertUnitToCorpse();
 	/// Plays the death sound.
 	void playDeathSound();
+	/// Returns the dying unit.
+	BattleUnit* getUnit() const { return _unit; }
 };
 
 }

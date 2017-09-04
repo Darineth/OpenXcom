@@ -32,6 +32,16 @@ class Globe;
 class Craft;
 class Target;
 
+
+struct CraftSorter
+{
+	Target *_target;
+
+	CraftSorter(Target *target);
+
+	bool operator() (Craft *c1, Craft *c2);
+};
+
 /**
  * Intercept window that lets the player launch
  * crafts into missions from the Geoscape.

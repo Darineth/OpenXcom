@@ -27,9 +27,13 @@
 #include "../Engine/Options.h"
 #include "../Mod/Mod.h"
 #include "../Mod/RuleManufacture.h"
+#include "../Mod/RuleItem.h"
 #include "../Savegame/SavedGame.h"
 #include "../Savegame/Base.h"
+#include "../Savegame/Production.h"
 #include "ManufactureStartState.h"
+#include "../Menu/ErrorMessageState.h"
+#include "../Mod/RuleInterface.h"
 
 namespace OpenXcom
 {
@@ -78,7 +82,8 @@ NewManufactureListState::NewManufactureListState(Base *base) : _base(base)
 	_lstManufacture->setSelectable(true);
 	_lstManufacture->setBackground(_window);
 	_lstManufacture->setMargin(2);
-	_lstManufacture->onMouseClick((ActionHandler)&NewManufactureListState::lstProdClick);
+	_lstManufacture->onMouseClick((ActionHandler)&NewManufactureListState::lstProdClick, SDL_BUTTON_LEFT);
+	_lstManufacture->onMouseClick((ActionHandler)&NewManufactureListState::lstProdRClick, SDL_BUTTON_RIGHT);
 
 	_btnOk->setText(tr("STR_OK"));
 	_btnOk->onMouseClick((ActionHandler)&NewManufactureListState::btnOkClick);
@@ -147,6 +152,56 @@ void NewManufactureListState::lstProdClick(Action *)
 }
 
 /**
+* Instantly queues up one production order for the item.
+* @param action A pointer to an Action.
+*/
+void NewManufactureListState::lstProdRClick(Action* action)
+{
+	RuleManufacture *rule = 0;
+	for (std::vector<RuleManufacture *>::iterator it = _possibleProductions.begin(); it != _possibleProductions.end(); ++it)
+	{
+		if ((*it)->getName() == _displayedStrings[_lstManufacture->getSelectedRow()])
+		{
+			rule = (*it);
+			break;
+		}
+	}
+	
+	int availableEngineers = _base->getAvailableEngineers();
+	int availableWorkspace = _base->getFreeWorkshops();
+	int itemWorkspace = rule->getRequiredSpace();
+
+	/*if (itemWorkspace > availableWorkspace)
+	{
+		_game->pushState(new ErrorMessageState(tr("STR_NOT_ENOUGH_WORK_SPACE"), _palette, _game->getMod()->getInterface("basescape")->getElement("errorMessage")->color, "BACK17.SCR", _game->getMod()->getInterface("basescape")->getElement("errorPalette")->color));
+		return;
+	}*/
+
+	int addedEngineers = (availableWorkspace - itemWorkspace - availableEngineers) >= 0 ? availableEngineers : availableWorkspace - itemWorkspace;
+	addedEngineers = std::max(addedEngineers, 0);
+
+	bool existingProduction = false;
+	std::vector<Production *> &Productions = _base->getProductions();
+	for (std::vector<Production *>::iterator it = Productions.begin(); it != Productions.end(); ++it)
+	{
+		if ((*it)->getRules()->getName() == rule->getName())
+		{	//Add to the existing production item if one exists
+			(*it)->setAmountTotal((*it)->getAmountTotal() + 1);
+			(*it)->setAssignedEngineers((*it)->getAssignedEngineers() + addedEngineers);
+			_base->setEngineers(_base->getEngineers() - addedEngineers);
+			existingProduction = true;
+		}
+	}
+	if (!existingProduction)
+	{	//Otherwise, add a new production item.
+		Production* prod = new Production(rule, 1);
+		prod->setAssignedEngineers(prod->getAssignedEngineers() + addedEngineers);
+		_base->addProduction(prod);
+		_base->setEngineers(_base->getEngineers() - addedEngineers);
+	}
+}
+
+/**
  * Updates the production list to match the category filter
  */
 
@@ -165,12 +220,54 @@ void NewManufactureListState::fillProductionList()
 	_game->getSavedGame()->getAvailableProductions(_possibleProductions, _game->getMod(), _base);
 	_displayedStrings.clear();
 
+	Mod *mod = _game->getMod();
+	bool singleItem = false;
+	std::string singleItemId;
+
 	for (std::vector<RuleManufacture *>::iterator it = _possibleProductions.begin(); it != _possibleProductions.end(); ++it)
 	{
 		if (((*it)->getCategory() == _catStrings[_cbxCategory->getSelected()]) || (_catStrings[_cbxCategory->getSelected()] == "STR_ALL_ITEMS"))
 		{
-			_lstManufacture->addRow(2, tr((*it)->getName()).c_str(), tr((*it)->getCategory()).c_str());
+			if ((*it)->getCategory() == "STR_AMMUNITION" || (*it)->getCategory() == "STR_CRAFT_AMMUNITION" || (*it)->getCategory() == "STR_HWP_AMMO")
+			{
+				const std::map<std::string, int> &producedItems = *it ? (*it)->getProducedItems() : (*it)->getProducedItems();
+				for (std::map<std::string, int>::const_iterator ii = producedItems.begin(); ii != producedItems.end(); ++ii)
+				{
+					RuleItem* item = mod->getItem(ii->first);
+					if (item)
+					{
+						if (singleItem)
+						{
+							singleItem = false;
+							break;
+						}
+						else if (singleItemId.size() == 0)
+						{
+							singleItem = true;
+							singleItemId = ii->first;
+							break;
+						}
+					}
+				}
+			}
+
+			std::wstring itemName = tr((*it)->getName());
+			if (singleItem)
+			{
+				RuleItem *rule = _game->getMod()->getItem(singleItemId);
+				itemName = tr(singleItemId);
+
+				if (rule->getBattleType() == BT_AMMO || (rule->getBattleType() == BT_NONE && rule->getClipSize() > 0))
+				{
+					//itemName.append(L"(x" + std::to_wstring((long long)(std::max(1, rule->getClipSize()))) + L")");
+					itemName = tr("STR_AMMO_COUNT_", rule->getClipSize()).arg(itemName);
+				}
+			}
+			_lstManufacture->addRow(2, itemName.c_str(), tr((*it)->getCategory()).c_str());
+
 			_displayedStrings.push_back((*it)->getName());
+			singleItem = false;
+			singleItemId = "";
 		}
 	}
 }

@@ -110,6 +110,46 @@ std::wstring Text::formatPercentage(int value)
 }
 
 /**
+ * Formats an integer value as percentage, replacing zero with -.
+ */
+std::wstring Text::formatPercentageModifier(int value)
+{
+	if(!value)
+	{
+		return L"-";
+	}
+	std::wostringstream ss;
+	ss << value << "%";
+	return ss.str();
+}
+
+/**
+ * Formats an integer value as number, replacing zero with -.
+ */
+std::wstring Text::formatModifier(int value)
+{
+	if(!value)
+	{
+		return L"-";
+	}
+	std::wostringstream ss;
+	ss << value;
+	return ss.str();
+}
+
+std::wstring Text::formatStatModifier(int value, int modifier)
+{
+	if (modifier)
+	{
+		return formatPercentageModifier(modifier);
+	}
+	else
+	{
+	   	return formatModifier(value);
+	}
+}
+
+/**
  * Changes the text to use the big-size font.
  */
 void Text::setBig()
@@ -163,7 +203,7 @@ void Text::setText(const std::wstring &text)
 	_text = text;
 	processText();
 	// If big text won't fit the space, try small text
-	if (_font == _big && (getTextWidth() > getWidth() || getTextHeight() > getHeight()) && _text[_text.size()-1] != L'.')
+	if (_font == _big && (getTextWidth() > getWidth() || getTextHeight() > getHeight()) && _text.size() && _text[_text.size()-1] != L'.')
 	{
 		setSmall();
 	}

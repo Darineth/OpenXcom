@@ -48,7 +48,7 @@ Tile::SerializationKey Tile::serializationKey =
  * constructor
  * @param pos Position.
  */
-Tile::Tile(Position pos): _smoke(0), _fire(0), _explosive(0), _explosiveType(0), _pos(pos), _unit(0), _animationOffset(0), _markerColor(0), _visible(false), _preview(-1), _TUMarker(-1), _overlaps(0), _danger(false)
+Tile::Tile(Position pos) : _smoke(0), _fire(0), _explosive(0), _explosiveType(0), _pos(pos), _unit(0), _animationOffset(0), _markerColor(0), _visible(false), _preview(-1), _TUMarker(-1), _overlaps(0), _danger(false), _knownHiddenUnit(false), _nightVision(0)
 {
 	for (int i = 0; i < 4; ++i)
 	{
@@ -334,7 +334,7 @@ int Tile::getFootstepSound(Tile *tileBelow) const
  * @param reserve
  * @return a value: 0(normal door), 1(ufo door) or -1 if no door opened or 3 if ufo door(=animated) is still opening 4 if not enough TUs
  */
-int Tile::openDoor(int part, BattleUnit *unit, BattleActionType reserve)
+int Tile::openDoor(SavedBattleGame *game, int part, BattleUnit *unit, BattleActionType reserve)
 {
 	if (!_objects[part]) return -1;
 
@@ -347,6 +347,10 @@ int Tile::openDoor(int part, BattleUnit *unit, BattleActionType reserve)
 		setMapData(_objects[part]->getDataset()->getObjects()->at(_objects[part]->getAltMCD()), _objects[part]->getAltMCD(), _mapDataSetID[part],
 				   _objects[part]->getDataset()->getObjects()->at(_objects[part]->getAltMCD())->getObjectType());
 		setMapData(0, -1, -1, part);
+		if (unit)
+		{
+			unit->cancelEffects(ECT_ACTIVATE);
+		}
 		return 0;
 	}
 	if (_objects[part]->isUFODoor() && _currentFrame[part] == 0) // ufo door part 0 - door is closed
@@ -354,10 +358,15 @@ int Tile::openDoor(int part, BattleUnit *unit, BattleActionType reserve)
 		if (unit &&	unit->getTimeUnits() < _objects[part]->getTUCost(unit->getMovementType()) + unit->getActionTUs(reserve, unit->getMainHandWeapon(false)))
 			return 4;
 		_currentFrame[part] = 1; // start opening door
+		if (unit)
+		{
+			unit->cancelEffects(ECT_ACTIVATE);
+		}
 		return 1;
 	}
 	if (_objects[part]->isUFODoor() && _currentFrame[part] != 7) // ufo door != part 7 - door is still opening
 	{
+		unit->cancelEffects(ECT_ACTIVATE);
 		return 3;
 	}
 	return -1;
@@ -439,7 +448,7 @@ void Tile::addLight(int light, int layer)
  * Shade level is the inverse of light level. So a maximum amount of light (15) returns shade level 0.
  * @return shade
  */
-int Tile::getShade() const
+int Tile::getShade(bool displayOnly) const
 {
 	int light = 0;
 
@@ -449,7 +458,8 @@ int Tile::getShade() const
 			light = _light[layer];
 	}
 
-	return std::max(0, 15 - light);
+	//return displayOnly ? (_nightVision ? 0 : (_visible ? 8 : 1 )) : std::max(0, 15 - light);
+	return (displayOnly && _nightVision) ? std::max(0, std::min(15 - light, 5)) : std::max(0, 15 - light);
 }
 
 /**
@@ -828,7 +838,7 @@ void Tile::prepareNewTurn(bool smokeDamage)
 				{
 					_unit->toggleFireDamage();
 					// _smoke becomes our damage value
-					_unit->damage(Position(0, 0, 0), _smoke, DT_IN, true);
+					_unit->damage(0, 0, Position(0, 0, 0), _smoke, DT_IN, true);
 					// try to set the unit on fire.
 					if (RNG::percent(40 * _unit->getArmor()->getDamageModifier(DT_IN)))
 					{
@@ -848,13 +858,13 @@ void Tile::prepareNewTurn(bool smokeDamage)
 					// try to knock this guy out.
 					if (_unit->getArmor()->getDamageModifier(DT_SMOKE) > 0.0 && _unit->getArmor()->getSize() == 1)
 					{
-						_unit->damage(Position(0,0,0), (_smoke / 4) + 1, DT_SMOKE, true);
-					}
-				}
+						_unit->damage(0, 0, Position(0,0,0), (_smoke / 4) + 1, DT_SMOKE, true);
+					}				}
 			}
 		}
 	}
 	_overlaps = 0;
+	_nightVision = false;
 }
 
 /**
@@ -889,18 +899,28 @@ int Tile::getMarkerColor() const
  * Set the tile visible flag.
  * @param visibility
  */
-void Tile::setVisible(int visibility)
+void Tile::setVisibleCount(int visibility, int nightVision)
 {
 	_visible += visibility;
+	_nightVision += nightVision;
 }
 
 /**
  * Get the tile visible flag.
  * @return visibility
  */
-int Tile::getVisible() const
+int Tile::getVisibleCount() const
 {
 	return _visible;
+}
+
+/**
+ * Gets the tile night vision flag.
+ * @return Night vision flag
+ */
+bool Tile::getNightVision() const
+{
+	return _nightVision;
 }
 
 /**
@@ -982,6 +1002,11 @@ void Tile::addParticle(Particle *particle)
 	_particles.push_back(particle);
 }
 
+std::vector<TileDrawable*>& Tile::getDrawables()
+{
+	return _drawables;
+}
+
 /**
  * gets a pointer to this tile's particle array.
  * @return a pointer to the internal array of particles.
@@ -989,6 +1014,33 @@ void Tile::addParticle(Particle *particle)
 std::list<Particle *> *Tile::getParticleCloud()
 {
 	return &_particles;
+}
+
+/// Clears and cleans up the pending drawables vector.
+void Tile::clearDrawables()
+{
+	if(_drawables.size())
+	{
+		for(std::vector<TileDrawable*>::const_iterator ii = _drawables.begin(); ii != _drawables.end(); ++ii)
+		{
+			delete *ii;
+		}
+		_drawables.clear();
+	}
+}
+
+void Tile::setKnownHiddenUnit(bool known)
+{
+	_knownHiddenUnit = known;
+}
+
+bool Tile::getKnownHiddenUnit() const
+{
+	return _knownHiddenUnit;
+}
+
+TileDrawable::TileDrawable(Surface *pSurface, int pX, int pY, int pO, int color, bool topMost) : surface(pSurface), x(pX), y(pY), off(pO), color(color), topMost(topMost)
+{
 }
 
 }

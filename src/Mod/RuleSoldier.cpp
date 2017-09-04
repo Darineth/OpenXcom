@@ -29,7 +29,7 @@ namespace OpenXcom
  * type of soldier.
  * @param type String defining the type.
  */
-RuleSoldier::RuleSoldier(const std::string &type) : _type(type), _costBuy(0), _costSalary(0), _standHeight(0), _kneelHeight(0), _floatHeight(0), _femaleFrequency(50)
+RuleSoldier::RuleSoldier(const std::string &type) : _type(type), _costBuy(0), _costSalary(0), _standHeight(0), _kneelHeight(0), _floatHeight(0), _femaleFrequency(50), _isVehicle(false), _requires(), _inventoryLayout("STR_STANDARD_INV"), _levelExperience()
 {
 }
 
@@ -127,6 +127,9 @@ void RuleSoldier::load(const YAML::Node &node, Mod *mod)
 			}
 		}
 	}
+	_isVehicle = node["isVehicle"].as<bool>(_isVehicle);
+	_inventoryLayout = node["inventoryLayout"].as<std::string>(_inventoryLayout);
+	_levelExperience = node["levelExperience"].as<std::vector<int> >(_levelExperience);
 }
 
 void RuleSoldier::addSoldierNamePool(const std::string &namFile)
@@ -271,6 +274,31 @@ const std::vector<int> &RuleSoldier::getFemaleDeathSounds() const
 const std::vector<SoldierNamePool*> &RuleSoldier::getNames() const
 {
 	return _names;
+}
+
+bool RuleSoldier::isVehicle() const
+{
+	return _isVehicle;
+}
+
+const std::string &RuleSoldier::getInventoryLayout() const
+{
+	return _inventoryLayout;
+}
+
+const std::vector<int> &RuleSoldier::getLevelExperience() const
+{
+	return _levelExperience;
+}
+
+int RuleSoldier::getMaxLevel() const
+{
+	return _levelExperience.size();
+}
+
+int RuleSoldier::getMaxLevelExperience() const
+{
+	return _levelExperience.size() ? _levelExperience[_levelExperience.size() - 1] : 0;
 }
 
 }

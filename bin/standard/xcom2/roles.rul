@@ -1,0 +1,37 @@
+roles:
+  - name: STR_ROLE_NONE
+    iconSprite: RoleIconNone
+    isBlank: true
+  - name: STR_ROLE_RIFLEMAN
+    iconSprite: RoleIconRifleman
+    smallIconSprite: RoleIconRiflemanSimple
+  - name: STR_ROLE_SNIPER
+    iconSprite: RoleIconSniper
+    smallIconSprite: RoleIconSniperSimple
+  - name: STR_ROLE_SCOUT
+    iconSprite: RoleIconScout
+    smallIconSprite: RoleIconScoutSimple
+  - name: STR_ROLE_ROCKETEER
+    iconSprite: RoleIconRocketeer
+    smallIconSprite: RoleIconRocketeerSimple
+  - name: STR_ROLE_ASSAULT
+    iconSprite: RoleIconAssault
+    smallIconSprite: RoleIconAssaultSimple
+  - name: STR_ROLE_HEAVY
+    iconSprite: RoleIconHeavy
+    smallIconSprite: RoleIconHeavySimple
+  - name: STR_ROLE_GRENADIER
+    iconSprite: RoleIconGrenadier
+    smallIconSprite: RoleIconGrenadierSimple
+  - name: STR_ROLE_MEDIC
+    iconSprite: RoleIconMedic
+    smallIconSprite: RoleIconMedicSimple
+  - name: STR_ROLE_PSIONICS
+    iconSprite: RoleIconPsionics
+    smallIconSprite: RoleIconPsionicsSimple
+  - name: STR_ROLE_DEMOLITIONS
+    iconSprite: RoleIconDemolitions
+    smallIconSprite: RoleIconDemolitionsSimple
+  - name: STR_ROLE_SPECIALIST
+    iconSprite: RoleIconSpecialist
+    smallIconSprite: RoleIconSpecialistSimple

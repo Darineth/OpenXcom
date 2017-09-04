@@ -40,6 +40,7 @@
 #include "../Engine/Action.h"
 #include "../Savegame/Craft.h"
 #include "../Savegame/ItemContainer.h"
+#include "../Savegame/Soldier.h"
 #include "../Menu/ErrorMessageState.h"
 #include "../Mod/RuleInterface.h"
 #include "../Mod/RuleSoldier.h"
@@ -61,13 +62,15 @@ PurchaseState::PurchaseState(Base *base) : _base(base), _sel(0), _total(0), _pQt
 	_btnOk = new TextButton(148, 16, 8, 176);
 	_btnCancel = new TextButton(148, 16, 164, 176);
 	_txtTitle = new Text(310, 17, 5, 8);
-	_txtFunds = new Text(150, 9, 10, 24);
-	_txtPurchases = new Text(150, 9, 160, 24);
-	_txtSpaceUsed = new Text(150, 9, 160, 34);
-	_txtCost = new Text(102, 9, 152, 44);
-	_txtQuantity = new Text(60, 9, 256, 44);
-	_cbxCategory = new ComboBox(this, 120, 16, 10, 36);
+	_txtFunds = new Text(150, 9, 10, 22);
+	_txtPurchases = new Text(150, 9, 160, 22);
+	_txtSpaceUsed = new Text(150, 9, 160, 30);
+	_txtQuartersUsed = new Text(150, 9, 160, 38);
+	_txtCost = new Text(102, 9, 152, 46);
+	_txtQuantity = new Text(60, 9, 256, 46);
+	_cbxCategory = new ComboBox(this, 110, 16, 10, 37);
 	_lstItems = new TextList(287, 120, 8, 54);
+	_lstItems = new TextList(287, 112, 8, 55);
 
 	// Set palette
 	setInterface("buyMenu");
@@ -81,6 +84,7 @@ PurchaseState::PurchaseState(Base *base) : _base(base), _sel(0), _total(0), _pQt
 	add(_txtFunds, "text", "buyMenu");
 	add(_txtPurchases, "text", "buyMenu");
 	add(_txtSpaceUsed, "text", "buyMenu");
+	add(_txtQuartersUsed, "text", "buyMenu");
 	add(_txtCost, "text", "buyMenu");
 	add(_txtQuantity, "text", "buyMenu");
 	add(_lstItems, "list", "buyMenu");
@@ -107,10 +111,14 @@ PurchaseState::PurchaseState(Base *base) : _base(base), _sel(0), _total(0), _pQt
 
 	_txtPurchases->setText(tr("STR_COST_OF_PURCHASES").arg(Text::formatFunding(_total)));
 
-	_txtSpaceUsed->setVisible(Options::storageLimitsEnforced);
+	//_txtSpaceUsed->setVisible(Options::storageLimitsEnforced);
 	std::wostringstream ss;
-	ss << _base->getUsedStores() << ":" << _base->getAvailableStores();
+	ss << _base->getUsedStores() << "/" << _base->getAvailableStores();
 	_txtSpaceUsed->setText(tr("STR_SPACE_USED").arg(ss.str()));
+
+	std::wostringstream ss2;
+	ss2 << _base->getUsedQuarters() << "/" << _base->getAvailableQuarters();
+	_txtQuartersUsed->setText(tr("STR_QUARTERS_USED").arg(ss2.str()));
 
 	_txtCost->setText(tr("STR_COST_PER_UNIT_UC"));
 
@@ -638,7 +646,7 @@ void PurchaseState::decreaseByValue(int change)
 void PurchaseState::updateItemStrings()
 {
 	_txtPurchases->setText(tr("STR_COST_OF_PURCHASES").arg(Text::formatFunding(_total)));
-	std::wostringstream ss, ss5;
+	std::wostringstream ss, ss5, ss6;
 	ss << getRow().amount;
 	_lstItems->setCellText(_sel, 3, ss.str());
 	if (getRow().amount > 0)
@@ -657,6 +665,7 @@ void PurchaseState::updateItemStrings()
 			}
 		}
 	}
+
 	ss5 << _base->getUsedStores();
 	if (std::abs(_iQty) > 0.05)
 	{
@@ -665,8 +674,19 @@ void PurchaseState::updateItemStrings()
 			ss5 << "+";
 		ss5 << std::fixed << std::setprecision(1) << _iQty << ")";
 	}
-	ss5 << ":" << _base->getAvailableStores();
+	ss5 << "/" << _base->getAvailableStores();
 	_txtSpaceUsed->setText(tr("STR_SPACE_USED").arg(ss5.str()));
+
+	ss6 << _base->getUsedQuarters();
+	if (std::abs(_pQty) > 0.05)
+	{
+		ss6 << "(";
+		if (_pQty > 0.05)
+			ss6 << "+";
+		ss6 << std::fixed << std::setprecision(1) << _pQty << ")";
+	}
+	ss6 << "/" << _base->getAvailableQuarters();
+	_txtQuartersUsed->setText(tr("STR_QUARTERS_USED").arg(ss6.str()));
 }
 
 /**

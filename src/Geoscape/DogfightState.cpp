@@ -342,22 +342,27 @@ DogfightState::DogfightState(GeoscapeState *state, Craft *craft, Ufo *ufo) : _st
 	_btnStandoff->copy(_window);
 	_btnStandoff->setGroup(&_mode);
 	_btnStandoff->onMousePress((ActionHandler)&DogfightState::btnStandoffPress);
+	_btnStandoff->onKeyboardPress((ActionHandler)&DogfightState::btnStandoffPress, SDLK_1);
 
 	_btnCautious->copy(_window);
 	_btnCautious->setGroup(&_mode);
 	_btnCautious->onMousePress((ActionHandler)&DogfightState::btnCautiousPress);
+	_btnCautious->onKeyboardPress((ActionHandler)&DogfightState::btnCautiousPress, SDLK_2);
 
 	_btnStandard->copy(_window);
 	_btnStandard->setGroup(&_mode);
 	_btnStandard->onMousePress((ActionHandler)&DogfightState::btnStandardPress);
+	_btnStandard->onKeyboardPress((ActionHandler)&DogfightState::btnStandardPress, SDLK_3);
 
 	_btnAggressive->copy(_window);
 	_btnAggressive->setGroup(&_mode);
 	_btnAggressive->onMousePress((ActionHandler)&DogfightState::btnAggressivePress);
+	_btnAggressive->onKeyboardPress((ActionHandler)&DogfightState::btnAggressivePress, SDLK_4);
 
 	_btnDisengage->copy(_window);
-	_btnDisengage->onMousePress((ActionHandler)&DogfightState::btnDisengagePress);
 	_btnDisengage->setGroup(&_mode);
+	_btnDisengage->onMousePress((ActionHandler)&DogfightState::btnDisengagePress);
+	_btnDisengage->onKeyboardPress((ActionHandler)&DogfightState::btnDisengagePress, SDLK_5);
 
 	_btnUfo->copy(_window);
 	_btnUfo->onMouseClick((ActionHandler)&DogfightState::btnUfoClick);
@@ -541,7 +546,9 @@ DogfightState::DogfightState(GeoscapeState *state, Craft *craft, Ufo *ufo) : _st
 
 	// Used for weapon toggling.
 	_weapon1->onMouseClick((ActionHandler)&DogfightState::weapon1Click);
+	_weapon1->onKeyboardPress((ActionHandler)&DogfightState::weapon1Click, Options::keyBattleUseLeftHand);
 	_weapon2->onMouseClick((ActionHandler)&DogfightState::weapon2Click);
+	_weapon2->onKeyboardPress((ActionHandler)&DogfightState::weapon2Click, Options::keyBattleUseRightHand);
 }
 
 /**
@@ -1328,6 +1335,7 @@ void DogfightState::btnStandoffPress(Action *)
 {
 	if (!_ufo->isCrashed() && !_craft->isDestroyed() && !_ufoBreakingOff)
 	{
+		_btnStandoff->setActive();
 		_end = false;
 		setStatus("STR_STANDOFF");
 		_targetDist = STANDOFF_DIST;
@@ -1342,6 +1350,7 @@ void DogfightState::btnCautiousPress(Action *)
 {
 	if (!_ufo->isCrashed() && !_craft->isDestroyed() && !_ufoBreakingOff)
 	{
+		_btnCautious->setActive();
 		_end = false;
 		setStatus("STR_CAUTIOUS_ATTACK");
 		if (_craft->getRules()->getWeapons() > 0 && _craft->getWeapons()->at(0) != 0)
@@ -1364,6 +1373,7 @@ void DogfightState::btnStandardPress(Action *)
 {
 	if (!_ufo->isCrashed() && !_craft->isDestroyed() && !_ufoBreakingOff)
 	{
+		_btnStandard->setActive();
 		_end = false;
 		setStatus("STR_STANDARD_ATTACK");
 		if (_craft->getRules()->getWeapons() > 0 && _craft->getWeapons()->at(0) != 0)
@@ -1386,6 +1396,7 @@ void DogfightState::btnAggressivePress(Action *)
 {
 	if (!_ufo->isCrashed() && !_craft->isDestroyed() && !_ufoBreakingOff)
 	{
+		_btnAggressive->setActive();
 		_end = false;
 		setStatus("STR_AGGRESSIVE_ATTACK");
 		if (_craft->getRules()->getWeapons() > 0 && _craft->getWeapons()->at(0) != 0)
@@ -1408,6 +1419,7 @@ void DogfightState::btnDisengagePress(Action *)
 {
 	if (!_ufo->isCrashed() && !_craft->isDestroyed() && !_ufoBreakingOff)
 	{
+		_btnDisengage->setActive();
 		_end = true;
 		setStatus("STR_DISENGAGING");
 		_targetDist = 800;

@@ -183,6 +183,11 @@ void NextTurnState::close()
 	{
 		_state->btnCenterClick(0);
 
+		if (_battleGame->getTurn() == 1 && _battleGame->getSide() == FACTION_PLAYER)
+		{
+			_state->initUnits();
+		}
+
 		// Autosave every set amount of turns
 		if ((_battleGame->getTurn() == 1 || _battleGame->getTurn() % Options::autosaveFrequency == 0) && _battleGame->getSide() == FACTION_PLAYER)
 		{

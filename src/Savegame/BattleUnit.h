@@ -27,6 +27,7 @@
 #include "../Mod/MapData.h"
 #include "Soldier.h"
 #include "BattleItem.h"
+#include "../Mod/RuleEffect.h"
 
 namespace OpenXcom
 {
@@ -46,11 +47,15 @@ class Language;
 class AIModule;
 struct BattleUnitStatistics;
 struct StatAdjustment;
+class SavedBattleGame;
+class TileEngine;
+class CombatLog;
+class BattleEffect;
 
-enum UnitStatus {STATUS_STANDING, STATUS_WALKING, STATUS_FLYING, STATUS_TURNING, STATUS_AIMING, STATUS_COLLAPSING, STATUS_DEAD, STATUS_UNCONSCIOUS, STATUS_PANICKING, STATUS_BERSERK, STATUS_IGNORE_ME};
+enum UnitStatus {STATUS_STANDING, STATUS_WALKING, STATUS_FLYING, STATUS_TURNING, STATUS_AIMING, STATUS_COLLAPSING, STATUS_DEAD, STATUS_UNCONSCIOUS, STATUS_PANICKING, STATUS_BERSERK, STATUS_IGNORE_ME, STATUS_BLEEDOUT};
 enum UnitFaction {FACTION_PLAYER, FACTION_HOSTILE, FACTION_NEUTRAL};
 enum UnitSide {SIDE_FRONT, SIDE_LEFT, SIDE_RIGHT, SIDE_REAR, SIDE_UNDER};
-enum UnitBodyPart {BODYPART_HEAD, BODYPART_TORSO, BODYPART_RIGHTARM, BODYPART_LEFTARM, BODYPART_RIGHTLEG, BODYPART_LEFTLEG};
+enum UnitBodyPart { BODYPART_HEAD, BODYPART_TORSO, BODYPART_RIGHTARM, BODYPART_LEFTARM, BODYPART_RIGHTLEG, BODYPART_LEFTLEG };
 
 /**
  * Represents a moving unit in the battlescape, player controlled or AI controlled
@@ -74,7 +79,9 @@ private:
 	UnitStatus _status;
 	int _walkPhase, _fallPhase;
 	std::vector<BattleUnit *> _visibleUnits, _unitsSpottedThisTurn;
+	std::vector<BattleEffect*> _activeEffects;
 	std::vector<Tile *> _visibleTiles;
+	bool _hadNightVision;
 	int _tu, _energy, _health, _morale, _stunlevel;
 	bool _kneeled, _floating, _dontReselect;
 	int _currentArmor[5], _maxArmor[5];
@@ -87,7 +94,9 @@ private:
 	Surface *_cache[5];
 	bool _cacheInvalid;
 	int _expBravery, _expReactions, _expFiring, _expThrowing, _expPsiSkill, _expPsiStrength, _expMelee;
+	int _battleExperience;
 	int improveStat(int exp) const;
+	int _turnsAwake;
 	int _motionPoints;
 	int _kills;
 	int _faceDirection; // used only during strafeing moves
@@ -104,13 +113,22 @@ private:
 	UnitSide _fatalShotSide;
 	UnitBodyPart _fatalShotBodyPart;
 	std::string _murdererWeapon, _murdererWeaponAmmo;
+	bool _overwatch;
+	Position _overwatchTarget;
+	std::string _overwatchWeaponSlot;
+	int _overwatchShotsAvailable;
+	bool _justKilled;
+	bool _bleedingOut;
+	std::string _inventoryLayout;
+	bool _inCombat;
+	MovementAction _movementAction;
 
 	// static data
 	std::string _type;
 	std::string _rank;
 	std::string _race;
 	std::wstring _name;
-	UnitStats _stats;
+	UnitStats _baseStats, _stats;
 	int _standHeight, _kneelHeight, _floatHeight;
 	std::vector<int> _deathSound;
 	int _value, _aggroSound, _moveSound;
@@ -125,12 +143,32 @@ private:
 	int _turretType;
 	int _breathFrame;
 	bool _breathing;
+	int _depth;
 	bool _hidingForTurn, _floorAbove, _respawn;
 	MovementType _movementType;
 	std::vector<std::pair<Uint8, Uint8> > _recolor;
 
 	/// Helper function initing recolor vector.
+	void setupSoldierRecolor();
 	void setRecolor(int basicLook, int utileLook, int rankLook);
+
+	BattleActionType _ongoingAction;
+	BattleUnit *_controlling;
+	BattleUnit *_controller;
+
+	int _loadedControllingId;
+	bool _isVehicle;
+
+	std::string _weaponSlot1, _weaponSlot2, _utilitySlot;
+
+	bool _aboutToFall;
+
+	bool checkStartBleedout();
+	void determineWeaponSlots();
+
+	/// Attempts to place an item in an inventory slot.
+	bool fitItem(BattleItem *item, RuleInventory *newSlot, int &x, int &y);
+
 public:
 	static const int MAX_SOLDIER_ID = 1000000;
 	/// Creates a BattleUnit from solder.
@@ -141,8 +179,12 @@ public:
 	~BattleUnit();
 	/// Loads the unit from YAML.
 	void load(const YAML::Node& node);
+	/// Does post-load unit initialization.
+	void initLoaded(SavedBattleGame *save);
 	/// Saves the unit to YAML.
 	YAML::Node save() const;
+	/// Does post-equipment battle initialization.
+	void initBattle();
 	/// Gets the BattleUnit's ID.
 	int getId() const;
 	/// Sets the unit's position
@@ -207,6 +249,10 @@ public:
 	int directionTo(Position point) const;
 	/// Gets the unit's time units.
 	int getTimeUnits() const;
+	/// Gets the unit's spendable time units.
+	int getAvailableTimeUnits(bool movement = false) const;
+	/// Gets the unit's time unit debt.
+	int getTimeUnitDebt() const;
 	/// Gets the unit's stamina.
 	int getEnergy() const;
 	/// Gets the unit's health.
@@ -214,7 +260,7 @@ public:
 	/// Gets the unit's bravery.
 	int getMorale() const;
 	/// Do damage to the unit.
-	int damage(Position relative, int power, ItemDamageType type, bool ignoreArmor = false);
+	int damage(TileEngine* tiles, BattleUnit *source, Position relative, int power, ItemDamageType type, bool ignoreArmor = false, int *wounds = 0, const std::string &displaySource = "");
 	/// Heal stun level of the unit.
 	void healStun(int power);
 	/// Gets the unit's stun level.
@@ -231,9 +277,9 @@ public:
 	bool isOut() const;
 	/// Get the number of time units a certain action takes.
 	int getActionTUs(BattleActionType actionType, BattleItem *item);
-	int getActionTUs(BattleActionType actionType, RuleItem *item);
+	//int getActionTUs(BattleActionType actionType, RuleItem *item);
 	/// Spend time units if it can.
-	bool spendTimeUnits(int tu);
+	bool spendTimeUnits(int tu, bool movement = false, bool forOverwatch = false);
 	/// Spend energy if it can.
 	bool spendEnergy(int tu);
 	/// Set time units.
@@ -245,13 +291,15 @@ public:
 	/// Clear visible units.
 	void clearVisibleUnits();
 	/// Add unit to visible tiles.
-	bool addToVisibleTiles(Tile *tile);
+	bool addToVisibleTiles(Tile *tile, bool nightVision);
 	/// Get the list of visible tiles.
 	std::vector<Tile*> *getVisibleTiles();
 	/// Clear visible tiles.
 	void clearVisibleTiles();
+	/// Get if the unit can see the tile.
+	bool canSeeTile(Tile *tile) const;
 	/// Calculate firing accuracy.
-	int getFiringAccuracy(BattleActionType actionType, BattleItem *item);
+	int getFiringAccuracy(BattleActionType actionType, BattleItem *item, bool useShotgun = false, bool dualFiring = false);
 	/// Calculate accuracy modifier.
 	int getAccuracyModifier(BattleItem *item = 0);
 	/// Calculate throwing accuracy.
@@ -265,9 +313,13 @@ public:
 	/// Get total number of fatal wounds.
 	int getFatalWounds() const;
 	/// Get the current reaction score.
-	double getReactionScore();
+	double getReactionScore(bool checkOverwatch);
+	/// Get the current evasion score.
+	double getEvasionScore(BattleUnit *attacker);
+	/// Get the mainhand weapon's reactions modifier.
+	double getWeaponReactionsModifier(bool overwatch);
 	/// Prepare for a new turn.
-	void prepareNewTurn(bool fullProcess = true);
+	void prepareNewTurn(TileEngine *tiles = 0, bool fullProcess = true, bool reset = false);
 	/// Morale change
 	void moraleChange(int change);
 	/// Don't reselect this unit
@@ -304,6 +356,10 @@ public:
 	BattleItem *getMainHandWeapon(bool quickest = true) const;
 	/// Gets a grenade from the belt, if any.
 	BattleItem *getGrenadeFromBelt() const;
+	/// Finds the quickest item to grab, if any.
+	BattleItem *findQuickItem(const std::string &item, RuleInventory* destSlot, int *moveCost = 0) const;
+	/// Finds the quickest ammo to reload a weapon.
+	BattleItem *findQuickAmmo(BattleItem *weapon, int *reloadCost = 0) const;
 	/// Reloads righthand weapon if needed.
 	bool checkAmmo();
 	/// Check if this unit is in the exit area
@@ -327,7 +383,8 @@ public:
 	/// Updates the stats of a Geoscape soldier.
 	void updateGeoscapeStats(Soldier *soldier) const;
 	/// Check if unit eligible for squaddie promotion.
-	bool postMissionProcedures(SavedGame *geoscape, UnitStats &statsDiff);
+	//bool postMissionProcedures(SavedGame *geoscape, UnitStats &statsDiff); // TODO: Rebase
+	bool postMissionProcedures(SavedGame *geoscape, int turns, int teamExperience, UnitStats &statIncreases, int &gainedExperience, bool &gainedLevel, int &kills);
 	/// Get the sprite index for the minimap
 	int getMiniMapSpriteIndex() const;
 	/// Set the turret type. -1 is no turret.
@@ -337,7 +394,7 @@ public:
 	/// Get fatal wound amount of a body part
 	int getFatalWound(int part) const;
 	/// Heal one fatal wound
-	void heal(int part, int woundAmount, int healthAmount);
+	bool heal(int part, int woundAmount, int healthAmount);
 	/// Give pain killers to this unit
 	void painKillers();
 	/// Give stimulant to this unit
@@ -348,6 +405,8 @@ public:
 	Armor *getArmor() const;
 	/// Gets the unit's name.
 	std::wstring getName(Language *lang, bool debugAppendId = false) const;
+	/// Gets the unit's display name for combat logging.
+	std::wstring getLogName(Language *lang) const;
 	/// Gets the unit's stats.
 	UnitStats *getBaseStats();
 	/// Get the unit's stand height.
@@ -394,6 +453,10 @@ public:
 	void kill();
 	/// Set health to 0 and set status dead
 	void instaKill();
+	/// Marks the unit dead and triggers related events
+	void die(TileEngine *tiles = 0);
+	/// Cause backlash to the controlling unit
+	void backlashController(TileEngine *tiles = 0, CombatLog *log = 0);
 	/// Gets the unit's spawn unit.
 	std::string getSpawnUnit() const;
 	/// Sets the unit's spawn unit.
@@ -420,6 +483,12 @@ public:
 	UnitFaction getOriginalFaction() const;
 	/// call this after the default copy constructor deletes the cache?
 	void invalidateCache();
+	/// Calculates the effective range for a shot with the given soldier and weapon accuracy.
+	double calculateEffectiveRange(double soldierAcc, double weaponAcc);
+	/// Calculates the effective range for a shot from the given action.
+	int calculateEffectiveRangeForAction(BattleActionType actionType, BattleItem *item, bool dualFiring);
+	/// Calculates the chance to hit for a shot with the given effective range and distance to target.
+	double calculateChanceToHit(double effectiveRange, double distance);
 
 	Unit *getUnitRules() const { return _unitRules; }
 
@@ -497,6 +566,87 @@ public:
 	int getFiringXP() const;
 	void nerfFiringXP(int newXP);
 	
+
+	bool onOverwatch() const;
+	void activateOverwatch(SavedBattleGame *save, BattleItem *weapon, const Position& target);
+	void clearOverwatch();
+	bool tryFireOverwatch();
+	void cancelOverwatchShot();
+	const Position& getOverwatchTarget() const;
+	BattleItem *getOverwatchWeapon() const;
+	BattleActionType getOverwatchShotAction(RuleItem *weapon = 0) const;
+
+	void setJustKilled(bool justKilled);
+	bool getJustKilled() const;
+	bool getCanBleedOut() const;
+	bool getBleedingOut() const;
+	int getDeathHealth() const;
+
+	bool checkSquadSight(SavedBattleGame *save, BattleUnit* target, bool visibleOnly) const;
+
+	BattleActionType getOngoingAction() const;
+	void setOngoingAction(BattleActionType type);
+	void clearOngoingAction(BattleActionType typeCheck = BA_NONE);
+
+	BattleUnit* getControlledBy() const;
+	void setControlledBy(BattleUnit *controller);
+	void clearControlledBy();
+	BattleUnit* getControlling() const;
+	void setControlling(BattleUnit *controlling);
+	void clearControlling();
+
+	/// Returns if the unit is a vehicle.
+	bool isVehicle() const;
+	bool findTurretType();
+
+	void updateStats(BattleItem *draggingItem = 0);
+	UnitStats calculateStats(BattleItem *draggingItem = 0) const;
+	/// Gets the inventory layout for the unit.
+	const std::string &getInventoryLayout() const;
+
+	void calculateArmor(int *armor, BattleItem *draggingItem = 0);
+	void updateArmor(BattleItem *draggingItem = 0);
+
+	bool canDualFire() const;
+	bool canDualFire(BattleItem *&weapon1, BattleItem *&weapon2) const;
+	bool canDualFire(BattleItem *&weapon1, BattleActionType &action1, BattleItem *&weapon2, BattleActionType &action2) const;
+	bool canDualFire(BattleItem *&weapon1, BattleActionType &action1, int &tu1, BattleItem *&weapon2, BattleActionType &action2, int &tu2) const;
+
+	double getDualFireAccuracy() const;
+
+	const std::string &getWeaponSlot1() const;
+	const std::string &getWeaponSlot2() const;
+	const std::string &getUtilitySlot() const;
+
+	/// Moves an item to a specified slot.
+	bool moveItem(BattleItem *item, RuleInventory *slot, int x, int y, std::string &warning, bool checkTu = true, bool testing = false, int *returnCost = 0);
+
+	/// Checks for item overlap.
+	bool overlapItems(BattleItem *item, RuleInventory *slot, int x = 0, int y = 0);
+
+	bool unloadWeapon(BattleItem *weapon, std::string &warning, bool checkTu = true, bool testing = false, int *returnCost = 0);
+
+	bool loadWeapon(BattleItem *weapon, BattleItem *ammo, std::string &warning, bool checkTu = true, bool testing = false, int *returnCost = 0, bool ignoreLoaded = false);
+
+	bool reloadWeapon(BattleItem *weapon, std::string &warning, bool checkTu = true, bool testing = false, int *returnCost = 0);
+
+	int getLoadCost(BattleItem *weapon, BattleItem *ammo) const;
+
+	void setMovementAction(MovementAction action);
+	MovementAction getMovementAction() const;
+
+	std::vector<BattleEffect*> &getActiveEffects();
+
+	bool cancelEffects(EffectTrigger trigger);
+	const EffectComponent* getEffectComponent(EffectComponentType type) const;
+
+	void addBattleExperience(const std::string &action);
+	void addBattleExperience(int battleExperience);
+	int getBattleExperience() const;
+
+	int getTurnsAwake() const;
+	void setAboutToFall(bool aboutToFall);
+	bool getAboutToFall() const;
 };
 
 }

@@ -898,12 +898,22 @@ int Craft::getSpaceAvailable() const
  */
 int Craft::getSpaceUsed() const
 {
-	int vehicleSpaceUsed = 0;
+	int spaceUsed = 0;
+
 	for (std::vector<Vehicle*>::const_iterator i = _vehicles.begin(); i != _vehicles.end(); ++i)
 	{
-		vehicleSpaceUsed += (*i)->getSize();
+		spaceUsed += (*i)->getSize();
 	}
-	return getNumSoldiers() + vehicleSpaceUsed;
+
+	for (std::vector<Soldier*>::const_iterator i = _base->getSoldiers()->begin(); i != _base->getSoldiers()->end(); ++i)
+	{
+		if((*i)->getCraft() == this)
+		{
+			spaceUsed += (*i)->getSize();
+		}
+	}
+
+	return spaceUsed;
 }
 
 /**

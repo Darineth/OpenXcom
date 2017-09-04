@@ -1,0 +1,1887 @@
+#Vehicle Soldiers
+soldiers:
+  - type: STR_SCOUT_CAR
+    minStats:
+      tu: 0
+      stamina: 100
+      health: 40
+      bravery: 0
+      reactions: 70
+      firing: 40
+      throwing: 0
+      strength: 0
+      psiStrength: 100
+      psiSkill: 0
+      melee: 0
+    maxStats:
+      tu: 0
+      stamina: 100
+      health: 40
+      bravery: 0
+      reactions: 70
+      firing: 40
+      throwing: 0
+      strength: 0
+      psiStrength: 100
+      psiSkill: 0
+      melee: 0
+    statCaps:
+      tu: 0
+      stamina: 100
+      health: 40
+      bravery: 0
+      reactions: 70
+      firing: 40
+      throwing: 0
+      strength: 0
+      psiStrength: 100
+      psiSkill: 0
+      melee: 0
+    armor: STR_SCOUT_CAR_ARMOR
+    standHeight: 16
+    kneelHeight: 16
+    femaleFrequency: 0
+    isVehicle: true
+    inventoryLayout: STR_SCOUT_CAR_INV
+    costBuy: 150000
+  - type: STR_MEDIUM_TANK
+    minStats:
+      tu: 0
+      stamina: 100
+      health: 70
+      bravery: 0
+      reactions: 40
+      firing: 50
+      throwing: 0
+      strength: 0
+      psiStrength: 100
+      psiSkill: 0
+      melee: 0
+    maxStats:
+      tu: 0
+      stamina: 100
+      health: 70
+      bravery: 0
+      reactions: 40
+      firing: 50
+      throwing: 0
+      strength: 0
+      psiStrength: 100
+      psiSkill: 0
+      melee: 0
+    statCaps:
+      tu: 0
+      stamina: 100
+      health: 70
+      bravery: 0
+      reactions: 40
+      firing: 50
+      throwing: 0
+      strength: 0
+      psiStrength: 100
+      psiSkill: 0
+      melee: 0
+    armor: STR_MEDIUM_TANK_ARMOR
+    standHeight: 16
+    kneelHeight: 16
+    femaleFrequency: 0
+    isVehicle: true
+    inventoryLayout: STR_MEDIUM_TANK_INV
+    costBuy: 300000
+  - type: STR_HOVER_TANK
+    minStats:
+      tu: 0
+      stamina: 100
+      health: 70
+      bravery: 0
+      reactions: 80
+      firing: 50
+      throwing: 0
+      strength: 0
+      psiStrength: 100
+      psiSkill: 0
+      melee: 0
+    maxStats:
+      tu: 0
+      stamina: 100
+      health: 70
+      bravery: 0
+      reactions: 80
+      firing: 50
+      throwing: 0
+      strength: 0
+      psiStrength: 100
+      psiSkill: 0
+      melee: 0
+    statCaps:
+      tu: 0
+      stamina: 100
+      health: 70
+      bravery: 0
+      reactions: 80
+      firing: 50
+      throwing: 0
+      strength: 0
+      psiStrength: 100
+      psiSkill: 0
+      melee: 0
+    armor: STR_HOVER_TANK_ARMOR
+    standHeight: 16
+    kneelHeight: 16
+    femaleFrequency: 0
+    isVehicle: true
+    inventoryLayout: STR_HOVER_TANK_INV
+    costBuy: 0
+  - type: STR_HEAVY_TANK
+    minStats:
+      tu: 0
+      stamina: 100
+      health: 150
+      bravery: 0
+      reactions: 40
+      firing: 55
+      throwing: 0
+      strength: 0
+      psiStrength: 100
+      psiSkill: 0
+      melee: 0
+    maxStats:
+      tu: 0
+      stamina: 100
+      health: 150
+      bravery: 0
+      reactions: 40
+      firing: 55
+      throwing: 0
+      strength: 0
+      psiStrength: 100
+      psiSkill: 0
+      melee: 0
+    statCaps:
+      tu: 0
+      stamina: 100
+      health: 150
+      bravery: 0
+      reactions: 40
+      firing: 55
+      throwing: 0
+      strength: 0
+      psiStrength: 100
+      psiSkill: 0
+      melee: 0
+    armor: STR_HEAVY_TANK_ARMOR
+    standHeight: 16
+    kneelHeight: 16
+    femaleFrequency: 0
+    isVehicle: true
+    inventoryLayout: STR_HEAVY_TANK_INV
+    costBuy: 0
+#Vehicle Armors
+armors:
+  - type: STR_SCOUT_CAR_ARMOR
+    storeItem: STR_NONE
+    spriteSheet: TANKS.PCK
+    corpseBattle:
+      - SCOUT_CAR_CORPSE_1
+      - SCOUT_CAR_CORPSE_2
+      - SCOUT_CAR_CORPSE_3
+      - SCOUT_CAR_CORPSE_4
+    statModifiers:
+      tu: 20
+    frontArmor: 13
+    sideArmor: 9
+    rearArmor: 6
+    underArmor: 6
+    drawingRoutine: 2
+    constantAnimation: true
+    movementType: 0
+    size: 2
+    deathSound: 23
+    moveSound: 14
+    spriteInv: tankInventoryImage
+    vehicleItem: true
+    weight: 65
+    spriteUtileGroup: 5
+    spriteUtileDefault: 7
+    damageModifier:
+      - 1.0
+      - 1.0
+      - 0.0
+      - 0.35
+      - 1.0
+      - 1.0
+      - 0.0
+      - 0.5
+      - 0.4
+      - 0.0
+    loftempsSet: [ 92, 89, 90, 91 ]
+  - type: STR_MEDIUM_TANK_ARMOR
+    storeItem: STR_NONE
+    spriteSheet: TANKS.PCK
+    corpseBattle:
+      - MEDIUM_TANK_CORPSE_1
+      - MEDIUM_TANK_CORPSE_2
+      - MEDIUM_TANK_CORPSE_3
+      - MEDIUM_TANK_CORPSE_4
+    statModifiers:
+      tu: 0
+    frontArmor: 30
+    sideArmor: 25
+    rearArmor: 18
+    underArmor: 18
+    drawingRoutine: 2
+    constantAnimation: true
+    movementType: 0
+    size: 2
+    deathSound: 23
+    moveSound: 14
+    spriteInv: tankInventoryImage
+    vehicleItem: true
+    weight: 110
+    spriteUtileGroup: 5
+    spriteUtileDefault: 20
+    damageModifier:
+      - 1.0
+      - 1.0
+      - 0.0
+      - 0.35
+      - 1.0
+      - 1.0
+      - 0.0
+      - 0.5
+      - 0.4
+      - 0.0
+    loftempsSet: [ 92, 89, 90, 91 ]
+  - type: STR_HOVER_TANK_ARMOR
+    storeItem: STR_NONE
+    spriteSheet: TANKS.PCK
+    corpseBattle:
+      - HOVER_TANK_CORPSE_1
+      - HOVER_TANK_CORPSE_2
+      - HOVER_TANK_CORPSE_3
+      - HOVER_TANK_CORPSE_4
+    statModifiers:
+      tu: 30
+    frontArmor: 30
+    sideArmor: 30
+    rearArmor: 30
+    underArmor: 30
+    drawingRoutine: 2
+    constantAnimation: true
+    movementType: 1
+    size: 2
+    deathSound: 23
+    moveSound: 40
+    spriteInv: tankInventoryImage
+    vehicleItem: true
+    weight: 80
+    spriteUtileGroup: 14
+    spriteUtileDefault: 18
+    damageModifier:
+      - 1.0
+      - 1.0
+      - 0.0
+      - 0.35
+      - 1.0
+      - 1.0
+      - 0.0
+      - 0.5
+      - 0.4
+      - 0.0
+    loftempsSet: [ 92, 89, 90, 91 ]
+  - type: STR_HEAVY_TANK_ARMOR
+    storeItem: STR_NONE
+    spriteSheet: TANKS.PCK
+    corpseBattle:
+      - HEAVY_TANK_CORPSE_1
+      - HEAVY_TANK_CORPSE_2
+      - HEAVY_TANK_CORPSE_3
+      - HEAVY_TANK_CORPSE_4
+    statModifiers:
+      tu: 0
+    frontArmor: 35
+    sideArmor: 27
+    rearArmor: 20
+    underArmor: 32
+    drawingRoutine: 2
+    constantAnimation: true
+    movementType: 0
+    size: 2
+    deathSound: 23
+    moveSound: 14
+    spriteInv: tankInventoryImage
+    vehicleItem: true
+    weight: 300
+    spriteUtileGroup: 5
+    spriteUtileDefault: 2
+    damageModifier:
+      - 1.0
+      - 1.0
+      - 0.0
+      - 0.35
+      - 1.0
+      - 1.0
+      - 0.0
+      - 0.5
+      - 0.4
+      - 0.0
+    loftempsSet: [ 92, 89, 90, 91 ]
+items:
+#Vehicle Engines
+  - type: STR_HWP_S_ENGINE
+    size: 1.5
+    costBuy: 50000
+    costSell: 42000
+    transferTime: 48
+    weight: 25
+    bigSprite: 1420
+    floorSprite: 11
+    vehicleItem: true
+    invWidth: 2
+    invHeight: 3
+    battleType: 13
+    stats:
+      tu: 100
+      strength: 75
+    validSlots:
+      - STR_ENGINE_LIGHT
+      - STR_ENGINE_MEDIUM
+  - type: STR_HWP_M_ENGINE
+    size: 2
+    costBuy: 75000
+    costSell: 60000
+    transferTime: 48
+    weight: 85
+    bigSprite: 1424
+    floorSprite: 11
+    vehicleItem: true
+    invWidth: 3
+    invHeight: 3
+    battleType: 13
+    stats:
+      tu: 100
+      strength: 126
+    validSlots:
+      - STR_ENGINE_LIGHT
+      - STR_ENGINE_MEDIUM
+  - type: STR_HWP_L_ENGINE
+    size: 3
+    costBuy: 0
+    costSell: 128200
+    transferTime: 48
+    weight: 150
+    bigSprite: 1428
+    floorSprite: 11
+    vehicleItem: true
+    invWidth: 4
+    invHeight: 3
+    battleType: 13
+    stats:
+      tu: 100
+      strength: 180
+    validSlots:
+      - STR_ENGINE_LIGHT
+      - STR_ENGINE_MEDIUM
+  - type: STR_HWP_SUPERCHARGED_S_ENGINE
+    size: 1.5
+    costBuy: 0
+    costSell: 157000
+    transferTime: 48
+    weight: 90
+    bigSprite: 1422
+    floorSprite: 11
+    vehicleItem: true
+    invWidth: 2
+    invHeight: 3
+    battleType: 13
+    stats:
+      tu: 100
+      strength: 108
+    validSlots:
+      - STR_ENGINE_LIGHT
+      - STR_ENGINE_MEDIUM
+  - type: STR_HWP_SUPERCHARGED_M_ENGINE
+    size: 2
+    costBuy: 0
+    costSell: 227600
+    transferTime: 48
+    weight: 185
+    bigSprite: 1426
+    floorSprite: 11
+    vehicleItem: true
+    invWidth: 3
+    invHeight: 3
+    battleType: 13
+    stats:
+      tu: 100
+      strength: 168
+    validSlots:
+      - STR_ENGINE_LIGHT
+      - STR_ENGINE_MEDIUM
+  - type: STR_HWP_SUPERCHARGED_L_ENGINE
+    size: 3
+    costBuy: 0
+    costSell: 333600
+    transferTime: 48
+    weight: 450
+    bigSprite: 1430
+    floorSprite: 11
+    vehicleItem: true
+    invWidth: 4
+    invHeight: 3
+    battleType: 13
+    stats:
+      tu: 100
+      strength: 270
+    validSlots:
+      - STR_ENGINE_LIGHT
+      - STR_ENGINE_MEDIUM
+  - type: STR_HWP_SX_ENGINE
+    size: 1.5
+    costBuy: 0
+    costSell: 196600
+    transferTime: 48
+    weight: 25
+    bigSprite: 1421
+    floorSprite: 11
+    vehicleItem: true
+    invWidth: 2
+    invHeight: 3
+    battleType: 13
+    stats:
+      tu: 100
+      strength: 90
+    validSlots:
+      - STR_ENGINE_LIGHT
+      - STR_ENGINE_MEDIUM
+  - type: STR_HWP_MX_ENGINE
+    size: 2
+    costBuy: 0
+    costSell: 196100
+    transferTime: 48
+    weight: 85
+    bigSprite: 1425
+    floorSprite: 11
+    vehicleItem: true
+    invWidth: 3
+    invHeight: 3
+    battleType: 13
+    stats:
+      tu: 100
+      strength: 152
+    validSlots:
+      - STR_ENGINE_LIGHT
+      - STR_ENGINE_MEDIUM
+  - type: STR_HWP_LX_ENGINE
+    size: 3
+    costBuy: 0
+    costSell: 282100
+    transferTime: 48
+    weight: 150
+    bigSprite: 1429
+    floorSprite: 11
+    vehicleItem: true
+    invWidth: 4
+    invHeight: 3
+    battleType: 13
+    stats:
+      tu: 100
+      strength: 216
+    validSlots:
+      - STR_ENGINE_LIGHT
+      - STR_ENGINE_MEDIUM
+  - type: STR_HWP_SUPERCHARGED_SX_ENGINE
+    size: 1.5
+    costBuy: 0
+    costSell: 417600
+    transferTime: 48
+    weight: 90
+    bigSprite: 1423
+    floorSprite: 11
+    vehicleItem: true
+    invWidth: 2
+    invHeight: 3
+    battleType: 13
+    stats:
+      tu: 100
+      strength: 130
+    validSlots:
+      - STR_ENGINE_LIGHT
+      - STR_ENGINE_MEDIUM
+  - type: STR_HWP_SUPERCHARGED_MX_ENGINE
+    size: 2
+    costBuy: 0
+    costSell: 519500
+    transferTime: 48
+    weight: 185
+    bigSprite: 1427
+    floorSprite: 11
+    vehicleItem: true
+    invWidth: 3
+    invHeight: 3
+    battleType: 13
+    stats:
+      tu: 100
+      strength: 200
+    validSlots:
+      - STR_ENGINE_LIGHT
+      - STR_ENGINE_MEDIUM
+  - type: STR_HWP_SUPERCHARGED_LX_ENGINE
+    size: 3
+    costBuy: 0
+    costSell: 554000
+    transferTime: 48
+    weight: 450
+    bigSprite: 1431
+    floorSprite: 11
+    vehicleItem: true
+    invWidth: 4
+    invHeight: 3
+    battleType: 13
+    stats:
+      tu: 100
+      strength: 324
+    validSlots:
+      - STR_ENGINE_LIGHT
+      - STR_ENGINE_MEDIUM
+  - type: STR_HWP_HX_ENGINE
+    size: 4
+    costBuy: 0
+    costSell: 370200
+    transferTime: 48
+    weight: 200
+    bigSprite: 1425
+    floorSprite: 11
+    vehicleItem: true
+    invWidth: 3
+    invHeight: 3
+    battleType: 13
+    stats:
+      tu: 100
+      strength: 310
+    validSlots:
+      - STR_ENGINE_HEAVY
+  - type: STR_HWP_SHX_ENGINE
+    size: 5
+    costBuy: 0
+    costSell: 533900
+    transferTime: 48
+    weight: 350
+    bigSprite: 1429
+    floorSprite: 11
+    vehicleItem: true
+    invWidth: 4
+    invHeight: 3
+    battleType: 13
+    stats:
+      tu: 100
+      strength: 420
+    validSlots:
+      - STR_ENGINE_HEAVY
+  - type: STR_HWP_SUPERCHARGED_HX_ENGINE
+    size: 4
+    costBuy: 0
+    costSell: 880300
+    transferTime: 48
+    weight: 375
+    bigSprite: 1427
+    floorSprite: 11
+    vehicleItem: true
+    invWidth: 3
+    invHeight: 3
+    battleType: 13
+    stats:
+      tu: 100
+      strength: 372
+    validSlots:
+      - STR_ENGINE_HEAVY
+  - type: STR_HWP_SUPERCHARGED_SHX_ENGINE
+    size: 5
+    costBuy: 0
+    costSell: 1108800
+    transferTime: 48
+    weight: 700
+    bigSprite: 1431
+    floorSprite: 11
+    vehicleItem: true
+    invWidth: 4
+    invHeight: 3
+    battleType: 13
+    stats:
+      tu: 100
+      strength: 540
+    validSlots:
+      - STR_ENGINE_HEAVY
+#Vehicle Addons
+  - type: STR_HWP_LIGHT_REINFORCEMENT
+    size: 0.25
+    costBuy: 0
+    costSell: 26800
+    transferTime: 24
+    weight: 5
+    bigSprite: 1256
+    floorSprite: 27
+    vehicleItem: true
+    invWidth: 1
+    invHeight: 1
+    battleType: 13
+    stats:
+      tu: 0
+      stamina: 0
+      health: 10
+      bravery: 0
+      reactions: 0
+      firing: 0
+      throwing: 0
+      strength: 0
+      psiStrength: 0
+      psiSkill: 0
+      melee: 0
+    statModifiers:
+      tu: 0
+      stamina: 0
+      health: 0
+      bravery: 0
+      reactions: 0
+      firing: 0
+      throwing: 0
+      strength: 0
+      psiStrength: 0
+      psiSkill: 0
+      melee: 0
+    validSlots:
+      - STR_ENGINE_LIGHT
+      - STR_ENGINE_MEDIUM
+      - STR_ENGINE_HEAVY
+  - type: STR_HWP_HEAVY_REINFORCEMENT
+    size: 0.5
+    costBuy: 0
+    costSell: 36200
+    transferTime: 24
+    weight: 35
+    bigSprite: 1257
+    floorSprite: 27
+    vehicleItem: true
+    invWidth: 1
+    invHeight: 1
+    battleType: 13
+    stats:
+      tu: 0
+      stamina: 0
+      health: 20
+      bravery: 0
+      reactions: 0
+      firing: 0
+      throwing: 0
+      strength: 0
+      psiStrength: 0
+      psiSkill: 0
+      melee: 0
+    statModifiers:
+      tu: 0
+      stamina: 0
+      health: 0
+      bravery: 0
+      reactions: 0
+      firing: 0
+      throwing: 0
+      strength: 0
+      psiStrength: 0
+      psiSkill: 0
+      melee: 0
+    validSlots:
+      - STR_ENGINE_LIGHT
+      - STR_ENGINE_MEDIUM
+      - STR_ENGINE_HEAVY
+  - type: STR_HWP_LIGHT_ALLOY_REINFORCEMENT
+    size: 0.25
+    costBuy: 0
+    costSell: 42800
+    transferTime: 24
+    weight: 5
+    bigSprite: 1258
+    floorSprite: 27
+    vehicleItem: true
+    invWidth: 1
+    invHeight: 1
+    battleType: 13
+    stats:
+      tu: 0
+      stamina: 0
+      health: 13
+      bravery: 0
+      reactions: 0
+      firing: 0
+      throwing: 0
+      strength: 0
+      psiStrength: 0
+      psiSkill: 0
+      melee: 0
+    statModifiers:
+      tu: 0
+      stamina: 0
+      health: 0
+      bravery: 0
+      reactions: 0
+      firing: 0
+      throwing: 0
+      strength: 0
+      psiStrength: 0
+      psiSkill: 0
+      melee: 0
+    validSlots:
+      - STR_ENGINE_LIGHT
+      - STR_ENGINE_MEDIUM
+      - STR_ENGINE_HEAVY
+  - type: STR_HWP_HEAVY_ALLOY_REINFORCEMENT
+    size: 0.5
+    costBuy: 0
+    costSell: 55700
+    transferTime: 24
+    weight: 35
+    bigSprite: 1259
+    floorSprite: 27
+    vehicleItem: true
+    invWidth: 1
+    invHeight: 1
+    battleType: 13
+    stats:
+      tu: 0
+      stamina: 0
+      health: 26
+      bravery: 0
+      reactions: 0
+      firing: 0
+      throwing: 0
+      strength: 0
+      psiStrength: 0
+      psiSkill: 0
+      melee: 0
+    statModifiers:
+      tu: 0
+      stamina: 0
+      health: 0
+      bravery: 0
+      reactions: 0
+      firing: 0
+      throwing: 0
+      strength: 0
+      psiStrength: 0
+      psiSkill: 0
+      melee: 0
+    validSlots:
+      - STR_ENGINE_LIGHT
+      - STR_ENGINE_MEDIUM
+      - STR_ENGINE_HEAVY
+  - type: STR_HWP_TARGETING_MODULE
+    size: 0.5
+    costBuy: 0
+    costSell: 84200
+    transferTime: 24
+    weight: 30
+    bigSprite: 1250
+    floorSprite: 27
+    vehicleItem: true
+    invWidth: 1
+    invHeight: 1
+    battleType: 13
+    stats:
+      tu: 0
+      stamina: 0
+      health: 0
+      bravery: 0
+      reactions: 0
+      firing: 0
+      throwing: 0
+      strength: 0
+      psiStrength: 0
+      psiSkill: 0
+      melee: 0
+    statModifiers:
+      tu: 0
+      stamina: 0
+      health: 0
+      bravery: 0
+      reactions: 0
+      firing: 15
+      throwing: 0
+      strength: 0
+      psiStrength: 0
+      psiSkill: 0
+      melee: 0
+    validSlots:
+      - STR_ENGINE_LIGHT
+      - STR_ENGINE_MEDIUM
+      - STR_ENGINE_HEAVY
+  - type: STR_HWP_HYPERWAVE_TARGETING_MODULE
+    size: 0.5
+    costBuy: 0
+    costSell: 140400
+    transferTime: 24
+    weight: 30
+    bigSprite: 1251
+    floorSprite: 27
+    vehicleItem: true
+    invWidth: 1
+    invHeight: 1
+    battleType: 13
+    stats:
+      tu: 0
+      stamina: 0
+      health: 0
+      bravery: 0
+      reactions: 0
+      firing: 0
+      throwing: 0
+      strength: 0
+      psiStrength: 0
+      psiSkill: 0
+      melee: 0
+    statModifiers:
+      tu: 0
+      stamina: 0
+      health: 0
+      bravery: 0
+      reactions: 0
+      firing: 19
+      throwing: 0
+      strength: 0
+      psiStrength: 0
+      psiSkill: 0
+      melee: 0
+    validSlots:
+      - STR_ENGINE_LIGHT
+      - STR_ENGINE_MEDIUM
+      - STR_ENGINE_HEAVY
+  - type: STR_HWP_TURBOCHARGER
+    size: 0.5
+    costBuy: 0
+    costSell: 76800
+    transferTime: 24
+    weight: 6
+    bigSprite: 1252
+    floorSprite: 27
+    vehicleItem: true
+    invWidth: 1
+    invHeight: 1
+    battleType: 13
+    stats:
+      tu: 0
+      stamina: 0
+      health: 0
+      bravery: 0
+      reactions: 0
+      firing: 0
+      throwing: 0
+      strength: 0
+      psiStrength: 0
+      psiSkill: 0
+      melee: 0
+    statModifiers:
+      tu: 0
+      stamina: 0
+      health: -12
+      bravery: 0
+      reactions: -8
+      firing: -1
+      throwing: 0
+      strength: 34
+      psiStrength: 0
+      psiSkill: 0
+      melee: 0
+    validSlots:
+      - STR_ENGINE_LIGHT
+      - STR_ENGINE_MEDIUM
+      - STR_ENGINE_HEAVY
+  - type: STR_HWP_ELERIUM_TURBOCHARGER
+    size: 0.5
+    costBuy: 0
+    costSell: 97300
+    transferTime: 24
+    weight: 6
+    bigSprite: 1253
+    floorSprite: 27
+    vehicleItem: true
+    invWidth: 1
+    invHeight: 1
+    battleType: 13
+    stats:
+      tu: 0
+      stamina: 0
+      health: 0
+      bravery: 0
+      reactions: 0
+      firing: 0
+      throwing: 0
+      strength: 0
+      psiStrength: 0
+      psiSkill: 0
+      melee: 0
+    statModifiers:
+      tu: 0
+      stamina: 0
+      health: -12
+      bravery: 0
+      reactions: -8
+      firing: -1
+      throwing: 0
+      strength: 40
+      psiStrength: 0
+      psiSkill: 0
+      melee: 0
+    validSlots:
+      - STR_ENGINE_LIGHT
+      - STR_ENGINE_MEDIUM
+      - STR_ENGINE_HEAVY
+  - type: STR_HWP_RESPONSE_BOOSTER
+    size: 0.5
+    costBuy: 0
+    costSell: 87200
+    transferTime: 24
+    weight: 12
+    bigSprite: 1254
+    floorSprite: 27
+    vehicleItem: true
+    invWidth: 1
+    invHeight: 1
+    battleType: 13
+    stats:
+      tu: 0
+      stamina: 0
+      health: 0
+      bravery: 0
+      reactions: 0
+      firing: 0
+      throwing: 0
+      strength: 0
+      psiStrength: 0
+      psiSkill: 0
+      melee: 0
+    statModifiers:
+      tu: 0
+      stamina: 0
+      health: 0
+      bravery: 0
+      reactions: 20
+      firing: -5
+      throwing: 0
+      strength: 0
+      psiStrength: 0
+      psiSkill: 0
+      melee: 0
+    validSlots:
+      - STR_ENGINE_LIGHT
+      - STR_ENGINE_MEDIUM
+      - STR_ENGINE_HEAVY
+  - type: STR_HWP_HYPERWAVE_RESPONSE_BOOSTER
+    size: 0.5
+    costBuy: 0
+    costSell: 155400
+    transferTime: 24
+    weight: 12
+    bigSprite: 1255
+    floorSprite: 27
+    vehicleItem: true
+    invWidth: 1
+    invHeight: 1
+    battleType: 13
+    stats:
+      tu: 0
+      stamina: 0
+      health: 0
+      bravery: 0
+      reactions: 0
+      firing: 0
+      throwing: 0
+      strength: 0
+      psiStrength: 0
+      psiSkill: 0
+      melee: 0
+    statModifiers:
+      tu: 0
+      stamina: 0
+      health: 0
+      bravery: 0
+      reactions: 25
+      firing: -5
+      throwing: 0
+      strength: 0
+      psiStrength: 0
+      psiSkill: 0
+      melee: 0
+    validSlots:
+      - STR_ENGINE_LIGHT
+      - STR_ENGINE_MEDIUM
+      - STR_ENGINE_HEAVY
+#Vehicle Armor Plates
+  - type: STR_HWP_LIGHT_ARMOR_PLATE
+    size: 0.25
+    costBuy: 15000
+    costSell: 12500
+    transferTime: 24
+    weight: 10
+    bigSprite: 1240
+    floorSprite: 2
+    vehicleItem: true
+    invWidth: 1
+    invHeight: 1
+    battleType: 12
+    frontArmor: 8
+    sideArmor: 8
+    rearArmor: 8
+    underArmor: 8
+  - type: STR_HWP_HEAVY_ARMOR_PLATE
+    size: 0.5
+    costBuy: 0
+    costSell: 31100
+    transferTime: 24
+    weight: 30
+    bigSprite: 1243
+    floorSprite: 2
+    vehicleItem: true
+    invWidth: 1
+    invHeight: 1
+    battleType: 12
+    frontArmor: 16
+    sideArmor: 16
+    rearArmor: 16
+    underArmor: 16
+  - type: STR_HWP_LIGHT_ALLOY_ARMOR_PLATE
+    size: 0.25
+    costBuy: 0
+    costSell: 22200
+    transferTime: 24
+    weight: 9
+    bigSprite: 1242
+    floorSprite: 2
+    vehicleItem: true
+    invWidth: 1
+    invHeight: 1
+    battleType: 12
+    frontArmor: 9
+    sideArmor: 9
+    rearArmor: 9
+    underArmor: 9
+  - type: STR_HWP_HEAVY_ALLOY_ARMOR_PLATE
+    size: 0.5
+    costBuy: 0
+    costSell: 61400
+    transferTime: 24
+    weight: 27
+    bigSprite: 1245
+    floorSprite: 2
+    vehicleItem: true
+    invWidth: 1
+    invHeight: 1
+    battleType: 12
+    frontArmor: 18
+    sideArmor: 18
+    rearArmor: 18
+    underArmor: 18
+#Vehicle Corpses
+  - type: SCOUT_CAR_CORPSE_1
+    floorSprite: 68
+    invWidth: 0
+    invHeight: 0
+    recover: false
+  - type: SCOUT_CAR_CORPSE_2
+    floorSprite: 69
+    invWidth: 0
+    invHeight: 0
+    recover: false
+  - type: SCOUT_CAR_CORPSE_3
+    floorSprite: 70
+    invWidth: 0
+    invHeight: 0
+    recover: false
+  - type: SCOUT_CAR_CORPSE_4
+    floorSprite: 71
+    invWidth: 0
+    invHeight: 0
+    recover: false
+  - type: MEDIUM_TANK_CORPSE_1
+    floorSprite: 68
+    invWidth: 0
+    invHeight: 0
+    recover: false
+  - type: MEDIUM_TANK_CORPSE_2
+    floorSprite: 69
+    invWidth: 0
+    invHeight: 0
+    recover: false
+  - type: MEDIUM_TANK_CORPSE_3
+    floorSprite: 70
+    invWidth: 0
+    invHeight: 0
+    recover: false
+  - type: MEDIUM_TANK_CORPSE_4
+    floorSprite: 71
+    invWidth: 0
+    invHeight: 0
+    recover: false
+  - type: HOVER_TANK_CORPSE_1
+    floorSprite: 64
+    invWidth: 0
+    invHeight: 0
+    recover: false
+  - type: HOVER_TANK_CORPSE_2
+    floorSprite: 65
+    invWidth: 0
+    invHeight: 0
+    recover: false
+  - type: HOVER_TANK_CORPSE_3
+    floorSprite: 66
+    invWidth: 0
+    invHeight: 0
+    recover: false
+  - type: HOVER_TANK_CORPSE_4
+    floorSprite: 67
+    invWidth: 0
+    invHeight: 0
+    recover: false
+  - type: HEAVY_TANK_CORPSE_1
+    floorSprite: 68
+    invWidth: 0
+    invHeight: 0
+    recover: false
+  - type: HEAVY_TANK_CORPSE_2
+    floorSprite: 69
+    invWidth: 0
+    invHeight: 0
+    recover: false
+  - type: HEAVY_TANK_CORPSE_3
+    floorSprite: 70
+    invWidth: 0
+    invHeight: 0
+    recover: false
+  - type: HEAVY_TANK_CORPSE_4
+    floorSprite: 71
+    invWidth: 0
+    invHeight: 0
+    recover: false
+#Vehicle Research
+research:
+  - name: STR_MODULAR_HWP_UPGRADES
+    cost: 50
+    points: 10
+    listOrder: 2800
+  - name: STR_HEAVY_HWP_ARMOR
+    cost: 200
+    points: 10
+    listOrder: 2801
+    dependencies:
+      - STR_MODULAR_HWP_UPGRADES
+  - name: STR_HWP_ALIEN_ALLOY_ARMOR
+    cost: 700
+    points: 10
+    listOrder: 2802
+    dependencies:
+      - STR_HEAVY_HWP_ARMOR
+      - STR_UFO_CONSTRUCTION
+  - name: STR_HWP_FRAME_REINFORCEMENT
+    cost: 220
+    points: 12
+    listOrder: 2803
+    dependencies:
+      - STR_MODULAR_HWP_UPGRADES
+  - name: STR_HWP_FRAME_ALLOY_REINFORCEMENT
+    cost: 500
+    points: 15
+    listOrder: 2804
+    dependencies:
+      - STR_HWP_FRAME_REINFORCEMENT
+      - STR_UFO_CONSTRUCTION
+  - name: STR_HWP_TARGETING_IMPROVEMENT
+    cost: 250
+    points: 13
+    listOrder: 2805
+    dependencies:
+      - STR_MODULAR_HWP_UPGRADES
+  - name: STR_HYPERWAVE_HWP_TARGETING
+    cost: 800
+    points: 20
+    listOrder: 2806
+    dependencies:
+      - STR_HWP_TARGETING_IMPROVEMENT
+      - STR_HYPER_WAVE_TRANSMISSIONS
+  - name: STR_HWP_TURBOCHARGING
+    cost: 350
+    points: 18
+    listOrder: 2807
+    dependencies:
+      - STR_MODULAR_HWP_UPGRADES
+  - name: STR_HWP_ELERIUM_TURBOCHARGING
+    cost: 900
+    points: 20
+    listOrder: 2808
+    dependencies:
+      - STR_HWP_TURBOCHARGING
+      - STR_UFO_POWER_SOURCE
+  - name: STR_HWP_RESPONSE_ENHANCEMENT
+    cost: 250
+    points: 13
+    listOrder: 2809
+    dependencies:
+      - STR_MODULAR_HWP_UPGRADES
+  - name: STR_HYPERWAVE_HWP_RESPONSE_BOOSTER
+    cost: 800
+    points: 15
+    listOrder: 2810
+    dependencies:
+      - STR_HWP_RESPONSE_ENHANCEMENT
+      - STR_HYPER_WAVE_TRANSMISSIONS
+  - name: STR_HEAVY_HWP_CANNON
+    cost: 250
+    points: 12
+    listOrder: 2811
+    dependencies:
+      - STR_MODULAR_HWP_UPGRADES
+  - name: STR_HWP_ARTILLERY
+    cost: 400
+    points: 15
+    listOrder: 2812
+    dependencies:
+      - STR_MODULAR_HWP_UPGRADES
+  - name: STR_LARGE_HWP_ENGINE
+    cost: 500
+    points: 12
+    listOrder: 2813
+    dependencies:
+      - STR_MODULAR_HWP_UPGRADES
+  - name: STR_SUPERCHARGED_HWP_ENGINES
+    cost: 700
+    points: 13
+    listOrder: 2814
+    dependencies:
+      - STR_LARGE_HWP_ENGINE
+  - name: STR_ELERIUM_115_HWP_ENGINES
+    cost: 900
+    points: 20
+    listOrder: 2815
+    dependencies:
+      - STR_SUPERCHARGED_HWP_ENGINES
+      - STR_UFO_POWER_SOURCE
+  - name: STR_HEAVY_TANK
+    cost: 2000
+    points: 25
+    listOrder: 2816
+    dependencies:
+      - STR_ADVANCED_ARMOR
+  - name: STR_HOVER_TANK
+    cost: 2000
+    points: 25
+    listOrder: 2817
+    dependencies:
+      - STR_ADVANCED_ARMOR
+#Manufacturing Rules
+manufacture:
+  - name: STR_HEAVY_TANK
+    category: STR_VEHICLE
+    requires:
+      - STR_HEAVY_TANK
+    space: 40
+    time: 8000
+    cost: 600000
+    listOrder: 1200
+    requiredItems:
+      STR_ALIEN_ALLOYS: 20
+      STR_ELERIUM_115: 10
+  - name: STR_HWP_HX_ENGINE
+    category: STR_HWP_ENGINE
+    requires:
+      - STR_HEAVY_TANK
+    space: 7
+    time: 1350
+    cost: 315000
+    listOrder: 1201
+    requiredItems:
+      STR_ELERIUM_115: 6
+  - name: STR_HWP_SHX_ENGINE
+    category: STR_HWP_ENGINE
+    requires:
+      - STR_HEAVY_TANK
+    space: 8
+    time: 1750
+    cost: 410000
+    listOrder: 1202
+    requiredItems:
+      STR_ELERIUM_115: 7
+  - name: STR_HWP_SUPERCHARGED_HX_ENGINE
+    category: STR_HWP_ENGINE
+    requires:
+      - STR_HEAVY_TANK
+    space: 7
+    time: 2700
+    cost: 720000
+    listOrder: 1203
+    requiredItems:
+      STR_ELERIUM_115: 12
+  - name: STR_HWP_SUPERCHARGED_SHX_ENGINE
+    category: STR_HWP_ENGINE
+    requires:
+      - STR_HEAVY_TANK
+    space: 8
+    time: 3500
+    cost: 910000
+    listOrder: 1204
+    requiredItems:
+      STR_ELERIUM_115: 14
+  - name: STR_HOVER_TANK
+    category: STR_VEHICLE
+    requires:
+      - STR_HOVER_TANK
+    space: 30
+    time: 7500
+    cost: 700000
+    listOrder: 1205
+    requiredItems:
+      STR_ALIEN_ALLOYS: 5
+      STR_ELERIUM_115: 20
+  - name: STR_HWP_SUPERCHARGED_S_ENGINE
+    category: STR_HWP_ENGINE
+    requires:
+      - STR_SUPERCHARGED_HWP_ENGINES
+    space: 4
+    time: 900
+    cost: 120000
+    listOrder: 1206
+  - name: STR_HWP_SX_ENGINE
+    category: STR_HWP_ENGINE
+    requires:
+      - STR_ELERIUM_115_HWP_ENGINES
+    space: 4
+    time: 900
+    cost: 135000
+    listOrder: 1207
+    requiredItems:
+      STR_ELERIUM_115: 3
+  - name: STR_HWP_SUPERCHARGED_SX_ENGINE
+    category: STR_HWP_ENGINE
+    requires:
+      - STR_ELERIUM_115_HWP_ENGINES
+    space: 4
+    time: 1800
+    cost: 280000
+    listOrder: 1208
+    requiredItems:
+      STR_ELERIUM_115: 6
+  - name: STR_HWP_SUPERCHARGED_M_ENGINE
+    category: STR_HWP_ENGINE
+    requires:
+      - STR_SUPERCHARGED_HWP_ENGINES
+    space: 5
+    time: 1200
+    cost: 160000
+    listOrder: 1209
+  - name: STR_HWP_MX_ENGINE
+    category: STR_HWP_ENGINE
+    requires:
+      - STR_ELERIUM_115_HWP_ENGINES
+    space: 5
+    time: 1050
+    cost: 178000
+    listOrder: 1210
+    requiredItems:
+      STR_ELERIUM_115: 4
+  - name: STR_HWP_SUPERCHARGED_MX_ENGINE
+    category: STR_HWP_ENGINE
+    requires:
+      - STR_ELERIUM_115_HWP_ENGINES
+    space: 5
+    time: 2100
+    cost: 345000
+    listOrder: 1211
+    requiredItems:
+      STR_ELERIUM_115: 8
+  - name: STR_HWP_L_ENGINE
+    category: STR_HWP_ENGINE
+    requires:
+      - STR_LARGE_HWP_ENGINE
+    space: 6
+    time: 750
+    cost: 90000
+    listOrder: 1212
+  - name: STR_HWP_SUPERCHARGED_L_ENGINE
+    category: STR_HWP_ENGINE
+    requires:
+      - STR_SUPERCHARGED_HWP_ENGINES
+    space: 6
+    time: 1500
+    cost: 220000
+    listOrder: 1213
+  - name: STR_HWP_LX_ENGINE
+    category: STR_HWP_ENGINE
+    requires:
+      - STR_ELERIUM_115_HWP_ENGINES
+    space: 6
+    time: 1200
+    cost: 245000
+    listOrder: 1214
+    requiredItems:
+      STR_ELERIUM_115: 5
+  - name: STR_HWP_SUPERCHARGED_LX_ENGINE
+    category: STR_HWP_ENGINE
+    requires:
+      - STR_ELERIUM_115_HWP_ENGINES
+    space: 6
+    time: 2400
+    cost: 480000
+    listOrder: 1215
+    requiredItems:
+      STR_ELERIUM_115: 10
+  - name: STR_HWP_BASIC_HEAVY_CANNON
+    category: STR_HWP_WEAPON
+    requires:
+      - STR_HEAVY_HWP_CANNON
+    space: 6
+    time: 1200
+    cost: 15000
+    listOrder: 1216
+  - name: STR_HWP_BASIC_HEAVY_CANNON_AMMO
+    category: STR_HWP_AMMO
+    requires:
+      - STR_HEAVY_HWP_CANNON
+    space: 1
+    time: 100
+    cost: 2100
+    listOrder: 1217
+  - name: STR_HWP_LASER_MACHINEGUN
+    category: STR_HWP_WEAPON
+    requires:
+      - STR_HEAVY_LASER_WEAPONS
+    space: 4
+    time: 750
+    cost: 85000
+    listOrder: 1218
+  - name: STR_HWP_LASER_MINIGUN
+    category: STR_HWP_WEAPON
+    requires:
+      - STR_HEAVY_LASER_WEAPONS
+    space: 4
+    time: 800
+    cost: 88000
+    listOrder: 1219
+  - name: STR_HWP_LASER_LIGHT_CANNON
+    category: STR_HWP_WEAPON
+    requires:
+      - STR_LASER_CANNONS
+    space: 4
+    time: 1000
+    cost: 91000
+    listOrder: 1220
+  - name: STR_HWP_LASER_HEAVY_CANNON
+    category: STR_HWP_WEAPON
+    requires:
+      - STR_LASER_CANNONS
+    space: 6
+    time: 2400
+    cost: 120000
+    listOrder: 1221
+  - name: STR_HWP_PLASMA_MACHINEGUN
+    category: STR_HWP_WEAPON
+    requires:
+      - STR_HEAVY_PLASMA_WEAPONS
+    space: 4
+    time: 1490
+    cost: 175000
+    listOrder: 1222
+    requiredItems:
+      STR_ALIEN_ALLOYS: 8
+      STR_ELERIUM_115: 3
+  - name: STR_HWP_PLASMA_MACHINEGUN_AMMO
+    category: STR_HWP_AMMO
+    requires:
+      - STR_HEAVY_PLASMA_WEAPONS
+    space: 1
+    time: 400
+    cost: 30000
+    listOrder: 1223
+    requiredItems:
+      STR_ELERIUM_115: 3
+  - name: STR_HWP_PLASMA_MINIGUN
+    category: STR_HWP_WEAPON
+    requires:
+      - STR_HEAVY_PLASMA_WEAPONS
+    space: 4
+    time: 1620
+    cost: 189000
+    listOrder: 1224
+    requiredItems:
+      STR_ALIEN_ALLOYS: 9
+      STR_ELERIUM_115: 3
+  - name: STR_HWP_PLASMA_MINIGUN_AMMO
+    category: STR_HWP_AMMO
+    requires:
+      - STR_HEAVY_PLASMA_WEAPONS
+    space: 1
+    time: 450
+    cost: 50000
+    listOrder: 1225
+    requiredItems:
+      STR_ELERIUM_115: 4
+  - name: STR_HWP_PLASMA_LIGHT_CANNON
+    category: STR_HWP_WEAPON
+    requires:
+      - STR_PLASMA_CANNONS
+    space: 4
+    time: 1970
+    cost: 180000
+    listOrder: 1226
+    requiredItems:
+      STR_ALIEN_ALLOYS: 7
+      STR_ELERIUM_115: 3
+  - name: STR_HWP_PLASMA_LIGHT_CANNON_AMMO
+    category: STR_HWP_AMMO
+    requires:
+      - STR_PLASMA_CANNONS
+    space: 1
+    time: 300
+    cost: 3200
+    listOrder: 1227
+    requiredItems:
+      STR_ELERIUM_115: 1
+    producedItems:
+      STR_HWP_PLASMA_LIGHT_CANNON_AMMO: 2
+  - name: STR_HWP_PLASMA_HEAVY_CANNON
+    category: STR_HWP_WEAPON
+    requires:
+      - STR_PLASMA_CANNONS
+    space: 6
+    time: 4500
+    cost: 370000
+    listOrder: 1228
+    requiredItems:
+      STR_ALIEN_ALLOYS: 20
+      STR_ELERIUM_115: 6
+  - name: STR_HWP_PLASMA_HEAVY_CANNON_AMMO
+    category: STR_HWP_AMMO
+    requires:
+      - STR_PLASMA_CANNONS
+    space: 1
+    time: 400
+    cost: 20000
+    listOrder: 1229
+    requiredItems:
+      STR_ELERIUM_115: 1
+  - name: STR_HWP_FISSION_MISSILE
+    category: STR_HWP_AMMO
+    requires:
+      - STR_FISSION_WARHEADS
+    space: 1
+    time: 220
+    cost: 14000
+    listOrder: 1230
+    requiredItems:
+      STR_ALIEN_ALLOYS: 2
+      STR_ELERIUM_115: 1
+  - name: STR_HWP_PLASMA_MISSILE
+    category: STR_HWP_AMMO
+    requires:
+      - STR_HEAVY_PLASMA_WEAPONS
+    space: 1
+    time: 210
+    cost: 12500
+    listOrder: 1231
+    requiredItems:
+      STR_ALIEN_ALLOYS: 2
+      STR_ELERIUM_115: 1
+  - name: STR_HWP_FUSION_MISSILE
+    category: STR_HWP_AMMO
+    requires:
+      - STR_FUSION_WARHEADS
+    space: 1
+    time: 500
+    cost: 27000
+    listOrder: 1232
+    requiredItems:
+      STR_ALIEN_ALLOYS: 2
+      STR_ELERIUM_115: 3
+  - name: STR_HWP_ARTILLERY_CANNON
+    category: STR_HWP_WEAPON
+    requires:
+      - STR_HWP_ARTILLERY
+    space: 8
+    time: 2400
+    cost: 52000
+    listOrder: 1233
+  - name: STR_HWP_ARTILLERY_CANNON_HE
+    category: STR_HWP_AMMO
+    requires:
+      - STR_HWP_ARTILLERY
+    space: 1
+    time: 140
+    cost: 2500
+    listOrder: 1234
+  - name: STR_HWP_ARTILLERY_CANNON_CLUSTER
+    category: STR_HWP_AMMO
+    requires:
+      - STR_HWP_ARTILLERY
+    space: 1
+    time: 175
+    cost: 3500
+    listOrder: 1235
+  - name: STR_HWP_ARTILLERY_CANNON_I
+    category: STR_HWP_AMMO
+    requires:
+      - STR_HWP_ARTILLERY
+    space: 1
+    time: 180
+    cost: 2400
+    listOrder: 1236
+  - name: STR_HWP_ARTILLERY_CANNON_SMOKE
+    category: STR_HWP_AMMO
+    requires:
+      - STR_HWP_ARTILLERY
+    space: 1
+    time: 100
+    cost: 1000
+    listOrder: 1237
+  - name: STR_HWP_FISSION_EXPLOSIVE_SHELL
+    category: STR_HWP_AMMO
+    requires:
+      - STR_FISSION_EXPLOSIVES
+    space: 1
+    time: 300
+    cost: 22000
+    listOrder: 1238
+    requiredItems:
+      STR_ALIEN_ALLOYS: 1
+      STR_ELERIUM_115: 2
+  - name: STR_HWP_FISSION_CLUSTER_SHELL
+    category: STR_HWP_AMMO
+    requires:
+      - STR_FISSION_EXPLOSIVES
+    space: 1
+    time: 340
+    cost: 25000
+    listOrder: 1239
+    requiredItems:
+      STR_ALIEN_ALLOYS: 1
+      STR_ELERIUM_115: 2
+  - name: STR_HWP_FUSION_EXPLOSIVE_SHELL
+    category: STR_HWP_AMMO
+    requires:
+      - STR_FUSION_EXPLOSIVES
+    space: 1
+    time: 500
+    cost: 40000
+    listOrder: 1240
+    requiredItems:
+      STR_ALIEN_ALLOYS: 2
+      STR_ELERIUM_115: 4
+  - name: STR_HWP_FUSION_CLUSTER_SHELL
+    category: STR_HWP_AMMO
+    requires:
+      - STR_FUSION_EXPLOSIVES
+    space: 1
+    time: 600
+    cost: 45000
+    listOrder: 1241
+    requiredItems:
+      STR_ALIEN_ALLOYS: 2
+      STR_ELERIUM_115: 4
+  - name: STR_HWP_SMART_LAUNCHER
+    category: STR_HWP_WEAPON
+    requires:
+      - STR_HWP_SMART_LAUNCHER
+    space: 10
+    time: 7000
+    cost: 615000
+    listOrder: 1242
+    requiredItems:
+      STR_ALIEN_ALLOYS: 10
+      STR_ELERIUM_115: 10
+  - name: STR_HWP_SMART_FUSION_BOMB
+    category: STR_HWP_AMMO
+    requires:
+      - STR_HWP_SMART_LAUNCHER
+    space: 2
+    time: 1500
+    cost: 220000
+    listOrder: 1243
+    requiredItems:
+      STR_ALIEN_ALLOYS: 2
+      STR_ELERIUM_115: 4
+      STR_BLASTER_BOMB: 2
+  - name: STR_HWP_LIGHT_ALLOY_ARMOR_PLATE
+    category: STR_HWP_ARMOR
+    requires:
+      - STR_HWP_ALIEN_ALLOY_ARMOR
+    space: 3
+    time: 180
+    cost: 16000
+    listOrder: 1244
+    requiredItems:
+      STR_ALIEN_ALLOYS: 1
+  - name: STR_HWP_HEAVY_ARMOR_PLATE
+    category: STR_HWP_ARMOR
+    requires:
+      - STR_HEAVY_HWP_ARMOR
+    space: 1
+    time: 360
+    cost: 21500
+    listOrder: 1245
+  - name: STR_HWP_HEAVY_ALLOY_ARMOR_PLATE
+    category: STR_HWP_ARMOR
+    requires:
+      - STR_HWP_ALIEN_ALLOY_ARMOR
+    space: 4
+    time: 450
+    cost: 32000
+    listOrder: 1246
+    requiredItems:
+      STR_ALIEN_ALLOYS: 2
+  - name: STR_HWP_TURBOCHARGER
+    category: STR_HWP_ADDON
+    requires:
+      - STR_HWP_TURBOCHARGING
+    space: 4
+    time: 675
+    cost: 41000
+    listOrder: 1247
+  - name: STR_HWP_ELERIUM_TURBOCHARGER
+    category: STR_HWP_ADDON
+    requires:
+      - STR_HWP_ELERIUM_TURBOCHARGING
+    space: 4
+    time: 1050
+    cost: 72000
+    listOrder: 1248
+    requiredItems:
+      STR_ELERIUM_115: 3
+  - name: STR_HWP_LIGHT_REINFORCEMENT
+    category: STR_HWP_ADDON
+    requires:
+      - STR_HWP_FRAME_REINFORCEMENT
+    space: 3
+    time: 300
+    cost: 14000
+    listOrder: 1249
+  - name: STR_HWP_LIGHT_ALLOY_REINFORCEMENT
+    category: STR_HWP_ADDON
+    requires:
+      - STR_HWP_FRAME_ALLOY_REINFORCEMENT
+    space: 3
+    time: 375
+    cost: 16700
+    listOrder: 1250
+    requiredItems:
+      STR_ALIEN_ALLOYS: 1
+  - name: STR_HWP_HEAVY_REINFORCEMENT
+    category: STR_HWP_ADDON
+    requires:
+      - STR_HWP_FRAME_REINFORCEMENT
+    space: 4
+    time: 450
+    cost: 27000
+    listOrder: 1251
+  - name: STR_HWP_HEAVY_ALLOY_REINFORCEMENT
+    category: STR_HWP_ADDON
+    requires:
+      - STR_HWP_FRAME_ALLOY_REINFORCEMENT
+    space: 4
+    time: 480
+    cost: 35000
+    listOrder: 1252
+    requiredItems:
+      STR_ALIEN_ALLOYS: 2
+  - name: STR_HWP_TARGETING_MODULE
+    category: STR_HWP_ADDON
+    requires:
+      - STR_HWP_TARGETING_IMPROVEMENT
+    space: 4
+    time: 450
+    cost: 45000
+    listOrder: 1253
+  - name: STR_HWP_HYPERWAVE_TARGETING_MODULE
+    category: STR_HWP_ADDON
+    requires:
+      - STR_HYPERWAVE_HWP_TARGETING
+    space: 4
+    time: 750
+    cost: 77500
+    listOrder: 1254
+    requiredItems:
+      STR_ALIEN_ALLOYS: 1
+      STR_ELERIUM_115: 2
+  - name: STR_HWP_RESPONSE_BOOSTER
+    category: STR_HWP_ADDON
+    requires:
+      - STR_HWP_RESPONSE_ENHANCEMENT
+    space: 4
+    time: 600
+    cost: 52000
+    listOrder: 1255
+  - name: STR_HWP_HYPERWAVE_RESPONSE_BOOSTER
+    category: STR_HWP_ADDON
+    requires:
+      - STR_HYPERWAVE_HWP_RESPONSE_BOOSTER
+    space: 4
+    time: 900
+    cost: 105000
+    listOrder: 1256
+    requiredItems:
+      STR_ELERIUM_115: 3
+extraStrings:
+  - type: en-US
+    strings:
+# Vehicles
+      STR_SCOUT_CAR: "Scout Car"
+      STR_MEDIUM_TANK: "Medium Tank"
+      STR_HOVER_TANK: "Hover Tank"
+      STR_HEAVY_TANK: "Heavy Tank"
+# Armors
+      STR_SCOUT_CAR_ARMOR: "Scout Car"
+      STR_MEDIUM_TANK_ARMOR: "Medium Tank"
+      STR_HOVER_TANK_ARMOR: "Hover Tank"
+      STR_HEAVY_TANK_ARMOR: "Heavy Tank"
+# Engines
+      STR_HWP_S_ENGINE: "HWP S Engine"
+      STR_HWP_M_ENGINE: "HWP M Engine"
+      STR_HWP_L_ENGINE: "HWP L Engine"
+      STR_HWP_SUPERCHARGED_S_ENGINE: "HWP Supercharged S Engine"
+      STR_HWP_SUPERCHARGED_M_ENGINE: "HWP Supercharged M Engine"
+      STR_HWP_SUPERCHARGED_L_ENGINE: "HWP Supercharged L Engine"
+      STR_HWP_SX_ENGINE: "HWP SX Engine"
+      STR_HWP_MX_ENGINE: "HWP MX Engine"
+      STR_HWP_LX_ENGINE: "HWP LX Engine"
+      STR_HWP_SUPERCHARGED_SX_ENGINE: "HWP Supercharged SX Engine"
+      STR_HWP_SUPERCHARGED_MX_ENGINE: "HWP Supercharged MX Engine"
+      STR_HWP_SUPERCHARGED_LX_ENGINE: "HWP Supercharged LX Engine"
+      STR_HWP_HX_ENGINE: "HWP HX Engine"
+      STR_HWP_SHX_ENGINE: "HWP SHX Engine"
+      STR_HWP_SUPERCHARGED_HX_ENGINE: "HWP Supercharged HX Engine"
+      STR_HWP_SUPERCHARGED_SHX_ENGINE: "HWP Supercharged SHX Engine"
+# Addons
+      STR_HWP_LIGHT_REINFORCEMENT: "HWP Light Reinforcement"
+      STR_HWP_HEAVY_REINFORCEMENT: "HWP Heavy Reinforcement"
+      STR_HWP_LIGHT_ALLOY_REINFORCEMENT: "HWP Light Alloy Reinforcement"
+      STR_HWP_HEAVY_ALLOY_REINFORCEMENT: "HWP Heavy Alloy Reinforcement"
+      STR_HWP_TARGETING_MODULE: "HWP Targeting Module"
+      STR_HWP_HYPERWAVE_TARGETING_MODULE: "HWP Hyperwave Targeting Module"
+      STR_HWP_TURBOCHARGER: "HWP Turbocharger"
+      STR_HWP_ELERIUM_TURBOCHARGER: "HWP Elerium Turbocharger"
+      STR_HWP_RESPONSE_BOOSTER: "HWP Response Booster"
+      STR_HWP_HYPERWAVE_RESPONSE_BOOSTER: "HWP Hyperwave Response Booster"
+# Armor Plates
+      STR_HWP_LIGHT_ARMOR_PLATE: "HWP Light Armor Plate"
+      STR_HWP_HEAVY_ARMOR_PLATE: "HWP Heavy Armor Plate"
+      STR_HWP_LIGHT_ALLOY_ARMOR_PLATE: "HWP Light Alloy Armor Plate"
+      STR_HWP_HEAVY_ALLOY_ARMOR_PLATE: "HWP Heavy Alloy Armor Plate"
+# Research
+      STR_MODULAR_HWP_UPGRADES: "Modular HWP Upgrades"
+      STR_HEAVY_HWP_ARMOR: "Heavy HWP Armor"
+      STR_HWP_ALIEN_ALLOY_ARMOR: "Alien Alloy HWP Armor"
+      STR_HWP_FRAME_REINFORCEMENT: "HWP Frame Reinforcement"
+      STR_HWP_FRAME_ALLOY_REINFORCEMENT: "HWP Frame Alloy Reinforcement"
+      STR_HWP_TARGETING_IMPROVEMENT: "HWP Targeting Improvement"
+      STR_HYPERWAVE_HWP_TARGETING: "Hyperwave HWP Targeting"
+      STR_HWP_TURBOCHARGING: "HWP Turbocharging"
+      STR_HWP_ELERIUM_TURBOCHARGING: "HWP Elerium Turbocharging"
+      STR_HWP_RESPONSE_ENHANCEMENT: "HWP Response Enhancement"
+      STR_HYPERWAVE_HWP_RESPONSE_BOOSTER: "Hyperwave HWP Response Booster"
+      STR_HEAVY_HWP_CANNON: "Heavy HWP Cannon"
+      STR_HWP_ARTILLERY: "HWP Artillery"
+      STR_LARGE_HWP_ENGINE: "Large HWP Engine"
+      STR_SUPERCHARGED_HWP_ENGINES: "Supercharged HWP Engines"
+      STR_ELERIUM_115_HWP_ENGINES: "Elerium HWP Engines"

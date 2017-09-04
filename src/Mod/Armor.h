@@ -35,30 +35,33 @@ enum ForcedTorso { TORSO_USE_GENDER, TORSO_ALWAYS_MALE, TORSO_ALWAYS_FEMALE };
 class Armor
 {
 public:
-	static const int DAMAGE_TYPES = 10;
+	static const int DAMAGE_TYPES = 11;
 	static const std::string NONE;
 private:
-	std::string _type, _spriteSheet, _spriteInv, _corpseGeo, _storeItem, _specWeapon;
+	std::string _type, _spriteSheet, _spriteInv, _corpseGeo, _storeItem, _specWeapon, _inventoryLayout;
 	std::vector<std::string> _corpseBattle;
 	int _frontArmor, _sideArmor, _rearArmor, _underArmor, _drawingRoutine;
 	MovementType _movementType;
 	int _size, _weight;
 	float _damageModifier[DAMAGE_TYPES];
 	std::vector<int> _loftempsSet;
-	UnitStats _stats;
+	UnitStats _stats, _statModifiers;
 	int _deathFrames;
 	bool _constantAnimation, _canHoldWeapon, _hasInventory;
 	ForcedTorso _forcedTorso;
-	int _faceColorGroup, _hairColorGroup, _utileColorGroup, _rankColorGroup;
+	int _faceColorGroup, _hairColorGroup, _utileColorGroup, _utileDefault, _rankColorGroup;
 	std::vector<int> _faceColor, _hairColor, _utileColor, _rankColor;
 	std::vector<std::string> _units;
+	std::vector<std::string> _equippedEffects;
+	bool _vehicleItem;
+	int _deathSound, _moveSound;
 public:
 	/// Creates a blank armor ruleset.
 	Armor(const std::string &type);
 	/// Cleans up the armor ruleset.
 	~Armor();
 	/// Loads the armor data from YAML.
-	void load(const YAML::Node& node);
+	void load(const YAML::Node& node, Mod *mod);
 	/// Gets the armor's type.
 	std::string getType() const;
 	/// Gets the unit's sprite sheet.
@@ -93,6 +96,8 @@ public:
 	const std::vector<int>& getLoftempsSet() const;
 	/// Gets the armor's stats.
 	const UnitStats *getStats() const;
+	/// Gets the armor's stat modifiers.
+	UnitStats *getStatModifiers();
 	/// Gets the armor's weight.
 	int getWeight() const;
 	/// Gets number of death frames.
@@ -119,10 +124,24 @@ public:
 	int getUtileColor(int i) const;
 	/// Get rank base color
 	int getRankColor(int i) const;
+	/// Get utile color count
+	int getUtileColorCount() const;
+	/// Get the default utile color replacement
+	int getDefaultUtileColor() const;
 	/// Can we access this unit's inventory?
 	bool hasInventory() const;
 	/// Gets the armor's units.
 	const std::vector<std::string> &getUnits() const;
+	/// Gets if armor is for vehicles.
+	bool getIsVehicleItem() const;
+	/// Gets the death sound for the armor.
+	int getDeathSound() const;
+	/// Gets the movement sound for the armor.
+	int getMoveSound() const;
+	/// Gets the effects that should be applied when equipping the armor.
+	const std::vector<std::string> &getEquippedEffects() const;
+	/// Gets the inventory layout used by this armor.
+	const std::string &getInventoryLayout() const;
 };
 
 }

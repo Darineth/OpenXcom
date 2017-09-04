@@ -121,12 +121,7 @@ MedikitButton::MedikitButton(int y) : InteractiveSurface(30, 20, 190, y)
  */
 MedikitState::MedikitState (BattleUnit *targetUnit, BattleAction *action) : _targetUnit(targetUnit), _action(action)
 {
-	if (Options::maximizeInfoScreens)
-	{
-		Options::baseXResolution = Screen::ORIGINAL_WIDTH;
-		Options::baseYResolution = Screen::ORIGINAL_HEIGHT;
-		_game->getScreen()->resetDisplay(false);
-	}
+	_game->getScreen()->pushMaximizeInfoScreen(true);
 
 	_tu = action->TU;
 	_unit = action->actor;
@@ -151,6 +146,10 @@ MedikitState::MedikitState (BattleUnit *targetUnit, BattleAction *action) : _tar
 	_pkText = new MedikitTxt (52);
 	_stimulantTxt = new MedikitTxt (88);
 	_healTxt = new MedikitTxt (124);
+	_txtStatus = new Text(78, 9, 81, 50);
+	_txtHealth = new Text(78, 9, 81, 58);
+	_txtStun = new Text(78, 9, 81, 66);
+	_txtTU = new Text(78, 9, 81, 112);
 	add(_bg);
 	add(_medikitView, "body", "medikit", _bg);
 	add(_endButton, "buttonEnd", "medikit", _bg);
@@ -165,6 +164,10 @@ MedikitState::MedikitState (BattleUnit *targetUnit, BattleAction *action) : _tar
 	add(_healTxt, "numHeal", "medikit", _bg);
 	add(_partTxt, "textPart", "medikit", _bg);
 	add(_woundTxt, "numWounds", "medikit", _bg);
+	add(_txtStatus);
+	add(_txtHealth);
+	add(_txtStun);
+	add(_txtTU);
 
 	centerAllSurfaces();
 
@@ -174,6 +177,20 @@ MedikitState::MedikitState (BattleUnit *targetUnit, BattleAction *action) : _tar
 	_healTxt->setBig();
 	_partTxt->setHighContrast(true);
 	_woundTxt->setHighContrast(true);
+	_txtStatus->setColor(Palette::blockOffset(4));
+	_txtStatus->setSecondaryColor(Palette::blockOffset(4));
+	_txtStatus->setHighContrast(true);
+	_txtHealth->setColor(Palette::blockOffset(4));
+	_txtHealth->setSecondaryColor(Palette::blockOffset(2));
+	_txtHealth->setHighContrast(true);
+	_txtStun->setColor(Palette::blockOffset(4));
+	_txtStun->setSecondaryColor(Palette::blockOffset(8));
+	_txtStun->setHighContrast(true);
+	_txtTU->setColor(Palette::blockOffset(4));
+	_txtTU->setSecondaryColor(Palette::blockOffset(4));
+	_txtTU->setHighContrast(true);
+	//_txtStatus->setSecondaryColor(Palette::blockOffset(1));
+	//_txtStatus->setAlign(ALIGN_CENTER);
 	_endButton->onMouseClick((ActionHandler)&MedikitState::onEndClick);
 	_endButton->onKeyboardPress((ActionHandler)&MedikitState::onEndClick, Options::keyCancel);
 	_healButton->onMouseClick((ActionHandler)&MedikitState::onHealClick);
@@ -201,11 +218,7 @@ void MedikitState::handle(Action *action)
  */
 void MedikitState::onEndClick(Action *)
 {
-	if (Options::maximizeInfoScreens)
-	{
-		Screen::updateScale(Options::battlescapeScale, Options::battlescapeScale, Options::baseXBattlescape, Options::baseYBattlescape, true);
-		_game->getScreen()->resetDisplay(false);
-	}
+	_game->getScreen()->popMaximizeInfoScreen();
 	_game->popState();
 }
 
@@ -223,6 +236,9 @@ void MedikitState::onHealClick(Action *)
 	}
 	if (_unit->spendTimeUnits(_tu))
 	{
+		_unit->cancelEffects(ECT_ACTIVATE);
+		_unit->addBattleExperience("STR_HEAL");
+
 		_targetUnit->heal(_medikitView->getSelectedPart(), rule->getWoundRecovery(), rule->getHealthRecovery());
 		_item->setHealQuantity(--heal);
 		_medikitView->updateSelectedPart();
@@ -257,6 +273,9 @@ void MedikitState::onStimulantClick(Action *)
 	}
 	if (_unit->spendTimeUnits (_tu))
 	{
+		_unit->cancelEffects(ECT_ACTIVATE);
+		_unit->addBattleExperience("STR_HEAL");
+
 		_targetUnit->stimulant(rule->getEnergyRecovery(), rule->getStunRecovery());
 		_item->setStimulantQuantity(--stimulant);
 		_action->actor->getStatistics()->appliedStimulant++;
@@ -289,6 +308,9 @@ void MedikitState::onPainKillerClick(Action *)
 	}
 	if (_unit->spendTimeUnits (_tu))
 	{
+		_unit->cancelEffects(ECT_ACTIVATE);
+		_unit->addBattleExperience("STR_HEAL");
+
 		_targetUnit->painKillers();
 		_item->setPainKillerQuantity(--pk);
 		_action->actor->getStatistics()->appliedPainKill++;
@@ -309,6 +331,69 @@ void MedikitState::update()
 	_pkText->setText(toString(_item->getPainKillerQuantity()));
 	_stimulantTxt->setText(toString(_item->getStimulantQuantity()));
 	_healTxt->setText(toString(_item->getHealQuantity()));
+
+	_txtTU->setText(tr("STR_MEDIKIT_TU").arg(_unit->getTimeUnits()).arg(_unit->getBaseStats()->tu));
+
+	_txtHealth->setText(tr("STR_MEDIKIT_HP").arg(_targetUnit->getHealth()).arg(_targetUnit->getBaseStats()->health));
+
+	if(_targetUnit->getBleedingOut())
+	{
+		_txtStatus->setSecondaryColor(Palette::blockOffset(2));
+		_txtStatus->setText(tr("STR_MEDIKIT_STATUS").arg(tr("STR_MEDIKIT_BLEEDING")));
+		_txtHealth->setText(tr("STR_MEDIKIT_HP_WOUNDS").arg((-_targetUnit->getDeathHealth()) + _targetUnit->getHealth()).arg(-_targetUnit->getDeathHealth()).arg(-_targetUnit->getFatalWounds()));
+		_txtStun->clear();
+	}
+	else if(_targetUnit->getHealth() <= 0)
+	{
+		_txtStatus->setSecondaryColor(Palette::blockOffset(2));
+		_txtStatus->setText(tr("STR_MEDIKIT_STATUS").arg(tr("STR_MEDIKIT_STABILIZED")));
+		_txtHealth->setText(tr("STR_MEDIKIT_HP").arg(_targetUnit->getHealth()).arg(_targetUnit->getBaseStats()->health));
+		_txtStun->clear();
+	}
+	else if(_targetUnit->getStunlevel() >= _targetUnit->getHealth())
+	{
+		_txtStatus->setSecondaryColor(Palette::blockOffset(8));
+		_txtStatus->setText(tr("STR_MEDIKIT_STATUS").arg(tr("STR_MEDIKIT_STUNNED")));
+		if (_targetUnit->getFatalWounds())
+		{
+			_txtHealth->setText(tr("STR_MEDIKIT_HP_WOUNDS").arg(_targetUnit->getHealth()).arg(_targetUnit->getBaseStats()->health).arg(_targetUnit->getFatalWounds()));
+		}
+		else
+		{
+			_txtHealth->setText(tr("STR_MEDIKIT_HP").arg(_targetUnit->getHealth()).arg(_targetUnit->getBaseStats()->health));
+		}
+		_txtStun->setText(tr("STR_MEDIKIT_STUN").arg(_targetUnit->getStunlevel()).arg(_targetUnit->getBaseStats()->health));
+	}
+	else
+	{
+		if (_targetUnit->getFatalWounds())
+		{
+			_txtStatus->setSecondaryColor(Palette::blockOffset(2));
+			_txtStatus->setText(tr("STR_MEDIKIT_STATUS").arg(tr("STR_MEDIKIT_WOUNDED")));
+		}
+		else if (_targetUnit->getHealth() < _targetUnit->getBaseStats()->health)
+		{
+			_txtStatus->setSecondaryColor(Palette::blockOffset(1));
+			_txtStatus->setText(tr("STR_MEDIKIT_STATUS").arg(tr("STR_MEDIKIT_INJURED")));
+		}
+		else
+		{
+			_txtStatus->setSecondaryColor(Palette::blockOffset(3));
+			_txtStatus->setText(tr("STR_MEDIKIT_STATUS").arg(tr("STR_MEDIKIT_OK")));
+		}
+
+		if (_targetUnit->getFatalWounds())
+		{
+			_txtHealth->setText(tr("STR_MEDIKIT_HP_WOUNDS").arg(_targetUnit->getHealth()).arg(_targetUnit->getBaseStats()->health).arg(_targetUnit->getFatalWounds()));
+		}
+		else
+		{
+			_txtHealth->setText(tr("STR_MEDIKIT_HP").arg(_targetUnit->getHealth()).arg(_targetUnit->getBaseStats()->health));
+		}
+		_txtStun->setText(tr("STR_MEDIKIT_STUN").arg(_targetUnit->getStunlevel()).arg(_targetUnit->getBaseStats()->health));
+	}
+
+
 	_medikitView->invalidate();
 }
 

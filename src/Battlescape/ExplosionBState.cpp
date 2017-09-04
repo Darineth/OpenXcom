@@ -32,6 +32,8 @@
 #include "../Mod/RuleItem.h"
 #include "../Mod/Armor.h"
 #include "../Engine/RNG.h"
+#include "../Engine/Timer.h"
+#include "../Engine/Logger.h"
 
 namespace OpenXcom
 {
@@ -45,9 +47,8 @@ namespace OpenXcom
  * @param tile Tile the explosion is on.
  * @param lowerWeapon Whether the unit causing this explosion should now lower their weapon.
  */
-ExplosionBState::ExplosionBState(BattlescapeGame *parent, Position center, BattleItem *item, BattleUnit *unit, Tile *tile, bool lowerWeapon, bool cosmetic) : BattleState(parent), _unit(unit), _center(center), _item(item), _tile(tile), _power(0), _areaOfEffect(false), _lowerWeapon(lowerWeapon), _cosmetic(cosmetic)
+ExplosionBState::ExplosionBState(BattlescapeGame *parent, Position center, BattleItem *item, BattleUnit *unit, Tile *tile, bool lowerWeapon, bool cosmetic, bool subState, float dropoffDistance) : BattleState(parent), _unit(unit), _center(center), _item(item), _tile(tile), _power(0), _areaOfEffect(false), _lowerWeapon(lowerWeapon), _cosmetic(cosmetic), _subState(subState), _dropoffDistance(dropoffDistance), _explosions(), _finished(false), _delayExplosion(false), _animationTimer(0), _terrainExplosion(0)
 {
-
 }
 
 /**
@@ -55,7 +56,12 @@ ExplosionBState::ExplosionBState(BattlescapeGame *parent, Position center, Battl
  */
 ExplosionBState::~ExplosionBState()
 {
-
+	delete _animationTimer;
+	if(_terrainExplosion)
+	{
+		delete _terrainExplosion;
+		_terrainExplosion = 0;
+	}
 }
 
 /**
@@ -65,6 +71,11 @@ ExplosionBState::~ExplosionBState()
  */
 void ExplosionBState::init()
 {
+	_animationTimer = new Timer(BattlescapeState::DEFAULT_ANIM_SPEED/4);
+	_animationTimer->onTimer((BattleStateHandler)&ExplosionBState::thinkTimer);
+	_animationTimer->start();
+
+	BattleActionType actionType = _parent->getCurrentAction()->type;
 	if (_item)
 	{
 		_power = _item->getRules()->getPower();
@@ -110,23 +121,26 @@ void ExplosionBState::init()
 				frame -= Explosion::EXPLODE_FRAMES;
 			}
 			int frameDelay = 0;
-			int counter = std::max(1, (_power/5) / 5);
+			int explosionSkew = _item ? (_item->getRules()->getExplosionRadius() * 20) : _power;
+			int counter = std::max(1, (explosionSkew / 5) / 5);
 			_parent->getMap()->setBlastFlash(true);
-			for (int i = 0; i < _power/5; i++)
+			for (int i = 0; i < explosionSkew / 5; i++)
 			{
-				int X = RNG::generate(-_power/2,_power/2);
-				int Y = RNG::generate(-_power/2,_power/2);
+				int X = RNG::generate(-explosionSkew / 2, explosionSkew / 2);
+				int Y = RNG::generate(-explosionSkew / 2, explosionSkew / 2);
 				Position p = _center;
 				p.x += X; p.y += Y;
 				Explosion *explosion = new Explosion(p, frame, frameDelay, true);
 				// add the explosion on the map
 				_parent->getMap()->getExplosions()->push_back(explosion);
+				_explosions.push_back(explosion);
 				if (i > 0 && i % counter == 0)
 				{
 					frameDelay++;
 				}
 			}
-			_parent->setStateInterval(BattlescapeState::DEFAULT_ANIM_SPEED/2);
+			//if(!_subState) { _parent->setStateInterval(BattlescapeState::DEFAULT_ANIM_SPEED/2); }
+			//_parent->setStateInterval(BattlescapeState::DEFAULT_ANIM_SPEED/2);
 			// explosion sound
 			if (_power <= 80)
 				_parent->getMod()->getSoundByDepth(_parent->getDepth(), Mod::SMALL_EXPLOSION)->play();
@@ -137,13 +151,28 @@ void ExplosionBState::init()
 		}
 		else
 		{
-			_parent->popState();
+			_finished = true;
+			if(!_subState) _parent->popState();
+			return;
 		}
 	}
 	else
 	// create a bullet hit
 	{
-		_parent->setStateInterval(std::max(1, ((BattlescapeState::DEFAULT_ANIM_SPEED/2) - (10 * _item->getRules()->getExplosionSpeed()))));
+		if (_item && (_dropoffDistance >= 0))
+		{
+			float voxelDropoff = _parent->getMod()->getDamageDropoff(_item->getRules()->getDamageType());
+			if (voxelDropoff > 0)
+			{
+				int powerLoss = (int)floor(_dropoffDistance * voxelDropoff / 16.0);
+				//Log(LOG_INFO) << "Distance: [" << _dropoffDistance << "] dropoff: [" << powerLoss << "]";
+				_power -= powerLoss;
+				if (_power < 0) _power = 0;
+			}
+		}
+
+		//if(!_subState) { _parent->setStateInterval(std::max(1, ((BattlescapeState::DEFAULT_ANIM_SPEED/2) - (10 * _item->getRules()->getExplosionSpeed())))); }
+		_animationTimer->setInterval(std::max(1, ((BattlescapeState::DEFAULT_ANIM_SPEED/4) - (10 * _item->getRules()->getExplosionSpeed()))));
 		int anim = _item->getRules()->getHitAnimation();
 		int sound = _item->getRules()->getHitSound();
 		if (_cosmetic) // Play melee animation on hitting and psiing
@@ -155,6 +184,7 @@ void ExplosionBState::init()
 		{
 			Explosion *explosion = new Explosion(_center, anim, 0, false, _cosmetic);
 			_parent->getMap()->getExplosions()->push_back(explosion);
+			_explosions.push_back(explosion);
 		}
 
 		_parent->getMap()->getCamera()->setViewLevel(_center.z / 24);
@@ -170,34 +200,66 @@ void ExplosionBState::init()
 			_parent->getMod()->getSoundByDepth(_parent->getDepth(), sound)->play(-1, _parent->getMap()->getSoundAngle(_center / Position(16,16,24)));
 		}
 	}
+
+	if(actionType != BA_MINDCONTROL && actionType != BA_PANIC && actionType != BA_CLAIRVOYANCE && actionType != BA_MINDBLAST)
+	{
+		explode();
+	}
+	else
+	{
+		_delayExplosion = true;
+	}
+}
+
+void ExplosionBState::think()
+{
+	_animationTimer->think(0, 0, this);
 }
 
 /**
  * Animates explosion sprites. If their animation is finished remove them from the list.
  * If the list is empty, this state is finished and the actual calculations take place.
  */
-void ExplosionBState::think()
+void ExplosionBState::thinkTimer()
 {
 	if (!_parent->getMap()->getBlastFlash())
 	{
-		if (_parent->getMap()->getExplosions()->empty())
-			explode();
-
-		for (std::list<Explosion*>::iterator i = _parent->getMap()->getExplosions()->begin(); i != _parent->getMap()->getExplosions()->end();)
+		if (_explosions.empty())
 		{
-			if (!(*i)->animate())
+			if (_delayExplosion) explode();
+			_finished = true;
+		}
+		else
+		{
+			for (std::vector<Explosion*>::iterator ii = _explosions.begin(); ii != _explosions.end();)
 			{
-				delete (*i);
-				i = _parent->getMap()->getExplosions()->erase(i);
-				if (_parent->getMap()->getExplosions()->empty())
+				if (!(*ii)->animate())
 				{
-					explode();
-					return;
+					std::list<Explosion*> *mapExplosions = _parent->getMap()->getExplosions();
+					for (std::list<Explosion*>::const_iterator jj = mapExplosions->begin(); jj != mapExplosions->end(); ++jj)
+					{
+						if (*jj == *ii)
+						{
+							mapExplosions->erase(jj);
+							break;
+						}
+					}
+
+					delete (*ii);
+					ii = _explosions.erase(ii);
+
+					if (_explosions.empty())
+					{
+						_finished = true;
+						if (!_subState) _parent->popState();
+						if (_delayExplosion) explode();
+						return;
+					}
 				}
-			}
-			else
-			{
-				++i;
+				else
+				{
+					++ii;
+				}
 			}
 		}
 	}
@@ -217,6 +279,7 @@ void ExplosionBState::explode()
 {
 	bool terrainExplosion = false;
 	SavedBattleGame *save = _parent->getSave();
+
 	// after the animation is done, the real explosion/hit takes place
 	if (_item)
 	{
@@ -229,18 +292,36 @@ void ExplosionBState::explode()
 
 		if (_areaOfEffect)
 		{
-			save->getTileEngine()->explode(_center, _power, _item->getRules()->getDamageType(), _item->getRules()->getExplosionRadius(), _unit);
+			save->getTileEngine()->explode(_center, _power, _parent->getCurrentAction()->type, _item->getRules()->getDamageType(), _item->getRules()->getExplosionRadius(), _item->getRules()->getExplosionDropoff(), _unit);
 		}
 		else if (!_cosmetic)
 		{
 			ItemDamageType type = _item->getRules()->getDamageType();
 
-			victim = save->getTileEngine()->hit(_center, _power, type, _unit);
+			if (type == DT_TELEPORT)
+			{
+				Tile *destination = _tile ? _tile : save->getTile(Position(_center.x / 16, _center.y / 16, _center.z / 24));
+				if (_unit && destination && !destination->getUnit())
+				{
+					save->getTile(_unit->getPosition())->setUnit(0);
+					const Position& oldPosition = _unit->getPosition();
+					_unit->setPosition(destination->getPosition());
+					destination->setUnit(_unit);
+					save->getTileEngine()->calculateFOV(oldPosition);
+					save->getTileEngine()->calculateFOV(destination->getPosition());
+				}
+			}
+			else
+			{
+				victim = save->getTileEngine()->hit(_center, _power, save->getBattleGame()->getCurrentAction()->type, type, _unit, _item);
+			}
 		}
+
 		// check if this unit turns others into zombies
 		if (!_item->getRules()->getZombieUnit().empty()
 			&& victim
 			&& victim->getArmor()->getSize() == 1
+			&& !victim->isVehicle()
 			&& (victim->getGeoscapeSoldier() || victim->getUnitRules()->getRace() == "STR_CIVILIAN")
 			&& victim->getSpawnUnit().empty())
 		{
@@ -271,7 +352,7 @@ void ExplosionBState::explode()
 		{
 			_tile->setExplosive(0,0,true);
 		}
-		save->getTileEngine()->explode(_center, _power, DT, _power/10);
+		save->getTileEngine()->explode(_center, _power, _parent->getCurrentAction()->type, DT, _power/10, 0);
 		terrainExplosion = true;
 	}
 	if (!_tile && !_item)
@@ -282,14 +363,14 @@ void ExplosionBState::explode()
 		{
 			radius = _parent->getMod()->getItem(_unit->getArmor()->getCorpseGeoscape(), true)->getExplosionRadius();
 		}
-		save->getTileEngine()->explode(_center, _power, DT_HE, radius);
+		save->getTileEngine()->explode(_center, _power, _parent->getCurrentAction()->type, DT_HE, radius, 0);
 		terrainExplosion = true;
 	}
 
 	if (!_cosmetic)
 	{
 		// now check for new casualties
-		_parent->checkForCasualties(_item, _unit, false, terrainExplosion);
+		_parent->checkForCasualties(_item, _unit, false, terrainExplosion, _subState);
 	}
 
 	// if this explosion was caused by a unit shooting, now it's the time to put the gun down
@@ -299,18 +380,29 @@ void ExplosionBState::explode()
 		_unit->setCache(0);
 	}
 	_parent->getMap()->cacheUnits();
-	_parent->popState();
+	//_finished = true;
+	//if(!_subState) _parent->popState();
 
 	// check for terrain explosions
 	Tile *t = save->getTileEngine()->checkForTerrainExplosions();
-	if (t)
+	if(t)
 	{
 		Position p = Position(t->getPosition().x * 16, t->getPosition().y * 16, t->getPosition().z * 24);
-		p += Position(8,8,0);
-		_parent->statePushFront(new ExplosionBState(_parent, p, 0, _unit, t));
+		p += Position(8, 8, 0);
+		{
+			//_parent->statePushFront(new ExplosionBState(_parent, p, 0, _unit, t));
+			if(!_subState)
+			{
+				_parent->statePushFront(new ExplosionBState(_parent, p, 0, _unit, t));
+			}
+			else
+			{
+				_terrainExplosion = new ExplosionBState(_parent, p, 0, _unit, t, false, false, true);
+			}
+		}
 	}
 
-	if (_item && (_item->getRules()->getBattleType() == BT_GRENADE || _item->getRules()->getBattleType() == BT_PROXIMITYGRENADE))
+	if (_item && !_item->isAmmo() && (_item->getRules()->getBattleType() == BT_GRENADE || _item->getRules()->getBattleType() == BT_PROXIMITYGRENADE))
 	{
 		for (std::vector<BattleItem*>::iterator j = _parent->getSave()->getItems()->begin(); j != _parent->getSave()->getItems()->end(); ++j)
 		{
@@ -323,4 +415,35 @@ void ExplosionBState::explode()
 	}
 }
 
+/**
+ * Returns if the current explosion is AoE.
+ * @return True if the explosion is an area of effect.
+ */
+bool ExplosionBState::getAreaOfEffect() const
+{
+	return _areaOfEffect;
+}
+
+/**
+ * Returns If the state is a substate and has finished processing.
+ * @return True if the state is a substate and has finished processing.
+ */
+bool ExplosionBState::getFinished() const
+{
+	return _finished;
+}
+
+/**
+ * Returns the new terrain explosion state if one was caused by explode() for a substate.
+ * @return The new explosion state.
+ */
+ExplosionBState *ExplosionBState::getTerrainExplosion() const
+{
+	return _terrainExplosion;
+}
+
+void ExplosionBState::clearTerrainExplosion()
+{
+	_terrainExplosion = 0;
+}
 }

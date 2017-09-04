@@ -33,12 +33,14 @@ namespace OpenXcom
 int Pathfinding::red = 3;
 int Pathfinding::yellow = 10;
 int Pathfinding::green = 4;
+int Pathfinding::blue = 14;
+int Pathfinding::purple = 13;
 
 /**
  * Sets up a Pathfinding.
  * @param save pointer to SavedBattleGame object.
  */
-Pathfinding::Pathfinding(SavedBattleGame *save) : _save(save), _unit(0), _pathPreviewed(false), _strafeMove(false), _totalTUCost(0), _modifierUsed(false), _movementType(MT_WALK)
+Pathfinding::Pathfinding(SavedBattleGame *save) : _save(save), _unit(0), _pathPreviewed(false), _totalTUCost(0), _modifierUsed(KMOD_NONE), _movementType(MT_WALK), _movementAction(MV_WALK)
 {
 	_size = _save->getMapSizeXYZ();
 	// Initialize one node per tile
@@ -81,6 +83,11 @@ void Pathfinding::calculate(BattleUnit *unit, Position endPosition, BattleUnit *
 {
 	_totalTUCost = 0;
 	_path.clear();
+
+	_modifierUsed = SDL_GetModState();
+
+	_movementAction = MV_WALK;
+
 	// i'm DONE with these out of bounds errors.
 	if (endPosition.x > _save->getMapSizeX() - unit->getArmor()->getSize() || endPosition.y > _save->getMapSizeY() - unit->getArmor()->getSize() || endPosition.x < 0 || endPosition.y < 0) return;
 
@@ -157,24 +164,35 @@ void Pathfinding::calculate(BattleUnit *unit, Position endPosition, BattleUnit *
 			}
 		}
 	}
-	// Strafing move allowed only to adjacent squares on same z. "Same z" rule mainly to simplify walking render.
-	_strafeMove = Options::strafe && (SDL_GetModState() & KMOD_CTRL) != 0 && (startPosition.z == endPosition.z) &&
-							(abs(startPosition.x - endPosition.x) <= 1) && (abs(startPosition.y - endPosition.y) <= 1);
 
 	// look for a possible fast and accurate bresenham path and skip A*
 	if (startPosition.z == endPosition.z && bresenhamPath(startPosition,endPosition, target, sneak))
 	{
 		std::reverse(_path.begin(), _path.end()); //paths are stored in reverse order
-		return;
 	}
 	else
 	{
 		abortPath(); // if bresenham failed, we shouldn't keep the path it was attempting, in case A* fails too.
+
+		// Now try through A*.
+		if (!aStarPath(startPosition, endPosition, target, sneak, maxTUCost))
+		{
+			abortPath();
+			return;
+		}
 	}
-	// Now try through A*.
-	if (!aStarPath(startPosition, endPosition, target, sneak, maxTUCost))
+
+	if ((_modifierUsed & KMOD_CTRL) && (_modifierUsed & KMOD_CTRL) == _modifierUsed && _unit->getArmor()->getSize() == 1 && _unit->getTurretType() == -1 && _path.size() > 4 && _unit->getTimeUnits() > 20)
 	{
-		abortPath();
+		_movementAction = MV_SPRINT;
+	}
+	else if ((_modifierUsed & KMOD_ALT) && (_modifierUsed & KMOD_CTRL) && _unit->getArmor()->getSize() == 1 && _unit->getTurretType() == -1 && !unit->getEffectComponent(EC_DIRECTIONAL_LIGHT) && !unit->getEffectComponent(EC_CIRCULAR_LIGHT))
+	{
+		_movementAction = MV_SNEAK;
+	}
+	else if ((_modifierUsed & KMOD_CTRL) && (_modifierUsed & KMOD_CTRL) == _modifierUsed && (startPosition.z == endPosition.z) && (abs(startPosition.x - endPosition.x) <= 1) && (abs(startPosition.y - endPosition.y) <= 1))
+	{
+		_movementAction = MV_STRAFE;
 	}
 }
 
@@ -226,7 +244,7 @@ bool Pathfinding::aStarPath(Position startPosition, Position endPosition, Battle
 			int tuCost = getTUCost(currentPos, direction, &nextPos, _unit, target, missile);
 			if (tuCost >= 255) // Skip unreachable / blocked
 				continue;
-			if (sneak && _save->getTile(nextPos)->getVisible()) tuCost *= 2; // avoid being seen
+			if (sneak && _save->getTile(nextPos)->getVisibleCount()) tuCost *= 2; // avoid being seen
 			PathfindingNode *nextNode = getNode(nextPos);
 			if (nextNode->isChecked()) // Our algorithm means this node is already at minimum cost.
 				continue;
@@ -453,17 +471,17 @@ int Pathfinding::getTUCost(Position startPosition, int direction, Position *endP
 
 			// Strafing costs +1 for forwards-ish or sidewards, propose +2 for backwards-ish directions
 			// Maybe if flying then it makes no difference?
-			if (Options::strafe && _strafeMove) {
+			if (_movementAction == MV_STRAFE) {
 				if (size) {
 					// 4-tile units not supported.
 					// Turn off strafe move and continue
-					_strafeMove = false;
+					_movementAction = MV_WALK;
 				}
 				else
 				{
 					if (std::min(abs(8 + direction - _unit->getDirection()), std::min( abs(_unit->getDirection() - direction), abs(8 + _unit->getDirection() - direction))) > 2) {
 						// Strafing backwards-ish currently unsupported, turn it off and continue.
-						_strafeMove = false;
+						_movementAction = MV_WALK;
 					}
 					else
 					{
@@ -938,22 +956,30 @@ bool Pathfinding::previewPath(bool bRemove)
 		switchBack = true;
 		_save->getBattleGame()->setTUReserved(BA_AUTOSHOT);
 	}
-	_modifierUsed = (SDL_GetModState() & KMOD_CTRL) != 0;
-	bool running = Options::strafe && _modifierUsed && _unit->getArmor()->getSize() == 1 && _path.size() > 1;
+	//_modifierUsed = SDL_GetModState();
+	bool running = _movementAction == MV_SPRINT;
+	bool sneaking = _movementAction == MV_SNEAK;
 	for (std::vector<int>::reverse_iterator i = _path.rbegin(); i != _path.rend(); ++i)
 	{
 		int dir = *i;
 		int tu = getTUCost(pos, dir, &destination, _unit, 0, false); // gets tu cost, but also gets the destination position.
 		int energyUse = tu;
+
+		if (running)
+		{
+			tu *= 0.5;
+			energyUse *= 2;
+		}
+		else if (sneaking)
+		{
+			tu *= 2.0;
+		}
+
 		if (dir >= Pathfinding::DIR_UP)
 		{
 			energyUse = 0;
 		}
-		else if (running)
-		{
-			tu *= 0.75;
-			energyUse *= 1.5;
-		}
+
 		energy -= energyUse / 2;
 		tus -= tu;
 		total += tu;
@@ -990,7 +1016,8 @@ bool Pathfinding::previewPath(bool bRemove)
 					tile->setPreview(-1);
 					tile->setTUMarker(-1);
 				}
-				tile->setMarkerColor(bRemove?0:((tus>=0 && energy>=0)?(reserve?Pathfinding::green : Pathfinding::yellow) : Pathfinding::red));
+
+				tile->setMarkerColor(bRemove?0:((tus>=0 && energy>=0)?(running ? Pathfinding::blue : (sneaking ? Pathfinding::purple : (reserve?Pathfinding::green : Pathfinding::yellow))) : Pathfinding::red));
 			}
 		}
 	}
@@ -1101,7 +1128,7 @@ bool Pathfinding::bresenhamPath(Position origin, Position target, BattleUnit *ta
 			}
 			int tuCost = getTUCost(lastPoint, dir, &nextPoint, _unit, targetUnit, (targetUnit && maxTUCost == 10000));
 
-			if (sneak && _save->getTile(nextPoint)->getVisible()) return false;
+			if (sneak && _save->getTile(nextPoint)->getVisibleCount()) return false;
 
 			// delete the following
 			bool isDiagonal = (dir&1);
@@ -1205,15 +1232,6 @@ std::vector<int> Pathfinding::findReachable(BattleUnit *unit, int tuMax)
 }
 
 /**
- * Gets the strafe move setting.
- * @return Strafe move.
- */
-bool Pathfinding::getStrafeMove() const
-{
-	return _strafeMove;
-}
-
-/**
  * Gets the path preview setting.
  * @return True, if paths are previewed.
  */
@@ -1243,7 +1261,7 @@ void Pathfinding::setUnit(BattleUnit* unit)
  * Checks whether a modifier key was used to enable strafing or running.
  * @return True, if a modifier was used.
  */
-bool Pathfinding::isModifierUsed() const
+SDLMod Pathfinding::getModifierUsed() const
 {
 	return _modifierUsed;
 }
@@ -1266,4 +1284,11 @@ std::vector<int> Pathfinding::copyPath() const
 	return _path;
 }
 
+/**
+ * Returns the calculated path's movement action type.
+ */
+MovementAction Pathfinding::getMovementAction() const
+{
+	return _movementAction;
+}
 }

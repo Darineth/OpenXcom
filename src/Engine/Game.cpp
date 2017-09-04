@@ -42,6 +42,10 @@
 namespace OpenXcom
 {
 
+Game *Game::_game = 0;
+Mod *Game::_mod = 0;
+Language *Game::_lang = 0;
+SavedGame *Game::_save = 0;
 const double Game::VOLUME_GRADIENT = 10.0;
 
 /**
@@ -49,8 +53,10 @@ const double Game::VOLUME_GRADIENT = 10.0;
  * creates the display screen and sets up the cursor.
  * @param title Title of the game window.
  */
-Game::Game(const std::string &title) : _screen(0), _cursor(0), _lang(0), _save(0), _mod(0), _quit(false), _init(false), _mouseActive(true), _timeUntilNextFrame(0)
+Game::Game(const std::string &title) : _screen(0), _cursor(0), _quit(false), _init(false), _mouseActive(true), _timeUntilNextFrame(0)
 {
+	_game = this;
+
 	Options::reload = false;
 	Options::mute = false;
 
@@ -121,14 +127,23 @@ Game::~Game()
 
 	delete _cursor;
 	delete _lang;
+	_lang = 0;
 	delete _save;
 	delete _mod;
+	_mod = 0;
 	delete _screen;
 	delete _fpsCounter;
 
 	Mix_CloseAudio();
 
 	SDL_Quit();
+
+	_game = 0;
+}
+
+Game *Game::getGame()
+{
+	return _game;
 }
 
 /**
@@ -442,7 +457,7 @@ void Game::popState()
  * Returns the language currently in use by the game.
  * @return Pointer to the language.
  */
-Language *Game::getLanguage() const
+Language *Game::getLanguage()
 {
 	return _lang;
 }
@@ -495,7 +510,7 @@ void Game::loadLanguage(const std::string &filename)
  * Returns the saved game currently in use by the game.
  * @return Pointer to the saved game.
  */
-SavedGame *Game::getSavedGame() const
+SavedGame *Game::getSavedGame()
 {
 	return _save;
 }
@@ -514,7 +529,7 @@ void Game::setSavedGame(SavedGame *save)
  * Returns the mod currently in use by the game.
  * @return Pointer to the mod.
  */
-Mod *Game::getMod() const
+Mod *Game::getMod()
 {
 	return _mod;
 }

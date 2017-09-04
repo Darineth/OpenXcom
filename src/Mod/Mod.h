@@ -1,22 +1,22 @@
 #pragma once
 /*
- * Copyright 2010-2016 OpenXcom Developers.
- *
- * This file is part of OpenXcom.
- *
- * OpenXcom is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * OpenXcom is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
- */
+* Copyright 2010-2016 OpenXcom Developers.
+*
+* This file is part of OpenXcom.
+*
+* OpenXcom is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* OpenXcom is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
+*/
 #include <map>
 #include <vector>
 #include <string>
@@ -29,7 +29,6 @@
 
 namespace OpenXcom
 {
-
 class Surface;
 class SurfaceSet;
 class Font;
@@ -52,11 +51,13 @@ class RuleItem;
 class RuleUfo;
 class RuleTerrain;
 class MapDataSet;
+class RuleRole;
 class RuleSoldier;
 class Unit;
 class Armor;
 class ArticleDefinition;
 class RuleInventory;
+class RuleInventoryLayout;
 class RuleResearch;
 class RuleManufacture;
 class AlienRace;
@@ -79,11 +80,13 @@ class RuleVideo;
 class RuleMusic;
 class RuleMissionScript;
 struct StatAdjustment;
+class Language;
+class RuleEffect;
 
 /**
- * Contains all the game-specific static data that never changes
- * throughout the game, like rulesets and resources.
- */
+* Contains all the game-specific static data that never changes
+* throughout the game, like rulesets and resources.
+*/
 class Mod
 {
 private:
@@ -106,6 +109,7 @@ private:
 	std::map<std::string, RuleCraft*> _crafts;
 	std::map<std::string, RuleCraftWeapon*> _craftWeapons;
 	std::map<std::string, RuleItem*> _items;
+	std::map<std::string, RuleRole*> _roles;
 	std::map<std::string, RuleUfo*> _ufos;
 	std::map<std::string, RuleTerrain*> _terrains;
 	std::map<std::string, MapDataSet*> _mapDataSets;
@@ -116,6 +120,7 @@ private:
 	std::map<std::string, Armor*> _armors;
 	std::map<std::string, ArticleDefinition*> _ufopaediaArticles;
 	std::map<std::string, RuleInventory*> _invs;
+	std::map<std::string, RuleInventoryLayout*> _inventoryLayouts;
 	std::map<std::string, RuleResearch *> _research;
 	std::map<std::string, RuleManufacture *> _manufacture;
 	std::map<std::string, UfoTrajectory *> _ufoTrajectories;
@@ -132,23 +137,30 @@ private:
 	std::map<std::string, ExtraStrings *> _extraStrings;
 	std::vector<StatString*> _statStrings;
 	std::map<std::string, RuleMusic *> _musicDefs;
+	std::map<std::string, RuleEffect*> _effects;
 	RuleGlobe *_globe;
 	RuleConverter *_converter;
 	int _costEngineer, _costScientist, _timePersonnel, _initialFunding, _turnAIUseGrenade, _turnAIUseBlaster, _defeatScore, _defeatFunds;
 	std::pair<std::string, int> _alienFuel;
+	int _baseMissionExperience;
 	std::string _fontName, _finalResearch;
 	YAML::Node _startingBase;
 	GameTime _startingTime;
 	StatAdjustment _statAdjustment[5];
 
 	std::vector<std::string> _countriesIndex, _regionsIndex, _facilitiesIndex, _craftsIndex, _craftWeaponsIndex, _itemsIndex, _invsIndex, _ufosIndex;
-	std::vector<std::string> _soldiersIndex, _aliensIndex, _deploymentsIndex, _armorsIndex, _ufopaediaIndex, _ufopaediaCatIndex, _researchIndex, _manufactureIndex, _MCDPatchesIndex;
+	std::vector<std::string> _soldiersIndex, _aliensIndex, _deploymentsIndex, _armorsIndex, _ufopaediaIndex, _ufopaediaCatIndex, _researchIndex, _manufactureIndex, _MCDPatchesIndex, _rolesIndex;
 	std::vector<std::string> _alienMissionsIndex, _terrainIndex, _extraSpritesIndex, _extraSoundsIndex, _extraStringsIndex, _missionScriptIndex;
+	std::vector<std::string> _inventoryLayoutsIndex;
 	std::vector<std::vector<int> > _alienItemLevels;
 	std::vector<SDL_Color> _transparencies;
-	int _facilityListOrder, _craftListOrder, _itemListOrder, _researchListOrder,  _manufactureListOrder, _ufopaediaListOrder, _invListOrder;
+	int _facilityListOrder, _craftListOrder, _itemListOrder, _researchListOrder, _manufactureListOrder, _ufopaediaListOrder, _invListOrder, _roleListOrder;
 	size_t _modOffset;
 	std::vector<std::string> _psiRequirements; // it's a cache for psiStrengthEval
+	std::map<std::string, Uint8> _soldierUtileColors;
+	std::vector<std::string> _soldierUtileColorIndex;
+	std::map<std::string, int> _actionExperience;
+	std::map<int, float> _damageDropoff;
 
 	/// Loads a ruleset from a YAML file.
 	void loadFile(const std::string &filename);
@@ -213,6 +225,7 @@ public:
 	static std::string DEBRIEF_MUSIC_GOOD;
 	static std::string DEBRIEF_MUSIC_BAD;
 	static int DIFFICULTY_COEFFICIENT[5];
+	static float ENCUMBRANCE_MULTIPLIER;
 	// reset all the statics in all classes to default values
 	static void resetGlobalStatics();
 	/// Creates a blank mod.
@@ -293,6 +306,10 @@ public:
 	const std::vector<std::string> &getSoldiersList() const;
 	/// Gets commendation rules.
 	std::map<std::string, RuleCommendations *> getCommendation() const;
+	/// Gets role rules.
+	RuleRole *getRole(const std::string &name) const;
+	// Gets role list.
+	const std::vector<std::string> &getRolesList() const;
 	/// Gets generated unit rules.
 	Unit *getUnit(const std::string &name, bool error = false) const;
 	/// Gets alien race rules.
@@ -317,6 +334,8 @@ public:
 	std::map<std::string, RuleInventory*> *getInventories();
 	/// Gets the ruleset for a specific inventory.
 	RuleInventory *getInventory(const std::string &id, bool error = false) const;
+	/// Gets the cost of a vehicle.
+	int getVehicleCost() const;
 	/// Gets the cost of an engineer.
 	int getEngineerCost() const;
 	/// Gets the cost of a scientist.
@@ -363,6 +382,8 @@ public:
 	const std::vector<std::string> &getInvsList() const;
 	/// Generates a new soldier.
 	Soldier *genSoldier(SavedGame *save, std::string type = "") const;
+	/// Generates a new vehicle.
+	//Soldier *genVehicle(SavedGame *save, Language* lang, const std::string& soldierType) const;
 	/// Gets the item to be used as fuel for ships.
 	std::string getAlienFuelName() const;
 	/// Gets the amount of alien fuel to recover
@@ -370,9 +391,14 @@ public:
 	/// Gets the font name.
 	std::string getFontName() const;
 	/// Gets first turn when AI can use grenade.
-	int getTurnAIUseGrenade() const {return _turnAIUseGrenade;}
+	int getTurnAIUseGrenade() const { return _turnAIUseGrenade; }
 	/// Gets first turn when AI can use Blaster launcher.
-	int getTurnAIUseBlaster() const {return _turnAIUseBlaster;}
+	int getTurnAIUseBlaster() const { return _turnAIUseBlaster; }
+	/// Gets the amount of base experience soldiers earn for going on a mission.
+	int getBaseMissionExperience() const { return _baseMissionExperience; }
+	/// Gets the number of user selectable colors for armor coloration.
+	const std::map<std::string, Uint8> &getSoldierUtileColors() const { return _soldierUtileColors; }
+	const std::vector<std::string> &getSoldierUtileColorIndex() const { return _soldierUtileColorIndex; }
 	/// Gets the minimum radar's range.
 	int getMinRadarRange() const;
 	/// Gets information on an interface element.
@@ -395,6 +421,13 @@ public:
 	StatAdjustment *getStatAdjustment(int difficulty);
 	int getDefeatScore() const;
 	int getDefeatFunds() const;
+	const std::map<std::string, RuleEffect*> *getEffects() const;
+	RuleEffect *getEffect(const std::string &type) const;
+	std::map<std::string, RuleInventoryLayout*> *getInventoryLayouts();
+	RuleInventoryLayout *getInventoryLayout(const std::string &id) const;
+	const std::vector<std::string> &getInventoryLayoutsList() const;
+	int getActionExperience(const std::string &action) const;
+	float getDamageDropoff(int damageType) const;
 };
 
 }

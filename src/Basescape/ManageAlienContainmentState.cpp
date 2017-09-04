@@ -114,7 +114,7 @@ ManageAlienContainmentState::ManageAlienContainmentState(Base *base, OptionsOrig
 	_txtTitle->setBig();
 	_txtTitle->setAlign(ALIGN_CENTER);
 	_txtTitle->setText(tr("STR_MANAGE_CONTAINMENT"));
-
+	 
 	_txtItem->setText(tr("STR_ALIEN"));
 
 	_txtLiveAliens->setText(tr("STR_LIVE_ALIENS"));

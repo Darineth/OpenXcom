@@ -33,7 +33,7 @@ namespace OpenXcom
  * @param x Position on the x-axis.
  * @param y Position on the y-asis.
  */
-ActionMenuItem::ActionMenuItem(int id, Game *game, int x, int y) : InteractiveSurface(272, 40, x + 24, y - (id*40)), _highlighted(false), _action(BA_NONE), _tu(0)
+ActionMenuItem::ActionMenuItem(int id, Game *game, int x, int y) : InteractiveSurface(272, 20, x + 25, y - (id*25) - 25), _highlighted(false), _action(BA_NONE), _tu(0), _description(L"ActionMenuItem")
 {
 	Font *big = game->getMod()->getFont("FONT_BIG"), *small = game->getMod()->getFont("FONT_SMALL");
 	Language *lang = game->getLanguage();
@@ -46,24 +46,21 @@ ActionMenuItem::ActionMenuItem(int id, Game *game, int x, int y) : InteractiveSu
 	_frame->setHighContrast(true);
 	_frame->setColor(actionMenu->border);
 	_frame->setSecondaryColor(actionMenu->color2);
-	_frame->setThickness(8);
+	_frame->setThickness(3);
 
-	_txtDescription = new Text(200, 20, 10, 13);
+	_txtDescription = new Text(200, 9, 5, 6);
 	_txtDescription->initText(big, small, lang);
-	_txtDescription->setBig();
 	_txtDescription->setHighContrast(true);
 	_txtDescription->setColor(actionMenu->color);
 	_txtDescription->setVisible(true);
 
-	_txtAcc = new Text(100, 20, 140, 13);
+	_txtAcc = new Text(100, 9, 120, 6);
 	_txtAcc->initText(big, small, lang);
-	_txtAcc->setBig();
 	_txtAcc->setHighContrast(true);
 	_txtAcc->setColor(actionMenu->color);
 
-	_txtTU = new Text(80, 20, 210, 13);
+	_txtTU = new Text(80, 9, 210, 6);
 	_txtTU->initText(big, small, lang);
-	_txtTU->setBig();
 	_txtTU->setHighContrast(true);
 	_txtTU->setColor(actionMenu->color);
 }
@@ -87,12 +84,33 @@ ActionMenuItem::~ActionMenuItem()
  * @param timeunits The timeunits string, including the TUs> prefix.
  * @param tu The timeunits value.
  */
-void ActionMenuItem::setAction(BattleActionType action, const std::wstring &description, const std::wstring &accuracy, const std::wstring &timeunits, int tu)
+void ActionMenuItem::setAction(BattleActionType action, const std::wstring &description, const std::wstring &accuracy, const std::wstring &timeunits, int tu, bool accError, bool tuError, bool tuWarn)
 {
 	_action = action;
+
+	Element *actionMenu = Game::getGame()->getMod()->getInterface("battlescape")->getElement("actionMenu");
+	Element *actionMenuWarning = Game::getGame()->getMod()->getInterface("battlescape")->getElement("actionMenuWarning");
+	Element *actionMenuError = Game::getGame()->getMod()->getInterface("battlescape")->getElement("actionMenuError");
+
+	std::wostringstream desc;
+	desc << description << L"   " << accuracy << L"   " << timeunits;
+	_description = desc.str();
 	_txtDescription->setText(description);
 	_txtAcc->setText(accuracy);
+	_txtAcc->setColor(accError ? actionMenuError->color : actionMenu->color);
+
 	_txtTU->setText(timeunits);
+	_txtTU->setColor(tuError ? actionMenuError->color : (tuWarn ? actionMenuWarning->color : actionMenu->color));
+
+	if(accError || tuError)
+	{
+		_frame->setColor(actionMenuError->border);
+	}
+	else if (tuWarn)
+	{
+		_frame->setColor(actionMenuWarning->border);
+	}
+
 	_tu = tu;
 	_redraw = true;
 }
@@ -168,5 +186,8 @@ void ActionMenuItem::mouseOut(Action *action, State *state)
 	InteractiveSurface::mouseOut(action, state);
 }
 
-
+std::wstring ActionMenuItem::getDescription() const
+{
+	return _description;
+}
 }

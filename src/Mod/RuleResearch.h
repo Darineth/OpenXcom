@@ -40,7 +40,7 @@ class RuleResearch
  private:
 	std::string _name, _lookup, _cutscene;
 	int _cost, _points;
-	std::vector<std::string> _dependencies, _unlocks, _getOneFree, _requires;
+	std::vector<std::string> _dependencies, _unlocks, _getOneFree, _requires, _needsAllItems, _needsAnyItems;
 	bool _needItem, _destroyItem;
 	int _listOrder;
 public:
@@ -53,6 +53,10 @@ public:
 	const std::string & getName() const;
 	/// Gets the research dependencies.
 	const std::vector<std::string> & getDependencies() const;
+	/// Gets the needed items to research this (only one required).
+	const std::vector<std::string> & getNeededItemsAny() const;
+	/// Gets the needed items to research this (all required).
+	const std::vector<std::string> & getNeededItemsAll() const;
 	/// Checks if this ResearchProject needs a corresponding Item to be researched.
 	bool needItem() const;
 	/// Checks if this ResearchProject consumes the corresponding Item when research completes.

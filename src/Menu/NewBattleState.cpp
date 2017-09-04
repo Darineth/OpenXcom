@@ -52,6 +52,7 @@
 #include "../Engine/CrossPlatform.h"
 #include "../Mod/RuleAlienMission.h"
 #include "../Mod/RuleGlobe.h"
+#include "../Mod/RuleSoldier.h"
 
 namespace OpenXcom
 {
@@ -280,7 +281,10 @@ void NewBattleState::load(const std::string &filename)
 			if (doc["base"])
 			{
 				const Mod *mod = _game->getMod();
-				SavedGame *save = new SavedGame();
+				SavedGame *save = new SavedGame(mod);
+
+				// Load Roles
+				save->loadRoles(mod);
 
 				Base *base = new Base(mod);
 				base->load(doc["base"], save, false);
@@ -377,7 +381,8 @@ void NewBattleState::save(const std::string &filename)
 void NewBattleState::initSave()
 {
 	const Mod *mod = _game->getMod();
-	SavedGame *save = new SavedGame();
+	SavedGame *save = new SavedGame(mod);
+
 	Base *base = new Base(mod);
 	const YAML::Node &starter = _game->getMod()->getStartingBase();
 	base->load(starter, save, true, true);
@@ -393,11 +398,25 @@ void NewBattleState::initSave()
 	_craft = new Craft(mod->getCraft(_crafts[_cbxCraft->getSelected()]), base, 1);
 	base->getCrafts()->push_back(_craft);
 
-	// Generate soldiers
-	for (int i = 0; i < 30; ++i)
+	std::vector<std::string> soldierTypes(_game->getMod()->getSoldiersList());
+
+	// Trim soldier type list to remove vehicle types.
+	for (std::vector<std::string>::iterator ii = soldierTypes.begin(); ii != soldierTypes.end();)
 	{
-		int randomType = RNG::generate(0, _game->getMod()->getSoldiersList().size() - 1);
-		Soldier *soldier = mod->genSoldier(save, _game->getMod()->getSoldiersList().at(randomType));
+		RuleSoldier *rs = _game->getMod()->getSoldier(*ii);
+
+		if (rs->isVehicle())
+			ii = soldierTypes.erase(ii);
+		else
+			++ii;
+	}
+
+	// Generate soldiers
+	for (int i = 0; i < 50; ++i)
+	{
+		int randomType = RNG::generate(0, soldierTypes.size() - 1);
+		std::string soldierType = soldierTypes.at(randomType);
+		Soldier *soldier = mod->genSoldier(save, soldierType);
 
 		for (int n = 0; n < 5; ++n)
 		{
@@ -426,12 +445,39 @@ void NewBattleState::initSave()
 			soldier->setCraft(_craft);
 	}
 
+	for (std::vector<std::string>::const_iterator ii = mod->getSoldiersList().begin(); ii != mod->getSoldiersList().end(); ++ii)
+	{
+		RuleSoldier *rs = mod->getSoldier(*ii);
+
+		if (rs && rs->isVehicle())
+		{
+			for (int nn = 0; nn < 4; ++nn)
+			{
+				base->getSoldiers()->push_back(mod->genSoldier(save, (*ii)));
+			}
+		}
+	}
+
 	// Generate items
 	const std::vector<std::string> &items = mod->getItemsList();
 	for (std::vector<std::string>::const_iterator i = items.begin(); i != items.end(); ++i)
 	{
 		RuleItem *rule = _game->getMod()->getItem(*i);
-		if (rule->getBattleType() != BT_CORPSE && rule->isRecoverable())
+		bool usable = true;
+
+		if(rule->getRequirements().size())
+		{
+			for(std::vector<std::string>::const_iterator jj = rule->getRequirements().begin(); jj != rule->getRequirements().end(); ++jj)
+			{
+				if(!mod->getResearch(*jj, false))
+				{
+					usable = false;
+					break;
+				}
+			}
+		}
+
+		if (usable && rule->getBattleType() != BT_CORPSE && rule->isRecoverable())
 		{
 			base->getStorageItems()->addItem(*i, 1);
 			if (rule->getBattleType() != BT_NONE && !rule->isFixed() && rule->getBigSprite() > -1)

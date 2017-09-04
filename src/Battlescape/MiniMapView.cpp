@@ -98,7 +98,7 @@ void MiniMapView::draw()
 							int shade = 16;
 							if (t->isDiscovered(2))
 							{
-								shade = t->getShade();
+								shade = t->getShade(true);
 								if (shade > 7) shade = 7; //vanilla
 							}
 							s->blitNShade(this, x, y, shade);

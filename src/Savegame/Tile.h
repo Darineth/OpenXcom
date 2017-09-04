@@ -35,6 +35,15 @@ class BattleItem;
 class RuleInventory;
 class Particle;
 
+struct TileDrawable
+{
+public:
+	TileDrawable(Surface *s, int x, int y, int o, int color = 0, bool topMost = false);
+	Surface *surface;
+	int x, y, off, color;
+	bool topMost;
+};
+
 /**
  * Basic element of which a battle map is build.
  * @sa http://www.ufopaedia.org/index.php?title=MAPS
@@ -78,7 +87,12 @@ protected:
 	int _TUMarker;
 	int _overlaps;
 	bool _danger;
+	int _nightVision;
 	std::list<Particle*> _particles;
+	bool _knownHiddenUnit;
+
+	std::vector<TileDrawable*> _drawables;
+
 public:
 	/// Creates a tile.
 	Tile(Position pos);
@@ -130,7 +144,7 @@ public:
 	/// Gets the floor object footstep sound.
 	int getFootstepSound(Tile *tileBelow) const;
 	/// Open a door, returns the ID, 0(normal), 1(ufo) or -1 if no door opened.
-	int openDoor(int part, BattleUnit *Unit = 0, BattleActionType reserve = BA_NONE);
+	int openDoor(SavedBattleGame *game, int part, BattleUnit *Unit = 0, BattleActionType reserve = BA_NONE);
 
 	/**
 	 * Check if the ufo door is open or opening. Used for visibility/light blocking checks.
@@ -154,7 +168,7 @@ public:
 	/// Add light to this tile.
 	void addLight(int light, int layer);
 	/// Get the shade amount.
-	int getShade() const;
+	int getShade(bool displayOnly = false) const;
 	/// Destroy a tile part.
 	bool destroy(int part, SpecialTileType type);
 	/// Damage a tile part.
@@ -216,9 +230,11 @@ public:
 	/// Get the tile marker color.
 	int getMarkerColor() const;
 	/// Set the tile visible flag.
-	void setVisible(int visibility);
+	void setVisibleCount(int visibility, int nightVision);
 	/// Get the tile visible flag.
-	int getVisible() const;
+	int getVisibleCount() const;
+	/// Get the tile night vision flag.
+	bool getNightVision() const;
 	/// set the direction (used for path previewing)
 	void setPreview(int dir);
 	/// retrieve the direction stored by the pathfinding.
@@ -239,7 +255,13 @@ public:
 	void addParticle(Particle *particle);
 	/// gets a pointer to this tile's particle array.
 	std::list<Particle *> *getParticleCloud();
+	/// Returns a list of pending drawable items
+	std::vector<TileDrawable*>& getDrawables();
+	/// Clears and cleans up the pending drawables vector.
+	void clearDrawables();
 
+	void setKnownHiddenUnit(bool known = true);
+	bool getKnownHiddenUnit() const;
 };
 
 }

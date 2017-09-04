@@ -852,63 +852,6 @@ void Surface::unlock()
 	SDL_UnlockSurface(_surface);
 }
 
-/**
- * help class used for Surface::blitNShade
- */
-struct ColorReplace
-{
-	/**
-	* Function used by ShaderDraw in Surface::blitNShade
-	* set shade and replace color in that surface
-	* @param dest destination pixel
-	* @param src source pixel
-	* @param shade value of shade of this surface
-	* @param newColor new color to set (it should be offseted by 4)
-	*/
-	static inline void func(Uint8& dest, const Uint8& src, const int& shade, const int& newColor, const int&)
-	{
-		if (src)
-		{
-			const int newShade = (src&15) + shade;
-			if (newShade > 15)
-				// so dark it would flip over to another color - make it black instead
-				dest = 15;
-			else
-				dest = newColor | newShade;
-		}
-	}
-
-};
-
-/**
- * help class used for Surface::blitNShade
- */
-struct StandardShade
-{
-	/**
-	* Function used by ShaderDraw in Surface::blitNShade
-	* set shade
-	* @param dest destination pixel
-	* @param src source pixel
-	* @param shade value of shade of this surface
-	* @param notused
-	* @param notused
-	*/
-	static inline void func(Uint8& dest, const Uint8& src, const int& shade, const int&, const int&)
-	{
-		if (src)
-		{
-			const int newShade = (src&15) + shade;
-			if (newShade > 15)
-				// so dark it would flip over to another color - make it black instead
-				dest = 15;
-			else
-				dest = (src&(15<<4)) | newShade;
-		}
-	}
-
-};
-
 
 
 /**
@@ -935,7 +878,7 @@ void Surface::blitNShade(Surface *surface, int x, int y, int off, bool half, int
 	{
 		--newBaseColor;
 		newBaseColor <<= 4;
-		ShaderDraw<ColorReplace>(ShaderSurface(surface), src, ShaderScalar(off), ShaderScalar(newBaseColor));
+		ShaderDraw<RecolorAndShade>(ShaderSurface(surface), src, ShaderScalar(off), ShaderScalar(newBaseColor));
 	}
 	else
 		ShaderDraw<StandardShade>(ShaderSurface(surface), src, ShaderScalar(off));

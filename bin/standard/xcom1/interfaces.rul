@@ -692,6 +692,9 @@ interfaces:
         color2: 245  # slightly lighter blue
       - id: text
         color: 244   # even lighter blue
+      - id: activity
+        color: 244
+        color2: 90
       - id: genericWindow
         color: 239   # bright green
       - id: genericText
@@ -905,6 +908,9 @@ interfaces:
       - id: text
         color: 218   # blue
         color2: 208  # white
+      - id: cost
+        color: 213   # gold
+        color2: 203
       - id: list
         color: 218   # blue
         color2: 208  # white
@@ -1331,6 +1337,8 @@ interfaces:
         color2: 82
       - id: barMorale
         color: 192
+      - id: barExperience
+        color: 208
       - id: numAmmoLeft
         color: 2
       - id: numAmmoRight
@@ -1390,10 +1398,37 @@ interfaces:
         color: -1
         color2: 14
         border: 3
+      - id: actionMenuWarning
+        color: 16   # Lightest Orange
+        color2: 14  # Second Darkest Grey
+        border: 16  # Darker Orange
+      - id: actionMenuError
+        color: 32   # Lightest Red
+        color2: 14  # Second Darkest Grey
+        border: 38  # Dark Orange
       - id: grenadeBackground
         color: 24
         color2: 28
         border: 15
+      - id: effects
+        color: 64
+        color2: 24
+      - id: unitName
+        color: 63  #Player
+        color2: 15 #Neutral
+        color3: 31 #Hostile
+      - id: spottedUnits
+        color:  32 #Dark
+        color2: 44 #Flashing
+        border: 13 #Border
+  - type: combatLog
+    elements:
+      - id: text
+        color: 32
+        color2: 64
+        color3: 128
+        color4: 16
+        border: 0
   - type: briefing
     elements:
       - id: window
@@ -1407,39 +1442,66 @@ interfaces:
     elements:
       - id: textName
         color: 64
+      - id: textRole
+        color: 16
       - id: textTUs
-        color: 64
-        color2: 16
+        color: 63
+        color2: 62
+      - id : textHealth
+        color: 63
+        color2: 32
       - id: textWeight
-        color: 64
-        color2: 16
+        color: 63
+        color2: 48
       - id: textFiring
-        color: 64
-        color2: 16
+        color: 63
+        color2: 128
+      - id: textThrowing
+        color: 63
+        color2: 96
       - id: textReaction
-        color: 64
-        color2: 16
+        color: 63
+        color2: 144
       - id: textPsiSkill
-        color: 64
-        color2: 16
+        color: 63
+        color2: 192
       - id: textPsiStrength
-        color: 64
+        color: 63
+        color2: 192
+      - id: textArmor
+        color: 63
         color2: 16
       - id: textItem
         color: 48
+        color2: 16
       - id: textAmmo
-        color: 64
+        color: 63
         color2: 16
       # required
       - id: textSlots
         color: 63
-      - id: weight
-        color: 16     # gold (acceptable)
-        color2: 32    # red (overweight)
+        color2: 16
+      - id: weight       # 0-50%
+        color: 48        # green (light)
+      - id: weightMedium # 50-100%
+        color: 16        # gold (acceptable)
+      - id: weightHeavy  # > 100%
+        color: 32        # red (overweight)
       - id: grid
         color: 8
+      - id: gridOk
+        color: 66     # green
+        color2: 75
+      - id: gridError
+        color: 34     # red
+        color2: 43
+      - id: gridReload
+        color: 21     # orange?
+        color2: 25
       - id: numStack
         color: 66
+      - id: armorColor
+        color: 80
   - type: stats
     elements:
       - id: textName
@@ -1507,3 +1569,19 @@ interfaces:
       - id: buttonEnd
         pos: [220, 140]
         size: [20, 20]
+  - type: rolemenu
+    elements:
+      - id: palette
+        color: 4     # green
+      - id: window
+      - id: button
+        TFTDMode: true
+      - id: heading
+  - type: rolechange
+    elements:
+      - id: palette
+        color: 4     # green
+      - id: window
+      - id: button
+        TFTDMode: true
+      - id: list

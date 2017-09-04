@@ -69,6 +69,9 @@ CraftInfoState::CraftInfoState(Base *base, size_t craftId) : _base(base), _craft
 	_edtCraft = new TextEdit(this, 140, 16, 80, 8);
 	_txtDamage = new Text(100, 17, 14, 24);
 	_txtFuel = new Text(82, 17, 228, 24);
+	_txtMaxDamage = new Text(110, 8, 100, 24);
+	_txtAcceleration = new Text(110, 8, 100, 32);
+	_txtMaxSpeed = new Text(110, 8, 100, 40);
 	_txtW1Name = new Text(95, 16, 46, 48);
 	_txtW1Ammo = new Text(75, 24, 46, 64);
 	_txtW2Name = new Text(95, 16, 184, 48);
@@ -92,6 +95,9 @@ CraftInfoState::CraftInfoState(Base *base, size_t craftId) : _base(base), _craft
 	add(_edtCraft, "text1", "craftInfo");
 	add(_txtDamage, "text1", "craftInfo");
 	add(_txtFuel, "text1", "craftInfo");
+	add(_txtMaxDamage, "text2", "craftInfo");
+	add(_txtAcceleration, "text2", "craftInfo");
+	add(_txtMaxSpeed, "text2", "craftInfo");
 	add(_txtW1Name, "text2", "craftInfo");
 	add(_txtW1Ammo, "text2", "craftInfo");
 	add(_txtW2Name, "text2", "craftInfo");
@@ -178,6 +184,10 @@ void CraftInfoState::init()
 		secondLine << formatTime(fuelHours);
 	}
 	_txtFuel->setText(secondLine.str());
+
+	_txtMaxDamage->setText(tr("STR_DAMAGE_CAPACITY_UC").arg(_craft->getRules()->getMaxDamage()));
+	_txtMaxSpeed->setText(tr("STR_MAXIMUM_SPEED_UC").arg(_craft->getRules()->getMaxSpeed()));
+	_txtAcceleration->setText(tr("STR_ACCELERATION").arg(_craft->getRules()->getAcceleration()));
 
 	if (_craft->getRules()->getSoldiers() > 0)
 	{

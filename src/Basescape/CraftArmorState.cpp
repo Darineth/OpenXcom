@@ -35,6 +35,7 @@
 #include "../Savegame/ItemContainer.h"
 #include "../Mod/RuleInterface.h"
 #include "../Mod/RuleSoldier.h"
+#include "../Savegame/Role.h"
 #include <algorithm>
 
 namespace OpenXcom
@@ -98,14 +99,25 @@ CraftArmorState::CraftArmorState(Base *base, size_t craft) : _base(base), _craft
 	Craft *c = _base->getCrafts()->at(_craft);
 	for (std::vector<Soldier*>::iterator i = _base->getSoldiers()->begin(); i != _base->getSoldiers()->end(); ++i)
 	{
-		_lstSoldiers->addRow(3, (*i)->getName(true).c_str(), (*i)->getCraftString(_game->getLanguage()).c_str(), tr((*i)->getArmor()->getType()).c_str());
+		Soldier *ss = *i;
+
+		std::wostringstream name;
+		Role* role;
+		if((role = ss->getRole()) && !role->isBlank())
+		{
+			name << tr(ss->getRole()->getName() + "_SHORT") << "-";
+		}
+
+		name << ss->getName(true);
+
+		_lstSoldiers->addRow(3, name.str().c_str(), ss->getCraftString(_game->getLanguage()).c_str(), tr(ss->getArmor()->getType()).c_str());
 
 		Uint8 color;
-		if ((*i)->getCraft() == c)
+		if (ss->getCraft() == c)
 		{
 			color = _lstSoldiers->getSecondaryColor();
 		}
-		else if ((*i)->getCraft() != 0)
+		else if (ss->getCraft() != 0)
 		{
 			color = otherCraftColor;
 		}
@@ -156,7 +168,7 @@ void CraftArmorState::btnOkClick(Action *)
 void CraftArmorState::lstSoldiersClick(Action *action)
 {
 	Soldier *s = _base->getSoldiers()->at(_lstSoldiers->getSelectedRow());
-	if (!(s->getCraft() && s->getCraft()->getStatus() == "STR_OUT"))
+	if (!(s->getCraft() && s->getCraft()->getStatus() == "STR_OUT") && !s->isVehicle())
 	{
 		if (action->getDetails()->button.button == SDL_BUTTON_LEFT)
 		{

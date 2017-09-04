@@ -95,9 +95,12 @@ UnitDieBState::UnitDieBState(BattlescapeGame *parent, BattleUnit *unit, ItemDama
 		}
 	}
 
+	_unit->setAboutToFall(true);
 	_unit->clearVisibleTiles();
 	_unit->clearVisibleUnits();
-
+	_unit->clearOverwatch();
+	_unit->clearOngoingAction();
+	
 	if (!_parent->getSave()->isBeforeGame() && _unit->getFaction() == FACTION_HOSTILE)
 	{
 		std::vector<Node *> *nodes = _parent->getSave()->getNodes();
@@ -118,7 +121,7 @@ UnitDieBState::UnitDieBState(BattlescapeGame *parent, BattleUnit *unit, ItemDama
  */
 UnitDieBState::~UnitDieBState()
 {
-
+	_unit->setAboutToFall(false);
 }
 
 void UnitDieBState::init()
@@ -288,6 +291,7 @@ void UnitDieBState::convertUnitToCorpse()
 		{
 			_unit->getInventory()->push_back(*i);
 		}
+		_unit->updateStats();
 	}
 
 	// remove unit-tile link
@@ -325,6 +329,8 @@ void UnitDieBState::convertUnitToCorpse()
 			}
 		}
 	}
+
+	_parent->getSave()->getTileEngine()->calculateFOV(lastPosition);
 }
 
 /**

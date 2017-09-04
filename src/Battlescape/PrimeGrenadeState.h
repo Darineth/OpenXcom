@@ -37,13 +37,16 @@ struct BattleAction;
 class PrimeGrenadeState : public State
 {
 private:
+	static const int MAX_PRIMER_DELAY = 24;
 	BattleAction *_action;
 	bool _inInventoryView;
 	BattleItem *_grenadeInInventory;
-	Text *_number[24];
+	Text *_number[MAX_PRIMER_DELAY];
 	Text *_title;
 	Frame *_frame;
-	InteractiveSurface *_button[24];
+	InteractiveSurface *_btnInstant;
+	Text *_txtInstant;
+	InteractiveSurface *_button[MAX_PRIMER_DELAY];
 	Surface *_bg;
 public:
 	/// Creates the Prime Grenade state.
@@ -54,6 +57,8 @@ public:
 	void handle(Action *action);
 	/// Handler for clicking a button.
 	void btnClick(Action *action);
+	/// Handler for clicking the instant fuse button.
+	void btnInstantClick(Action *action);
 };
 
 }

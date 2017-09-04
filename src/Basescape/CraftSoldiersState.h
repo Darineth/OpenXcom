@@ -47,6 +47,7 @@ private:
 
 	Base *_base;
 	size_t _craft;
+	bool _craftOut;
 	Uint8 _otherCraftColor;
 	std::vector<Soldier *> _origSoldierOrder;
 	std::vector<SortFunctor *> _sortFunctors;

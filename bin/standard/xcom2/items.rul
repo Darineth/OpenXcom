@@ -94,7 +94,7 @@ items: #done
     hitAnimation: 26
     power: 50
     damageType: 1
-    clipSize: 30
+    battleClipSize: 30
     battleType: 2
     invWidth: 2
     invHeight: 1
@@ -127,7 +127,7 @@ items: #done
     transferTime: 48
     power: 90
     damageType: 3
-    clipSize: 8
+    battleClipSize: 8
     battleType: 2
     hitAnimation: 8
     vaporColor: 1
@@ -152,7 +152,7 @@ items: #done
     # how many rounds it adds.
     compatibleAmmo:
       - STR_GAUSS_CANNON_AMMO
-    clipSize: 50
+    battleClipSize: 50
   - type: STR_DISPLACER_SONIC
     size: 6
     costSell: 980000
@@ -170,7 +170,7 @@ items: #done
     tuAimed: 60
     battleType: 1
     fixedWeapon: true
-    clipSize: 100
+    battleClipSize: 100
     invWidth: 2
     invHeight: 3
     turretType: 3
@@ -200,7 +200,7 @@ items: #done
     transferTime: 48
     power: 140
     damageType: 3
-    clipSize: 8
+    battleClipSize: 8
     battleType: 2
     blastRadius: 11
     hitAnimation: 8

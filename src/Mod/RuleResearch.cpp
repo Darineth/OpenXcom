@@ -39,6 +39,8 @@ void RuleResearch::load(const YAML::Node &node, int listOrder)
 	_cost = node["cost"].as<int>(_cost);
 	_points = node["points"].as<int>(_points);
 	_dependencies = node["dependencies"].as< std::vector<std::string> >(_dependencies);
+	_needsAnyItems = node["needsAnyItems"].as< std::vector<std::string> >(_needsAnyItems);
+	_needsAllItems = node["needsAllItems"].as< std::vector<std::string> >(_needsAllItems);
 	_unlocks = node["unlocks"].as< std::vector<std::string> >(_unlocks);
 	_getOneFree = node["getOneFree"].as< std::vector<std::string> >(_getOneFree);
 	_requires = node["requires"].as< std::vector<std::string> >(_requires);
@@ -81,6 +83,18 @@ const std::string & RuleResearch::getName() const
 const std::vector<std::string> & RuleResearch::getDependencies() const
 {
 	return _dependencies;
+}
+
+/// Gets the needed items to research this (only one required).
+const std::vector<std::string> & RuleResearch::getNeededItemsAny() const
+{
+	return _needsAnyItems;
+}
+
+/// Gets the needed items to research this (only one required).
+const std::vector<std::string> & RuleResearch::getNeededItemsAll() const
+{
+	return _needsAllItems;
 }
 
 /**

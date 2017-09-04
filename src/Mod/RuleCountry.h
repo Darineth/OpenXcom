@@ -46,6 +46,8 @@ public:
 	std::string getType() const;
 	/// Generates the country's starting funding.
 	int generateFunding() const;
+	/// Gets the country's base funding.
+	int getBaseFunding() const;
 	/// Gets the country's funding cap.
 	int getFundingCap() const;
 	/// Gets the country's label X position.

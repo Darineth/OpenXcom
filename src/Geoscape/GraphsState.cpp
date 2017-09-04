@@ -37,6 +37,8 @@
 #include "../Engine/Action.h"
 #include "../Engine/Options.h"
 #include "../Mod/RuleInterface.h"
+#include "../Engine/Game.h"
+#include "../Engine/Screen.h"
 
 namespace OpenXcom
 {
@@ -54,6 +56,8 @@ struct GraphButInfo
  */
 GraphsState::GraphsState() : _butRegionsOffset(0), _butCountriesOffset(0)
 {
+	Game::getGame()->getScreen()->pushMaximizeInfoScreen();
+
 	// Create objects
 	_bg = new InteractiveSurface(320, 200, 0, 0);
 	_bg->onMousePress((ActionHandler)&GraphsState::shiftButtons, SDL_BUTTON_WHEELUP);
@@ -312,6 +316,8 @@ GraphsState::~GraphsState()
 	std::string graphRegionToggles;
 	std::string graphCountryToggles;
 	std::string graphFinanceToggles;
+	_game->getScreen()->popMaximizeInfoScreen();
+
 	for (size_t i = 0; i < _regionToggles.size(); ++i)
 	{
 		graphRegionToggles.push_back(_regionToggles[i]->_pushed ? '1' : '0');

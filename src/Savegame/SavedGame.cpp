@@ -53,6 +53,8 @@
 #include "../Mod/RuleRegion.h"
 #include "MissionStatistics.h"
 #include "SoldierDeath.h"
+#include "../Mod/RuleRole.h"
+#include "Role.h"
 
 namespace OpenXcom
 {
@@ -98,7 +100,7 @@ bool equalProduction::operator()(const Production * p) const
 /**
  * Initializes a brand new saved game according to the specified difficulty.
  */
-SavedGame::SavedGame() : _difficulty(DIFF_BEGINNER), _end(END_NONE), _ironman(false), _globeLon(0.0), _globeLat(0.0), _globeZoom(0), _battleGame(0), _debug(false), _warned(false), _monthsPassed(-1), _selectedBase(0)
+SavedGame::SavedGame(const Mod *mod) : _difficulty(DIFF_BEGINNER), _end(END_NONE), _ironman(false), _globeLon(0.0), _globeLat(0.0), _globeZoom(0), _battleGame(0), _debug(false), _warned(false), _monthsPassed(-1), _selectedBase(0), _defaultRole(0)
 {
 	_time = new GameTime(6, 1, 1, 1999, 12, 0, 0);
 	_alienStrategy = new AlienStrategy();
@@ -108,6 +110,7 @@ SavedGame::SavedGame() : _difficulty(DIFF_BEGINNER), _end(END_NONE), _ironman(fa
 	_incomes.push_back(0);
 	_expenditures.push_back(0);
 	_lastselectedArmor="STR_NONE_UC";
+	loadRoles(mod);
 }
 
 /**
@@ -158,6 +161,10 @@ SavedGame::~SavedGame()
 		delete *i;
 	}
 	
+	for (std::map<std::string, Role*>::iterator i = _roles.begin(); i != _roles.end(); ++i)
+	{
+		delete i->second;
+	}
 	delete _battleGame;
 }
 
@@ -358,6 +365,21 @@ void SavedGame::load(const std::string &filename, Mod *mod)
 	_globeZoom = doc["globeZoom"].as<int>(_globeZoom);
 	_ids = doc["ids"].as< std::map<std::string, int> >(_ids);
 
+	loadRoles(mod);
+
+	for (YAML::const_iterator i = doc["roles"].begin(); i != doc["roles"].end(); ++i)
+	{
+		std::string name = (*i)["name"].as<std::string>();
+		if (RuleRole *ruleRole = mod->getRole(name))
+		{
+			std::map<std::string, Role*>::const_iterator jj = _roles.find(name);
+			if(jj != _roles.end())
+			{
+				jj->second->load(*i, this);
+			}
+		}
+	}
+
 	for (YAML::const_iterator i = doc["countries"].begin(); i != doc["countries"].end(); ++i)
 	{
 		std::string type = (*i)["type"].as<std::string>();
@@ -518,7 +540,7 @@ void SavedGame::load(const std::string &filename, Mod *mod)
 		std::string type = (*i)["type"].as<std::string>(mod->getSoldiersList().front());
 		if (mod->getSoldier(type))
 		{
-			Soldier *soldier = new Soldier(mod->getSoldier(type), 0);
+			Soldier *soldier = new Soldier(mod->getSoldier(type), this, 0);
 			soldier->load(*i, mod, this);
 			_deadSoldiers.push_back(soldier);
 		}
@@ -617,6 +639,25 @@ void SavedGame::save(const std::string &filename) const
 	node["globeLat"] = serializeDouble(_globeLat);
 	node["globeZoom"] = _globeZoom;
 	node["ids"] = _ids;
+
+	/*for (YAML::const_iterator i = doc["roles"].begin(); i != doc["roles"].end(); ++i)
+	{
+		std::string name = (*i)["name"].as<std::string>();
+		if (RuleRole *ruleRole = rule->getRole(name))
+		{
+			auto jj = _roles.find(name);
+			if(jj != _roles.end())
+			{
+				jj->second->load(*i, this);
+			}
+		}
+	}*/
+
+	for (std::map<std::string, Role*>::const_iterator i = _roles.begin(); i != _roles.end(); ++i)
+	{
+		node["roles"].push_back(i->second->save());
+	}
+
 	for (std::vector<Country*>::const_iterator i = _countries.begin(); i != _countries.end(); ++i)
 	{
 		node["countries"].push_back((*i)->save());
@@ -1229,7 +1270,12 @@ void SavedGame::getAvailableResearchProjects(std::vector<RuleResearch *> & proje
 	{
 		RuleResearch *research = mod->getResearch(*iter);
 
+		// TODO: Rebase new if/else with unlocked list thing.
 		if ((considerDebugMode && _debug) || std::find(unlocked.begin(), unlocked.end(), research) != unlocked.end())
+		std::vector<std::string> allNeeded = research->getNeededItemsAll();
+		std::vector<std::string> anyNeeded = research->getNeededItemsAny();
+
+		if (!isResearchAvailable(research, unlocked, mod))
 		{
 			// Empty, these research topics are on the "unlocked list", *don't* check the dependencies!
 		}
@@ -1288,8 +1334,40 @@ void SavedGame::getAvailableResearchProjects(std::vector<RuleResearch *> & proje
 		}
 		else
 		{
-			// Used in vanilla save converter only
-			if (research->needItem() && research->getCost() == 0)
+			continue;
+		}
+
+		bool foundNeededItems = true;
+		for (std::vector<std::string>::const_iterator iter = allNeeded.begin(); iter != allNeeded.end(); ++iter)
+		{
+			if (base->getStorageItems()->getItem(*iter) == 0)
+			{
+				foundNeededItems = false;
+				break;
+			}
+		}
+		if (!foundNeededItems)
+		{
+			continue;
+		}
+		for (std::vector<std::string>::const_iterator iter = anyNeeded.begin(); iter != anyNeeded.end(); ++iter)
+		{
+			if (base->getStorageItems()->getItem(*iter) > 0)
+			{
+				foundNeededItems = true;
+				break;
+			}
+			foundNeededItems = false;
+		}
+		if (!foundNeededItems)
+		{
+			continue;
+		}
+
+		if (!research->getRequirements().empty())
+		{
+			size_t tally(0);
+			for (size_t itreq = 0; itreq != research->getRequirements().size(); ++itreq)
 			{
 				continue;
 			}
@@ -1987,4 +2065,40 @@ std::vector<Soldier*>::iterator SavedGame::killSoldier(Soldier *soldier, BattleU
 	return j;
 }
 
+/// Gets the default role.
+Role* SavedGame::getDefaultRole() const
+{
+	return _defaultRole;
+}
+
+/// Gets the named role.
+Role* SavedGame::getRole(const std::string &name) const
+{
+	std::map<std::string, Role*>::const_iterator ii = _roles.find(name);
+	return ii == _roles.end() ? 0 : ii->second;
+}
+
+/// Loads the roles from the ruleset.
+void SavedGame::loadRoles(const Mod *rule)
+{
+	// Setup the default roles list.
+	if(!_roles.empty())
+	{
+		for (std::map<std::string, Role*>::iterator i = _roles.begin(); i != _roles.end(); ++i)
+		{
+			delete i->second;
+		}
+		_roles.clear();
+	}
+
+	for (std::vector<std::string>::const_iterator ii = rule->getRolesList().begin(); ii != rule->getRolesList().end(); ++ii)
+	{
+		RuleRole *role = rule->getRole(*ii);
+		_roles[*ii] = new Role(*ii, role);
+		if(role->isBlank())
+		{
+			_defaultRole = _roles[*ii];
+		}
+	}
+}
 }

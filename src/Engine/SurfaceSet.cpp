@@ -225,9 +225,10 @@ void SurfaceSet::loadDat(const std::string &filename)
  */
 Surface *SurfaceSet::getFrame(int i)
 {
-	if (_frames.find(i) != _frames.end())
+	std::map<int, Surface*>::const_iterator ii = _frames.find(i);
+	if (ii != _frames.end())
 	{
-		return _frames[i];
+		return ii->second;
 	}
 	return 0;
 }

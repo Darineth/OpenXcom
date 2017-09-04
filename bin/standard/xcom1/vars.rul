@@ -14,3 +14,48 @@ timePersonnel: 72
 initialFunding: 6000
 alienFuel: [STR_ELERIUM_115, 50]
 fontName: Font.dat
+soldierUtileColors:
+  - name: STR_COLOR_WHITE
+    color: 1
+  - name: STR_COLOR_GRAY
+    color: 0
+  - name: STR_COLOR_BLACK
+    color: 15
+  - name: STR_COLOR_LIGHT_RED
+    color: 33
+  - name: STR_COLOR_RED
+    color: 32
+  - name: STR_COLOR_DARK_RED
+    color: 47
+  - name: STR_COLOR_ORANGE
+    color: 17
+  - name: STR_COLOR_YELLOW
+    color: 145
+  - name: STR_COLOR_LIGHT_GREEN
+    color: 65
+  - name: STR_COLOR_GREEN
+    color: 64
+  - name: STR_COLOR_DARK_GREEN
+    color: 79
+  - name: STR_COLOR_BLUE_GREEN
+    color: 48
+  - name: STR_COLOR_LIGHT_BLUE
+    color: 129
+  - name: STR_COLOR_BLUE
+    color: 208
+  - name: STR_COLOR_NAVY
+    color: 223
+  - name: STR_COLOR_LIGHT_PURPLE
+    color: 193
+  - name: STR_COLOR_PURPLE
+    color: 192
+  - name: STR_COLOR_DARK_PURPLE
+    color: 207
+  - name: STR_COLOR_METALLIC
+    color: 224
+  - name: STR_COLOR_PINK
+    color: 177
+  - name: STR_COLOR_BEIGE
+    color: 80
+  - name: STR_COLOR_BROWN
+    color: 160

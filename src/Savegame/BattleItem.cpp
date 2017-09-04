@@ -30,22 +30,27 @@ namespace OpenXcom
  * @param rules Pointer to ruleset.
  * @param id The id of the item.
  */
-BattleItem::BattleItem(RuleItem *rules, int *id) : _id(*id), _rules(rules), _owner(0), _previousOwner(0), _unit(0), _tile(0), _inventorySlot(0), _inventoryX(0), _inventoryY(0), _ammoItem(0), _fuseTimer(-1), _ammoQuantity(0), _painKiller(0), _heal(0), _stimulant(0), _XCOMProperty(false), _droppedOnAlienTurn(false), _isAmmo(false)
+BattleItem::BattleItem(RuleItem *rules, int *id) : _id(*id), _rules(rules), _owner(0), _previousOwner(0), _unit(0), _tile(0), _inventorySlot(0), _inventoryX(0), _inventoryY(0), _ammoItem(0), _fuseTimer(GRENADE_INACTIVE), _ammoQuantity(0), _painKiller(0), _heal(0), _stimulant(0), _XCOMProperty(false), _droppedOnAlienTurn(false), _isAmmo(false)
 {
-	(*id)++;
-	if (_rules)
-	{
-		setAmmoQuantity(_rules->getClipSize());
-		if (_rules->getBattleType() == BT_MEDIKIT)
-		{
-			setHealQuantity (_rules->getHealQuantity());
-			setPainKillerQuantity (_rules->getPainKillerQuantity());
-			setStimulantQuantity (_rules->getStimulantQuantity());
-		}
+	++(*id);
 
-		// weapon does not need ammo, ammo item points to weapon
-		else if ((_rules->getBattleType() == BT_FIREARM || _rules->getBattleType() == BT_MELEE) && _rules->getCompatibleAmmo()->empty())
+	if(_rules)
+	{
+		if (_rules->isAmmo())
 		{
+			setAmmoQuantity(_rules->getClipSize());
+		}
+		else if (_rules->getBattleType() == BT_MEDIKIT)
+		{
+			setHealQuantity (_rules->getHealQuantity ());
+			setPainKillerQuantity (_rules->getPainKillerQuantity ());
+			setStimulantQuantity (_rules->getStimulantQuantity ());
+			_ammoItem = this;
+		}
+		// weapon does not need ammo, ammo item points to weapon
+		else if ((_rules->getBattleType() == BT_FIREARM || _rules->getBattleType() == BT_MELEE || _rules->getBattleType() == BT_GRENADE) && _rules->getCompatibleAmmo()->empty())
+		{
+			setAmmoQuantity(_rules->getClipSize());
 			_ammoItem = this;
 		}
 	}
@@ -160,6 +165,32 @@ int BattleItem::getFuseTimer() const
 {
 	return _fuseTimer;
 }
+/**
+ * Checks if the grenade is currently live (the fuse is active).
+ * @return True if the fuse is active.
+ */
+bool BattleItem::getGrenadeLive() const
+{
+	return _fuseTimer != GRENADE_INACTIVE;
+}
+
+/**
+ * Checks if the grenade is ready to explode immediately.
+ * @return True if the grenade should explode immediately.
+ */
+bool BattleItem::getFuseDone() const
+{
+	return _fuseTimer == 0 || _fuseTimer == GRENADE_INSTANT_FUSE;
+}
+
+/**
+ * Checks if the grenade is set to explode instantly.
+ * @return True if the grenade fuse is set to explode immediately.
+ */
+bool BattleItem::getFuseInstant() const
+{
+	return _fuseTimer == GRENADE_INSTANT_FUSE;
+}
 
 /**
  * Sets the turn to explode on.
@@ -196,10 +227,12 @@ void BattleItem::setAmmoQuantity(int qty)
  * Spends a bullet from the ammo in this item.
  * @return True if there are bullets left.
  */
-bool BattleItem::spendBullet()
+bool BattleItem::spendBullet(int bullets)
 {
-	_ammoQuantity--;
-	if (_ammoQuantity == 0)
+	if(_ammoQuantity < 0) return true;
+
+	_ammoQuantity -= bullets;
+	if (_ammoQuantity <= 0)
 		return false;
 	else
 		return true;
@@ -257,6 +290,7 @@ void BattleItem::moveToOwner(BattleUnit *owner)
 			if ((*i) == this)
 			{
 				_previousOwner->getInventory()->erase(i);
+				_previousOwner->updateStats();
 				break;
 			}
 		}
@@ -264,6 +298,7 @@ void BattleItem::moveToOwner(BattleUnit *owner)
 	if (_owner != 0)
 	{
 		_owner->getInventory()->push_back(this);
+		_owner->updateStats();
 	}
 }
 
@@ -332,7 +367,7 @@ bool BattleItem::occupiesSlot(int x, int y, BattleItem *item) const
 {
 	if (item == this)
 		return false;
-	if (_inventorySlot->getType() == INV_HAND)
+	if (_inventorySlot->getType() == INV_HAND || _inventorySlot->getType() == INV_UTILITY || _inventorySlot->getType() == INV_EQUIP)
 		return true;
 	if (item == 0)
 	{
@@ -363,7 +398,7 @@ BattleItem *BattleItem::getAmmoItem()
  */
 bool BattleItem::needsAmmo() const
 {
-	return !(_ammoItem == this); // no ammo for this weapon is needed
+	return _ammoItem != this && _rules->getCompatibleAmmo()->size(); // no ammo for this weapon is needed
 }
 
 /**
@@ -382,6 +417,7 @@ int BattleItem::setAmmoItem(BattleItem *item)
 			_ammoItem->setIsAmmo(false);
 		}
 		_ammoItem = 0;
+		if(_owner) _owner->updateStats();
 		return 0;
 	}
 
@@ -392,13 +428,27 @@ int BattleItem::setAmmoItem(BattleItem *item)
 	{
 		if (*i == item->getRules()->getType())
 		{
+			if(_ammoItem)
+			{
+				_ammoItem->setIsAmmo(false);
+			}
 			_ammoItem = item;
 			item->setIsAmmo(true);
+			if(_owner) _owner->updateStats();
 			return 0;
 		}
 	}
 
 	return -2;
+}
+
+/**
+ * Gets the ammo item's reload cost.
+ * @return The TU cost of reloading this ammo item.
+ */
+int BattleItem::getAmmoReloadCost() const
+{
+	return (_rules->getWeight() * 2) + 5;
 }
 
 /**

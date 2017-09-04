@@ -32,6 +32,7 @@ class BattleUnit;
 struct BattleAction;
 class BattlescapeState;
 class Node;
+class RuleItem;
 
 enum AIMode { AI_PATROL, AI_AMBUSH, AI_COMBAT, AI_ESCAPE };
 /**
@@ -42,6 +43,9 @@ class AIModule
 private:
 	SavedBattleGame *_save;
 	BattleUnit *_unit;
+	static std::vector<std::string> _aiAttackPriorityClose, _aiAttackPriorityMid, _aiAttackPriorityLong, _aiAttackPriorityMax;
+	static std::string _attackSnap, _attackAimed, _attackAuto, _attackBurst;
+
 	BattleUnit *_aggroTarget;
 	int _knownEnemies, _visibleEnemies, _spottingEnemies;
 	int _escapeTUs, _ambushTUs;
@@ -110,7 +114,10 @@ public:
 	/// Performs a melee attack action.
 	void meleeAttack();
 	/// Checks to make sure a target is valid, given the parameters
-	bool validTarget(BattleUnit* unit, bool assessDanger, bool includeCivs) const;
+	bool validTarget(BattleUnit* unit, bool assessDanger, bool includeCivs, bool allowFormerSpotted = true) const;
+	
+	bool checkSquadSight(BattleUnit* target, bool visibleOnly) const;
+	bool selectRangeOption(int currentTU, int tuAuto, int tuSnap, int tuAimed, int tuBurst, const std::vector<std::string> &actions);
 	/// Checks the alien's TU reservation setting.
 	BattleActionType getReserveMode();
 	/// Assuming we have both a ranged and a melee weapon, we have to select one.

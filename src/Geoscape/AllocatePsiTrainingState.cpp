@@ -102,35 +102,38 @@ AllocatePsiTrainingState::AllocatePsiTrainingState(Base *base) : _sel(0)
 	{
 		std::wostringstream ssStr;
 		std::wostringstream ssSkl;
-		_soldiers.push_back(*s);
-		if ((*s)->getCurrentStats()->psiSkill > 0 || (Options::psiStrengthEval && _game->getSavedGame()->isResearched(_game->getMod()->getPsiRequirements())))
+		if (!(*s)->isVehicle())
 		{
-			ssStr << L"   " << (*s)->getCurrentStats()->psiStrength;
-			if (Options::allowPsiStrengthImprovement) ssStr << "/+" << (*s)->getPsiStrImprovement();
+			_soldiers.push_back(*s);
+			if ((*s)->getCurrentStats()->psiSkill > 0 || (Options::psiStrengthEval && _game->getSavedGame()->isResearched(_game->getMod()->getPsiRequirements())))
+			{
+				ssStr << L"   " << (*s)->getCurrentStats()->psiStrength;
+				if (Options::allowPsiStrengthImprovement) ssStr << "/+" << (*s)->getPsiStrImprovement();
+			}
+			else
+			{
+				ssStr << tr("STR_UNKNOWN");
+			}
+			if ((*s)->getCurrentStats()->psiSkill > 0)
+			{
+				ssSkl << (*s)->getCurrentStats()->psiSkill << "/+" << (*s)->getImprovement();
+			}
+			else
+			{
+				ssSkl << "0/+0";
+			}
+			if ((*s)->isInPsiTraining())
+			{
+				_lstSoldiers->addRow(4, (*s)->getName(true).c_str(), ssStr.str().c_str(), ssSkl.str().c_str(), tr("STR_YES").c_str());
+				_lstSoldiers->setRowColor(row, _lstSoldiers->getSecondaryColor());
+			}
+			else
+			{
+				_lstSoldiers->addRow(4, (*s)->getName(true).c_str(), ssStr.str().c_str(), ssSkl.str().c_str(), tr("STR_NO").c_str());
+				_lstSoldiers->setRowColor(row, _lstSoldiers->getColor());
+			}
+			row++;
 		}
-		else
-		{
-			ssStr << tr("STR_UNKNOWN");
-		}
-		if ((*s)->getCurrentStats()->psiSkill > 0)
-		{
-			ssSkl << (*s)->getCurrentStats()->psiSkill << "/+" << (*s)->getImprovement();
-		}
-		else
-		{
-			ssSkl << "0/+0";
-		}
-		if ((*s)->isInPsiTraining())
-		{
-			_lstSoldiers->addRow(4, (*s)->getName(true).c_str(), ssStr.str().c_str(), ssSkl.str().c_str(), tr("STR_YES").c_str());
-			_lstSoldiers->setRowColor(row, _lstSoldiers->getSecondaryColor());
-		}
-		else
-		{
-			_lstSoldiers->addRow(4, (*s)->getName(true).c_str(), ssStr.str().c_str(), ssSkl.str().c_str(), tr("STR_NO").c_str());
-			_lstSoldiers->setRowColor(row, _lstSoldiers->getColor());
-		}
-		row++;
 	}
 }
 
@@ -164,7 +167,8 @@ void AllocatePsiTrainingState::lstSoldiersClick(Action *action)
 	_sel = _lstSoldiers->getSelectedRow();
 	if (action->getDetails()->button.button == SDL_BUTTON_LEFT)
 	{
-		if (!_base->getSoldiers()->at(_sel)->isInPsiTraining())
+		Soldier *s = _soldiers[_sel];
+		if (!s->isInPsiTraining())
 		{
 			if (_base->getUsedPsiLabs() < _base->getAvailablePsiLabs())
 			{
@@ -172,7 +176,7 @@ void AllocatePsiTrainingState::lstSoldiersClick(Action *action)
 				_lstSoldiers->setRowColor(_sel, _lstSoldiers->getSecondaryColor());
 				_labSpace--;
 				_txtRemaining->setText(tr("STR_REMAINING_PSI_LAB_CAPACITY").arg(_labSpace));
-				_base->getSoldiers()->at(_sel)->setPsiTraining();
+				s->setPsiTraining();
 			}
 		}
 		else
@@ -181,7 +185,7 @@ void AllocatePsiTrainingState::lstSoldiersClick(Action *action)
 			_lstSoldiers->setRowColor(_sel, _lstSoldiers->getColor());
 			_labSpace++;
 			_txtRemaining->setText(tr("STR_REMAINING_PSI_LAB_CAPACITY").arg(_labSpace));
-			_base->getSoldiers()->at(_sel)->setPsiTraining();
+			_soldiers[_sel]->setPsiTraining();
 		}
 	}
 }

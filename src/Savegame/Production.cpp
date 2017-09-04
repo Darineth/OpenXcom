@@ -29,6 +29,8 @@
 #include "../Mod/RuleCraft.h"
 #include "../Mod/RuleCraftWeapon.h"
 #include <climits>
+#include "../Engine/Game.h"
+#include "Soldier.h"
 #include "BaseFacility.h"
 
 namespace OpenXcom
@@ -130,6 +132,12 @@ productionProgress_e Production::step(Base * b, SavedGame * g, const Mod *m)
 					Craft *craft = new Craft(m->getCraft(i->first, true), b, g->getId(i->first));
 					craft->setStatus("STR_REFUELLING");
 					b->getCrafts()->push_back(craft);
+					break;
+				}
+				else if (_rules->getCategory() == "STR_VEHICLE")
+				{
+					Soldier *soldier = m->genSoldier(g, i->first);
+					b->getSoldiers()->push_back(soldier);
 					break;
 				}
 				else

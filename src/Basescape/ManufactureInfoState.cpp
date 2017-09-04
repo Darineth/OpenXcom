@@ -31,11 +31,14 @@
 #include "../Mod/RuleCraft.h"
 #include "../Mod/RuleItem.h"
 #include "../Mod/RuleManufacture.h"
+#include "../Mod/RuleCraft.h"
+#include "../Mod/RuleItem.h"
 #include "../Savegame/Base.h"
 #include "../Savegame/Production.h"
 #include "../Engine/Timer.h"
 #include "../Menu/ErrorMessageState.h"
 #include "../Mod/RuleInterface.h"
+#include "../Mod/RuleSoldier.h"
 #include <climits>
 
 namespace OpenXcom
@@ -169,8 +172,25 @@ void ManufactureInfoState::buildUi()
 
 	_txtUnitDown->setText(tr("STR_DECREASE_UC"));
 
-	_btnSell->setText(tr("STR_SELL_PRODUCTION"));
 	_btnSell->onMouseClick((ActionHandler)&ManufactureInfoState::btnSellClick, 0);
+
+	int sellPrice = 0;
+
+	Mod *mod = _game->getMod();
+
+	const std::map<std::string, int> &producedItems = _item ? _item->getProducedItems() : _production->getRules()->getProducedItems();
+	for(std::map<std::string, int>::const_iterator ii = producedItems.begin(); ii != producedItems.end(); ++ii)
+	{
+		RuleItem* item = mod->getItem(ii->first);
+		if(item)
+		{
+			sellPrice += item->getSellCost() * ii->second;
+		}
+	}
+
+	std::wostringstream sellText;
+	sellText << tr("STR_SELL_PRODUCTION") << ": " << Text::formatFunding(sellPrice);
+	_btnSell->setText(sellText.str());
 
 	_btnOk->setText(tr("STR_OK"));
 	_btnOk->onMouseClick((ActionHandler)&ManufactureInfoState::btnOkClick);
@@ -210,6 +230,10 @@ void ManufactureInfoState::initProfitInfo ()
 		if (item->getCategory() == "STR_CRAFT")
 		{
 			sellValue = mod->getCraft(i->first, true)->getSellCost();
+		}
+		else if (item->getCategory() == "STR_VEHICLE")
+		{
+			//sellValue = mod->getSoldier(i->first)->getBuyCost()
 		}
 		else
 		{
@@ -327,7 +351,7 @@ void ManufactureInfoState::moreEngineer(int change)
 {
 	if (change <= 0) return;
 	int availableEngineer = _base->getAvailableEngineers();
-	int availableWorkSpace = _base->getFreeWorkshops();
+	int availableWorkSpace = _production->getAssignedEngineers() == 0 ? _base->getFreeWorkshops() - _production->getRules()->getRequiredSpace() : _base->getFreeWorkshops();
 	if (availableEngineer > 0 && availableWorkSpace > 0)
 	{
 		change = std::min(std::min(availableEngineer, availableWorkSpace), change);
@@ -430,12 +454,20 @@ void ManufactureInfoState::moreUnit(int change)
 		_timerMoreUnit->stop();
 		_game->pushState(new ErrorMessageState(tr("STR_NO_FREE_HANGARS_FOR_CRAFT_PRODUCTION"), _palette, _game->getMod()->getInterface("basescape")->getElement("errorMessage")->color, "BACK17.SCR", _game->getMod()->getInterface("basescape")->getElement("errorPalette")->color));
 	}
+	else if (_production->getRules()->getCategory() == "STR_VEHICLE" && _base->getAvailableQuarters() - _base->getUsedQuarters() <= 0)
+	{
+		// TODO: Vehicle storage space requirement?
+		//_timerMoreUnit->stop();
+		//_game->pushState(new ErrorMessageState(tr("STR_NOT_ENOUGH_LIVING_SPACE"), _palette, _game->getMod()->getInterface("basescape")->getElement("errorMessage")->color, "BACK17.SCR", _game->getMod()->getInterface("basescape")->getElement("errorPalette")->color));
+	}
 	else
 	{
 		int units = _production->getAmountTotal();
 		change = std::min(INT_MAX - units, change);
 		if (_production->getRules()->getCategory() == "STR_CRAFT")
 			change = std::min(_base->getAvailableHangars() - _base->getUsedHangars(), change);
+		else if (_production->getRules()->getCategory() == "STR_VEHICLE")
+			change = std::min(_base->getAvailableQuarters() - _base->getUsedQuarters(), change);
 		_production->setAmountTotal(units+change);
 		setAssignedEngineer();
 	}
@@ -473,7 +505,7 @@ void ManufactureInfoState::moreUnitClick(Action *action)
 	if (_production->getInfiniteAmount()) return; // We can't increase over infinite :)
 	if (action->getDetails()->button.button == SDL_BUTTON_RIGHT)
 	{
-		if (_production->getRules()->getCategory() == "STR_CRAFT")
+		if (_production->getRules()->getCategory() == "STR_CRAFT" || _production->getRules()->getCategory() == "STR_VEHICLE")
 		{
 			moreUnit(INT_MAX);
 		}

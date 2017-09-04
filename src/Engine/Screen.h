@@ -19,6 +19,7 @@
  */
 #include <SDL.h>
 #include <string>
+#include <stack>
 #include "OpenGL.h"
 
 namespace OpenXcom
@@ -52,6 +53,9 @@ private:
 	SDL_Rect _clear;
 	/// Sets the _flags and _bpp variables based on game options; needed in more than one place now
 	void makeVideoFlags();
+
+	static std::stack<bool> _maximized;
+
 public:
 	static const int ORIGINAL_WIDTH;
 	static const int ORIGINAL_HEIGHT;
@@ -98,6 +102,10 @@ public:
 	static bool useOpenGL();
 	/// update the game scale as required.
 	static void updateScale(int &type, int selection, int &x, int &y, bool change);
+	/// Pushes a request to maximize the current screen if Maximize Info Screens option is enabled.
+	void pushMaximizeInfoScreen(bool battlescape = false);
+	/// Pops a request to maximize the current screen if Maximize Info Screens option is enabled.
+	void popMaximizeInfoScreen();
 };
 
 }

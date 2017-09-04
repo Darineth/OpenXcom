@@ -83,9 +83,7 @@ void ImageButton::mousePress(Action *action, State *state)
 	{
 		if (action->getDetails()->button.button == SDL_BUTTON_LEFT)
 		{
-			(*_group)->invert((*_group)->getColor() + 3);
-			*_group = this;
-			invert(_color + 3);
+			setActive();
 		}
 	}
 	else if (!_inverted && isButtonPressed() && isButtonHandled(action->getDetails()->button.button))
@@ -122,6 +120,13 @@ void ImageButton::toggle(bool press)
 		_inverted = !_inverted;
 		invert(_color + 3);
 	}
+}
+
+void ImageButton::setActive()
+{
+	(*_group)->invert((*_group)->getColor() + 3);
+	*_group = this;
+	invert(_color + 3);
 }
 
 }

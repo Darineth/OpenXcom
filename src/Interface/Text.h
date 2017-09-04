@@ -64,6 +64,12 @@ public:
 	static std::wstring formatFunding(int64_t funds);
 	/// Formats an integer value as percentage.
 	static std::wstring formatPercentage(int value);
+	/// Formats an integer value as percentage, replacing zero with -.
+	static std::wstring formatPercentageModifier(int value);
+	/// Formats an integer value as number, replacing zero with -.
+	static std::wstring formatModifier(int value);
+	/// Formats a stat value or modifier as number, replacing zero with -.
+	static std::wstring formatStatModifier(int value, int modifier);
 	/// Sets the text size to big.
 	void setBig();
 	/// Sets the text size to small.

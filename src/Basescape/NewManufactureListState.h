@@ -56,6 +56,8 @@ public:
 	void btnOkClick(Action * action);
 	/// Handler for clicking on the list.
 	void lstProdClick (Action * action);
+	/// Handler for clicking on the list.
+	void lstProdRClick(Action * action);
 	/// Handler for changing the category filter
 	void cbxCategoryChange (Action * action);
 	/// Fills the list of possible productions.

@@ -18,10 +18,12 @@
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "../Engine/State.h"
+#include "../Engine/LocalizedText.h"
 #include <string>
 #include <vector>
 #include <map>
 #include "../Savegame/SavedGame.h"
+#include "../Mod/Unit.h"
 
 namespace OpenXcom
 {
@@ -38,8 +40,15 @@ class Country;
 class RuleItem;
 class BattleUnit;
 struct UnitStats;
+class Soldier;
 
-struct DebriefingStat { DebriefingStat(const std::string &_item, bool recovery) : item(_item), qty(0), score(0), recovery(recovery) {}; std::string item; int qty; int score; bool recovery; };
+struct DebriefingStat
+{
+	DebriefingStat(const std::string &_item, bool recovery) : item(_item), qty(0), score(0), recovery(recovery), soldier(0), statIncreases(), gainedExperience(0), gainedLevel(0) {};
+	DebriefingStat(Soldier* soldier, const std::wstring &text) : text(text), item(), qty(qty), score(0), recovery(recovery), soldier(soldier), statIncreases(), gainedExperience(0), gainedLevel(0) {};
+	DebriefingStat(Soldier* soldier, const std::wstring &text, const UnitStats &statIncreases, int gainedExperience, bool gainedLevel, int kills) : text(text), item(), qty(0), score(0), recovery(recovery), soldier(soldier), statIncreases(statIncreases), gainedExperience(gainedExperience), gainedLevel(gainedLevel), kills(kills){};
+	std::string item; std::wstring text; int qty; int score; bool recovery; Soldier* soldier; UnitStats statIncreases; int gainedExperience; bool gainedLevel; int kills;
+};
 
 struct ReequipStat { std::string item; int qty; std::wstring craft; };
 
@@ -62,7 +71,7 @@ private:
 	TextButton *_btnOk, *_btnStats;
 	Window *_window;
 	Text *_txtTitle, *_txtItem, *_txtQuantity, *_txtScore, *_txtRecovery, *_txtRating,
-	     *_txtSoldier, *_txtTU, *_txtStamina, *_txtHealth, *_txtBravery, *_txtReactions,
+	     *_txtSoldier, *_txtStatus, *_txtTU, *_txtStamina, *_txtHealth, *_txtBravery, *_txtReactions,
 	     *_txtFiring, *_txtThrowing, *_txtMelee, *_txtStrength, *_txtPsiStrength, *_txtPsiSkill;
 	TextList *_lstStats, *_lstRecovery, *_lstTotal, *_lstSoldierStats;
 	std::string _currentTooltip;
@@ -70,7 +79,7 @@ private:
 	std::vector<ReequipStat> _missingItems;
 	std::map<RuleItem*, int> _rounds;
 	std::map<int, RecoveryItem*> _recoveryStats;
-	bool _positiveScore, _noContainment, _manageContainment, _destroyBase;
+	bool _positiveScore, _noContainment, _manageContainment, _destroyBase, _showSoldiers;
 	int _limitsEnforced;
 	MissionStatistics *_missionStatistics;
     std::vector<Soldier*> _soldiersCommended, _deadSoldiersCommended;

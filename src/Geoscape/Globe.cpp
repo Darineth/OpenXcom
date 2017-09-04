@@ -200,7 +200,7 @@ struct CreateShadow
 		{
 			const Sint16 val = (temp.x> 31)? 31 : (Sint16)temp.x;
 			const int d = dest & helper::ColorGroup;
-			if (d ==  Globe::OCEAN_COLOR || d == Globe::OCEAN_COLOR + 16)
+			if (Globe::OCEAN_COLOR > 0 && (d == Globe::OCEAN_COLOR || d == Globe::OCEAN_COLOR + 16))
 			{
 				//this pixel is ocean
 				return Globe::OCEAN_COLOR + val;
@@ -219,7 +219,7 @@ struct CreateShadow
 		else
 		{
 			const int d = dest & helper::ColorGroup;
-			if (d ==  Globe::OCEAN_COLOR || d ==  Globe::OCEAN_COLOR + 16)
+			if (Globe::OCEAN_COLOR > 0 && (d == Globe::OCEAN_COLOR || d == Globe::OCEAN_COLOR + 16))
 			{
 				//this pixel is ocean
 				return Globe::OCEAN_COLOR;
@@ -903,9 +903,6 @@ void Globe::drawOcean()
 	unlock();
 }
 
-
-
-
 /**
  * Renders the land, taking all the visible world polygons
  * and texturing and shading them accordingly.
@@ -983,7 +980,6 @@ Cord Globe::getSunDirection(double lon, double lat) const
 	return sun_direction;
 }
 
-
 void Globe::drawShadow()
 {
 	ShaderMove<Cord> earth = ShaderMove<Cord>(_earthData[_zoom], getWidth(), getHeight());
@@ -996,7 +992,6 @@ void Globe::drawShadow()
 	unlock();
 
 }
-
 
 void Globe::XuLine(Surface* surface, Surface* src, double x1, double y1, double x2, double y2, int shade)
 {

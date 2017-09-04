@@ -39,6 +39,8 @@
 namespace OpenXcom
 {
 
+std::vector<std::string> AIModule::_aiAttackPriorityClose, AIModule::_aiAttackPriorityMid, AIModule::_aiAttackPriorityLong, AIModule::_aiAttackPriorityMax;
+std::string AIModule::_attackSnap("snap"), AIModule::_attackAimed("aimed"), AIModule::_attackAuto("auto"), AIModule::_attackBurst("burst");
 
 /**
  * Sets up a BattleAIState.
@@ -63,6 +65,34 @@ AIModule::AIModule(SavedBattleGame *save, BattleUnit *unit, Node *node) : _save(
 	if (_unit->getOriginalFaction() == FACTION_NEUTRAL)
 	{
 		_targetFaction = FACTION_HOSTILE;
+	}
+
+	if(_aiAttackPriorityClose.empty())
+	{
+		/*
+			Default AI Priorities:
+
+			0 - close:		auto, aimed, snap
+			close - mid:	snap, aimed, auto
+			mid - long:		aimed, snap, auto
+			long - max:		aimed, snap, auto
+		*/
+
+		_aiAttackPriorityClose.push_back("auto");
+		_aiAttackPriorityClose.push_back("aimed");
+		_aiAttackPriorityClose.push_back("snap");
+		
+		_aiAttackPriorityMid.push_back("snap");
+		_aiAttackPriorityMid.push_back("aimed");
+		_aiAttackPriorityMid.push_back("auto");
+		
+		_aiAttackPriorityLong.push_back("aimed");
+		_aiAttackPriorityLong.push_back("snap");
+		_aiAttackPriorityLong.push_back("auto");
+		
+		_aiAttackPriorityMax.push_back("aimed");
+		_aiAttackPriorityMax.push_back("snap");
+		_aiAttackPriorityMax.push_back("auto");
 	}
 }
 
@@ -186,7 +216,20 @@ void AIModule::think(BattleAction *action)
 				if (rule->getWaypoints() != 0 || (action->weapon->getAmmoItem() && action->weapon->getAmmoItem()->getRules()->getWaypoints() != 0))
 				{
 					_blaster = true;
-					_reachableWithAttack = _save->getPathfinding()->findReachable(_unit, _unit->getTimeUnits() - _unit->getActionTUs(BA_AIMEDSHOT, action->weapon));
+					_rifle = true;
+					int tuSnap = _unit->getActionTUs(BA_SNAPSHOT, action->weapon);
+					int tuAimed = _unit->getActionTUs(BA_AIMEDSHOT, action->weapon);
+					int tuAuto = _unit->getActionTUs(BA_AUTOSHOT, action->weapon);
+					int tuBurst = _unit->getActionTUs(BA_BURSTSHOT, action->weapon);
+
+					int tuMin = _unit->getTimeUnits();
+
+					if(tuSnap && tuSnap < tuMin) tuMin = tuSnap;
+					if(tuAimed && tuAimed < tuMin) tuMin = tuAimed;
+					if(tuBurst && tuBurst < tuMin) tuMin = tuBurst;
+					if(tuAuto && tuAuto < tuMin) tuMin = tuAuto;
+
+					_reachableWithAttack = _save->getPathfinding()->findReachable(_unit, _unit->getTimeUnits() - tuMin);
 				}
 				else
 				{
@@ -321,6 +364,7 @@ void AIModule::think(BattleAction *action)
 		_unit->setCharging(0);
 		if (action->weapon && action->weapon->getRules()->getBattleType() == BT_FIREARM)
 		{
+			// TODO: BURST handling?
 			switch (_unit->getAggression())
 			{
 			case 0:
@@ -1756,6 +1800,53 @@ void AIModule::projectileAction()
 	}
 }
 
+bool AIModule::selectRangeOption(int currentTU, int tuAuto, int tuSnap, int tuAimed, int tuBurst, const std::vector<std::string> &actions)
+{
+	for(std::vector<std::string>::const_iterator ii = actions.begin(); ii != actions.end(); ++ii)
+	{
+		const std::string &attack = *ii;
+
+		if(attack == _attackSnap)
+		{
+			if(tuSnap && currentTU >= _unit->getActionTUs(BA_SNAPSHOT, _attackAction->weapon))
+			{
+				_attackAction->type = BA_SNAPSHOT;
+				return true;
+			}
+		}
+		else if(attack == _attackAimed)
+		{
+			if(tuAimed && currentTU >= _unit->getActionTUs(BA_AIMEDSHOT, _attackAction->weapon))
+			{
+				_attackAction->type = BA_AIMEDSHOT;
+				return true;
+			}
+		}
+		else if (attack == _attackBurst)
+		{
+			if (tuBurst && currentTU >= _unit->getActionTUs(BA_BURSTSHOT, _attackAction->weapon))
+			{
+				_attackAction->type = BA_BURSTSHOT;
+				return true;
+			}
+		}
+		else if(attack == _attackAuto)
+		{
+			if(tuAuto && currentTU >= _unit->getActionTUs(BA_AUTOSHOT, _attackAction->weapon))
+			{
+				_attackAction->type = BA_AUTOSHOT;
+				return true;
+			}
+		}
+		else
+		{
+			assert(0 && "Unknown attack");
+		}
+	}
+
+	return false;
+}
+
 /**
  * Selects a fire method based on range, time units, and time units reserved for cover.
  */
@@ -1763,12 +1854,115 @@ void AIModule::selectFireMethod()
 {
 	int distance = _save->getTileEngine()->distance(_unit->getPosition(), _attackAction->target);
 	_attackAction->type = BA_RETHINK;
-	int tuAuto = _attackAction->weapon->getRules()->getTUAuto();
-	int tuSnap = _attackAction->weapon->getRules()->getTUSnap();
-	int tuAimed = _attackAction->weapon->getRules()->getTUAimed();
+
+	BattleItem *weapon = _attackAction->weapon;
+	RuleItem *rules = weapon->getRules();
+	BattleItem *ammo = weapon->getAmmoItem();
+	RuleItem *ammoRules = ammo? ammo->getRules() : 0;
+
+	int closeRange = -1;
+	int midRange = -1;
+	int longRange = -1;
+	int maxRange = -1;
+
+	if(ammoRules)
+	{
+		if(closeRange < 0) closeRange = ammoRules->getAiRangeClose();
+		if(midRange < 0) midRange = ammoRules->getAiRangeMid();
+		if(longRange < 0) longRange = ammoRules->getAiRangeLong();
+		if(maxRange < 0) maxRange = ammoRules->getAiRangeMax();
+	}
+
+	if(rules)
+	{
+		if(closeRange < 0) closeRange = rules->getAiRangeClose();
+		if(midRange < 0) midRange = rules->getAiRangeMid();
+		if(longRange < 0) longRange = rules->getAiRangeLong();
+		if(maxRange < 0) maxRange = rules->getAiRangeMax();
+	}
+
+	if(closeRange < 0) closeRange = 4;
+	if(midRange < 0) midRange = 12;
+	if(longRange < 0) longRange = 20;
+	if(maxRange < 0) maxRange = 0;
+
+	int tuAuto = rules->getTUAuto();
+	int tuSnap = rules->getTUSnap();
+	int tuAimed = rules->getTUAimed();
+	int tuBurst = rules->getTUBurst();
 	int currentTU = _unit->getTimeUnits();
 
-	if (distance < 4)
+	if (maxRange && distance > maxRange)
+	{
+		return;
+	}
+	else if (closeRange > 0 && distance < closeRange)
+	{
+		const std::vector<std::string> &actions = (ammoRules && !ammoRules->getAiAttackPriorityClose().empty()) ? ammoRules->getAiAttackPriorityClose() :
+			((rules && !rules->getAiAttackPriorityClose().empty()) ? rules->getAiAttackPriorityClose() : 
+			_aiAttackPriorityClose);
+
+		selectRangeOption(currentTU, tuAuto, tuSnap, tuAimed, tuBurst, actions);
+	}
+	else if (midRange > 0 && distance < midRange)
+	{
+		const std::vector<std::string> &actions = (ammoRules && !ammoRules->getAiAttackPriorityMid().empty()) ? ammoRules->getAiAttackPriorityMid() :
+			((rules && !rules->getAiAttackPriorityMid().empty()) ? rules->getAiAttackPriorityMid() : 
+			_aiAttackPriorityMid);
+
+		selectRangeOption(currentTU, tuAuto, tuSnap, tuAimed, tuBurst, actions);
+	}
+	else if (longRange > 0 && distance < longRange)
+	{
+		const std::vector<std::string> &actions = (ammoRules && !ammoRules->getAiAttackPriorityLong().empty()) ? ammoRules->getAiAttackPriorityLong() :
+			((rules && !rules->getAiAttackPriorityLong().empty()) ? rules->getAiAttackPriorityLong() : 
+			_aiAttackPriorityLong);
+
+		selectRangeOption(currentTU, tuAuto, tuSnap, tuAimed, tuBurst, actions);
+	}
+	else if(maxRange == 0 || distance <= maxRange)
+	{
+		const std::vector<std::string> &actions = (ammoRules && !ammoRules->getAiAttackPriorityMax().empty()) ? ammoRules->getAiAttackPriorityMax() :
+			((rules && !rules->getAiAttackPriorityMax().empty()) ? rules->getAiAttackPriorityMax() : 
+			_aiAttackPriorityMax);
+
+		selectRangeOption(currentTU, tuAuto, tuSnap, tuAimed, tuBurst, actions);
+	}
+
+
+	////////////////
+	/*
+		0 - close:		auto, aimed, snap
+		close - mid:	snap, aimed, auto
+		mid - long:		aimed, snap, snap, aimed, auto
+		long - max:		aimed, snap, snap, aimed, auto
+	*/
+	////////////////
+
+	/*if(distance < close)
+	{
+		// if(auto) => auto
+		// if(!snap && aimed) => aimed
+		// snap
+
+		// .. equivalent
+		// auto, snap, aimed
+	}
+
+	if(distance > mid)
+	{
+		// if(aimed) => aimed
+		// if(distance < long && snap) => snap /////// WHY
+	}
+
+	// snap
+	// aimed
+	// auto
+	*/
+
+	////////////////////////////
+
+	/*if (distance < closeRange)
 	{
 		if ( tuAuto && currentTU >= _unit->getActionTUs(BA_AUTOSHOT, _attackAction->weapon) )
 		{
@@ -1787,15 +1981,14 @@ void AIModule::selectFireMethod()
 		return;
 	}
 
-
-	if ( distance > 12 )
+	if ( distance > midRange )
 	{
 		if ( tuAimed && currentTU >= _unit->getActionTUs(BA_AIMEDSHOT, _attackAction->weapon) )
 		{
 			_attackAction->type = BA_AIMEDSHOT;
 			return;
 		}
-		if ( distance < 20
+		if ( distance < longRange
 			&& tuSnap
 			&& currentTU >= _unit->getActionTUs(BA_SNAPSHOT, _attackAction->weapon) )
 		{
@@ -1806,18 +1999,18 @@ void AIModule::selectFireMethod()
 
 	if ( tuSnap && currentTU >= _unit->getActionTUs(BA_SNAPSHOT, _attackAction->weapon) )
 	{
-			_attackAction->type = BA_SNAPSHOT;
-			return;
+		_attackAction->type = BA_SNAPSHOT;
+		return;
 	}
 	if ( tuAimed && currentTU >= _unit->getActionTUs(BA_AIMEDSHOT, _attackAction->weapon) )
 	{
-			_attackAction->type = BA_AIMEDSHOT;
-			return;
+		_attackAction->type = BA_AIMEDSHOT;
+		return;
 	}
 	if ( tuAuto && currentTU >= _unit->getActionTUs(BA_AUTOSHOT, _attackAction->weapon) )
 	{
-			_attackAction->type = BA_AUTOSHOT;
-	}
+		_attackAction->type = BA_AUTOSHOT;
+	}*/
 }
 
 /**
@@ -1884,7 +2077,8 @@ bool AIModule::psiAction()
 	bool LOSRequired = psiWeaponRules->isLOSRequired();
 
 	_aggroTarget = 0;
-		// don't let mind controlled soldiers mind control other soldiers.
+
+	// don't let mind controlled soldiers mind control other soldiers.
 	if (_unit->getOriginalFaction() == _unit->getFaction()
 		// and we have the required 25 TUs and can still make it to cover
 		&& _unit->getTimeUnits() > _escapeTUs + cost
@@ -1896,18 +2090,20 @@ bool AIModule::psiAction()
 
 		for (std::vector<BattleUnit*>::const_iterator i = _save->getUnits()->begin(); i != _save->getUnits()->end(); ++i)
 		{
+			BattleUnit *potentialTarget = *i;
+
 			// don't target tanks
-			if ((*i)->getArmor()->getSize() == 1 &&
-				validTarget(*i, true, false) &&
+			if (potentialTarget->getArmor()->getSize() == 1 &&
+				validTarget(*i, true, false, false) &&
 				// they must be player units
-				(*i)->getOriginalFaction() == _targetFaction &&
+				potentialTarget->getFaction() == _targetFaction &&
 				(!LOSRequired ||
 				std::find(_unit->getVisibleUnits()->begin(), _unit->getVisibleUnits()->end(), *i) != _unit->getVisibleUnits()->end()))
 			{
 				int chanceToAttackMe = psiAttackStrength
-					+ (((*i)->getBaseStats()->psiSkill > 0) ? (*i)->getBaseStats()->psiSkill * -0.4 : 0)
-					- _save->getTileEngine()->distance((*i)->getPosition(), _unit->getPosition())
-					- ((*i)->getBaseStats()->psiStrength)
+					+ ((potentialTarget->getBaseStats()->psiSkill > 0) ? potentialTarget->getBaseStats()->psiSkill * -0.4 : 0)
+					- _save->getTileEngine()->distance(potentialTarget->getPosition(), _unit->getPosition())
+					- (potentialTarget->getBaseStats()->psiStrength)
 					+ RNG::generate(55, 105);
 
 				if (chanceToAttackMe > chanceToAttack)
@@ -1996,12 +2192,12 @@ void AIModule::meleeAttack()
  * @param includeCivs do we include civilians in the threat assessment?
  * @return whether this target is someone we would like to kill.
  */
-bool AIModule::validTarget(BattleUnit *unit, bool assessDanger, bool includeCivs) const
+bool AIModule::validTarget(BattleUnit *unit, bool assessDanger, bool includeCivs, bool allowFormerSpotted) const
 {
-		// ignore units that are dead/unconscious
+	// ignore units that are dead/unconscious
 	if (unit->isOut() ||
 		// they must be units that we "know" about
-		(_unit->getFaction() == FACTION_HOSTILE && _intelligence < unit->getTurnsSinceSpotted()) ||
+		(_unit->getFaction() == FACTION_HOSTILE && allowFormerSpotted ? _intelligence < unit->getTurnsSinceSpotted() : !_unit->checkSquadSight(_save, unit, false)) ||
 		// they haven't been grenaded
 		(assessDanger && unit->getTile()->getDangerous()) ||
 		// and they mustn't be on our side
@@ -2080,7 +2276,7 @@ void AIModule::selectMeleeOrRanged()
 		if (RNG::percent(meleeOdds))
 		{
 			_rifle = false;
-			_reachableWithAttack = _save->getPathfinding()->findReachable(_unit, _unit->getTimeUnits() - _unit->getActionTUs(BA_HIT, meleeWeapon));
+			_reachableWithAttack = _save->getPathfinding()->findReachable(_unit, _unit->getTimeUnits() - _unit->getActionTUs(BA_HIT, _unit->getMeleeWeapon()));
 			return;
 		}
 	}

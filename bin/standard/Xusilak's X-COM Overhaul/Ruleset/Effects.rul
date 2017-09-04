@@ -1,0 +1,66 @@
+effects:
+  - type: STR_DAMAGE_TEST
+    duration: 5
+    initialComponents:
+      -
+        type: 11
+        magnitude: 5
+        damageType: 2
+        ignoreArmor: true
+    ongoingComponents:
+      -
+        type: 11
+        magnitude: 10
+        damageType: 2
+        ignoreArmor: true
+  - type: STR_INCENDIARY_BURN
+    duration: 2
+    isNegative: true
+    initialComponents:
+      -
+        type: 11
+        magnitude: 5
+        damageType: 2
+    ongoingComponents:
+      -
+        type: 11
+        magnitude: 5
+        damageType: 2
+  - type: STR_INVISIBILITY
+    duration: -1
+    cancelTriggers: [2, 4, 10, 11]
+    ongoingComponents:
+      -
+        type: 30
+        magnitude: 100
+  - type: STR_STEALTH
+    effectClass: STR_STEALTH
+    duration: -1
+    cancelTriggers: [2, 4, 10, 11]
+    ongoingComponents:
+      -
+        type: 30
+        magnitude: 50
+  - type: STR_NIGHT_VISION
+    duration: -1
+    ongoingComponents:
+      -
+        type: 42
+  - type: STR_HEADLAMP
+    duration: -1
+    ongoingComponents:
+      -
+        type: 41
+        magnitude: 19
+      -
+        type: 22
+        affectsEffectClass: STR_STEALTH
+
+extraStrings:
+  - type: en-US
+    strings:
+      STR_STEALTH: Stealth
+      
+      STR_DAMAGE_TEST: Damage Test
+      STR_INCENDIARY_BURN: Burning
+      STR_INVISIBILITY: Invisibility

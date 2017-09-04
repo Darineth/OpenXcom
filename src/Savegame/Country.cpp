@@ -19,6 +19,9 @@
 #include "Country.h"
 #include "../Mod/RuleCountry.h"
 #include "../Engine/RNG.h"
+#include "../Savegame/Region.h"
+#include "../Engine/Game.h"
+#include "../Savegame/SavedGame.h"
 
 namespace OpenXcom
 {
@@ -167,32 +170,57 @@ void Country::newMonth(int xcomTotal, int alienTotal, int pactScore)
 {
 	_satisfaction = 2;
 	int funding = getFunding().back();
-	int good = (xcomTotal / 10) + _activityXcom.back();
-	int bad = (alienTotal / 20) + _activityAlien.back();
-	int oldFunding = _funding.back() / 1000;
-	int newFunding = (oldFunding * RNG::generate(5, 20) / 100) * 1000;
+	Region* countryRegion = Game::getGame()->getSavedGame()->locateRegion(getRules()->getLabelLongitude(), getRules()->getLabelLatitude());
+	int good = (xcomTotal / 40) + _activityXcom.back() * 1.5 + countryRegion->getActivityXcom().at(countryRegion->getActivityXcom().size() - 2);
+	int bad = (alienTotal / 40) + _activityAlien.back() + countryRegion->getActivityAlien()[countryRegion->getActivityAlien().size() - 2] * 0.667;
+	//Increase funding by 6% to 12% of the nation's base funding.
+	int newFunding = (getRules()->getBaseFunding() * RNG::generate(6, 12) / 100) * 1000;
 
 	if (bad <= good + 30)
 	{
 		if (good > bad + 30)
 		{
-			if (RNG::generate(0, good) > bad)
-			{
+			if (RNG::generate(good/2, good) > bad)
+			{	//If the player did particularly well in this country, increase funding by 2-4 times more.
+				if (good > bad + 200)
+				{
+					newFunding *= 2;
+					if (good > bad + 1000)
+					{
+						newFunding *= 2;
+					}
+				}
+
 				// don't go over the cap
 				int cap = getRules()->getFundingCap()*1000;
 				if (funding + newFunding > cap)
 					newFunding = cap - funding;
 				if (newFunding)
 					_satisfaction = 3;
+
+
 			}
 		}
 	}
 	else
 	{
-		if (RNG::generate(0, bad) > good)
+		if (RNG::generate(bad/2, bad) > good)
 		{
 			if (newFunding)
-			{
+			{	// Reduce funding by 4% to 8% of old funding.
+				int oldFunding = _funding.back() / 1000;
+
+				newFunding = (oldFunding * RNG::generate(4, 8) / 100) * 1000;
+
+				if (bad > good + 200)
+				{	//If the score gap was particularly large, reduce it 2-4 times more.
+					newFunding *= 2;
+					if (bad > good + 1000)
+					{
+						newFunding *= 2;
+					}
+				}
+
 				newFunding = -newFunding;
 				_satisfaction = 1;
 			}

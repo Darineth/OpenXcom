@@ -38,17 +38,8 @@ namespace OpenXcom
  */
 ListLoadState::ListLoadState(OptionsOrigin origin) : ListGamesState(origin, 0, true)
 {
-	// Create objects
-	_btnOld = new TextButton(80, 16, 60, 172);
-	_btnCancel->setX(180);
-
-	add(_btnOld, "button", "saveMenus");
-	
 	// Set up objects
 	_txtTitle->setText(tr("STR_SELECT_GAME_TO_LOAD"));
-
-	_btnOld->setText(tr("STR_ORIGINAL_XCOM"));
-	_btnOld->onMouseClick((ActionHandler)&ListLoadState::btnOldClick);
 
 	centerAllSurfaces();
 }
@@ -59,15 +50,6 @@ ListLoadState::ListLoadState(OptionsOrigin origin) : ListGamesState(origin, 0, t
 ListLoadState::~ListLoadState()
 {
 
-}
-
-/**
- * Switches to Original X-Com saves.
- * @param action Pointer to an action.
- */
-void ListLoadState::btnOldClick(Action *)
-{
-	_game->pushState(new ListLoadOriginalState(_origin));
 }
 
 /**

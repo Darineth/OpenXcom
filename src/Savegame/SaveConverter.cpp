@@ -56,6 +56,7 @@
 #include "../Engine/RNG.h"
 #include "../Mod/RuleConverter.h"
 #include "../Ufopaedia/Ufopaedia.h"
+#include "../Engine/Game.h"
 #include "../fmath.h"
 
 namespace OpenXcom
@@ -163,7 +164,7 @@ void SaveConverter::getList(Language *lang, SaveOriginal info[NUM_SAVES])
  */
 SavedGame *SaveConverter::loadOriginal()
 {
-	_save = new SavedGame();
+	_save = new SavedGame(Game::getMod());
 
 	// Load globe data
 	_save->getIncomes().clear();
@@ -1055,7 +1056,7 @@ void SaveConverter::loadDatSoldier()
 			node["look"] = (int)load<Uint8>(sdata + _rules->getOffset("SOLDIER.DAT_LOOK"));
 			node["id"] = _save->getId("STR_SOLDIER");
 
-			Soldier *soldier = new Soldier(_mod->getSoldier(_mod->getSoldiersList().front(), true), 0);
+			Soldier *soldier = new Soldier(_mod->getSoldier(_mod->getSoldiersList().front(), true), _save, 0);
 			soldier->load(node, _mod, _save);
 			if (base != 0xFFFF)
 			{

@@ -25,20 +25,28 @@ namespace OpenXcom
 {
 enum SpecialAbility { SPECAB_NONE, SPECAB_EXPLODEONDEATH, SPECAB_BURNFLOOR, SPECAB_BURN_AND_EXPLODE };
 /**
- * This struct holds some plain unit attribute data together.
- */
+* This struct holds some plain unit attribute data together.
+*/
 struct UnitStats
 {
 	int tu, stamina, health, bravery, reactions, firing, throwing, strength, psiStrength, psiSkill, melee;
 public:
 	UnitStats() : tu(0), stamina(0), health(0), bravery(0), reactions(0), firing(0), throwing(0), strength(0), psiStrength(0), psiSkill(0), melee(0) {};
 	UnitStats(int tu_, int stamina_, int health_, int bravery_, int reactions_, int firing_, int throwing_, int strength_, int psiStrength_, int psiSkill_, int melee_) : tu(tu_), stamina(stamina_), health(health_), bravery(bravery_), reactions(reactions_), firing(firing_), throwing(throwing_), strength(strength_), psiStrength(psiStrength_), psiSkill(psiSkill_), melee(melee_) {};
+	UnitStats(const UnitStats &stats) : tu(stats.tu), stamina(stats.stamina), health(stats.health), bravery(stats.bravery), reactions(stats.reactions), firing(stats.firing), throwing(stats.throwing), strength(stats.strength), psiStrength(stats.psiStrength), psiSkill(stats.psiSkill), melee(stats.melee) {};
+	UnitStats& operator=(const UnitStats& stats) { tu = stats.tu; stamina = stats.stamina; health = stats.health; bravery = stats.bravery; reactions = stats.reactions; firing = stats.firing; throwing = stats.throwing; strength = stats.strength; psiStrength = stats.psiStrength; psiSkill = stats.psiSkill; melee = stats.melee; return *this; }
 	UnitStats& operator+=(const UnitStats& stats) { tu += stats.tu; stamina += stats.stamina; health += stats.health; bravery += stats.bravery; reactions += stats.reactions; firing += stats.firing; throwing += stats.throwing; strength += stats.strength; psiStrength += stats.psiStrength; psiSkill += stats.psiSkill; melee += stats.melee; return *this; }
 	UnitStats operator+(const UnitStats& stats) const { return UnitStats(tu + stats.tu, stamina + stats.stamina, health + stats.health, bravery + stats.bravery, reactions + stats.reactions, firing + stats.firing, throwing + stats.throwing, strength + stats.strength, psiStrength + stats.psiStrength, psiSkill + stats.psiSkill, melee + stats.melee); }
 	UnitStats& operator-=(const UnitStats& stats) { tu -= stats.tu; stamina -= stats.stamina; health -= stats.health; bravery -= stats.bravery; reactions -= stats.reactions; firing -= stats.firing; throwing -= stats.throwing; strength -= stats.strength; psiStrength -= stats.psiStrength; psiSkill -= stats.psiSkill; melee -= stats.melee; return *this; }
 	UnitStats operator-(const UnitStats& stats) const { return UnitStats(tu - stats.tu, stamina - stats.stamina, health - stats.health, bravery - stats.bravery, reactions - stats.reactions, firing - stats.firing, throwing - stats.throwing, strength - stats.strength, psiStrength - stats.psiStrength, psiSkill - stats.psiSkill, melee - stats.melee); }
 	UnitStats operator-() const { return UnitStats(-tu, -stamina, -health, -bravery, -reactions, -firing, -throwing, -strength, -psiStrength, -psiSkill, -melee); }
+	UnitStats operator*(const UnitStats& mods) { return UnitStats(mod(tu, mods.tu), mod(stamina, mods.stamina), mod(health, mods.health), mod(bravery, mods.bravery), mod(reactions, mods.reactions), mod(firing, mods.firing), mod(throwing, mods.throwing), mod(strength, mods.strength), mod(psiStrength, mods.psiStrength), mod(psiSkill, mods.psiSkill), mod(melee, mods.melee)); }
+	UnitStats& operator*=(const UnitStats& mods) { tu = mod(tu, mods.tu); stamina = mod(stamina, mods.stamina); health = mod(health, mods.health); bravery = mod(bravery, mods.bravery); reactions = mod(reactions, mods.reactions); firing = mod(firing, mods.firing); throwing = mod(throwing, mods.throwing); strength = mod(strength, mods.strength); psiStrength = mod(psiStrength, mods.psiStrength); psiSkill = mod(psiSkill, mods.psiSkill); melee = mod(melee, mods.melee); return *this; }
 	void merge(const UnitStats& stats) { tu = (stats.tu ? stats.tu : tu); stamina = (stats.stamina ? stats.stamina : stamina); health = (stats.health ? stats.health : health); bravery = (stats.bravery ? stats.bravery : bravery); reactions = (stats.reactions ? stats.reactions : reactions); firing = (stats.firing ? stats.firing : firing); throwing = (stats.throwing ? stats.throwing : throwing); strength = (stats.strength ? stats.strength : strength); psiStrength = (stats.psiStrength ? stats.psiStrength : psiStrength); psiSkill = (stats.psiSkill ? stats.psiSkill : psiSkill); melee = (stats.melee ? stats.melee : melee); };
+	void clear() { tu = 0; stamina = 0; health = 0; bravery = 0; reactions = 0; firing = 0; throwing = 0; strength = 0; psiStrength = 0; psiSkill = 0; melee = 0; }
+	bool isZero() { return tu == 0 && stamina == 0 && health == 0 && bravery == 0 && reactions == 0 && firing == 0 && throwing == 0 && strength == 0 && psiStrength == 0 && psiSkill == 0 && melee == 0; }
+private:
+	static int mod(int stat, int mod) { return mod == 0 ? stat : (int)((stat * (mod + 100)) / 100); }
 };
 
 struct StatAdjustment
@@ -127,7 +135,7 @@ public:
 namespace YAML
 {
 	template<>
-	struct convert<OpenXcom::UnitStats>
+	struct convert < OpenXcom::UnitStats >
 	{
 		static Node encode(const OpenXcom::UnitStats& rhs)
 		{

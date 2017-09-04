@@ -73,7 +73,7 @@ namespace OpenXcom
  * Initializes all the elements in the Debriefing screen.
  * @param game Pointer to the core game.
  */
-DebriefingState::DebriefingState() : _region(0), _country(0), _positiveScore(true), _noContainment(false), _manageContainment(false), _destroyBase(false), _showSoldierStats(false)
+DebriefingState::DebriefingState() : _region(0), _country(0), _positiveScore(true), _noContainment(false), _manageContainment(false), _destroyBase(false), _showSoldierStats(false), _showSoldiers(false)
 {
 	_missionStatistics = new MissionStatistics();
 
@@ -98,6 +98,9 @@ DebriefingState::DebriefingState() : _region(0), _country(0), _positiveScore(tru
 	_lstStats = new TextList(290, 80, 16, 32);
 	_lstRecovery = new TextList(290, 80, 16, 32);
 	_lstTotal = new TextList(290, 9, 16, 12);
+	_txtSoldier = new Text(180, 9, 16, 24);
+	_txtStatus = new Text(60, 9, 246, 24);
+	_lstSoldiers = new TextList(290, 144, 16, 32);
 
 	// Second page (soldier stats)
 	_txtSoldier     = new Text(90, 9,  16, 24); //16..106 = 90
@@ -134,6 +137,9 @@ DebriefingState::DebriefingState() : _region(0), _country(0), _positiveScore(tru
 	add(_lstStats, "list", "debriefing");
 	add(_lstRecovery, "list", "debriefing");
 	add(_lstTotal, "totals", "debriefing");
+	add(_txtSoldier, "text", "debriefing");
+	add(_txtStatus, "text", "debriefing");
+	add(_lstSoldiers, "list", "debriefing");
 
 	add(_txtSoldier, "text", "debriefing");
 	add(_txtTU, "text", "debriefing");
@@ -171,10 +177,10 @@ DebriefingState::DebriefingState() : _region(0), _country(0), _positiveScore(tru
 
 	_txtScore->setText(tr("STR_SCORE"));
 
-	_lstStats->setColumns(3, 224, 30, 64);
+	_lstStats->setColumns(3, 214, 40, 64);
 	_lstStats->setDot(true);
 
-	_lstRecovery->setColumns(3, 224, 30, 64);
+	_lstRecovery->setColumns(3, 214, 40, 64);
 	_lstRecovery->setDot(true);
 
 	_lstTotal->setColumns(2, 254, 64);
@@ -182,6 +188,8 @@ DebriefingState::DebriefingState() : _region(0), _country(0), _positiveScore(tru
 
 	// Second page
 	_txtSoldier->setText(tr("STR_NAME_UC"));
+	_txtSoldier->setText(tr("STR_NAME_UC"));
+	_txtSoldier->setVisible(false);
 
 	_txtTU->setAlign(ALIGN_CENTER);
 	_txtTU->setText(tr("STR_TIME_UNITS_ABBREVIATION"));
@@ -254,6 +262,14 @@ DebriefingState::DebriefingState() : _region(0), _country(0), _positiveScore(tru
 	_lstSoldierStats->setAlign(ALIGN_LEFT, 0);
 	_lstSoldierStats->setDot(true);
 
+
+	_txtStatus->setText(tr("STR_STATUS"));
+	_txtStatus->setVisible(false);
+
+	_lstSoldiers->setColumns(2, 214, 88);
+	_lstSoldiers->setDot(true);
+	_lstSoldiers->setVisible(false);
+
 	prepareDebriefing();
 
 	for (std::vector<SoldierStatsEntry>::iterator i = _soldierStats.begin(); i != _soldierStats.end(); ++i)
@@ -274,19 +290,116 @@ DebriefingState::DebriefingState() : _region(0), _country(0), _positiveScore(tru
 		// note: final dummy element to cause dot filling until the end of the line
 	}
 
+	bool psiResearched = _game->getSavedGame()->isResearched(_game->getMod()->getPsiRequirements());
+
 	int total = 0, statsY = 0, recoveryY = 0;
 	int civiliansSaved = 0, civiliansDead = 0;
 	int aliensKilled = 0, aliensStunned = 0;
 	for (std::vector<DebriefingStat*>::iterator i = _stats.begin(); i != _stats.end(); ++i)
 	{
-		if ((*i)->qty == 0)
+		if ((*i)->qty == 0 && !(*i)->soldier)
 			continue;
 
 		std::wostringstream ss, ss2;
 		ss << L'\x01' << (*i)->qty << L'\x01';
 		ss2 << L'\x01' << (*i)->score;
 		total += (*i)->score;
-		if ((*i)->recovery)
+		if ((*i)->soldier)
+		{
+			_lstSoldiers->addRow(2, (*i)->soldier->getName().c_str(), (*i)->text.c_str());
+			if ((*i)->gainedExperience)
+			{
+				ss.str(L"");
+				ss << L"  \x01" << tr("STR_EXPERIENCE");
+				_lstSoldiers->addRow(2, ss.str().c_str(), Text::formatNumber((*i)->gainedExperience).c_str());
+			}
+
+			if ((*i)->kills)
+			{
+				ss.str(L"");
+				ss << L"  \x01" << tr("STR_ALIENS_KILLED");
+				_lstSoldiers->addRow(2, ss.str().c_str(), Text::formatNumber((*i)->kills).c_str());
+			}
+
+			if ((*i)->gainedLevel)
+			{
+				ss.str(L"");
+				ss << L"  \x01" << tr("STR_GAINED_LEVEL");
+				_lstSoldiers->addRow(2, ss.str().c_str(), Text::formatNumber((*i)->soldier->getLevel()).c_str());
+			}
+
+			UnitStats &statIncreases((*i)->statIncreases);
+			if (statIncreases.tu)
+			{
+				ss.str(L"");
+				ss << L"  \x01" << tr("STR_TIME_UNITS");
+				_lstSoldiers->addRow(2, ss.str().c_str(), Text::formatNumber(statIncreases.tu).c_str());
+			}
+			if (statIncreases.stamina)
+			{
+				ss.str(L"");
+				ss << L"  \x01" << tr("STR_STAMINA");
+				_lstSoldiers->addRow(2, ss.str().c_str(), Text::formatNumber(statIncreases.stamina).c_str());
+			}
+			if (statIncreases.health)
+			{
+				ss.str(L"");
+				ss << L"  \x01" << tr("STR_HEALTH");
+				_lstSoldiers->addRow(2, ss.str().c_str(), Text::formatNumber(statIncreases.health).c_str());
+			}
+			if (statIncreases.bravery)
+			{
+				ss.str(L"");
+				ss << L"  \x01" << tr("STR_BRAVERY");
+				_lstSoldiers->addRow(2, ss.str().c_str(), Text::formatNumber(statIncreases.bravery).c_str());
+			}
+			if (statIncreases.reactions)
+			{
+				ss.str(L"");
+				ss << L"  \x01" << tr("STR_REACTIONS");
+				_lstSoldiers->addRow(2, ss.str().c_str(), Text::formatNumber(statIncreases.reactions).c_str());
+			}
+			if (statIncreases.firing)
+			{
+				ss.str(L"");
+				ss << L"  \x01" << tr("STR_FIRING_ACCURACY");
+				_lstSoldiers->addRow(2, ss.str().c_str(), Text::formatNumber(statIncreases.firing).c_str());
+			}
+			if (statIncreases.throwing)
+			{
+				ss.str(L"");
+				ss << L"  \x01" << tr("STR_THROWING_ACCURACY");
+				_lstSoldiers->addRow(2, ss.str().c_str(), Text::formatNumber(statIncreases.throwing).c_str());
+			}
+			if (statIncreases.melee)
+			{
+				ss.str(L"");
+				ss << L"  \x01" << tr("STR_MELEE_ACCURACY");
+				_lstSoldiers->addRow(2, ss.str().c_str(), Text::formatNumber(statIncreases.melee).c_str());
+			}
+			if (statIncreases.strength)
+			{
+				ss.str(L"");
+				ss << L"  \x01" << tr("STR_STRENGTH");
+				_lstSoldiers->addRow(2, ss.str().c_str(), Text::formatNumber(statIncreases.strength).c_str());
+			}
+			if (Options::psiStrengthEval && psiResearched)
+			{
+				if (statIncreases.psiStrength)
+				{
+					ss.str(L"");
+					ss << L"  \x01" << tr("STR_PSIONIC_STRENGTH");
+					_lstSoldiers->addRow(2, ss.str().c_str(), Text::formatNumber(statIncreases.psiStrength).c_str());
+				}
+				if (statIncreases.psiSkill)
+				{
+					ss.str(L"");
+					ss << L"  \x01" << tr("STR_PSIONIC_SKILL");
+					_lstSoldiers->addRow(2, ss.str().c_str(), Text::formatNumber(statIncreases.psiSkill).c_str());
+				}
+			}
+		}
+		else if ((*i)->recovery)
 		{
 			_lstRecovery->addRow(3, tr((*i)->item).c_str(), ss.str().c_str(), ss2.str().c_str());
 			recoveryY += 8;
@@ -664,61 +777,82 @@ void DebriefingState::btnStatsClick(Action *)
  */
 void DebriefingState::btnOkClick(Action *)
 {
-	std::vector<Soldier*> participants;
-	for (std::vector<BattleUnit*>::const_iterator i = _game->getSavedGame()->getSavedBattle()->getUnits()->begin();
-		i != _game->getSavedGame()->getSavedBattle()->getUnits()->end(); ++i)
+	if (!_showSoldiers)
 	{
-		if ((*i)->getGeoscapeSoldier())
-		{
-			participants.push_back((*i)->getGeoscapeSoldier());
-		}
-	}
-	_game->getSavedGame()->setBattleGame(0);
-	_game->popState();
-	if (_game->getSavedGame()->getMonthsPassed() == -1)
-	{
-		_game->setState(new MainMenuState);
+		_showSoldiers = true;
+
+		_txtItem->setVisible(false);
+		_txtQuantity->setVisible(false);
+		_txtScore->setVisible(false);
+		_txtRecovery->setVisible(false);
+		_lstStats->setVisible(false);
+		_lstRecovery->setVisible(false);
+		_lstTotal->setVisible(false);
+
+		_txtSoldier->setVisible(true);
+		_txtStatus->setVisible(true);
+		_lstSoldiers->setVisible(true);
 	}
 	else
 	{
-		if (!_deadSoldiersCommended.empty())
+		std::vector<Soldier*> participants;
+		for (std::vector<BattleUnit*>::const_iterator i = _game->getSavedGame()->getSavedBattle()->getUnits()->begin();
+			i != _game->getSavedGame()->getSavedBattle()->getUnits()->end(); ++i)
 		{
-			_game->pushState(new CommendationLateState(_deadSoldiersCommended));
-		}
-		if (!_soldiersCommended.empty())
-		{
-			_game->pushState(new CommendationState(_soldiersCommended));
-		}
-		if (!_destroyBase)
-		{
-			if (_game->getSavedGame()->handlePromotions(participants))
+			if ((*i)->getGeoscapeSoldier())
 			{
-				_game->pushState(new PromotionsState);
-			}
-			if (!_missingItems.empty())
-			{
-				_game->pushState(new CannotReequipState(_missingItems));
-			}
-			else if (_manageContainment)
-			{
-				_game->pushState(new ManageAlienContainmentState(_base, OPT_BATTLESCAPE));
-				_game->pushState(new ErrorMessageState(tr("STR_CONTAINMENT_EXCEEDED").arg(_base->getName()), _palette, _game->getMod()->getInterface("debriefing")->getElement("errorMessage")->color, "BACK01.SCR", _game->getMod()->getInterface("debriefing")->getElement("errorPalette")->color));
-			}
-			if (!_manageContainment && Options::storageLimitsEnforced && _base->storesOverfull())
-			{
-				_game->pushState(new SellState(_base, OPT_BATTLESCAPE));
-				_game->pushState(new ErrorMessageState(tr("STR_STORAGE_EXCEEDED").arg(_base->getName()), _palette, _game->getMod()->getInterface("debriefing")->getElement("errorMessage")->color, "BACK01.SCR", _game->getMod()->getInterface("debriefing")->getElement("errorPalette")->color));
+				participants.push_back((*i)->getGeoscapeSoldier());
 			}
 		}
 
-		// Autosave after mission
-		if (_game->getSavedGame()->isIronman())
+		_game->getSavedGame()->setBattleGame(0);
+		_game->popState();
+
+		if (_game->getSavedGame()->getMonthsPassed() == -1)
 		{
-			_game->pushState(new SaveGameState(OPT_GEOSCAPE, SAVE_IRONMAN, _palette));
+			_game->setState(new MainMenuState);
 		}
-		else if (Options::autosave)
+		else
 		{
-			_game->pushState(new SaveGameState(OPT_GEOSCAPE, SAVE_AUTO_GEOSCAPE, _palette));
+			if (!_destroyBase)
+			{
+				if (!_deadSoldiersCommended.empty())
+				{
+					_game->pushState(new CommendationLateState(_deadSoldiersCommended));
+				}
+				if (!_soldiersCommended.empty())
+				{
+					_game->pushState(new CommendationState(_soldiersCommended));
+				}
+				if (_game->getSavedGame()->handlePromotions(participants))
+				{
+					_game->pushState(new PromotionsState);
+				}
+				if (!_missingItems.empty())
+				{
+					_game->pushState(new CannotReequipState(_missingItems));
+				}
+				else if (_manageContainment)
+				{
+					_game->pushState(new ManageAlienContainmentState(_base, OPT_BATTLESCAPE));
+					_game->pushState(new ErrorMessageState(tr("STR_CONTAINMENT_EXCEEDED").arg(_base->getName()).c_str(), _palette, _game->getMod()->getInterface("debriefing")->getElement("errorMessage")->color, "BACK01.SCR", _game->getMod()->getInterface("debriefing")->getElement("errorPalette")->color));
+				}
+				if (!_manageContainment && Options::storageLimitsEnforced && _base->storesOverfull())
+				{
+					_game->pushState(new SellState(_base, OPT_BATTLESCAPE));
+					_game->pushState(new ErrorMessageState(tr("STR_STORAGE_EXCEEDED").arg(_base->getName()).c_str(), _palette, _game->getMod()->getInterface("debriefing")->getElement("errorMessage")->color, "BACK01.SCR", _game->getMod()->getInterface("debriefing")->getElement("errorPalette")->color));
+				}
+			}
+
+			// Autosave after mission
+			if (_game->getSavedGame()->isIronman())
+			{
+				_game->pushState(new SaveGameState(OPT_GEOSCAPE, SAVE_IRONMAN, _palette));
+			}
+			else if (Options::autosave)
+			{
+				_game->pushState(new SaveGameState(OPT_GEOSCAPE, SAVE_AUTO_GEOSCAPE, _palette));
+			}
 		}
 	}
 }
@@ -1090,6 +1224,8 @@ void DebriefingState::prepareDebriefing()
 		}
 	}
 
+	std::vector<BattleUnit*> postMissionUnits;
+
 	// time to care for units.
 	for (std::vector<BattleUnit*>::iterator j = battle->getUnits()->begin(); j != battle->getUnits()->end(); ++j)
 	{
@@ -1132,7 +1268,15 @@ void DebriefingState::prepareDebriefing()
 			{
 				if (soldier != 0)
 				{
-					addStat("STR_XCOM_OPERATIVES_KILLED", 1, -value);
+					if (soldier->isVehicle())
+					{
+						addStat("STR_TANKS_DESTROYED", 1, -value);
+					}
+					else
+					{
+						addStat("STR_XCOM_OPERATIVES_KILLED", 1, -value);
+					}
+					_stats.push_back(new DebriefingStat(soldier, tr("STR_SOLDIER_DEBRIEFING_DEAD")));
 					(*j)->updateGeoscapeStats(soldier);
 					(*j)->getStatistics()->KIA = true;
 					save->killSoldier(soldier); // in case we missed the soldier death on battlescape
@@ -1154,6 +1298,7 @@ void DebriefingState::prepareDebriefing()
 		{ // so this unit is not dead...
 			if (oldFaction == FACTION_PLAYER)
 			{
+				UnitStats statIncreases;
 				if ((((*j)->isInExitArea() || (*j)->getStatus() == STATUS_IGNORE_ME) && (battle->getMissionType() != "STR_BASE_DEFENSE" || success)) || !aborted)
 				{ // so game is not aborted or aborted and unit is on exit area
 					UnitStats statIncrease;
@@ -1162,15 +1307,25 @@ void DebriefingState::prepareDebriefing()
 						_soldierStats.push_back(std::pair<std::wstring, UnitStats>((*j)->getGeoscapeSoldier()->getName(), statIncrease));
 					playerInExitArea++;
 
-					recoverItems((*j)->getInventory(), base);
-
 					if (soldier != 0)
 					{
+						postMissionUnits.push_back(*j);
+						/*recoverItems((*j)->getInventory(), base);
 						// calculate new statString
 						soldier->calcStatString(_game->getMod()->getStatStrings(), (Options::psiStrengthEval && _game->getSavedGame()->isResearched(_game->getMod()->getPsiRequirements())));
+
+						if (int recovery = soldier->getWoundRecovery())
+						{
+							_stats.push_back(new DebriefingStat(soldier, tr("STR_SOLDIER_DEBRIEFING_WOUNDED").arg(Text::formatNumber(recovery)), statIncreases));
+						}
+						else
+						{
+							_stats.push_back(new DebriefingStat(soldier, tr("STR_SOLDIER_DEBRIEFING_OK"), statIncreases));
+						}*/
 					}
 					else
 					{ // non soldier player = tank
+						recoverItems((*j)->getInventory(), base);
 						base->getStorageItems()->addItem((*j)->getType());
 						RuleItem *tankRule = _game->getMod()->getItem((*j)->getType(), true);
 						if ((*j)->getItem("STR_RIGHT_HAND"))
@@ -1211,6 +1366,7 @@ void DebriefingState::prepareDebriefing()
 					addStat("STR_XCOM_OPERATIVES_MISSING_IN_ACTION", 1, -value);
 					if (soldier != 0)
 					{
+						_stats.push_back(new DebriefingStat(soldier, tr("STR_SOLDIER_DEBRIEFING_MISSING")));
 						(*j)->updateGeoscapeStats(soldier);
 						(*j)->getStatistics()->MIA = true;
 						save->killSoldier(soldier);
@@ -1387,6 +1543,57 @@ void DebriefingState::prepareDebriefing()
 		// assuming this was a multi-stage mission,
 		// recover everything that was in the craft in the previous stage
 		recoverItems(battle->getGuaranteedRecoveredItems(), base);
+
+		int experienceScore = Game::getMod()->getBaseMissionExperience();
+		for (std::vector<DebriefingStat*>::iterator i = _stats.begin(); i != _stats.end(); ++i)
+		{
+			if ((*i)->qty == 0 && !(*i)->soldier)
+				continue;
+
+			if ((*i)->score > 0)
+			{
+				experienceScore += (*i)->score;
+			}
+			else
+			{
+				experienceScore += ((*i)->score * -0.1);
+			}
+		}
+
+		experienceScore = std::max(experienceScore, Game::getMod()->getBaseMissionExperience());
+
+		UnitStats statIncreases;
+		for (auto ii = postMissionUnits.cbegin(); ii != postMissionUnits.cend(); ++ii)
+		{
+			if (Soldier *soldier = save->getSoldier((*ii)->getId()))
+			{
+				int gainedExperience = 0;
+				bool gainedLevel = false;
+				int kills = 0;
+				(*ii)->postMissionProcedures(save, battle->getTurn(), experienceScore, statIncreases, gainedExperience, gainedLevel, kills);
+				playerInExitArea++;
+				recoverItems((*ii)->getInventory(), base);
+				// calculate new statString
+				soldier->calcStatString(_game->getMod()->getStatStrings(), (Options::psiStrengthEval && _game->getSavedGame()->isResearched(_game->getMod()->getPsiRequirements())));
+
+				if (int recovery = soldier->getWoundRecovery())
+				{
+					_stats.push_back(new DebriefingStat(soldier, tr("STR_SOLDIER_DEBRIEFING_WOUNDED").arg(Text::formatNumber(recovery)), statIncreases, gainedExperience, gainedLevel, kills));
+				}
+				else
+				{
+					_stats.push_back(new DebriefingStat(soldier, tr("STR_SOLDIER_DEBRIEFING_OK"), statIncreases, gainedExperience, gainedLevel, kills));
+				}
+			}
+		}
+
+		// calculate the clips for each type based on the recovered rounds.
+		for (std::map<RuleItem*, int>::const_iterator i = _rounds.begin(); i != _rounds.end(); ++i)
+		{
+			int total_clips = i->first->getBattleClipSize() ? i->second : i->second / i->first->getClipSize();
+			if (total_clips > 0)
+				base->getStorageItems()->addItem(i->first->getType(), total_clips);
+		}
 	}
 
 	// calculate the clips for each type based on the recovered rounds.
@@ -1534,6 +1741,11 @@ void DebriefingState::reequipCraft(Base *base, Craft *craft, bool vehicleItemsCa
 				clipSize = tankRule->getClipSize();
 				ammoPerVehicle = clipSize / ammo->getClipSize();
 			}
+			else if(ammo->getBattleClipSize() > 0)
+			{
+				clipSize = ammo->getBattleClipSize();
+				ammoPerVehicle = clipSize;
+			}
 			else
 			{
 				clipSize = ammo->getClipSize();
@@ -1625,10 +1837,11 @@ void DebriefingState::recoverItems(std::vector<BattleItem*> *from, Base *base)
 						break;
 					case BT_FIREARM:
 					case BT_MELEE:
+					case BT_PSIAMP:
 						// It's a weapon, count any rounds left in the clip.
 						{
 							BattleItem *clip = (*it)->getAmmoItem();
-							if (clip && clip->getRules()->getClipSize() > 0 && clip != *it)
+							if (clip && (clip->getRules()->getClipSize() > 0 || clip->getRules()->getBattleClipSize()) && clip != *it)
 							{
 								_rounds[clip->getRules()] += clip->getAmmoQuantity();
 							}

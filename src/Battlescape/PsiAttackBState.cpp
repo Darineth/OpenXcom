@@ -72,7 +72,7 @@ void PsiAttackBState::init()
 		return;
 	}
 
-	if (_unit->getTimeUnits() < _action.TU) // not enough time units
+	if (_unit->getAvailableTimeUnits() < _action.TU) // not enough time units
 	{
 		_action.result = "STR_NOT_ENOUGH_TIME_UNITS";
 		_parent->popState();
@@ -81,7 +81,67 @@ void PsiAttackBState::init()
 
 	_target = _parent->getSave()->getTile(_action.target)->getUnit();
 
-	if (!_target) // invalid target
+	int psiCost = 0;
+	bool requireTarget = true;
+	if(_action.weapon)
+	{
+		switch (_action.type)
+		{
+		case BA_PANIC:
+			psiCost = _action.weapon->getRules()->getPsiCostPanic();
+			break;
+
+		case BA_MINDCONTROL:
+			psiCost = _action.weapon->getRules()->getPsiCostMindControl();
+			break;
+
+		case BA_CLAIRVOYANCE:
+			psiCost = _action.weapon->getRules()->getPsiCostClairvoyance();
+			requireTarget = false;
+			break;
+
+		case BA_MINDBLAST:
+			psiCost = _action.weapon->getRules()->getPsiCostMindBlast();
+
+			Position targetVoxel;
+			_parent->getSave()->getTileEngine()->getTargetVoxel(&_action, _action.target, targetVoxel);
+			Position originVoxel = _parent->getSave()->getTileEngine()->getOriginVoxel(_action, _parent->getSave()->getTile(_action.actor->getPosition()));
+			int hit = _parent->getSave()->getTileEngine()->calculateLine(originVoxel, targetVoxel, false, 0, _action.actor, true, true, _target);
+
+			if (hit != V_UNIT || !_action.actor->checkSquadSight(_parent->getSave(), _target, false))
+			{
+				_action.result = "STR_NO_LINE_OF_FIRE";
+				_parent->popState();
+				return;
+			}
+			break;
+		}
+	}
+
+	if(psiCost)
+	{
+		BattleItem *ammo = _action.weapon->getAmmoItem();
+		if(!ammo)
+		{
+			_action.result = "STR_NO_AMMUNITION_LOADED";
+			_parent->popState();
+			return;
+		}
+		else if(ammo->getAmmoQuantity() < psiCost)
+		{
+			_action.result = "STR_NO_ROUNDS_LEFT";
+			_parent->popState();
+			return;
+		}
+		else if(!ammo->spendBullet(psiCost))
+		{
+			_parent->getSave()->removeItem(ammo);
+			_action.weapon->setAmmoItem(0);
+		}
+	}
+
+
+	if (requireTarget && !_target) // invalid target
 	{
 		_parent->popState();
 		return;
@@ -97,10 +157,21 @@ void PsiAttackBState::init()
 		_parent->getMod()->getSoundByDepth(_parent->getDepth(), _item->getRules()->getHitSound())->play(-1, _parent->getMap()->getSoundAngle(_action.target));
 	}
 
+	_unit->cancelEffects(ECT_ACTIVATE);
+	_action.actor->addBattleExperience("STR_PSIONICS");
+
 	// make a cosmetic explosion
-	int height = _target->getFloatHeight() + (_target->getHeight() / 2) - _parent->getSave()->getTile(_action.target)->getTerrainLevel();
-	Position voxel = _action.target * Position(16, 16, 24) + Position(8, 8, height);
-	_parent->statePushFront(new ExplosionBState(_parent, voxel, _item, _unit, 0, false, true));
+	if (_target)
+	{
+		int height = _target->getFloatHeight() + (_target->getHeight() / 2) - _parent->getSave()->getTile(_action.target)->getTerrainLevel();
+		Position voxel = _action.target * Position(16, 16, 24) + Position(8, 8, height);
+		_parent->statePushFront(new ExplosionBState(_parent, voxel, _item, _unit, 0, false, true));
+	}
+	else
+	{
+		Position voxel = _action.target * Position(16, 16, 24) + Position(8, 8, 12);
+		_parent->statePushFront(new ExplosionBState(_parent, voxel, _item, _unit, 0, false, true));
+	}
 }
 
 
@@ -130,23 +201,93 @@ void PsiAttackBState::think()
  */
 void PsiAttackBState::psiAttack()
 {
-	double attackStrength = _unit->getBaseStats()->psiStrength * _unit->getBaseStats()->psiSkill / 50.0;
-	double defenseStrength = _target->getBaseStats()->psiStrength
-		+ ((_target->getBaseStats()->psiSkill > 0) ? 10.0 + _target->getBaseStats()->psiSkill / 5.0 : 10.0);
-	double dist = _parent->getTileEngine()->distance(_unit->getPosition(), _action.target);
-	attackStrength -= dist;
-	attackStrength += RNG::generate(0,55);
+	TileEngine *tiles = _parent->getSave()->getTileEngine();
+
+	if (_action.type == BA_CLAIRVOYANCE)
+	{
+		int psiScore = _action.actor->getBaseStats()->psiStrength + _action.actor->getBaseStats()->psiSkill;
+
+		if (psiScore < 100)
+		{
+			return;
+		}
+
+		int radius = (int)floor(0.223607 * sqrt((double)(4 * (psiScore - 100) + 5)) - 0.49);
+		//int radius = (psiScore -= 100) / 30;
+		int radiusSq = radius * radius;
+
+		for (int xx = -radius; xx <= radius; ++xx)
+		{
+			for (int yy = -radius; yy <= radius; ++yy)
+			{
+				Position test(_action.target.x + xx, _action.target.y + yy, _action.target.z);
+
+				Tile *tile;
+				if ((tiles->distanceSq(_action.target, test) <= radiusSq) && (tile = _parent->getSave()->getTile(test)))
+				{
+					tile->setDiscovered(true, 0);
+					tile->setDiscovered(true, 1);
+					tile->setDiscovered(true, 2);
+					tile->setVisibleCount(1, 0);
+
+					if (tile->getUnit())
+					{
+						tile->setKnownHiddenUnit();
+					}
+				}
+			}
+		}
+		_action.actor->addPsiSkillExp();
+		return;
+	}
+
+	BattleUnit *victim = _parent->getSave()->getTile(_action.target)->getUnit();
+	if (!victim)
+		return;
+
+	bool success = false;
+
+	double attackStrength = 0.0;
+	double defenseStrength = 0.0;
+	double difference = 0.0;
+	double dist = 0.0;
+
+	switch (_action.type)
+	{
+	case BA_PANIC:
+	case BA_MINDCONTROL:
+		attackStrength = _action.actor->getBaseStats()->psiStrength * _action.actor->getBaseStats()->psiSkill / 50.0;
+		defenseStrength = victim->getBaseStats()->psiStrength + ((victim->getBaseStats()->psiSkill > 0) ? 10.0 + victim->getBaseStats()->psiSkill / 5.0 : 10.0);
+		dist = tiles->distance(_action.actor->getPosition(), _action.target);
+		attackStrength -= dist;
+		attackStrength += RNG::generate(0, 55);
+		break;
+
+	case BA_MINDBLAST:
+		attackStrength = _action.actor->getBaseStats()->psiStrength + _action.actor->getBaseStats()->psiSkill + RNG::generate(-15, 15) - 10;
+		defenseStrength = victim->getBaseStats()->psiStrength + victim->getBaseStats()->psiSkill;
+		difference = attackStrength - defenseStrength;
+		dist = tiles->distance(_action.actor->getPosition(), _action.target);
+		if (dist > 0)
+		{
+			dist = 10 / (dist + 10);
+		}
+		else
+		{
+			dist = 1;
+		}
+		break;
+	}
 
 	if (_action.type == BA_MINDCONTROL)
 	{
 		defenseStrength += 20;
 	}
 	
-	_unit->addPsiSkillExp();
-	if (Options::allowPsiStrengthImprovement) _target->addPsiStrengthExp();
+	_action.actor->addPsiSkillExp();
+	if (Options::allowPsiStrengthImprovement) victim->addPsiStrengthExp();
 	if (attackStrength > defenseStrength)
 	{
-		Game *game = _parent->getSave()->getBattleState()->getGame();
 		_action.actor->addPsiSkillExp();
 		_action.actor->addPsiSkillExp();
 
@@ -159,62 +300,90 @@ void PsiAttackBState::psiAttack()
 		killStat.mission = _parent->getSave()->getGeoscapeSave()->getMissionStatistics()->size();
 		killStat.id = _target->getId();
 
-		if (_action.type == BA_PANIC)
+		switch (_action.type)
 		{
-			int moraleLoss = (110-_target->getBaseStats()->bravery);
+		case BA_PANIC:
+		{
+			int moraleLoss = (110 - _parent->getSave()->getTile(_action.target)->getUnit()->getBaseStats()->bravery);
 			if (moraleLoss > 0)
-			_target->moraleChange(-moraleLoss);
-			_target->setMindControllerId(_unit->getId());
-			// Award Panic battle unit kill
-			if (!_unit->getStatistics()->duplicateEntry(STATUS_PANICKING, _target->getId()))
-			{
-				killStat.status = STATUS_PANICKING;
-				_unit->getStatistics()->kills.push_back(new BattleUnitKills(killStat));
-			}
-			if (_parent->getSave()->getSide() == FACTION_PLAYER)
-			{
-				game->pushState(new InfoboxState(game->getLanguage()->getString("STR_MORALE_ATTACK_SUCCESSFUL")));
-			}
+				_target->moraleChange(-moraleLoss);
+				// Award Panic battle unit kill
+				if (!_unit->getStatistics()->duplicateEntry(STATUS_PANICKING, _target->getId()))
+				{
+					killStat.status = STATUS_PANICKING;
+					_unit->getStatistics()->kills.push_back(new BattleUnitKills(killStat));
+					_target->setMurdererId(_unit->getId());
+				}
+			break;
 		}
-		else if (_action.type == BA_MINDCONTROL)
+		case BA_MINDBLAST:
+		{
+			if (difference > 20)
+			{
+				// Decisive victory
+				int power = difference / 6.0 * dist * RNG::generate(1.0, 3.0);
+				victim->damage(tiles, _action.actor, Position(), power, DT_PSYCHIC);
+			}
+			else
+			{
+				// Victory/backlash
+				victim->damage(tiles, _action.actor, Position(), RNG::generate(3, 6) * dist * RNG::generate(1.0, 3.0), DT_PSYCHIC);
+				_action.actor->damage(tiles, victim, Position(), RNG::generate(2, 4) * dist * RNG::generate(1.0, 3.0), DT_PSYCHIC);
+			}
+			_parent->checkForCasualties(_action.weapon, _unit, false, false, false);
+			break;
+		}
+		case BA_MINDCONTROL:
 		{
 			// Award MC battle unit kill
 			if (!_unit->getStatistics()->duplicateEntry(STATUS_TURNING, _target->getId()))
 			{
 				killStat.status = STATUS_TURNING;
 				_unit->getStatistics()->kills.push_back(new BattleUnitKills(killStat));
+				_target->setMurdererId(_unit->getId());
 			}
-			_target->setMindControllerId(_unit->getId());
-			_target->convertToFaction(_unit->getFaction());
-			_parent->getTileEngine()->calculateFOV(_target->getPosition());
-			_parent->getTileEngine()->calculateUnitLighting();
-			_target->recoverTimeUnits();
-			_target->allowReselect();
-			_target->abortTurn(); // resets unit status to STANDING
+			_action.actor->setControlling(victim);
+			if (_action.actor->getTimeUnits() > 5)
+			{
+				_action.actor->spendTimeUnits(_action.actor->getTimeUnits() - 5);
+			}
+			tiles->calculateFOV(victim->getPosition());
+			tiles->calculateUnitLighting();
+			victim->recoverTimeUnits();
+			victim->allowReselect();
+			victim->abortTurn(); // resets unit status to STANDING
+
 			// if all units from either faction are mind controlled - auto-end the mission.
-			if (_parent->getSave()->getSide() == FACTION_PLAYER)
+			if (_parent->getSave()->getSide() == FACTION_PLAYER && Options::battleAutoEnd && Options::allowPsionicCapture)
 			{
 				if (Options::allowPsionicCapture)
 				{
 					_parent->autoEndBattle();
 				}
-				game->pushState(new InfoboxState(game->getLanguage()->getString("STR_MIND_CONTROL_SUCCESSFUL")));
-				_parent->getSave()->getBattleState()->updateSoldierInfo();
-			}
-			else
-			{
-				// show a little infobox with the name of the unit and "... is under alien control"
-				game->pushState(new InfoboxState(game->getLanguage()->getString("STR_IS_UNDER_ALIEN_CONTROL", _target->getGender()).arg(_target->getName(game->getLanguage()))));
 			}
 		}
+		break;
+		}
+
+		success = true;
 	}
 	else
 	{
+		if (_action.type == BA_MINDBLAST)
+		{
+			int power = (-difference + RNG::generate(1, 2)) / 3.0 * dist * RNG::generate(2.0, 4.0);
+			_action.actor->damage(tiles, victim, Position(), power, DT_PSYCHIC);
+			_parent->checkForCasualties(_action.weapon, _unit, false, false, false);
+		}
+
 		if (Options::allowPsiStrengthImprovement)
 		{
-			_target->addPsiStrengthExp();
+			victim->addPsiStrengthExp();
 		}
+		//return false;
 	}
+
+	if (_action.type != BA_MINDBLAST) { tiles->displayDamage(_action.actor, victim, _action.type, DT_NONE, success ? 1 : 0, 0, 0); }
 }
 
 }

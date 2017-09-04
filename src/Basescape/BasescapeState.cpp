@@ -50,6 +50,7 @@
 #include "CraftInfoState.h"
 #include "../Geoscape/AllocatePsiTrainingState.h"
 #include "../Mod/RuleInterface.h"
+#include "../Engine/Screen.h"
 
 namespace OpenXcom
 {
@@ -62,24 +63,32 @@ namespace OpenXcom
  */
 BasescapeState::BasescapeState(Base *base, Globe *globe) : _base(base), _globe(globe)
 {
+	_game->getScreen()->pushMaximizeInfoScreen();
+
 	// Create objects
 	_txtFacility = new Text(192, 9, 0, 0);
 	_view = new BaseView(192, 192, 0, 8);
-	_mini = new MiniBaseView(128, 16, 192, 41);
+	_mini = new MiniBaseView(128, 16, 192, 64);
 	_edtBase = new TextEdit(this, 127, 17, 193, 0);
 	_txtLocation = new Text(126, 9, 194, 16);
 	_txtFunds = new Text(126, 9, 194, 24);
-	_btnNewBase = new TextButton(128, 12, 192, 58);
-	_btnBaseInfo = new TextButton(128, 12, 192, 71);
-	_btnSoldiers = new TextButton(128, 12, 192, 84);
-	_btnCrafts = new TextButton(128, 12, 192, 97);
-	_btnFacilities = new TextButton(128, 12, 192, 110);
-	_btnResearch = new TextButton(128, 12, 192, 123);
-	_btnManufacture = new TextButton(128, 12, 192, 136);
-	_btnTransfer = new TextButton(128, 12, 192, 149);
-	_btnPurchase = new TextButton(128, 12, 192, 162);
-	_btnSell = new TextButton(128, 12, 192, 175);
-	_btnGeoscape = new TextButton(128, 12, 192, 188);
+	_txtStores = new Text(126, 9, 194, 32);
+	_txtQuarters = new Text(126, 9, 194, 40);
+	_txtSoldiers = new Text(126, 9, 194, 48);
+
+	_btnNewBase = new TextButton(64, 20, 192, 80);
+	_btnBaseInfo = new TextButton(64, 20, 256, 80);
+
+	_btnSoldiers = new TextButton(64, 20, 192, 100);
+	_btnCrafts = new TextButton(64, 20, 256, 100);
+
+	_btnFacilities = new TextButton(64, 20, 192, 120);
+	_btnResearch = new TextButton(64, 20, 256, 120);
+	_btnManufacture = new TextButton(64, 20, 192, 140);
+	_btnTransfer = new TextButton(64, 20, 256, 140);
+	_btnPurchase = new TextButton(64, 20, 192, 160);
+	_btnSell = new TextButton(64, 20, 256, 160);
+	_btnGeoscape = new TextButton(128, 20, 192, 180);
 
 	// Set palette
 	setInterface("basescape");
@@ -90,6 +99,9 @@ BasescapeState::BasescapeState(Base *base, Globe *globe) : _base(base), _globe(g
 	add(_edtBase, "text1", "basescape");
 	add(_txtLocation, "text2", "basescape");
 	add(_txtFunds, "text3", "basescape");
+	add(_txtStores, "text3", "basescape");
+	add(_txtQuarters, "text3", "basescape");
+	add(_txtSoldiers, "text3", "basescape");
 	add(_btnNewBase, "button", "basescape");
 	add(_btnBaseInfo, "button", "basescape");
 	add(_btnSoldiers, "button", "basescape");
@@ -159,6 +171,8 @@ BasescapeState::BasescapeState(Base *base, Globe *globe) : _base(base), _globe(g
  */
 BasescapeState::~BasescapeState()
 {
+	_game->getScreen()->popMaximizeInfoScreen();
+
 	// Clean up any temporary bases
 	bool exists = false;
 	for (std::vector<Base*>::iterator i = _game->getSavedGame()->getBases()->begin(); i != _game->getSavedGame()->getBases()->end() && !exists; ++i)
@@ -199,6 +213,21 @@ void BasescapeState::init()
 	}
 
 	_txtFunds->setText(tr("STR_FUNDS").arg(Text::formatFunding(_game->getSavedGame()->getFunds())));
+
+	std::wostringstream stores;
+	stores << L"STORES> " << Text::formatNumber(_base->getUsedStores()) << "/" << Text::formatNumber(_base->getAvailableStores());
+
+	_txtStores->setText(stores.str());
+
+	std::wostringstream quarters;
+	quarters << L"QUARTERS> " << Text::formatNumber(_base->getUsedQuarters()) << "/" << Text::formatNumber(_base->getAvailableQuarters());
+
+	_txtQuarters->setText(quarters.str());
+
+	std::wostringstream soldiers;
+	soldiers << L"SOLDIERS> " << Text::formatNumber(_base->getSoldiers()->size());
+
+	_txtSoldiers->setText(soldiers.str());
 
 	_btnNewBase->setVisible(_game->getSavedGame()->getBases()->size() < MiniBaseView::MAX_BASES);
 }

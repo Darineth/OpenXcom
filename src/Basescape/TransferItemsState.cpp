@@ -21,6 +21,7 @@
 #include <sstream>
 #include <climits>
 #include <cfloat>
+#include <iomanip>
 #include "../Engine/Action.h"
 #include "../Engine/Game.h"
 #include "../Mod/Mod.h"
@@ -36,6 +37,8 @@
 #include "../Savegame/Craft.h"
 #include "../Savegame/ItemContainer.h"
 #include "../Mod/RuleItem.h"
+#include "../Mod/Armor.h"
+#include "../Mod/RuleCraftWeapon.h"
 #include "../Engine/Timer.h"
 #include "../Menu/ErrorMessageState.h"
 #include "TransferConfirmState.h"
@@ -55,7 +58,7 @@ namespace OpenXcom
  * @param baseFrom Pointer to the source base.
  * @param baseTo Pointer to the destination base.
  */
-TransferItemsState::TransferItemsState(Base *baseFrom, Base *baseTo) : _baseFrom(baseFrom), _baseTo(baseTo), _sel(0), _total(0), _pQty(0), _cQty(0), _aQty(0), _iQty(0.0), _distance(0.0), _ammoColor(0)
+TransferItemsState::TransferItemsState(Base *baseFrom, Base *baseTo) : _baseFrom(baseFrom), _baseTo(baseTo), _sel(0), _total(0), _pQty(0), _cQty(0), _aQty(0), _iQty(0.0), _distance(0.0), _ammoColor(0), _spaceChange(0)
 {
 	// Create objects
 	_window = new Window(this, 320, 200, 0, 0);
@@ -66,7 +69,8 @@ TransferItemsState::TransferItemsState(Base *baseFrom, Base *baseTo) : _baseFrom
 	_txtAmountTransfer = new Text(60, 17, 200, 24);
 	_txtAmountDestination = new Text(60, 17, 260, 24);
 	_cbxCategory = new ComboBox(this, 120, 16, 10, 24);
-	_lstItems = new TextList(287, 128, 8, 44);
+	_lstItems = new TextList(287, 120, 8, 44);
+	_txtSpaceUsed = new Text(250, 9, 60, 166);
 
 	// Set palette
 	setInterface("transferMenu");
@@ -81,6 +85,7 @@ TransferItemsState::TransferItemsState(Base *baseFrom, Base *baseTo) : _baseFrom
 	add(_txtAmountTransfer, "text", "transferMenu");
 	add(_txtAmountDestination, "text", "transferMenu");
 	add(_lstItems, "list", "transferMenu");
+	add(_txtSpaceUsed, "text", "transferMenu");
 	add(_cbxCategory, "text", "transferMenu");
 
 	centerAllSurfaces();
@@ -107,6 +112,12 @@ TransferItemsState::TransferItemsState(Base *baseFrom, Base *baseTo) : _baseFrom
 
 	_txtAmountDestination->setText(tr("STR_AMOUNT_AT_DESTINATION"));
 	_txtAmountDestination->setWordWrap(true);
+
+	std::wostringstream ss5, ss6;
+	ss5 << _baseFrom->getUsedStores() << "/" << _baseFrom->getAvailableStores();
+	ss6 << _baseTo->getUsedStores() << "/" << _baseTo->getAvailableStores();
+	_txtSpaceUsed->setText(ss5.str());
+	_txtSpaceUsed->setText(tr("STR_SPACE_USED_HERE_THERE").arg(ss5.str()).arg(ss6.str()));
 
 	_lstItems->setArrowColumn(193, ARROW_VERTICAL);
 	_lstItems->setColumns(4, 162, 58, 40, 20);
@@ -652,6 +663,7 @@ void TransferItemsState::increaseByValue(int change)
 				_iQty += change * storesNeededPerItem;
 				getRow().amount += change;
 				_total += getRow().cost * change;
+				_spaceChange -= change * selItem->getSize();
 			}
 			else
 			{
@@ -711,6 +723,7 @@ void TransferItemsState::decreaseByValue(int change)
 		if (!selItem->isAlien())
 		{
 			_iQty -= selItem->getSize() * change;
+			_spaceChange += change * selItem->getSize();
 		}
 		else
 		{
@@ -729,7 +742,7 @@ void TransferItemsState::decreaseByValue(int change)
  */
 void TransferItemsState::updateItemStrings()
 {
-	std::wostringstream ss1, ss2;
+	std::wostringstream ss1, ss2, ss5, ss6;
 	ss1 << getRow().qtySrc - getRow().amount;
 	ss2 << getRow().amount;
 	_lstItems->setCellText(_sel, 1, ss1.str());
@@ -750,6 +763,32 @@ void TransferItemsState::updateItemStrings()
 				_lstItems->setRowColor(_sel, _ammoColor);
 			}
 		}
+	}
+
+	ss5 << _baseFrom->getUsedStores();
+	ss6 << _baseTo->getUsedStores();
+	if (std::abs(_spaceChange) > 0.05)
+	{
+		ss5 << "(";
+		ss6 << "(";
+		if (_spaceChange > 0.05)
+		{
+			ss5 << "+";
+		}
+		else if (_spaceChange < -0.05)
+		{
+			ss6 << "+";
+		}
+		ss5 << std::fixed << std::setprecision(1) << _spaceChange << ")";
+		ss6 << std::fixed << std::setprecision(1) << -_spaceChange << ")";
+	}
+	ss5 << "/" << _baseFrom->getAvailableStores();
+	ss6 << "/" << _baseTo->getAvailableStores();
+
+	_txtSpaceUsed->setText(tr("STR_SPACE_USED_HERE_THERE").arg(ss5.str()).arg(ss6.str()));
+	if (Options::storageLimitsEnforced)
+	{
+		_btnOk->setVisible(!_baseFrom->storesOverfull(_spaceChange));
 	}
 }
 

@@ -18,7 +18,6 @@
  */
 #include "RuleInventory.h"
 #include <cmath>
-#include "RuleItem.h"
 
 namespace YAML
 {
@@ -53,7 +52,7 @@ namespace OpenXcom
  * type of inventory section.
  * @param id String defining the id.
  */
-RuleInventory::RuleInventory(const std::string &id): _id(id), _x(0), _y(0), _type(INV_SLOT), _listOrder(0)
+	RuleInventory::RuleInventory(const std::string &id) : _id(id), _x(0), _y(0), _type(INV_SLOT), _listOrder(0), _countStats(false), _armorSide(-1), _allowGenericItems(true), _allowCombatSwap(true), _battleType(BT_NONE), _height(0), _width(0), _textAlign(0)
 {
 }
 
@@ -71,10 +70,18 @@ void RuleInventory::load(const YAML::Node &node, int listOrder)
 	_id = node["id"].as<std::string>(_id);
 	_x = node["x"].as<int>(_x);
 	_y = node["y"].as<int>(_y);
+	_height = node["height"].as<int>(_height);
+	_width = node["width"].as<int>(_width);
 	_type = (InventoryType)node["type"].as<int>(_type);
 	_slots = node["slots"].as< std::vector<RuleSlot> >(_slots);
 	_costs = node["costs"].as< std::map<std::string, int> >(_costs);
 	_listOrder = node["listOrder"].as<int>(listOrder);
+	_countStats = node["countStats"].as<bool>(_countStats);
+	_armorSide = node["armorSide"].as<int>(_armorSide);
+	_allowGenericItems = node["allowGenericItems"].as<bool>(_allowGenericItems);
+	_allowCombatSwap = node["allowCombatSwap"].as<bool>(_allowCombatSwap);
+	_battleType = (BattleType)node["battleType"].as<int>(_battleType);
+	_textAlign = node["textAlign"].as<int>(_textAlign);
 }
 
 /**
@@ -103,6 +110,18 @@ int RuleInventory::getX() const
 int RuleInventory::getY() const
 {
 	return _y;
+}
+
+/// Gets the height of the inventory.
+int RuleInventory::getHeight() const
+{
+	return _height;
+}
+
+/// Gets the width of the inventory.
+int RuleInventory::getWidth() const
+{
+	return _width;
 }
 
 /**
@@ -135,8 +154,9 @@ std::vector<struct RuleSlot> *RuleInventory::getSlots()
 bool RuleInventory::checkSlotInPosition(int *x, int *y) const
 {
 	int mouseX = *x, mouseY = *y;
-	if (_type == INV_HAND)
+	switch (_type)
 	{
+	case INV_HAND:
 		for (int xx = 0; xx < HAND_W; ++xx)
 		{
 			for (int yy = 0; yy < HAND_H; ++yy)
@@ -150,18 +170,46 @@ bool RuleInventory::checkSlotInPosition(int *x, int *y) const
 				}
 			}
 		}
-	}
-	else if (_type == INV_GROUND)
-	{
+		break;
+	case INV_UTILITY:
+		for (int xx = 0; xx < UTILITY_W; ++xx)
+		{
+			for (int yy = 0; yy < UTILITY_H; ++yy)
+			{
+				if (mouseX >= _x + xx * SLOT_W && mouseX < _x + (xx + 1) * SLOT_W &&
+					mouseY >= _y + yy * SLOT_H && mouseY < _y + (yy + 1) * SLOT_H)
+				{
+					*x = 0;
+					*y = 0;
+					return true;
+				}
+			}
+		}
+		break;
+	case INV_EQUIP:
+		for (int xx = 0; xx < _width; ++xx)
+		{
+			for (int yy = 0; yy < _height; ++yy)
+			{
+				if (mouseX >= _x + xx * SLOT_W && mouseX < _x + (xx + 1) * SLOT_W &&
+					mouseY >= _y + yy * SLOT_H && mouseY < _y + (yy + 1) * SLOT_H)
+				{
+					*x = 0;
+					*y = 0;
+					return true;
+				}
+			}
+		}
+		break;
+	case INV_GROUND:
 		if (mouseX >= _x && mouseX < 320 && mouseY >= _y && mouseY < 200)
 		{
 			*x = (int)floor(double(mouseX - _x) / SLOT_W);
 			*y = (int)floor(double(mouseY - _y) / SLOT_H);
 			return true;
 		}
-	}
-	else
-	{
+		break;
+	default:
 		for (std::vector<RuleSlot>::const_iterator i = _slots.begin(); i != _slots.end(); ++i)
 		{
 			if (mouseX >= _x + i->x * SLOT_W && mouseX < _x + (i->x + 1) * SLOT_W &&
@@ -186,11 +234,16 @@ bool RuleInventory::checkSlotInPosition(int *x, int *y) const
  */
 bool RuleInventory::fitItemInSlot(RuleItem *item, int x, int y) const
 {
-	if (_type == INV_HAND)
+	switch (_type)
 	{
+	case INV_HAND:
+	case INV_UTILITY:
 		return true;
-	}
-	else if (_type == INV_GROUND)
+		break;
+	case INV_EQUIP:
+		return item->getInventoryHeight() <= _height && item->getInventoryWidth() <= _width;
+		break;
+	case INV_GROUND:
 	{
 		int width = (320 - _x) / SLOT_W;
 		int height = (200 - _y) / SLOT_H;
@@ -207,8 +260,7 @@ bool RuleInventory::fitItemInSlot(RuleItem *item, int x, int y) const
 		}
 		return true;
 	}
-	else
-	{
+	default:
 		int totalSlots = item->getInventoryWidth() * item->getInventoryHeight();
 		int foundSlots = 0;
 		for (std::vector<RuleSlot>::const_iterator i = _slots.begin(); i != _slots.end() && foundSlots < totalSlots; ++i)
@@ -232,12 +284,44 @@ int RuleInventory::getCost(RuleInventory* slot) const
 {
 	if (slot == this)
 		return 0;
-	return _costs.find(slot->getId())->second;
+
+	std::map<std::string, int>::const_iterator ii = _costs.find(slot->getId());
+	return ii == _costs.end() ? -1 : ii->second;
 }
 
 int RuleInventory::getListOrder() const
 {
 	return _listOrder;
+}
+
+bool RuleInventory::getCountStats() const
+{
+	return _countStats;
+}
+
+int RuleInventory::getArmorSide() const
+{
+	return _armorSide;
+}
+
+bool RuleInventory::getAllowGenericItems() const
+{
+	return _allowGenericItems;
+}
+
+bool RuleInventory::getAllowCombatSwap() const
+{
+	return _allowCombatSwap;
+}
+
+BattleType RuleInventory::getBattleType() const
+{
+	return _battleType;
+}
+
+int RuleInventory::getTextAlign() const
+{
+	return _textAlign;
 }
 
 }

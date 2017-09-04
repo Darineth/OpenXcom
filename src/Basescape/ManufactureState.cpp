@@ -31,6 +31,7 @@
 #include "../Savegame/Production.h"
 #include "NewManufactureListState.h"
 #include "ManufactureInfoState.h"
+#include "../Engine/Action.h"
 
 namespace OpenXcom
 {
@@ -108,6 +109,7 @@ ManufactureState::ManufactureState(Base *base) : _base(base)
 	_txtTimeLeft->setText(tr("STR_DAYS_HOURS_LEFT"));
 	_txtTimeLeft->setWordWrap(true);
 
+	_lstManufacture->setArrowColumn(90, ARROW_VERTICAL);
 	_lstManufacture->setColumns(5, 115, 15, 52, 56, 48);
 	_lstManufacture->setAlign(ALIGN_RIGHT);
 	_lstManufacture->setAlign(ALIGN_LEFT, 0);
@@ -115,8 +117,11 @@ ManufactureState::ManufactureState(Base *base) : _base(base)
 	_lstManufacture->setBackground(_window);
 	_lstManufacture->setMargin(2);
 	_lstManufacture->setWordWrap(true);
+	_lstManufacture->onLeftArrowClick((ActionHandler)&ManufactureState::lstManufactureLeftArrowClick);
+	_lstManufacture->onRightArrowClick((ActionHandler)&ManufactureState::lstManufactureRightArrowClick);
 	_lstManufacture->onMouseClick((ActionHandler)&ManufactureState::lstManufactureClick);
-	fillProductionList();
+	_lstManufacture->onMousePress((ActionHandler)&ManufactureState::lstManufactureMousePress);
+	fillProductionList(0);
 }
 
 /**
@@ -134,7 +139,7 @@ ManufactureState::~ManufactureState()
 void ManufactureState::init()
 {
 	State::init();
-	fillProductionList();
+	fillProductionList(0);
 }
 
 /**
@@ -158,9 +163,9 @@ void ManufactureState::btnNewProductionClick(Action *)
 /**
  * Fills the list of base productions.
  */
-void ManufactureState::fillProductionList()
+void ManufactureState::fillProductionList(size_t scroll)
 {
-	const std::vector<Production *> productions(_base->getProductions());
+	const std::vector<Production *> &productions = _base->getProductions();
 	_lstManufacture->clearList();
 	for (std::vector<Production *>::const_iterator iter = productions.begin(); iter != productions.end(); ++iter)
 	{
@@ -195,6 +200,11 @@ void ManufactureState::fillProductionList()
 		}
 		_lstManufacture->addRow(5, tr((*iter)->getRules()->getName()).c_str(), s1.str().c_str(), s2.str().c_str(), s3.str().c_str(), s4.str().c_str());
 	}
+
+	if (scroll)
+		_lstManufacture->scrollTo(scroll);
+	_lstManufacture->draw();
+
 	_txtAvailable->setText(tr("STR_ENGINEERS_AVAILABLE").arg(_base->getAvailableEngineers()));
 	_txtAllocated->setText(tr("STR_ENGINEERS_ALLOCATED").arg(_base->getAllocatedEngineers()));
 	_txtSpace->setText(tr("STR_WORKSHOP_SPACE_AVAILABLE").arg(_base->getFreeWorkshops()));
@@ -204,10 +214,182 @@ void ManufactureState::fillProductionList()
  * Opens the screen displaying production settings.
  * @param action Pointer to an action.
  */
-void ManufactureState::lstManufactureClick(Action *)
+void ManufactureState::lstManufactureClick(Action *action)
 {
+	double mx = action->getAbsoluteXMouse();
+	if (mx >= _lstManufacture->getArrowsLeftEdge() && mx < _lstManufacture->getArrowsRightEdge())
+	{
+		return;
+	}
+
 	const std::vector<Production*> productions(_base->getProductions());
 	_game->pushState(new ManufactureInfoState(_base, productions[_lstManufacture->getSelectedRow()]));
+}
+
+/**
+* Moves a production up on the list.
+* @param action Pointer to an action.
+* @param row Selected production row.
+* @param max Move the production to the top?
+*/
+void ManufactureState::moveProductionUp(Action *action, unsigned int row, bool max)
+{
+	if (_lstManufacture->getRows() < 2) return;
+
+	Production *s = _base->getProductions().at(row);
+	if (max)
+	{
+		_base->getProductions().erase(_base->getProductions().begin() + row);
+
+		int engineers = 0;
+		for (std::vector<Production*>::iterator ii = _base->getProductions().begin(); ii != _base->getProductions().end(); ++ii)
+		{
+			Production *prod = *ii;
+			if (prod->getAssignedEngineers())
+			{
+				engineers += prod->getAssignedEngineers();
+				prod->setAssignedEngineers(0);
+			}
+		}
+
+		s->setAssignedEngineers(s->getAssignedEngineers() + engineers);
+
+		_base->getProductions().insert(_base->getProductions().begin(), s);
+	}
+	else
+	{
+		Production *swap = _base->getProductions().at(row) = _base->getProductions().at(row - 1);
+		if (swap->getAssignedEngineers())
+		{
+			s->setAssignedEngineers(s->getAssignedEngineers() + swap->getAssignedEngineers());
+			swap->setAssignedEngineers(0);
+		}
+		_base->getProductions().at(row - 1) = s;
+		if (row != _lstManufacture->getScroll())
+		{
+			SDL_WarpMouse(action->getLeftBlackBand() + action->getXMouse(), action->getTopBlackBand() + action->getYMouse() - static_cast<Uint16>(8 * action->getYScale()));
+		}
+		else
+		{
+			_lstManufacture->scrollUp(false);
+		}
+	}
+	fillProductionList(_lstManufacture->getScroll());
+}
+
+/**
+* Reorders a production up.
+* @param action Pointer to an action.
+*/
+void ManufactureState::lstManufactureLeftArrowClick(Action *action)
+{
+	unsigned int row = _lstManufacture->getSelectedRow();
+	if (row > 0)
+	{
+		if (action->getDetails()->button.button == SDL_BUTTON_LEFT)
+		{
+			moveProductionUp(action, row);
+		}
+		else if (action->getDetails()->button.button == SDL_BUTTON_RIGHT)
+		{
+			moveProductionUp(action, row, true);
+		}
+	}
+}
+
+/**
+* Moves a production down on the list.
+* @param action Pointer to an action.
+* @param row Selected production row.
+* @param max Move the production to the bottom?
+*/
+void ManufactureState::moveProductionDown(Action *action, unsigned int row, bool max)
+{
+	if (_lstManufacture->getRows() < 2) return;
+
+	Production *s = _base->getProductions().at(row);
+	if (max)
+	{
+		_base->getProductions().erase(_base->getProductions().begin() + row);
+		_base->getProductions().insert(_base->getProductions().end(), s);
+
+		if (s->getAssignedEngineers())
+		{
+			_base->getProductions().front()->setAssignedEngineers(_base->getProductions().front()->getAssignedEngineers() + s->getAssignedEngineers());
+			s->setAssignedEngineers(0);
+		}
+	}
+	else
+	{
+		Production *swap = _base->getProductions().at(row) = _base->getProductions().at(row + 1);
+		if (s->getAssignedEngineers())
+		{
+			swap->setAssignedEngineers(s->getAssignedEngineers() + swap->getAssignedEngineers());
+			s->setAssignedEngineers(0);
+		}
+		_base->getProductions().at(row + 1) = s;
+		
+		if (row != _lstManufacture->getVisibleRows() - 1 + _lstManufacture->getScroll())
+		{
+			SDL_WarpMouse(action->getLeftBlackBand() + action->getXMouse(), action->getTopBlackBand() + action->getYMouse() + static_cast<Uint16>(8 * action->getYScale()));
+		}
+		else
+		{
+			_lstManufacture->scrollDown(false);
+		}
+	}
+	fillProductionList(_lstManufacture->getScroll());
+}
+
+/**
+* Reorders a production down.
+* @param action Pointer to an action.
+*/
+void ManufactureState::lstManufactureRightArrowClick(Action *action)
+{
+	unsigned int row = _lstManufacture->getSelectedRow();
+	size_t numProductions = _base->getProductions().size();
+	if (0 < numProductions && INT_MAX >= numProductions && row < numProductions - 1)
+	{
+		if (action->getDetails()->button.button == SDL_BUTTON_LEFT)
+		{
+			moveProductionDown(action, row);
+		}
+		else if (action->getDetails()->button.button == SDL_BUTTON_RIGHT)
+		{
+			moveProductionDown(action, row, true);
+		}
+	}
+}
+
+/**
+* Handles the mouse-wheels on the arrow-buttons.
+* @param action Pointer to an action.
+*/
+void ManufactureState::lstManufactureMousePress(Action *action)
+{
+	if (Options::changeValueByMouseWheel == 0)
+		return;
+	unsigned int row = _lstManufacture->getSelectedRow();
+	size_t numProductions = _base->getProductions().size();
+	if (action->getDetails()->button.button == SDL_BUTTON_WHEELUP &&
+		row > 0)
+	{
+		if (action->getAbsoluteXMouse() >= _lstManufacture->getArrowsLeftEdge() &&
+			action->getAbsoluteXMouse() <= _lstManufacture->getArrowsRightEdge())
+		{
+			moveProductionUp(action, row);
+		}
+	}
+	else if (action->getDetails()->button.button == SDL_BUTTON_WHEELDOWN &&
+		0 < numProductions && INT_MAX >= numProductions && row < numProductions - 1)
+	{
+		if (action->getAbsoluteXMouse() >= _lstManufacture->getArrowsLeftEdge() &&
+			action->getAbsoluteXMouse() <= _lstManufacture->getArrowsRightEdge())
+		{
+			moveProductionDown(action, row);
+		}
+	}
 }
 
 }

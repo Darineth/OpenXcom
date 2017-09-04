@@ -36,7 +36,7 @@ class MedikitState : public State
 {
 	Surface *_bg;
 	MedikitView *_medikitView;
-	Text *_pkText, *_stimulantTxt,  *_healTxt, *_partTxt, *_woundTxt;
+	Text *_pkText, *_stimulantTxt,  *_healTxt, *_partTxt, *_woundTxt, *_txtStatus, *_txtHealth, *_txtStun, *_txtTU;
 	InteractiveSurface *_endButton, *_stimulantButton, *_pkButton, *_healButton;
 	BattleUnit *_targetUnit, *_unit;
 	BattleItem *_item;

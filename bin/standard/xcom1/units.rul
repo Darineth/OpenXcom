@@ -756,6 +756,7 @@ units:
     kneelHeight: 15
     value: 20
     deathSound: 9
+    moveSound: 15
     intelligence: 6
     aggression: 1
     energyRecovery: 40
@@ -779,6 +780,7 @@ units:
     kneelHeight: 15
     value: 30
     deathSound: 9
+    moveSound: 15
     intelligence: 7
     aggression: 1
     energyRecovery: 40
@@ -802,6 +804,7 @@ units:
     kneelHeight: 15
     value: 40
     deathSound: 9
+    moveSound: 15
     intelligence: 8
     aggression: 1
     energyRecovery: 40

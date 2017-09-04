@@ -494,6 +494,50 @@ std::vector<std::string> getFolderContents(const std::string &path, const std::s
 	return files;
 }
 
+/*std::vector<std::string> getDataSubfolders(const std::string &folder)
+{
+	std::set<std::string> unique;
+	std::vector<std::string> files;
+
+	// Check current data path
+	std::string current = Options::getDataFolder() + folder;
+	if (!current.empty())
+	{
+		std::vector<std::string> contents = getFolderContents(current);
+		for (std::vector<std::string>::const_iterator file = contents.begin(); file != contents.end(); ++file)
+		{
+			if(folderExists(current + *file))
+			{
+				unique.insert(*file);
+			}
+		}
+	}
+
+	// Check every other path
+	for (std::vector<std::string>::const_iterator i = Options::getDataList().begin(); i != Options::getDataList().end(); ++i)
+	{
+		std::string path = caseInsensitiveFolder(*i, folder);
+		if (path == current)
+		{
+			continue;
+		}
+		if (!path.empty())
+		{
+			std::vector<std::string> contents = getFolderContents(path);
+			for (std::vector<std::string>::const_iterator file = contents.begin(); file != contents.end(); ++file)
+			{
+				if(folderExists(path + *file))
+				{
+					unique.insert(*file);
+				}
+			}
+		}
+	}
+
+	files = std::vector<std::string>(unique.begin(), unique.end());
+	return files;
+}*/
+
 /**
  * Checks if a certain path exists and is a folder.
  * @param path Full path to folder.

@@ -41,6 +41,12 @@ private:
 	Text *_txtTitle, *_txtAvailable, *_txtAllocated, *_txtSpace, *_txtFunds, *_txtItem, *_txtEngineers, *_txtProduced, *_txtCost, *_txtTimeLeft;
 	TextList *_lstManufacture;
 	void lstManufactureClick(Action * action);
+	void lstManufactureLeftArrowClick(Action *action);
+	void lstManufactureRightArrowClick(Action *action);
+	void moveProductionUp(Action *action, unsigned int row, bool max = false);
+	void moveProductionDown(Action *action, unsigned int row, bool max = false);
+	void lstManufactureMousePress(Action *action);
+	void fillProductionList(size_t scroll);
 public:
 	/// Creates the Manufacture state.
 	ManufactureState(Base *base);
@@ -52,8 +58,6 @@ public:
 	void init();
 	/// Handler for the New Production button.
 	void btnNewProductionClick(Action * action);
-	/// Fills the list of base productions.
-	void fillProductionList();
 };
 
 }

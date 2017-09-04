@@ -65,8 +65,10 @@ void UnitTurnBState::init()
 		_parent->setStateInterval(Options::battleAlienSpeed);
 
 	// if the unit has a turret and we are turning during targeting, then only the turret turns
-	_turret = _unit->getTurretType() != -1 && (_action.targeting || _action.strafe);
+	_turret = _unit->getTurretType() != -1 && (_action.targeting || _action.movementAction == MV_STRAFE);
 
+	_unit->cancelEffects(ECT_MOVE);
+	_unit->cancelEffects(ECT_TURN);
 	_unit->lookAt(_action.target, _turret);
 
 	if (_chargeTUs && _unit->getStatus() != STATUS_TURNING)
@@ -82,6 +84,7 @@ void UnitTurnBState::init()
 			if (door == 1)
 			{
 				_parent->getMod()->getSoundByDepth(_parent->getDepth(), Mod::SLIDING_DOOR_OPEN)->play(-1, _parent->getMap()->getSoundAngle(_unit->getPosition())); // ufo door
+				_unit->cancelEffects(ECT_ACTIVATE);
 			}
 			if (door == 4)
 			{
@@ -106,13 +109,14 @@ void UnitTurnBState::think()
 		return;
 	}
 
-	if (_unit->spendTimeUnits(tu))
+	if (_unit->spendTimeUnits(tu, true, _action.overwatch))
 	{
 		size_t unitSpotted = _unit->getUnitsSpottedThisTurn().size();
 		_unit->turn(_turret);
 		_parent->getTileEngine()->calculateFOV(_unit);
 		_unit->setCache(0);
 		_parent->getMap()->cacheUnit(_unit);
+		_parent->getTileEngine()->calculateUnitLighting();
 		if (_chargeTUs && _unit->getFaction() == _parent->getSave()->getSide() && _parent->getPanicHandled() && _action.type == BA_NONE && _unit->getUnitsSpottedThisTurn().size() > unitSpotted)
 		{
 			_unit->abortTurn();
