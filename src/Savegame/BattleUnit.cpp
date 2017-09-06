@@ -2726,11 +2726,8 @@ void BattleUnit::updateGeoscapeStats(Soldier *soldier) const
  * @param statsDiff (out) The passed UnitStats struct will be filled with the stats differences.
  * @return True if the soldier was eligible for squaddie promotion.
  */
-//bool BattleUnit::postMissionProcedures(SavedGame *geoscape, UnitStats &statsDiff) // TODO: Rebase
-bool BattleUnit::postMissionProcedures(SavedGame *geoscape, int turns, int teamExperience, UnitStats &statIncreases, int &gainedExperience, bool &gainedLevel, int &kills)
+bool BattleUnit::postMissionProcedures(SavedGame *geoscape, UnitStats &statsDiff, int turns, int teamExperience, int &gainedExperience, bool &gainedLevel, int &kills)
 {
-	statIncreases.clear();
-
 	Soldier *s = geoscape->getSoldier(_id);
 	if (s == 0)
 	{
@@ -2741,7 +2738,7 @@ bool BattleUnit::postMissionProcedures(SavedGame *geoscape, int turns, int teamE
 
 	kills = _kills;
 
-	if(s->isVehicle())
+	if (s->isVehicle())
 	{
 		gainedLevel = false;
 		gainedExperience = 0;
@@ -2751,13 +2748,11 @@ bool BattleUnit::postMissionProcedures(SavedGame *geoscape, int turns, int teamE
 	UnitStats *stats = s->getCurrentStats();
 	statsDiff -= *stats;        // subtract old stats
 	const UnitStats caps = s->getRules()->getStatCaps();
-	/*int healthLoss = _stats.health - _health;
-	s->setWoundRecovery(RNG::generate((healthLoss*0.5),(healthLoss*1.5)));*/
 
 	float healthLoss = stats->health - _health;
-	if(healthLoss > 0)
+	if (healthLoss > 0)
 	{
-		if(geoscape->isResearched("STR_FIELD_SURGERY_UNIT"))
+		if (geoscape->isResearched("STR_FIELD_SURGERY_UNIT"))
 		{
 			s->setWoundRecovery((healthLoss * RNG::generate(15, 25)) / stats->health);
 		}
@@ -2783,57 +2778,54 @@ bool BattleUnit::postMissionProcedures(SavedGame *geoscape, int turns, int teamE
 
 	if (_expBravery && stats->bravery < caps.bravery)
 	{
-		if (_expBravery > RNG::generate(0,10)) stats->bravery += (statIncreases.bravery = 10);
+		if (_expBravery > RNG::generate(0, 10)) stats->bravery += 10;
 	}
 	if (_expReactions && stats->reactions < caps.reactions)
 	{
-		stats->reactions += (statIncreases.reactions = improveStat(_expReactions));
+		stats->reactions += improveStat(_expReactions);
 	}
 	if (_expFiring && stats->firing < caps.firing)
 	{
-		stats->firing += (statIncreases.firing = improveStat(_expFiring));
+		stats->firing += improveStat(_expFiring);
 	}
 	if (_expMelee && stats->melee < caps.melee)
 	{
-		stats->melee += (statIncreases.firing = improveStat(_expFiring));
+		stats->melee += improveStat(_expMelee);
 	}
 	if (_expThrowing && stats->throwing < caps.throwing)
 	{
-		stats->throwing += (statIncreases.throwing = improveStat(_expThrowing));
+		stats->throwing += improveStat(_expThrowing);
 	}
 	if (_expPsiSkill && stats->psiSkill < caps.psiSkill)
 	{
-		stats->psiSkill += (statIncreases.psiSkill = improveStat(_expPsiSkill));
+		stats->psiSkill += improveStat(_expPsiSkill);
 	}
 	if (_expPsiStrength && stats->psiStrength < caps.psiStrength)
 	{
-		stats->psiStrength += (statIncreases.psiStrength = improveStat(_expPsiStrength));
+		stats->psiStrength += improveStat(_expPsiStrength);
 	}
 
 	bool hasImproved = false;
-	if (_expBravery || _expReactions || _expFiring || _expMelee || _expThrowing || _expPsiSkill || _expPsiStrength)
+	if (_expBravery || _expReactions || _expFiring || _expPsiSkill || _expPsiStrength || _expMelee || _expThrowing)
 	{
 		hasImproved = true;
 		if (s->getRank() == RANK_ROOKIE)
 			s->promoteRank();
 		int v;
 		v = caps.tu - stats->tu;
-		if (v > 0) stats->tu += (statIncreases.tu = RNG::generate(0, v/10 + 2));
+		if (v > 0) stats->tu += RNG::generate(0, v / 10 + 2);
 		v = caps.health - stats->health;
-		if (v > 0) stats->health += (statIncreases.health = RNG::generate(0, v/10 + 2));
+		if (v > 0) stats->health += RNG::generate(0, v / 10 + 2);
 		v = caps.strength - stats->strength;
-		if (v > 0) stats->strength += (statIncreases.strength = RNG::generate(0, v/10 + 2));
+		if (v > 0) stats->strength += RNG::generate(0, v / 10 + 2);
 		v = caps.stamina - stats->stamina;
-		if (v > 0) stats->stamina += (statIncreases.stamina = RNG::generate(0, v/10 + 2));
+		if (v > 0) stats->stamina += RNG::generate(0, v / 10 + 2);
 	}
 
-	/*statsDiff += *stats; // add new stats
+	statsDiff += *stats; // add new stats
 
-	return hasImproved;*/ // TODO: Rebase to use SupSuper statsDiff?
-	else
-	{
-		return gainedLevel;
-	}
+	return hasImproved;
+}
 
 /**
  * Converts the number of experience to the stat increase.

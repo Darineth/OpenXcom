@@ -587,6 +587,7 @@ void BattlescapeGame::checkForCasualties(BattleItem *murderweapon, BattleUnit *o
 	for (std::vector<BattleUnit*>::iterator j = _save->getUnits()->begin(); j != _save->getUnits()->end(); ++j)
 	{
 		BattleUnit *victim = (*j);
+		BattleUnit *murderer = origMurderer;
 		if (victim->getStatus() == STATUS_IGNORE_ME || victim->getAboutToFall()) continue;
 		UnitDieBState* deathState = 0;
 

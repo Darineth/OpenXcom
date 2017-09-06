@@ -1440,8 +1440,8 @@ void SavedBattleGame::prepareNewTurn()
 		// do damage to units, average out the smoke, etc.
 		for (int i = 0; i < _mapsize_x * _mapsize_y * _mapsize_z; ++i)
 		{
-			if (tiles()[i]->getSmoke() != 0)
-				tiles()[i]->prepareNewTurn(getDepth() == 0);
+			if (tiles[i]->getSmoke() != 0)
+				tiles[i]->prepareNewTurn(getDepth() == 0);
 		}
 		// fires could have been started, stopped or smoke could reveal/conceal units.
 		getTileEngine()->calculateTerrainLighting();

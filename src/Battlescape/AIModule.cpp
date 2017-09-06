@@ -18,6 +18,7 @@
  */
 #include <climits>
 #include <algorithm>
+#include <assert.h>
 #include "AIModule.h"
 #include "../Savegame/BattleItem.h"
 #include "../Savegame/Node.h"

@@ -71,15 +71,15 @@ private:
 	TextButton *_btnOk, *_btnStats;
 	Window *_window;
 	Text *_txtTitle, *_txtItem, *_txtQuantity, *_txtScore, *_txtRecovery, *_txtRating,
-	     *_txtSoldier, *_txtStatus, *_txtTU, *_txtStamina, *_txtHealth, *_txtBravery, *_txtReactions,
-	     *_txtFiring, *_txtThrowing, *_txtMelee, *_txtStrength, *_txtPsiStrength, *_txtPsiSkill;
-	TextList *_lstStats, *_lstRecovery, *_lstTotal, *_lstSoldierStats;
+	     *_txtSoldier, *_txtStatus /*, *_txtTU, *_txtStamina, *_txtHealth, *_txtBravery, *_txtReactions,
+	     *_txtFiring, *_txtThrowing, *_txtMelee, *_txtStrength, *_txtPsiStrength, *_txtPsiSkill*/;
+	TextList *_lstStats, *_lstRecovery, *_lstTotal, *_lstSoldiers;
 	std::string _currentTooltip;
-	Text *_txtTooltip;
+	//Text *_txtTooltip;
 	std::vector<ReequipStat> _missingItems;
 	std::map<RuleItem*, int> _rounds;
 	std::map<int, RecoveryItem*> _recoveryStats;
-	bool _positiveScore, _noContainment, _manageContainment, _destroyBase, _showSoldiers;
+	bool _positiveScore, _noContainment, _manageContainment, _destroyBase;
 	int _limitsEnforced;
 	MissionStatistics *_missionStatistics;
     std::vector<Soldier*> _soldiersCommended, _deadSoldiersCommended;

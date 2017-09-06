@@ -1270,12 +1270,10 @@ void SavedGame::getAvailableResearchProjects(std::vector<RuleResearch *> & proje
 	{
 		RuleResearch *research = mod->getResearch(*iter);
 
-		// TODO: Rebase new if/else with unlocked list thing.
-		if ((considerDebugMode && _debug) || std::find(unlocked.begin(), unlocked.end(), research) != unlocked.end())
 		std::vector<std::string> allNeeded = research->getNeededItemsAll();
 		std::vector<std::string> anyNeeded = research->getNeededItemsAny();
 
-		if (!isResearchAvailable(research, unlocked, mod))
+		if ((considerDebugMode && _debug) || std::find(unlocked.begin(), unlocked.end(), research) != unlocked.end())
 		{
 			// Empty, these research topics are on the "unlocked list", *don't* check the dependencies!
 		}
@@ -1346,10 +1344,12 @@ void SavedGame::getAvailableResearchProjects(std::vector<RuleResearch *> & proje
 				break;
 			}
 		}
+
 		if (!foundNeededItems)
 		{
 			continue;
 		}
+
 		for (std::vector<std::string>::const_iterator iter = anyNeeded.begin(); iter != anyNeeded.end(); ++iter)
 		{
 			if (base->getStorageItems()->getItem(*iter) > 0)
@@ -1359,6 +1359,7 @@ void SavedGame::getAvailableResearchProjects(std::vector<RuleResearch *> & proje
 			}
 			foundNeededItems = false;
 		}
+
 		if (!foundNeededItems)
 		{
 			continue;

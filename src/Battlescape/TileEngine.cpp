@@ -1255,31 +1255,32 @@ BattleUnit* TileEngine::getReactor(const std::vector<std::pair<BattleUnit *, int
 	*/
 int TileEngine::determineReactionType(BattleUnit *unit, BattleUnit *target, bool overwatch, BattleItem *weapon)
 {
-	if (!overwatch)
-{
-	// prioritize melee
-	BattleItem *meleeWeapon = unit->getMeleeWeapon();
-	if (meleeWeapon &&
-		// has a melee weapon and is in melee range
-		validMeleeRange(unit, target, unit->getDirection()) &&
-		unit->getActionTUs(BA_HIT, meleeWeapon) > 0 &&
-		unit->getTimeUnits() > unit->getActionTUs(BA_HIT, meleeWeapon) &&
-		(unit->getOriginalFaction() != FACTION_PLAYER ||
-		_save->getGeoscapeSave()->isResearched(meleeWeapon->getRules()->getRequirements())) &&
-		_save->isItemUsable(meleeWeapon->getRules()))
+	if(!overwatch)
 	{
 		// prioritize melee
 		BattleItem *meleeWeapon = unit->getMeleeWeapon();
-		if (meleeWeapon &&
+		if(meleeWeapon &&
 			// has a melee weapon and is in melee range
 			validMeleeRange(unit, target, unit->getDirection()) &&
 			unit->getActionTUs(BA_HIT, meleeWeapon) > 0 &&
 			unit->getTimeUnits() > unit->getActionTUs(BA_HIT, meleeWeapon) &&
 			(unit->getOriginalFaction() != FACTION_PLAYER ||
 			_save->getGeoscapeSave()->isResearched(meleeWeapon->getRules()->getRequirements())) &&
-			(_save->getDepth() != 0 || meleeWeapon->getRules()->isWaterOnly() == false))
+			_save->isItemUsable(meleeWeapon->getRules()))
 		{
-			return BA_HIT;
+			// prioritize melee
+			BattleItem *meleeWeapon = unit->getMeleeWeapon();
+			if(meleeWeapon &&
+				// has a melee weapon and is in melee range
+				validMeleeRange(unit, target, unit->getDirection()) &&
+				unit->getActionTUs(BA_HIT, meleeWeapon) > 0 &&
+				unit->getTimeUnits() > unit->getActionTUs(BA_HIT, meleeWeapon) &&
+				(unit->getOriginalFaction() != FACTION_PLAYER ||
+				_save->getGeoscapeSave()->isResearched(meleeWeapon->getRules()->getRequirements())) &&
+				(_save->getDepth() != 0 || meleeWeapon->getRules()->isWaterOnly() == false))
+			{
+				return BA_HIT;
+			}
 		}
 	}
 
@@ -1318,7 +1319,6 @@ int TileEngine::determineReactionType(BattleUnit *unit, BattleUnit *target, bool
 	{
 		return BA_SNAPSHOT;
 	}
-
 
 	return BA_NONE;
 }

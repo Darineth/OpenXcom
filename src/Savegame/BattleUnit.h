@@ -383,8 +383,7 @@ public:
 	/// Updates the stats of a Geoscape soldier.
 	void updateGeoscapeStats(Soldier *soldier) const;
 	/// Check if unit eligible for squaddie promotion.
-	//bool postMissionProcedures(SavedGame *geoscape, UnitStats &statsDiff); // TODO: Rebase
-	bool postMissionProcedures(SavedGame *geoscape, int turns, int teamExperience, UnitStats &statIncreases, int &gainedExperience, bool &gainedLevel, int &kills);
+	bool postMissionProcedures(SavedGame *geoscape, UnitStats &statsDiff, int turns, int teamExperience, int &gainedExperience, bool &gainedLevel, int &kills);
 	/// Get the sprite index for the minimap
 	int getMiniMapSpriteIndex() const;
 	/// Set the turret type. -1 is no turret.

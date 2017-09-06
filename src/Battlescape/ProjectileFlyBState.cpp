@@ -1227,6 +1227,8 @@ void ProjectileFlyBState::projectileHitUnit(Position pos)
 		if (_ammo != 0)
 			victim->setMurdererWeaponAmmo(_ammo->getRules()->getName());
 	}
+}
+
 void ProjectileFlyBState::popParentState()
 {
 	if(!_subState)
