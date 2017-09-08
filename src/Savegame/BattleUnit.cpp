@@ -1708,6 +1708,16 @@ bool BattleUnit::spendTimeUnits(int tu, bool movement, bool forOverwatch)
 }
 
 /**
+ * Checks if the unit could spend the specified time units.
+ * @param tu
+ * @return flag if it could spend the time units or not.
+ */
+bool BattleUnit::canSpendTimeUnits(int tu, bool movement, bool forOverwatch)
+{
+	return tu == 0 || (_tu > 0 && (_tu - tu) >= (_stats.tu / -4));
+}
+
+/**
  * Spend energy  if it can. Return false if it can't.
  * @param tu
  * @return flag if it could spend the time units or not.
@@ -4907,6 +4917,7 @@ bool BattleUnit::unloadWeapon(BattleItem *weapon, std::string &warning, bool che
 		}
 		return true;
 	}
+
 	if(ammo == weapon)
 	{
 		return false;
@@ -5060,7 +5071,17 @@ bool BattleUnit::reloadWeapon(BattleItem *weapon, std::string &warning, bool che
 		return false;
 	}
 
-	if(unloadWeapon(weapon, warning, checkTu, true, &unloadCost) && loadWeapon(weapon, ammo, warning, checkTu, true, &loadCost, true) && (!checkTu || (unloadCost + loadCost <= _tu)))
+	bool canUnload = unloadWeapon(weapon, warning, checkTu, true, &unloadCost);
+	bool canLoad = loadWeapon(weapon, ammo, warning, checkTu, true, &loadCost, true);
+	bool haveTus = canSpendTimeUnits(unloadCost + loadCost);
+
+	if(checkTu && !haveTus)
+	{
+		warning = "STR_NOT_ENOUGH_TIME_UNITS";
+		return false;
+	}
+
+	if(canUnload && canLoad && (!checkTu || haveTus))
 	{
 		if(returnCost)
 		{

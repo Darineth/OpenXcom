@@ -280,6 +280,8 @@ public:
 	//int getActionTUs(BattleActionType actionType, RuleItem *item);
 	/// Spend time units if it can.
 	bool spendTimeUnits(int tu, bool movement = false, bool forOverwatch = false);
+	/// Checks if the unit could spend the specified time units.
+	bool canSpendTimeUnits(int tu, bool movement = false, bool forOverwatch = false);
 	/// Spend energy if it can.
 	bool spendEnergy(int tu);
 	/// Set time units.
