@@ -166,3 +166,11 @@ facilities:
     monthlyCost: 25000
     crafts: 1
     mapName: XBASE_16
+  - type: STR_TRAINING_FACILITY
+    spriteShape: 1
+    spriteFacility: 18
+    buildCost: 400000
+    buildTime: 16
+    monthlyCost: 10000
+    trainingRooms: 10
+    mapName: XBASE_01
