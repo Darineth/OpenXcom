@@ -59,6 +59,14 @@ void RuleSoldier::load(const YAML::Node &node, Mod *mod)
 	_minStats.merge(node["minStats"].as<UnitStats>(_minStats));
 	_maxStats.merge(node["maxStats"].as<UnitStats>(_maxStats));
 	_statCaps.merge(node["statCaps"].as<UnitStats>(_statCaps));
+	if (node["trainingStatCaps"])
+	{
+		_trainingStatCaps.merge(node["trainingStatCaps"].as<UnitStats>(_trainingStatCaps));
+	}
+	else
+	{
+		_trainingStatCaps.merge(node["statCaps"].as<UnitStats>(_trainingStatCaps));
+	}
 	_armor = node["armor"].as<std::string>(_armor);
 	_costBuy = node["costBuy"].as<int>(_costBuy);
 	_costSalary = node["costSalary"].as<int>(_costSalary);
@@ -184,6 +192,15 @@ UnitStats RuleSoldier::getMaxStats() const
 UnitStats RuleSoldier::getStatCaps() const
 {
 	return _statCaps;
+}
+
+/**
+* Gets the training stat caps.
+* @return The training stat caps.
+*/
+UnitStats RuleSoldier::getTrainingStatCaps() const
+{
+	return _trainingStatCaps;
 }
 
 /**

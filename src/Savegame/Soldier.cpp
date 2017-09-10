@@ -42,7 +42,7 @@ namespace OpenXcom
  * @param armor Soldier armor.
  * @param id Unique soldier id for soldier generation.
  */
-Soldier::Soldier(RuleSoldier *rules, SavedGame *save, Armor *armor, int id, Language *lang, int vehicleId) : _id(id), _improvement(0), _psiStrImprovement(0), _rules(rules), _rank(RANK_ROOKIE), _craft(0), _gender(GENDER_MALE), _look(LOOK_BLONDE), _missions(0), _kills(0), _recovery(0), _recentlyPromoted(false), _psiTraining(false), _armor(armor), _death(0), _diary(new SoldierDiary()), _initialStats(), _equipmentLayout(), _role(save->getDefaultRole()), _isVehicle(rules->isVehicle()), _vehicleId(vehicleId), _type(rules->getType()), _inventoryLayout(rules->getInventoryLayout()), _armorColor("STR_NONE"), _experience(0), _level(0), _talentPoints(0), _spentTalentPoints(0)
+Soldier::Soldier(RuleSoldier *rules, SavedGame *save, Armor *armor, int id, Language *lang, int vehicleId) : _id(id), _improvement(0), _psiStrImprovement(0), _rules(rules), _rank(RANK_ROOKIE), _craft(0), _gender(GENDER_MALE), _look(LOOK_BLONDE), _missions(0), _kills(0), _recovery(0), _recentlyPromoted(false), _psiTraining(false), _armor(armor), _death(0), _diary(new SoldierDiary()), _initialStats(), _equipmentLayout(), _role(save->getDefaultRole()), _isVehicle(rules->isVehicle()), _vehicleId(vehicleId), _type(rules->getType()), _inventoryLayout(rules->getInventoryLayout()), _armorColor("STR_NONE"), _experience(0), _level(0), _talentPoints(0), _spentTalentPoints(0), _training(false)
 {
 	if (id != 0)
 	{
@@ -133,6 +133,7 @@ void Soldier::load(const YAML::Node& node, const Mod *mod, SavedGame *save)
 	}
 	_armor = armor;
 	_psiTraining = node["psiTraining"].as<bool>(_psiTraining);
+	_training = node["training"].as<bool>(_training);
 	_improvement = node["improvement"].as<int>(_improvement);
 	_psiStrImprovement = node["psiStrImprovement"].as<int>(_psiStrImprovement);
 	if (const YAML::Node &layout = node["equipmentLayout"])
@@ -212,6 +213,8 @@ YAML::Node Soldier::save() const
 	node["armor"] = _armor->getType();
 	if (_psiTraining)
 		node["psiTraining"] = _psiTraining;
+	if (_training)
+		node["training"] = _training;
 	node["improvement"] = _improvement;
 	node["psiStrImprovement"] = _psiStrImprovement;
 	if (!_equipmentLayout.empty())
@@ -497,6 +500,24 @@ void Soldier::setArmor(Armor *armor)
 }
 
 /**
+* Is the soldier wounded or not?.
+* @return True if wounded.
+*/
+bool Soldier::isWounded() const
+{
+	return _recovery > 0.0f;
+}
+
+/**
+* Is the soldier wounded or not?.
+* @return False if wounded.
+*/
+bool Soldier::hasFullHealth() const
+{
+	return !isWounded();
+}
+
+/**
  * Returns the amount of time until the soldier is healed.
  * @return Number of days.
  */
@@ -517,6 +538,11 @@ void Soldier::setWoundRecovery(int recovery)
 	if (_recovery > 0)
 	{
 		_craft = 0;
+		// remove from training
+		if (Options::removeWoundedFromTraining)
+		{
+			_training = false;
+		}
 	}
 }
 
@@ -695,6 +721,70 @@ SoldierDiary *Soldier::getDiary()
 void Soldier::calcStatString(const std::vector<StatString *> &statStrings, bool psiStrengthEval)
 {
 	_statString = StatString::calcStatString(_currentStats, statStrings, psiStrengthEval && !_isVehicle, _psiTraining);
+}
+
+/**
+* Trains a soldier's Physical abilities
+*/
+void Soldier::trainPhys(int customTrainingFactor)
+{
+	UnitStats caps1 = _rules->getStatCaps();
+	UnitStats caps2 = _rules->getTrainingStatCaps();
+	// no P.T. for the wounded
+	if (hasFullHealth())
+	{
+		if (_currentStats.firing < caps1.firing && RNG::generate(0, caps2.firing) > _currentStats.firing && RNG::percent(customTrainingFactor))
+			_currentStats.firing++;
+		if (_currentStats.health < caps1.health && RNG::generate(0, caps2.health) > _currentStats.health && RNG::percent(customTrainingFactor))
+			_currentStats.health++;
+		if (_currentStats.melee < caps1.melee && RNG::generate(0, caps2.melee) > _currentStats.melee && RNG::percent(customTrainingFactor))
+			_currentStats.melee++;
+		if (_currentStats.throwing < caps1.throwing && RNG::generate(0, caps2.throwing) > _currentStats.throwing && RNG::percent(customTrainingFactor))
+			_currentStats.throwing++;
+		if (_currentStats.strength < caps1.strength && RNG::generate(0, caps2.strength) > _currentStats.strength && RNG::percent(customTrainingFactor))
+			_currentStats.strength++;
+		if (_currentStats.tu < caps1.tu && RNG::generate(0, caps2.tu) > _currentStats.tu && RNG::percent(customTrainingFactor))
+			_currentStats.tu++;
+		if (_currentStats.stamina < caps1.stamina && RNG::generate(0, caps2.stamina) > _currentStats.stamina && RNG::percent(customTrainingFactor))
+			_currentStats.stamina++;
+	}
+}
+
+/**
+* Is the soldier already fully trained?
+* @return True, if the soldier cannot gain any more stats in the training facility.
+*/
+bool Soldier::isFullyTrained()
+{
+	UnitStats trainingCaps = _rules->getTrainingStatCaps();
+
+	if (_currentStats.firing < trainingCaps.firing
+		|| _currentStats.health < trainingCaps.health
+		|| _currentStats.melee < trainingCaps.melee
+		|| _currentStats.throwing < trainingCaps.throwing
+		|| _currentStats.strength < trainingCaps.strength
+		|| _currentStats.tu < trainingCaps.tu
+		|| _currentStats.stamina < trainingCaps.stamina)
+	{
+		return false;
+	}
+	return true;
+}
+
+/**
+* returns whether or not the unit is in physical training
+*/
+bool Soldier::isInTraining()
+{
+	return _training;
+}
+
+/**
+* changes whether or not the unit is in physical training
+*/
+void Soldier::setTraining(bool training)
+{
+	_training = training;
 }
 
 /**

@@ -372,6 +372,7 @@
     <ClCompile Include="Basescape\SoldierDiaryPerformanceState.cpp" />
     <ClCompile Include="Basescape\SoldierInfoState.cpp" />
     <ClCompile Include="Basescape\SoldierMemorialState.cpp" />
+    <ClCompile Include="Basescape\SoldierSortUtil.cpp" />
     <ClCompile Include="Basescape\SoldiersState.cpp" />
     <ClCompile Include="Basescape\StoresState.cpp" />
     <ClCompile Include="Basescape\TransferBaseState.cpp" />
@@ -470,6 +471,7 @@
     <ClCompile Include="Engine\Timer.cpp" />
     <ClCompile Include="Engine\Zoom.cpp" />
     <ClCompile Include="Geoscape\AlienBaseState.cpp" />
+    <ClCompile Include="Geoscape\AllocateTrainingState.cpp" />
     <ClCompile Include="Geoscape\DogfightErrorState.cpp" />
     <ClCompile Include="Geoscape\MissionDetectedState.cpp" />
     <ClCompile Include="Geoscape\AllocatePsiTrainingState.cpp" />
@@ -502,6 +504,8 @@
     <ClCompile Include="Geoscape\MultipleTargetsState.cpp" />
     <ClCompile Include="Geoscape\SelectDestinationState.cpp" />
     <ClCompile Include="Geoscape\TargetInfoState.cpp" />
+    <ClCompile Include="Geoscape\TrainingFinishedState.cpp" />
+    <ClCompile Include="Geoscape\TrainingState.cpp" />
     <ClCompile Include="Geoscape\UfoDetectedState.cpp" />
     <ClCompile Include="Geoscape\UfoLostState.cpp" />
     <ClCompile Include="Interface\ArrowButton.cpp" />
@@ -702,6 +706,7 @@
     <ClInclude Include="Basescape\SoldierDiaryPerformanceState.h" />
     <ClInclude Include="Basescape\SoldierInfoState.h" />
     <ClInclude Include="Basescape\SoldierMemorialState.h" />
+    <ClInclude Include="Basescape\SoldierSortUtil.h" />
     <ClInclude Include="Basescape\SoldiersState.h" />
     <ClInclude Include="Basescape\StoresState.h" />
     <ClInclude Include="Basescape\TransferBaseState.h" />
@@ -811,6 +816,7 @@
     <ClInclude Include="Engine\Zoom.h" />
     <ClInclude Include="fmath.h" />
     <ClInclude Include="Geoscape\AlienBaseState.h" />
+    <ClInclude Include="Geoscape\AllocateTrainingState.h" />
     <ClInclude Include="Geoscape\Cord.h" />
     <ClInclude Include="Geoscape\DogfightErrorState.h" />
     <ClInclude Include="Geoscape\MissionDetectedState.h" />
@@ -844,6 +850,8 @@
     <ClInclude Include="Geoscape\ResearchCompleteState.h" />
     <ClInclude Include="Geoscape\SelectDestinationState.h" />
     <ClInclude Include="Geoscape\TargetInfoState.h" />
+    <ClInclude Include="Geoscape\TrainingFinishedState.h" />
+    <ClInclude Include="Geoscape\TrainingState.h" />
     <ClInclude Include="Geoscape\UfoDetectedState.h" />
     <ClInclude Include="Geoscape\UfoLostState.h" />
     <ClInclude Include="Interface\ArrowButton.h" />

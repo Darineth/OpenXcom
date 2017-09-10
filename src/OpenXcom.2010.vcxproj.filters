@@ -948,6 +948,10 @@
     <ClCompile Include="Mod\RuleEffect.cpp" />
     <ClCompile Include="Mod\RuleInventoryLayout.cpp" />
     <ClCompile Include="Mod\RuleRole.cpp" />
+    <ClCompile Include="Geoscape\AllocateTrainingState.cpp" />
+    <ClCompile Include="Geoscape\TrainingFinishedState.cpp" />
+    <ClCompile Include="Geoscape\TrainingState.cpp" />
+    <ClCompile Include="Basescape\SoldierSortUtil.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h" />
@@ -1938,6 +1942,10 @@
     <ClInclude Include="Mod\RuleEffect.h" />
     <ClInclude Include="Mod\RuleInventoryLayout.h" />
     <ClInclude Include="Mod\RuleRole.h" />
+    <ClInclude Include="Geoscape\AllocateTrainingState.h" />
+    <ClInclude Include="Geoscape\TrainingFinishedState.h" />
+    <ClInclude Include="Geoscape\TrainingState.h" />
+    <ClInclude Include="Basescape\SoldierSortUtil.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Geoscape">

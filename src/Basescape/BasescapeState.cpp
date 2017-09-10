@@ -49,6 +49,7 @@
 #include "TransferBaseState.h"
 #include "CraftInfoState.h"
 #include "../Geoscape/AllocatePsiTrainingState.h"
+#include "../Geoscape/AllocateTrainingState.h"
 #include "../Mod/RuleInterface.h"
 #include "../Engine/Screen.h"
 
@@ -435,6 +436,10 @@ void BasescapeState::viewRightClick(Action *)
 	else if (f->getRules()->getPsiLaboratories() > 0 && Options::anytimePsiTraining && _base->getAvailablePsiLabs() > 0)
 	{
 		_game->pushState(new AllocatePsiTrainingState(_base));
+	}
+	else if (f->getRules()->getTrainingFacilities() > 0 && Options::anytimeMartialTraining && _base->getAvailableTraining() > 0)
+	{
+		_game->pushState(new AllocateTrainingState(_base));
 	}
 	else if (f->getRules()->getLaboratories() > 0)
 	{

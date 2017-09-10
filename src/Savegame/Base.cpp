@@ -1235,6 +1235,42 @@ int Base::getUsedPsiLabs() const
 }
 
 /**
+* Returns the total amount of training space
+* available in the base.
+* @return Training space.
+*/
+int Base::getAvailableTraining() const
+{
+	int total = 0;
+	for (std::vector<BaseFacility*>::const_iterator i = _facilities.begin(); i != _facilities.end(); ++i)
+	{
+		if ((*i)->getBuildTime() == 0)
+		{
+			total += (*i)->getRules()->getTrainingFacilities();
+		}
+	}
+	return total;
+}
+
+/**
+* Returns the total amount of used training space
+* available in the base.
+* @return used training space.
+*/
+int Base::getUsedTraining() const
+{
+	int total = 0;
+	for (std::vector<Soldier*>::const_iterator s = _soldiers.begin(); s != _soldiers.end(); ++s)
+	{
+		if ((*s)->isInTraining())
+		{
+			total++;
+		}
+	}
+	return total;
+}
+
+/**
  * Returns the total amount of used
  * Containment Space in the base.
  * @return Containment Lab space.

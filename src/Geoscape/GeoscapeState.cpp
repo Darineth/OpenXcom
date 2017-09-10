@@ -75,6 +75,7 @@
 #include "ResearchRequiredState.h"
 #include "NewPossibleResearchState.h"
 #include "NewPossibleManufactureState.h"
+#include "TrainingFinishedState.h"
 #include "../Savegame/Production.h"
 #include "../Mod/RuleManufacture.h"
 #include "../Savegame/ItemContainer.h"
@@ -1853,6 +1854,26 @@ void GeoscapeState::time1Day()
 				(*j)->heal();
 			}
 		}
+
+		// Handle soldier wounds and martial training
+		std::vector<Soldier *> trainingFinishedList;
+		for (std::vector<Soldier*>::iterator j = (*i)->getSoldiers()->begin(); j != (*i)->getSoldiers()->end(); ++j)
+		{
+			if ((*j)->isInTraining())
+			{
+				(*j)->trainPhys(_game->getMod()->getCustomTrainingFactor());
+				if ((*j)->isFullyTrained())
+				{
+					(*j)->setTraining(false);
+					trainingFinishedList.push_back(*j);
+				}
+			}
+		}
+		if (!trainingFinishedList.empty())
+		{
+			popup(new TrainingFinishedState(*i, trainingFinishedList));
+		}
+
 		// Handle psionic training
 		if ((*i)->getAvailablePsiLabs() > 0 && Options::anytimePsiTraining)
 		{

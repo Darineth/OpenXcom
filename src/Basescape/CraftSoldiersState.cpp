@@ -36,62 +36,10 @@
 #include "SoldierInfoState.h"
 #include "../Mod/RuleInterface.h"
 #include "../Savegame/Role.h"
+#include "SoldierSortUtil.h"
 
 namespace OpenXcom
 {
-
-typedef int (*getStatFn_t)(Game *, Soldier *);
-
-struct SortFunctor : public std::binary_function<Soldier *, Soldier *, bool>
-{
-	Game *_game;
-	getStatFn_t _getStatFn;
-	SortFunctor(Game *game, getStatFn_t getStatFn)
-		: _game(game), _getStatFn(getStatFn) { }
-	bool operator()(Soldier *a, Soldier *b)
-	{
-		bool ret = _getStatFn(_game, a) < _getStatFn(_game, b);
-		return ret;
-	}
-};
-
-#define GET_ATTRIB_STAT_FN(attrib) \
-	int attrib##Stat(Game *, Soldier *s) { return s->getCurrentStats()->attrib; }
-GET_ATTRIB_STAT_FN(tu)
-GET_ATTRIB_STAT_FN(stamina)
-GET_ATTRIB_STAT_FN(health)
-GET_ATTRIB_STAT_FN(bravery)
-GET_ATTRIB_STAT_FN(reactions)
-GET_ATTRIB_STAT_FN(firing)
-GET_ATTRIB_STAT_FN(throwing)
-GET_ATTRIB_STAT_FN(strength)
-int psiStrengthStat(Game *game, Soldier *s)
-{
-	// don't reveal (relative) psi strength before it would otherwise be known
-	if (s->getCurrentStats()->psiSkill > 0
-	 || (Options::psiStrengthEval
-	     && game->getSavedGame()->isResearched(game->getMod()->getPsiRequirements())))
-	{
-		return s->getCurrentStats()->psiStrength;
-	}
-	return 0;
-}
-int psiSkillStat(Game *, Soldier *s)
-{
-	// protect against negative psiSkill (possible when Options::anytimePsiTraining
-	// is enabled)
-	return (s->getCurrentStats()->psiSkill > 0) ? s->getCurrentStats()->psiSkill : 0;
-}
-GET_ATTRIB_STAT_FN(melee)
-#undef GET_ATTRIB_STAT_FN
-#define GET_SOLDIER_STAT_FN(attrib, camelCaseAttrib) \
-	int attrib##Stat(Game *, Soldier *s) { return s->get##camelCaseAttrib(); }
-GET_SOLDIER_STAT_FN(rank, Rank)
-GET_SOLDIER_STAT_FN(missions, Missions)
-GET_SOLDIER_STAT_FN(kills, Kills)
-GET_SOLDIER_STAT_FN(woundRecovery, WoundRecovery)
-#undef GET_SOLDIER_STAT_FN
-
 /**
  * Initializes all the elements in the Craft Soldiers screen.
  * @param game Pointer to the core game.

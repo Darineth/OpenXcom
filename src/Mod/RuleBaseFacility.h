@@ -43,7 +43,7 @@ private:
 	int _storage, _personnel, _aliens, _crafts, _labs, _workshops, _psiLabs;
 	int _radarRange, _radarChance, _defense, _hitRatio, _fireSound, _hitSound;
 	std::string _mapName;
-	int _listOrder;
+	int _listOrder, _trainingRooms;
 public:
 	/// Creates a blank facility ruleset.
 	RuleBaseFacility(const std::string &type);
@@ -105,6 +105,8 @@ public:
 	int getHitSound() const;
 	/// Gets the facility's list weight.
 	int getListOrder() const;
+	/// Gets the facility's training capacity.
+	int getTrainingFacilities() const;
 };
 
 }

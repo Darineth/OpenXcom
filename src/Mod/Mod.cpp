@@ -195,7 +195,8 @@ void Mod::resetGlobalStatics()
 * Creates an empty mod.
 */
 Mod::Mod() : _costEngineer(0), _costScientist(0), _timePersonnel(0), _initialFunding(0), _turnAIUseGrenade(3), _turnAIUseBlaster(3), _defeatScore(0), _defeatFunds(0), _startingTime(6, 1, 1, 1999, 12, 0, 0),
-	_facilityListOrder(0), _craftListOrder(0), _itemListOrder(0), _researchListOrder(0), _manufactureListOrder(0), _roleListOrder(0), _ufopaediaListOrder(0), _invListOrder(0), _modOffset(0), _baseMissionExperience(0)
+	_facilityListOrder(0), _craftListOrder(0), _itemListOrder(0), _researchListOrder(0), _manufactureListOrder(0), _roleListOrder(0), _ufopaediaListOrder(0), _invListOrder(0), _modOffset(0), _baseMissionExperience(0),
+	_customTrainingFactor(100)
 {
 	_muteMusic = new Music();
 	_muteSound = new Sound();
@@ -1062,6 +1063,7 @@ void Mod::loadFile(const std::string &filename)
 	_fontName = doc["fontName"].as<std::string>(_fontName);
 	_turnAIUseGrenade = doc["turnAIUseGrenade"].as<int>(_turnAIUseGrenade);
 	_turnAIUseBlaster = doc["turnAIUseBlaster"].as<int>(_turnAIUseBlaster);
+	_customTrainingFactor = doc["customTrainingFactor"].as<int>(_customTrainingFactor);
 	_defeatScore = doc["defeatScore"].as<int>(_defeatScore);
 	_defeatFunds = doc["defeatFunds"].as<int>(_defeatFunds);
 	_baseMissionExperience = doc["baseMissionExperience"].as<int>(_baseMissionExperience);

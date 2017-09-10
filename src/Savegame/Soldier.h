@@ -58,7 +58,7 @@ private:
 	SoldierGender _gender;
 	SoldierLook _look;
 	int _missions, _kills, _recovery;
-	bool _recentlyPromoted, _psiTraining, _isVehicle;
+	bool _recentlyPromoted, _psiTraining, _training, _isVehicle;
 	Armor *_armor;
 	Role *_role;
 	std::vector<EquipmentLayoutItem*> _equipmentLayout;
@@ -128,6 +128,10 @@ public:
 	Armor *getArmor() const;
 	/// Sets the soldier armor.
 	void setArmor(Armor *armor);
+	/// Is the soldier wounded or not?.
+	bool isWounded() const;
+	/// Is the soldier wounded or not?.
+	bool hasFullHealth() const;
 	/// Gets the soldier's wound recovery time.
 	int getWoundRecovery() const;
 	/// Sets the soldier's wound recovery time.
@@ -156,6 +160,14 @@ public:
 	SoldierDiary *getDiary();
 	/// Calculate statString.
 	void calcStatString(const std::vector<StatString *> &statStrings, bool psiStrengthEval);
+	/// Trains a soldier's physical stats
+	void trainPhys(int customTrainingFactor);
+	/// Is the soldier already fully trained?
+	bool isFullyTrained();
+	/// Returns whether the unit is in training or not
+	bool isInTraining();
+	/// set the training status
+	void setTraining(bool training);
 	/// Sets the soldier's role.
 	void setRole(Role *role);
 	/// Gets the soldier's role.

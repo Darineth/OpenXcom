@@ -27,7 +27,7 @@ namespace OpenXcom
  * type of base facility.
  * @param type String defining the type.
  */
-RuleBaseFacility::RuleBaseFacility(const std::string &type) : _type(type), _spriteShape(-1), _spriteFacility(-1), _lift(false), _hyper(false), _mind(false), _grav(false), _size(1), _buildCost(0), _buildTime(0), _monthlyCost(0), _storage(0), _personnel(0), _aliens(0), _crafts(0), _labs(0), _workshops(0), _psiLabs(0), _radarRange(0), _radarChance(0), _defense(0), _hitRatio(0), _fireSound(0), _hitSound(0), _listOrder(0)
+RuleBaseFacility::RuleBaseFacility(const std::string &type) : _type(type), _spriteShape(-1), _spriteFacility(-1), _lift(false), _hyper(false), _mind(false), _grav(false), _size(1), _buildCost(0), _buildTime(0), _monthlyCost(0), _storage(0), _personnel(0), _aliens(0), _crafts(0), _labs(0), _workshops(0), _psiLabs(0), _radarRange(0), _radarChance(0), _defense(0), _hitRatio(0), _fireSound(0), _hitSound(0), _listOrder(0), _trainingRooms(0)
 {
 }
 
@@ -85,6 +85,7 @@ void RuleBaseFacility::load(const YAML::Node &node, Mod *mod, int listOrder)
 	}
 	_mapName = node["mapName"].as<std::string>(_mapName);
 	_listOrder = node["listOrder"].as<int>(_listOrder);
+	_trainingRooms = node["trainingRooms"].as<int>(_trainingRooms);
 	if (!_listOrder)
 	{
 		_listOrder = listOrder;
@@ -356,6 +357,16 @@ int RuleBaseFacility::getFireSound() const
 int RuleBaseFacility::getListOrder() const
 {
 	return _listOrder;
+}
+
+/**
+* Returns the amount of soldiers this facility can contain
+* for monthly training.
+* @return Amount of room.
+*/
+int RuleBaseFacility::getTrainingFacilities() const
+{
+	return _trainingRooms;
 }
 
 }

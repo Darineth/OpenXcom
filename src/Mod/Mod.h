@@ -161,6 +161,7 @@ private:
 	std::vector<std::string> _soldierUtileColorIndex;
 	std::map<std::string, int> _actionExperience;
 	std::map<int, float> _damageDropoff;
+	int _customTrainingFactor;
 
 	/// Loads a ruleset from a YAML file.
 	void loadFile(const std::string &filename);
@@ -428,6 +429,8 @@ public:
 	const std::vector<std::string> &getInventoryLayoutsList() const;
 	int getActionExperience(const std::string &action) const;
 	float getDamageDropoff(int damageType) const;
+	/// Gets the custom physical training factor in percent (default = 100).
+	int getCustomTrainingFactor() const { return _customTrainingFactor; }
 };
 
 }
