@@ -56,6 +56,10 @@ RuleItem::~RuleItem()
  */
 void RuleItem::load(const YAML::Node &node, Mod *mod, int listOrder)
 {
+	if (const YAML::Node &parent = node["refNode"])
+	{
+		load(parent, mod, listOrder);
+	}
 	_type = node["type"].as<std::string>(_type);
 	_name = node["name"].as<std::string>(_name);
 	_requires = node["requires"].as< std::vector<std::string> >(_requires);
@@ -254,6 +258,26 @@ std::string RuleItem::getName() const
 const std::vector<std::string> &RuleItem::getRequirements() const
 {
 	return _requires;
+}
+
+/**
+* Gets the list of categories
+* this item belongs to.
+* @return The list of category IDs.
+*/
+const std::vector<std::string> &RuleItem::getCategories() const
+{
+	return _categories;
+}
+
+/**
+* Checks if the item belongs to a category.
+* @param category Category name.
+* @return True if item belongs to the category, False otherwise.
+*/
+bool RuleItem::belongsToCategory(const std::string &category) const
+{
+	return std::find(_categories.begin(), _categories.end(), category) != _categories.end();
 }
 
 /**

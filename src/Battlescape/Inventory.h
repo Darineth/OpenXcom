@@ -52,6 +52,7 @@ private:
 	std::vector<std::pair<int, int> > _grenadeIndicators;
 	NumberText *_stackNumber;
 	NumberText *_ammoNumber;
+	std::wstring _searchString;
 	Timer *_animTimer;
 	int _depth;
 	bool _locked;
@@ -79,6 +80,8 @@ public:
 	BattleItem *getSelectedItem() const;
 	/// Sets the currently selected item.
 	void setSelectedItem(BattleItem *item);
+	/// Sets the search string.
+	void setSearchString(const std::wstring &searchString);
 	/// Gets the mouse over item.
 	BattleItem *getMouseOverItem() const;
 	/// Sets the mouse over item.

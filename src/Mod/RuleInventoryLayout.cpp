@@ -34,6 +34,10 @@ RuleInventoryLayout::~RuleInventoryLayout()
 
 void RuleInventoryLayout::load(const YAML::Node& node, Mod *mod)
 {
+	if (const YAML::Node &parent = node["refNode"])
+	{
+		load(parent, mod);
+	}
 	_slotIds = node["invs"].as< std::vector<std::string> >(_slotIds);
 	_invSpriteOffset = node["invSpriteOffset"].as<int>(_invSpriteOffset);
 

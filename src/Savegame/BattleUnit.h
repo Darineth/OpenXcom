@@ -404,6 +404,8 @@ public:
 	int getMotionPoints() const;
 	/// Gets the unit's armor.
 	Armor *getArmor() const;
+	/// Sets the unit's name.
+	void setName(const std::wstring &name);
 	/// Gets the unit's name.
 	std::wstring getName(Language *lang, bool debugAppendId = false) const;
 	/// Gets the unit's display name for combat logging.

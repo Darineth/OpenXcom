@@ -172,5 +172,5 @@ facilities:
     buildCost: 400000
     buildTime: 16
     monthlyCost: 10000
-    trainingRooms: 10
+    trainingRooms: 5
     mapName: XBASE_01

@@ -42,7 +42,16 @@ namespace OpenXcom
  * @param armor Soldier armor.
  * @param id Unique soldier id for soldier generation.
  */
-Soldier::Soldier(RuleSoldier *rules, SavedGame *save, Armor *armor, int id, Language *lang, int vehicleId) : _id(id), _improvement(0), _psiStrImprovement(0), _rules(rules), _rank(RANK_ROOKIE), _craft(0), _gender(GENDER_MALE), _look(LOOK_BLONDE), _missions(0), _kills(0), _recovery(0), _recentlyPromoted(false), _psiTraining(false), _armor(armor), _death(0), _diary(new SoldierDiary()), _initialStats(), _equipmentLayout(), _role(save->getDefaultRole()), _isVehicle(rules->isVehicle()), _vehicleId(vehicleId), _type(rules->getType()), _inventoryLayout(rules->getInventoryLayout()), _armorColor("STR_NONE"), _experience(0), _level(0), _talentPoints(0), _spentTalentPoints(0), _training(false)
+Soldier::Soldier(RuleSoldier *rules, SavedGame *save, Armor *armor, int id, Language *lang, int vehicleId) :
+	_id(id), _nationality(0),
+	_improvement(0), _psiStrImprovement(0), _rules(rules), _rank(RANK_ROOKIE), _craft(0),
+	_gender(GENDER_MALE), _look(LOOK_BLONDE), _lookVariant(0), _missions(0), _kills(0), _recovery(0),
+	_recentlyPromoted(false), _psiTraining(false), _training(false),
+	_armor(armor), _death(0), _diary(new SoldierDiary()),
+	_initialStats(), _equipmentLayout(), _role(save->getDefaultRole()),
+	_isVehicle(rules->isVehicle()), _vehicleId(vehicleId), _type(rules->getType()),
+	_inventoryLayout(rules->getInventoryLayout()), _armorColor("STR_NONE"),
+	_experience(0), _level(0), _talentPoints(0), _spentTalentPoints(0)
 {
 	if (id != 0)
 	{
@@ -76,9 +85,9 @@ Soldier::Soldier(RuleSoldier *rules, SavedGame *save, Armor *armor, int id, Lang
 		}
 		else if (!names.empty())
 		{
-			size_t nationality = RNG::generate(0, names.size() - 1);
-			_name = names.at(nationality)->genName(&_gender, rules->getFemaleFrequency());
-			_look = (SoldierLook)names.at(nationality)->genLook(4); // Once we add the ability to mod in extra looks, this will need to reference the ruleset for the maximum amount of looks.
+			_nationality = RNG::generate(0, names.size() - 1);
+			_name = names.at(_nationality)->genName(&_gender, rules->getFemaleFrequency());
+			_look = (SoldierLook)names.at(_nationality)->genLook(4); // Once we add the ability to mod in extra looks, this will need to reference the ruleset for the maximum amount of looks.
 		}
 		else
 		{
@@ -91,6 +100,7 @@ Soldier::Soldier(RuleSoldier *rules, SavedGame *save, Armor *armor, int id, Lang
 
 		deriveLevel();
 	}
+	_lookVariant = RNG::seedless(0, 15);
 }
 
 /**
@@ -118,11 +128,13 @@ void Soldier::load(const YAML::Node& node, const Mod *mod, SavedGame *save)
 	_type = node["type"].as<std::string>(_rules->getType());
 	_vehicleId = node["vehicleId"].as<int>(_vehicleId);
 	_name = Language::utf8ToWstr(node["name"].as<std::string>());
+	_nationality = node["nationality"].as<int>(_nationality);
 	_initialStats = node["initialStats"].as<UnitStats>(_initialStats);
 	_currentStats = node["currentStats"].as<UnitStats>(_currentStats);
 	_rank = (SoldierRank)node["rank"].as<int>();
 	_gender = (SoldierGender)node["gender"].as<int>();
 	_look = (SoldierLook)node["look"].as<int>();
+	_lookVariant = node["lookVariant"].as<int>(_lookVariant);
 	_missions = node["missions"].as<int>(_missions);
 	_kills = node["kills"].as<int>(_kills);
 	_recovery = node["recovery"].as<int>(_recovery);
@@ -197,6 +209,7 @@ YAML::Node Soldier::save() const
 	node["type"] = _type;
 	node["vehicleId"] = _vehicleId;
 	node["name"] = Language::wstrToUtf8(_name);
+	node["nationality"] = _nationality;
 	node["initialStats"] = _initialStats;
 	node["currentStats"] = _currentStats;
 	node["rank"] = (int)_rank;
@@ -206,6 +219,7 @@ YAML::Node Soldier::save() const
 	}
 	node["gender"] = (int)_gender;
 	node["look"] = (int)_look;
+	node["lookVariant"] = _lookVariant;
 	node["missions"] = _missions;
 	node["kills"] = _kills;
 	if (_recovery > 0)
@@ -281,6 +295,24 @@ void Soldier::setName(const std::wstring &name)
 }
 
 /**
+* Returns the soldier's nationality.
+* @return Nationality ID.
+*/
+int Soldier::getNationality() const
+{
+	return _nationality;
+}
+
+/**
+* Changes the soldier's nationality.
+* @param nationality Nationality ID.
+*/
+void Soldier::setNationality(int nationality)
+{
+	_nationality = nationality;
+}
+
+/**
  * Returns the craft the soldier is assigned to.
  * @return Pointer to craft.
  */
@@ -331,6 +363,9 @@ std::wstring Soldier::getCraftString(Language *lang) const
  */
 std::string Soldier::getRankString() const
 {
+	if (!_rules->getAllowPromotion())
+		return "STR_RANK_NONE";
+
 	switch (_rank)
 	{
 	case RANK_ROOKIE:
@@ -375,6 +410,9 @@ SoldierRank Soldier::getRank() const
  */
 void Soldier::promoteRank()
 {
+	if (!_rules->getAllowPromotion())
+		return;
+
 	_rank = (SoldierRank)((int)_rank + 1);
 	if (_rank > RANK_SQUADDIE)
 	{
@@ -411,12 +449,48 @@ SoldierGender Soldier::getGender() const
 }
 
 /**
+ * Changes the soldier's gender (1/3 of avatar).
+ * @param gender Gender.
+ */
+void Soldier::setGender(SoldierGender gender)
+{
+	_gender = gender;
+}
+
+/**
  * Returns the soldier's look.
  * @return Look.
  */
 SoldierLook Soldier::getLook() const
 {
 	return _look;
+}
+
+/**
+ * Changes the soldier's look (2/3 of avatar).
+ * @param look Look.
+ */
+void Soldier::setLook(SoldierLook look)
+{
+	_look = look;
+}
+
+/**
+ * Returns the soldier's look sub type.
+ * @return Look.
+ */
+int Soldier::getLookVariant() const
+{
+	return _lookVariant;
+}
+
+/**
+ * Changes the soldier's look variant (3/3 of avatar).
+ * @param lookVariant Look sub type.
+ */
+void Soldier::setLookVariant(int lookVariant)
+{
+	_lookVariant = lookVariant;
 }
 
 /**
@@ -535,7 +609,7 @@ void Soldier::setWoundRecovery(int recovery)
 	_recovery = recovery;
 
 	// dismiss from craft
-	if (_recovery > 0)
+	if (isWounded())
 	{
 		_craft = 0;
 		// remove from training
@@ -713,6 +787,15 @@ SoldierDiary *Soldier::getDiary()
 }
 
 /**
+* Resets the soldier's diary.
+*/
+void Soldier::resetDiary()
+{
+	delete _diary;
+	_diary = new SoldierDiary();
+}
+
+/**
  * Calculates the soldier's statString
  * Calculates the soldier's statString.
  * @param statStrings List of statString rules.
@@ -724,8 +807,8 @@ void Soldier::calcStatString(const std::vector<StatString *> &statStrings, bool 
 }
 
 /**
-* Trains a soldier's Physical abilities
-*/
+ * Trains a soldier's Physical abilities
+ */
 void Soldier::trainPhys(int customTrainingFactor)
 {
 	UnitStats caps1 = _rules->getStatCaps();
@@ -751,9 +834,9 @@ void Soldier::trainPhys(int customTrainingFactor)
 }
 
 /**
-* Is the soldier already fully trained?
-* @return True, if the soldier cannot gain any more stats in the training facility.
-*/
+ * Is the soldier already fully trained?
+ * @return True, if the soldier cannot gain any more stats in the training facility.
+ */
 bool Soldier::isFullyTrained()
 {
 	UnitStats trainingCaps = _rules->getTrainingStatCaps();
@@ -772,16 +855,16 @@ bool Soldier::isFullyTrained()
 }
 
 /**
-* returns whether or not the unit is in physical training
-*/
+ * returns whether or not the unit is in physical training
+ */
 bool Soldier::isInTraining()
 {
 	return _training;
 }
 
 /**
-* changes whether or not the unit is in physical training
-*/
+ * changes whether or not the unit is in physical training
+ */
 void Soldier::setTraining(bool training)
 {
 	_training = training;

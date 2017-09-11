@@ -196,7 +196,7 @@ void Mod::resetGlobalStatics()
 */
 Mod::Mod() : _costEngineer(0), _costScientist(0), _timePersonnel(0), _initialFunding(0), _turnAIUseGrenade(3), _turnAIUseBlaster(3), _defeatScore(0), _defeatFunds(0), _startingTime(6, 1, 1, 1999, 12, 0, 0),
 	_facilityListOrder(0), _craftListOrder(0), _itemListOrder(0), _researchListOrder(0), _manufactureListOrder(0), _roleListOrder(0), _ufopaediaListOrder(0), _invListOrder(0), _modOffset(0), _baseMissionExperience(0),
-	_customTrainingFactor(100)
+	_customTrainingFactor(100), _maxLookVariant(0)
 {
 	_muteMusic = new Music();
 	_muteSound = new Sound();
@@ -1063,6 +1063,7 @@ void Mod::loadFile(const std::string &filename)
 	_fontName = doc["fontName"].as<std::string>(_fontName);
 	_turnAIUseGrenade = doc["turnAIUseGrenade"].as<int>(_turnAIUseGrenade);
 	_turnAIUseBlaster = doc["turnAIUseBlaster"].as<int>(_turnAIUseBlaster);
+	_maxLookVariant = doc["maxLookVariant"].as<int>(_maxLookVariant);
 	_customTrainingFactor = doc["customTrainingFactor"].as<int>(_customTrainingFactor);
 	_defeatScore = doc["defeatScore"].as<int>(_defeatScore);
 	_defeatFunds = doc["defeatFunds"].as<int>(_defeatFunds);
@@ -1609,6 +1610,27 @@ RuleCraftWeapon *Mod::getCraftWeapon(const std::string &id, bool error) const
 const std::vector<std::string> &Mod::getCraftWeaponsList() const
 {
 	return _craftWeaponsIndex;
+}
+
+/**
+* Returns the rules for the specified item category.
+* @param id Item category type.
+* @return Rules for the item category, or 0 when the item category is not found.
+*/
+RuleItemCategory *Mod::getItemCategory(const std::string &id, bool error) const
+{
+	std::map<std::string, RuleItemCategory*>::const_iterator i = _itemCategories.find(id);
+	if (_itemCategories.end() != i) return i->second; else return 0;
+}
+
+/**
+* Returns the list of all item categories
+* provided by the mod.
+* @return List of item categories.
+*/
+const std::vector<std::string> &Mod::getItemCategoriesList() const
+{
+	return _itemCategoriesIndex;
 }
 
 /**

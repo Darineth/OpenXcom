@@ -40,6 +40,14 @@ OPT SDLKey keyBattleLeft, keyBattleRight, keyBattleUp, keyBattleDown, keyBattleL
 	keyBattleCenterEnemy1, keyBattleCenterEnemy2, keyBattleCenterEnemy3, keyBattleCenterEnemy4, keyBattleCenterEnemy5, keyBattleCenterEnemy6, keyBattleCenterEnemy7, keyBattleCenterEnemy8,
 	keyBattleCenterEnemy9, keyBattleCenterEnemy10, keyBattleVoxelView, keyBattleZeroTUs, keyInvCreateTemplate, keyInvApplyTemplate, keyInvClear, keyInvAutoEquip;
 
+// Extra hotkeys (Meridian's build)
+OPT SDLKey keyGeoUfoTracker,
+	keyGraphsZoomIn, keyGraphsZoomOut,
+	keyToggleQuickSearch,
+	keyCraftLoadoutSave, keyCraftLoadoutLoad,
+	keyMarkAllAsSeen, keySelectAll, keyDeselectAll, keyResetAll,
+	keyInventoryArmor, keyInventoryAvatar, keyInventorySave, keyInventoryLoad,
+	keySelectMusicTrack;
 
 OPT bool removeWoundedFromTraining;
 

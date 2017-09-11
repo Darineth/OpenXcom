@@ -25,6 +25,7 @@
 #include "GameTime.h"
 #include "../Mod/RuleAlienMission.h"
 #include "../Savegame/Craft.h"
+#include "../Mod/RuleManufacture.h"
 
 namespace OpenXcom
 {
@@ -51,6 +52,8 @@ class Target;
 class Role;
 class Soldier;
 class Craft;
+class EquipmentLayoutItem;
+class ItemContainer;
 struct MissionStatistics;
 struct BattleUnitKills;
 
@@ -85,11 +88,12 @@ struct SaveInfo
 
 struct PromotionInfo
 {
+	int totalSoldiers;
 	int totalCommanders;
 	int totalColonels;
 	int totalCaptains;
 	int totalSergeants;
-	PromotionInfo(): totalCommanders(0), totalColonels(0), totalCaptains(0), totalSergeants(0){}
+	PromotionInfo(): totalSoldiers(0), totalCommanders(0), totalColonels(0), totalCaptains(0), totalSergeants(0){}
 };
 
 /**
@@ -99,6 +103,9 @@ struct PromotionInfo
  */
 class SavedGame
 {
+public:
+	static const int MAX_EQUIPMENT_LAYOUT_TEMPLATES = 20;
+	static const int MAX_CRAFT_LOADOUT_TEMPLATES = 10;
 private:
 	std::wstring _name;
 	GameDifficulty _difficulty;
@@ -132,6 +139,10 @@ private:
 	std::vector<Soldier*> _deadSoldiers;
 	size_t _selectedBase;
 	std::string _lastselectedArmor; //contains the last selected armour
+	std::wstring _globalEquipmentLayoutName[MAX_EQUIPMENT_LAYOUT_TEMPLATES];
+	std::vector<EquipmentLayoutItem*> _globalEquipmentLayout[MAX_EQUIPMENT_LAYOUT_TEMPLATES];
+	std::wstring _globalCraftLoadoutName[MAX_CRAFT_LOADOUT_TEMPLATES];
+	ItemContainer *_globalCraftLoadout[MAX_CRAFT_LOADOUT_TEMPLATES];
 	std::vector<MissionStatistics*> _missionStatistics;
 
 	static SaveInfo getSaveInfo(const std::string &file, Language *lang);
@@ -228,7 +239,7 @@ public:
 	/// Get the list of newly available research projects once a research has been completed.
 	void getNewlyAvailableResearchProjects(std::vector<RuleResearch*> & before, std::vector<RuleResearch*> & after, std::vector<RuleResearch*> & diff) const;
 	/// Get the list of Productions which can be manufactured in a Base
-	void getAvailableProductions(std::vector<RuleManufacture*> & productions, const Mod *mod, Base *base) const;
+	void getAvailableProductions(std::vector<RuleManufacture*> & productions, const Mod *mod, Base *base, ManufacturingFilterType filter = MANU_FILTER_DEFAULT) const;
 	/// Get the list of newly available manufacture projects once a research has been completed.
 	void getDependableManufacture(std::vector<RuleManufacture*> & dependables, const RuleResearch *research, const Mod *mod, Base *base) const;
 	/// Gets if a research still has undiscovered "protected unlocks".
@@ -315,6 +326,18 @@ public:
 	std::string getLastSelectedArmor() const;
 	/// Returns the craft corresponding to the specified unique id.
 	Craft *findCraftByUniqueId(const CraftId& craftId) const;
+	/// Gets the name of a global equipment layout at specified index.
+	const std::wstring &getGlobalEquipmentLayoutName(int index) const;
+	/// Sets the name of a global equipment layout at specified index.
+	void setGlobalEquipmentLayoutName(int index, const std::wstring &name);
+	/// Gets the global equipment layout at specified index.
+	std::vector<EquipmentLayoutItem*> *getGlobalEquipmentLayout(int index);
+	/// Gets the name of a global craft loadout at specified index.
+	const std::wstring &getGlobalCraftLoadoutName(int index) const;
+	/// Sets the name of a global craft loadout at specified index.
+	void setGlobalCraftLoadoutName(int index, const std::wstring &name);
+	/// Gets the global craft loadout at specified index.
+	ItemContainer *getGlobalCraftLoadout(int index);
 	/// Gets the list of missions statistics
 	std::vector<MissionStatistics*> *getMissionStatistics();
 	/// Handles a soldier's death.

@@ -53,6 +53,7 @@ private:
 	Text *_txtTitle, *_txtMedalName, *_txtMedalLevel, *_txtMedalInfo;
 	TextList *_lstPerformance, *_lstKillTotals, *_lstMissionTotals, *_lstCommendations;
 	std::vector<std::wstring> _commendationsListEntry;
+	std::vector<std::string> _commendationsNames;
 	std::vector<Surface*> _commendations, _commendationDecorations;
 	SurfaceSet *_commendationSprite, *_commendationDecoration;
 
@@ -85,6 +86,8 @@ public:
     void lstInfoMouseOver(Action *action);
     /// Handler for moving the mouse outside the medals list.
     void lstInfoMouseOut(Action *action);
+	/// Handler for clicking on a medal.
+	void lstInfoMouseClick(Action *action);
 	/// Runs state functionality every cycle.
 	void think();
 };

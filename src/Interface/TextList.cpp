@@ -339,9 +339,9 @@ void TextList::addRow(int cols, ...)
 			{
 				if (_align[i] != ALIGN_RIGHT)
 				{
-				w += _font->getChar('.')->getCrop()->w + _font->getSpacing();
-				buf += '.';
-			}
+					w += _font->getChar('.')->getCrop()->w + _font->getSpacing();
+					buf += '.';
+				}
 				if (_align[i] != ALIGN_LEFT)
 				{
 					w += _font->getChar('.')->getCrop()->w + _font->getSpacing();
@@ -421,6 +421,8 @@ void TextList::addRow(int cols, ...)
  */
 void TextList::setColumns(int cols, ...)
 {
+	_columns.clear();
+
 	va_list args;
 	va_start(args, cols);
 
@@ -727,6 +729,18 @@ void TextList::setArrowColumn(int pos, ArrowOrientation type)
 	_arrowType = type;
 	_arrowsLeftEdge = getX() + _arrowPos;
 	_arrowsRightEdge = _arrowsLeftEdge + 12 + 11;
+
+	if (_arrowLeft.size())
+	{
+		for (std::vector<ArrowButton*>::iterator i = _arrowLeft.begin(); i < _arrowLeft.end(); ++i)
+		{
+			(*i)->setX(getX() + _arrowPos);
+		}
+		for (std::vector<ArrowButton*>::iterator i = _arrowRight.begin(); i < _arrowRight.end(); ++i)
+		{
+			(*i)->setX(getX() + _arrowPos + 12);
+		}
+	}
 }
 
 /**

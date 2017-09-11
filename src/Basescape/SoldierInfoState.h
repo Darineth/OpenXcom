@@ -1,23 +1,23 @@
 #pragma once
 #pragma once
 /*
-* Copyright 2010-2016 OpenXcom Developers.
-*
-* This file is part of OpenXcom.
-*
-* OpenXcom is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* OpenXcom is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * Copyright 2010-2016 OpenXcom Developers.
+ *
+ * This file is part of OpenXcom.
+ *
+ * OpenXcom is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * OpenXcom is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
+ */
 #include "../Engine/State.h"
 #include <vector>
 
@@ -33,9 +33,9 @@ class Soldier;
 class BattlescapeButton;
 
 /**
-* Soldier Info screen that shows all the
-* info of a specific soldier.
-*/
+ * Soldier Info screen that shows all the
+ * info of a specific soldier.
+ */
 class SoldierInfoState : public State
 {
 private:
@@ -45,6 +45,7 @@ private:
 	std::vector<Soldier*> *_list;
 
 	Surface *_bg;
+	InteractiveSurface *_flag;
 	TextButton *_btnOk, *_btnPrev, *_btnNext, *_btnArmor, *_btnSack, *_btnDiary, *_btnInventory, *_btnCraft;
 	Text *_txtRank, *_txtMissions, *_txtKills, *_txtRecovery, *_txtPsionic, *_txtDead;
 	Text *_txtLevel, *_txtExperience;
@@ -82,6 +83,8 @@ public:
 	void btnSackClick(Action *action);
 	/// Handler for clicking the Diary button.
 	void btnDiaryClick(Action *action);
+	/// Handler for clicking the flag.
+	void btnFlagClick(Action *action);
 	/// Handler for clicking the Craft button.
 	void btnCraftClick(Action *action);
 	/// Handler for clicking the Rank button.

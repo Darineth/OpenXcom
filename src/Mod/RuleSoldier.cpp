@@ -29,7 +29,10 @@ namespace OpenXcom
  * type of soldier.
  * @param type String defining the type.
  */
-RuleSoldier::RuleSoldier(const std::string &type) : _type(type), _costBuy(0), _costSalary(0), _standHeight(0), _kneelHeight(0), _floatHeight(0), _femaleFrequency(50), _isVehicle(false), _requires(), _inventoryLayout("STR_STANDARD_INV"), _levelExperience()
+RuleSoldier::RuleSoldier(const std::string &type) : _type(type), _costBuy(0), _costSalary(0),
+	_standHeight(0), _kneelHeight(0), _floatHeight(0), _femaleFrequency(50), _avatarOffsetX(66), _avatarOffsetY(42), _flagOffset(0),
+	_isVehicle(false), _requires(), _inventoryLayout("STR_STANDARD_INV"), _levelExperience(),
+	_allowPromotion(true)
 {
 }
 
@@ -51,6 +54,10 @@ RuleSoldier::~RuleSoldier()
  */
 void RuleSoldier::load(const YAML::Node &node, Mod *mod)
 {
+	if (const YAML::Node &parent = node["refNode"])
+	{
+		load(parent, mod);
+	}
 	_type = node["type"].as<std::string>(_type);
 	// Just in case
 	if (_type == "XCOM")
@@ -255,6 +262,42 @@ int RuleSoldier::getFloatHeight() const
 std::string RuleSoldier::getArmor() const
 {
 	return _armor;
+}
+
+/**
+ * Gets the avatar's X offset.
+ * @return The X offset.
+ */
+int RuleSoldier::getAvatarOffsetX() const
+{
+	return _avatarOffsetX;
+}
+
+/**
+ * Gets the avatar's Y offset.
+ * @return The Y offset.
+ */
+int RuleSoldier::getAvatarOffsetY() const
+{
+	return _avatarOffsetY;
+}
+
+/**
+ * Gets the flag offset.
+ * @return The flag offset.
+ */
+int RuleSoldier::getFlagOffset() const
+{
+	return _flagOffset;
+}
+
+/**
+ * Gets the allow promotion flag.
+ * @return True if promotion is allowed.
+ */
+bool RuleSoldier::getAllowPromotion() const
+{
+	return _allowPromotion;
 }
 
 /**

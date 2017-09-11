@@ -952,6 +952,12 @@
     <ClCompile Include="Geoscape\TrainingFinishedState.cpp" />
     <ClCompile Include="Geoscape\TrainingState.cpp" />
     <ClCompile Include="Basescape\SoldierSortUtil.cpp" />
+    <ClCompile Include="Basescape\CraftEquipmentLoadState.cpp" />
+    <ClCompile Include="Basescape\CraftEquipmentSaveState.cpp" />
+    <ClCompile Include="Basescape\ManufactureDependenciesTreeState.cpp" />
+    <ClCompile Include="Basescape\SoldierAvatarState.cpp" />
+    <ClCompile Include="Savegame\SoldierAvatar.cpp" />
+    <ClCompile Include="Mod\RuleItemCategory.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h" />
@@ -1946,6 +1952,12 @@
     <ClInclude Include="Geoscape\TrainingFinishedState.h" />
     <ClInclude Include="Geoscape\TrainingState.h" />
     <ClInclude Include="Basescape\SoldierSortUtil.h" />
+    <ClInclude Include="Basescape\CraftEquipmentLoadState.h" />
+    <ClInclude Include="Basescape\CraftEquipmentSaveState.h" />
+    <ClInclude Include="Basescape\ManufactureDependenciesTreeState.h" />
+    <ClInclude Include="Basescape\SoldierAvatarState.h" />
+    <ClInclude Include="Savegame\SoldierAvatar.h" />
+    <ClInclude Include="Mod\RuleItemCategory.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Geoscape">

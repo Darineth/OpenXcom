@@ -283,6 +283,35 @@ void create()
 	_info.push_back(OptionInfo("keyInvClear", &keyInvClear, SDLK_x, "STR_CLEAR_INVENTORY", "STR_BATTLESCAPE"));
 	_info.push_back(OptionInfo("keyInvAutoEquip", &keyInvAutoEquip, SDLK_z, "STR_AUTO_EQUIP", "STR_BATTLESCAPE"));
 
+	// OXCE+
+	_info.push_back(OptionInfo("keyGeoUfoTracker", &keyGeoUfoTracker, SDLK_t, "STR_UFO_TRACKER", "STR_OXCE"));
+	//_info.push_back(OptionInfo("keyGeoTechTreeViewer", &keyGeoTechTreeViewer, SDLK_q, "STR_TECH_TREE_VIEWER", "STR_OXCE"));
+	_info.push_back(OptionInfo("keyGraphsZoomIn", &keyGraphsZoomIn, SDLK_KP_PLUS, "STR_GRAPHS_ZOOM_IN", "STR_OXCE"));
+	_info.push_back(OptionInfo("keyGraphsZoomOut", &keyGraphsZoomOut, SDLK_KP_MINUS, "STR_GRAPHS_ZOOM_OUT", "STR_OXCE"));
+
+	_info.push_back(OptionInfo("keyToggleQuickSearch", &keyToggleQuickSearch, SDLK_q, "STR_TOGGLE_QUICK_SEARCH", "STR_OXCE"));
+	_info.push_back(OptionInfo("keyCraftLoadoutSave", &keyCraftLoadoutSave, SDLK_F5, "STR_SAVE_CRAFT_LOADOUT_TEMPLATE", "STR_OXCE"));
+	_info.push_back(OptionInfo("keyCraftLoadoutLoad", &keyCraftLoadoutLoad, SDLK_F9, "STR_LOAD_CRAFT_LOADOUT_TEMPLATE", "STR_OXCE"));
+
+	_info.push_back(OptionInfo("keyMarkAllAsSeen", &keyMarkAllAsSeen, SDLK_x, "STR_MARK_ALL_AS_SEEN", "STR_OXCE"));
+	_info.push_back(OptionInfo("keySelectAll", &keySelectAll, SDLK_x, "STR_SELECT_ALL", "STR_OXCE"));
+	_info.push_back(OptionInfo("keyDeselectAll", &keyDeselectAll, SDLK_x, "STR_DESELECT_ALL", "STR_OXCE"));
+	_info.push_back(OptionInfo("keyResetAll", &keyResetAll, SDLK_x, "STR_RESET_ALL", "STR_OXCE"));
+
+	_info.push_back(OptionInfo("keyInventoryArmor", &keyInventoryArmor, SDLK_a, "STR_INVENTORY_ARMOR", "STR_OXCE"));
+	_info.push_back(OptionInfo("keyInventoryAvatar", &keyInventoryAvatar, SDLK_m, "STR_INVENTORY_AVATAR", "STR_OXCE"));
+	_info.push_back(OptionInfo("keyInventorySave", &keyInventorySave, SDLK_F5, "STR_SAVE_EQUIPMENT_TEMPLATE", "STR_OXCE"));
+	_info.push_back(OptionInfo("keyInventoryLoad", &keyInventoryLoad, SDLK_F9, "STR_LOAD_EQUIPMENT_TEMPLATE", "STR_OXCE"));
+
+	/*_info.push_back(OptionInfo("keyBattleActionItem1", &keyBattleActionItem1, SDLK_1, "STR_ACTION_ITEM_1", "STR_OXCE"));
+	_info.push_back(OptionInfo("keyBattleActionItem2", &keyBattleActionItem2, SDLK_2, "STR_ACTION_ITEM_2", "STR_OXCE"));
+	_info.push_back(OptionInfo("keyBattleActionItem3", &keyBattleActionItem3, SDLK_3, "STR_ACTION_ITEM_3", "STR_OXCE"));
+	_info.push_back(OptionInfo("keyBattleActionItem4", &keyBattleActionItem4, SDLK_4, "STR_ACTION_ITEM_4", "STR_OXCE"));
+	_info.push_back(OptionInfo("keyBattleActionItem5", &keyBattleActionItem5, SDLK_5, "STR_ACTION_ITEM_5", "STR_OXCE"));
+	_info.push_back(OptionInfo("keyNightVisionToggle", &keyNightVisionToggle, SDLK_SCROLLOCK, "STR_TOGGLE_NIGHT_VISION", "STR_OXCE"));
+	_info.push_back(OptionInfo("keyNightVisionHold", &keyNightVisionHold, SDLK_SPACE, "STR_HOLD_NIGHT_VISION", "STR_OXCE"));*/
+	_info.push_back(OptionInfo("keySelectMusicTrack", &keySelectMusicTrack, SDLK_END, "STR_SELECT_MUSIC_TRACK", "STR_OXCE"));
+
 #ifdef __MORPHOS__
 	_info.push_back(OptionInfo("FPS", &FPS, 15, "STR_FPS_LIMIT", "STR_GENERAL"));
 	_info.push_back(OptionInfo("FPSInactive", &FPSInactive, 15, "STR_FPS_INACTIVE_LIMIT", "STR_GENERAL"));
@@ -647,6 +676,7 @@ void updateMods()
 		}
 	}
 
+	updateReservedSpace();
 	mapResources();
 	userSplitMasters();
 }
@@ -716,6 +746,51 @@ static void _loadMod(const ModInfo &modInfo, std::set<std::string> circDepCheck)
 		else
 		{
 			throw Exception(modInfo.getId() + " mod requires " + modInfo.getMaster() + " master");
+		}
+	}
+}
+
+void updateReservedSpace()
+{
+	Log(LOG_VERBOSE) << "Updating reservedSpace for master mods if necessary...";
+
+	std::string curMaster = getActiveMaster();
+	Log(LOG_VERBOSE) << "curMaster = " << curMaster;
+
+	int maxSize = 1;
+	for (std::vector< std::pair<std::string, bool> >::reverse_iterator i = mods.rbegin(); i != mods.rend(); ++i)
+	{
+		if (!i->second)
+		{
+			Log(LOG_VERBOSE) << "skipping inactive mod: " << i->first;
+			continue;
+		}
+
+		const ModInfo &modInfo = _modInfos.find(i->first)->second;
+		if (!modInfo.isMaster() && !modInfo.getMaster().empty() && modInfo.getMaster() != curMaster)
+		{
+			Log(LOG_VERBOSE) << "skipping mod for non-current master: " << i->first << "(" << modInfo.getMaster() << " != " << curMaster << ")";
+			continue;
+		}
+
+		if (modInfo.getReservedSpace() > maxSize)
+		{
+			maxSize = modInfo.getReservedSpace();
+		}
+	}
+
+	if (maxSize > 1)
+	{
+		// Small hack: update ALL masters, not only active master!
+		// this is because, there can be a hierarchy of multiple masters (e.g. xcom1 master > piratez master > some piratez mod)
+		// and the one that needs to be updated is actually the "root", i.e. xcom1 master
+		for (std::map<std::string, ModInfo>::iterator i = _modInfos.begin(); i != _modInfos.end(); ++i)
+		{
+			if (i->second.isMaster())
+			{
+				i->second.setReservedSpace(maxSize);
+				Log(LOG_INFO) << "reservedSpace for: " << i->first << " updated to: " << i->second.getReservedSpace();
+			}
 		}
 	}
 }
@@ -893,7 +968,7 @@ void updateOptions()
 	//if (!_commandLine.empty())
 	for (std::vector<OptionInfo>::iterator i = _info.begin(); i != _info.end(); ++i)
 	{
-		i->load(_commandLine);
+		i->load(_commandLine, true);
 	}
 }
 

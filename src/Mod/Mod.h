@@ -47,6 +47,7 @@ class RuleRegion;
 class RuleBaseFacility;
 class RuleCraft;
 class RuleCraftWeapon;
+class RuleItemCategory;
 class RuleItem;
 class RuleUfo;
 class RuleTerrain;
@@ -108,6 +109,7 @@ private:
 	std::map<std::string, RuleBaseFacility*> _facilities;
 	std::map<std::string, RuleCraft*> _crafts;
 	std::map<std::string, RuleCraftWeapon*> _craftWeapons;
+	std::map<std::string, RuleItemCategory*> _itemCategories;
 	std::map<std::string, RuleItem*> _items;
 	std::map<std::string, RuleRole*> _roles;
 	std::map<std::string, RuleUfo*> _ufos;
@@ -141,6 +143,7 @@ private:
 	RuleGlobe *_globe;
 	RuleConverter *_converter;
 	int _costEngineer, _costScientist, _timePersonnel, _initialFunding, _turnAIUseGrenade, _turnAIUseBlaster, _defeatScore, _defeatFunds;
+	int _maxLookVariant;
 	std::pair<std::string, int> _alienFuel;
 	int _baseMissionExperience;
 	std::string _fontName, _finalResearch;
@@ -148,7 +151,7 @@ private:
 	GameTime _startingTime;
 	StatAdjustment _statAdjustment[5];
 
-	std::vector<std::string> _countriesIndex, _regionsIndex, _facilitiesIndex, _craftsIndex, _craftWeaponsIndex, _itemsIndex, _invsIndex, _ufosIndex;
+	std::vector<std::string> _countriesIndex, _regionsIndex, _facilitiesIndex, _craftsIndex, _craftWeaponsIndex, _itemCategoriesIndex, _itemsIndex, _invsIndex, _ufosIndex;
 	std::vector<std::string> _soldiersIndex, _aliensIndex, _deploymentsIndex, _armorsIndex, _ufopaediaIndex, _ufopaediaCatIndex, _researchIndex, _manufactureIndex, _MCDPatchesIndex, _rolesIndex;
 	std::vector<std::string> _alienMissionsIndex, _terrainIndex, _extraSpritesIndex, _extraSoundsIndex, _extraStringsIndex, _missionScriptIndex;
 	std::vector<std::string> _inventoryLayoutsIndex;
@@ -287,6 +290,10 @@ public:
 	RuleCraftWeapon *getCraftWeapon(const std::string &id, bool error = false) const;
 	/// Gets the available craft weapons.
 	const std::vector<std::string> &getCraftWeaponsList() const;
+	/// Gets the ruleset for an item category type.
+	RuleItemCategory *getItemCategory(const std::string &id, bool error = false) const;
+	/// Gets the available item categories.
+	const std::vector<std::string> &getItemCategoriesList() const;
 	/// Gets the ruleset for an item type.
 	RuleItem *getItem(const std::string &id, bool error = false) const;
 	/// Gets the available items.
@@ -343,6 +350,8 @@ public:
 	int getScientistCost() const;
 	/// Gets the transfer time of personnel.
 	int getPersonnelTime() const;
+	/// Gets maximum supported lookVariant (0-15)
+	int getMaxLookVariant() const  {return abs(_maxLookVariant) % 16;}
 	/// Gets the ruleset for a specific research project.
 	RuleResearch *getResearch (const std::string &id, bool error = false) const;
 	/// Gets the list of all research projects.

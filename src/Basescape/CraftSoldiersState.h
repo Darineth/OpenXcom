@@ -30,6 +30,7 @@ class TextList;
 class ComboBox;
 class Base;
 class Soldier;
+template <typename TagType> class TaggedText;
 struct SortFunctor;
 
 /**
@@ -39,12 +40,16 @@ struct SortFunctor;
 class CraftSoldiersState : public State
 {
 private:
-	TextButton *_btnOk;
+	TextButton *_btnOk, *_btnStats, *_btnRoles;
 	Window *_window;
 	Text *_txtTitle, *_txtName, *_txtRank, *_txtCraft, *_txtAvailable, *_txtUsed;
 	ComboBox *_cbxSortBy;
 	TextList *_lstSoldiers;
-
+	TaggedText<int> *_txtTU, *_txtStamina, *_txtHealth, *_txtBravery, *_txtReactions, *_txtFiring,
+		*_txtThrowing, *_txtMelee, *_txtStrength, *_txtPsiStrength, *_txtPsiSkill;
+	Text *_txtTooltip;
+	std::string _currentTooltip;
+	bool _showStats, _showPsi;
 	Base *_base;
 	size_t _craft;
 	bool _craftOut;
@@ -77,6 +82,14 @@ public:
 	void lstSoldiersClick(Action *action);
 	/// Handler for pressing-down a mouse-button in the list.
 	void lstSoldiersMousePress(Action *action);
+	/// Handler for displaying tooltips.
+	void txtTooltipIn(Action *action);
+	/// Handler for hiding tooltips.
+	void txtTooltipOut(Action *action);
+	/// Handler for toggling the stats list.
+	void btnToggleStatsClick(Action *action);
+	/// Handler for sortable column headers.
+	void txtColumnHeaderClick(Action *action);
 };
 
 }

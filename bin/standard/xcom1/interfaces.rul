@@ -1161,6 +1161,20 @@ interfaces:
         border: 213  # gold
       - id: button
         color: 213   # gold
+  - type: soldierAvatar
+    palette: PAL_BASESCAPE
+    elements:
+      - id: palette
+        color: 4     # green
+      - id: window
+        color: 218   # blue
+      - id: text
+        color: 213   # gold
+      - id: list
+        color: 208   # white
+        border: 213  # gold
+      - id: button
+        color: 213   # gold
   - type: soldierMemorial
     music: GMLOSE
     palette: PAL_BASESCAPE
@@ -1251,6 +1265,34 @@ interfaces:
         color: 2     # orange
       - id: errorMessage
         color: 241   # pink
+  - type: craftEquipmentSave
+    parent: craftEquipment
+    elements:
+      - id: window
+        color: 241   # pink
+      - id: text
+        color: 241   # pink
+        color2: 208  # white
+      - id: button
+        color: 241   # pink
+      - id: list
+        color: 218   # blue
+        color2: 208  # white
+        border: 241  # pink
+  - type: craftEquipmentLoad
+    parent: craftEquipment
+    elements:
+      - id: window
+        color: 241   # pink
+      - id: text
+        color: 241   # pink
+        color2: 208  # white
+      - id: button
+        color: 241   # pink
+      - id: list
+        color: 218   # blue
+        color2: 208  # white
+        border: 241  # pink
   - type: craftArmor
     palette: PAL_BASESCAPE
     elements:

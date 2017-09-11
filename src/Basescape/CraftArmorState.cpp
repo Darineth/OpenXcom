@@ -172,7 +172,7 @@ void CraftArmorState::lstSoldiersClick(Action *action)
 	{
 		if (action->getDetails()->button.button == SDL_BUTTON_LEFT)
 		{
-			_game->pushState(new SoldierArmorState(_base, _lstSoldiers->getSelectedRow()));
+			_game->pushState(new SoldierArmorState(_base, _lstSoldiers->getSelectedRow(), SA_GEOSCAPE));
 		}
 		else if (action->getDetails()->button.button == SDL_BUTTON_RIGHT)
 		{

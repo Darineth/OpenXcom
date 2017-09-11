@@ -36,6 +36,7 @@
 #include "Country.h"
 #include "Base.h"
 #include "Craft.h"
+#include "EquipmentLayoutItem.h"
 #include "Region.h"
 #include "Ufo.h"
 #include "Waypoint.h"
@@ -111,6 +112,11 @@ SavedGame::SavedGame(const Mod *mod) : _difficulty(DIFF_BEGINNER), _end(END_NONE
 	_expenditures.push_back(0);
 	_lastselectedArmor="STR_NONE_UC";
 	loadRoles(mod);
+
+	for (int j = 0; j < MAX_CRAFT_LOADOUT_TEMPLATES; ++j)
+	{
+		_globalCraftLoadout[j] = new ItemContainer();
+	}
 }
 
 /**
@@ -1408,10 +1414,11 @@ void SavedGame::getNewlyAvailableResearchProjects(std::vector<RuleResearch *> & 
  * @param mod the Game Mod
  * @param base a pointer to a Base
  */
-void SavedGame::getAvailableProductions (std::vector<RuleManufacture *> & productions, const Mod * mod, Base * base) const
+void SavedGame::getAvailableProductions (std::vector<RuleManufacture *> &productions, const Mod *mod, Base *base, ManufacturingFilterType filter) const
 {
 	const std::vector<std::string> &items = mod->getManufactureList();
-	const std::vector<Production *>& baseProductions (base->getProductions());
+	const std::vector<Production *> &baseProductions = base->getProductions();
+	//const std::vector<std::string> &baseFunc = base->getProvidedBaseFunc();
 
 	for (std::vector<std::string>::const_iterator iter = items.begin();
 		iter != items.end();
@@ -1426,6 +1433,17 @@ void SavedGame::getAvailableProductions (std::vector<RuleManufacture *> & produc
 		{
 			continue;
 		}
+		/*if (!std::includes(baseFunc.begin(), baseFunc.end(), m->getRequireBaseFunc().begin(), m->getRequireBaseFunc().end()))
+		{
+			if (filter != MANU_FILTER_FACILITY_REQUIRED)
+				continue;
+		}
+		else
+		{
+			if (filter == MANU_FILTER_FACILITY_REQUIRED)
+				continue;
+		}*/
+
 		productions.push_back(m);
 	}
 }
@@ -2032,6 +2050,62 @@ Craft *SavedGame::findCraftByUniqueId(const CraftId& craftId) const
 	}
 
 	return NULL;
+}
+
+/**
+* Returns the global equipment layout at specified index.
+* @return Pointer to the EquipmentLayoutItem list.
+*/
+std::vector<EquipmentLayoutItem*> *SavedGame::getGlobalEquipmentLayout(int index)
+{
+	return &_globalEquipmentLayout[index];
+}
+
+/**
+* Returns the name of a global equipment layout at specified index.
+* @return A name.
+*/
+const std::wstring &SavedGame::getGlobalEquipmentLayoutName(int index) const
+{
+	return _globalEquipmentLayoutName[index];
+}
+
+/**
+* Sets the name of a global equipment layout at specified index.
+* @param index Array index.
+* @param name New name.
+*/
+void SavedGame::setGlobalEquipmentLayoutName(int index, const std::wstring &name)
+{
+	_globalEquipmentLayoutName[index] = name;
+}
+
+/**
+* Returns the global craft loadout at specified index.
+* @return Pointer to the ItemContainer list.
+*/
+ItemContainer *SavedGame::getGlobalCraftLoadout(int index)
+{
+	return _globalCraftLoadout[index];
+}
+
+/**
+* Returns the name of a global craft loadout at specified index.
+* @return A name.
+*/
+const std::wstring &SavedGame::getGlobalCraftLoadoutName(int index) const
+{
+	return _globalCraftLoadoutName[index];
+}
+
+/**
+* Sets the name of a global craft loadout at specified index.
+* @param index Array index.
+* @param name New name.
+*/
+void SavedGame::setGlobalCraftLoadoutName(int index, const std::wstring &name)
+{
+	_globalCraftLoadoutName[index] = name;
 }
 
 /**

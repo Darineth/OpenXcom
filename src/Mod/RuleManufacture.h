@@ -24,6 +24,15 @@
 namespace OpenXcom
 {
 
+enum ManufacturingFilterType
+{
+	MANU_FILTER_DEFAULT,
+	MANU_FILTER_DEFAULT_SUPPLIES_OK,
+	MANU_FILTER_DEFAULT_NO_SUPPLIES,
+	MANU_FILTER_FACILITY_REQUIRED,
+	MANU_FILTER_HIDDEN
+};
+	
 /**
  * Represents the information needed to manufacture an object.
  */

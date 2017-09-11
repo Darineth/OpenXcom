@@ -15,10 +15,11 @@ struct SortFunctor : public std::binary_function<Soldier *, Soldier *, bool>
 {
 	Game *_game;
 	getStatFn_t _getStatFn;
-	SortFunctor(Game *game, getStatFn_t getStatFn) : _game(game), _getStatFn(getStatFn) { }
+	bool _asc;
+	SortFunctor(Game *game, getStatFn_t getStatFn, bool asc) : _game(game), _getStatFn(getStatFn), _asc(asc){ }
 	bool operator()(Soldier *a, Soldier *b)
 	{
-		bool ret = _getStatFn(_game, a) < _getStatFn(_game, b);
+		bool ret = _asc ? _getStatFn(_game, a) < _getStatFn(_game, b) : _getStatFn(_game, a) > _getStatFn(_game, b);
 		return ret;
 	}
 	getStatFn_t getGetter()

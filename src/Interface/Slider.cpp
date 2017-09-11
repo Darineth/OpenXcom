@@ -218,7 +218,13 @@ void Slider::setRange(int min, int max)
  */
 void Slider::setValue(int value)
 {
-	if (_min < _max)
+	if (_min == _max)
+	{
+		_value = 0;
+		setPosition(0.0);
+		return;
+	}
+	else if (_min < _max)
 	{
 		_value = Clamp(value, _min, _max);
 	}

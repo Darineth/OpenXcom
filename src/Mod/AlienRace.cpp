@@ -39,6 +39,10 @@ AlienRace::~AlienRace()
  */
 void AlienRace::load(const YAML::Node &node)
 {
+	if (const YAML::Node &parent = node["refNode"])
+	{
+		load(parent);
+	}
 	_id = node["id"].as<std::string>(_id);
 	_members = node["members"].as< std::vector<std::string> >(_members);
 }

@@ -87,6 +87,7 @@ SoldierInfoState::SoldierInfoState(Base *base, size_t soldierId) : _base(base), 
 	// Create objects
 	_bg = new Surface(320, 200, 0, 0);
 	_btnRank = new BattlescapeButton(26, 23, 4, 4);
+	_flag = new InteractiveSurface(40, 20, 275, 6);
 	_btnRole = new BattlescapeButton(26, 23, 35, 4);
 	//_edtSoldier = new TextEdit(this, 210, 16, 40, 9);
 	_txtRank = new Text(130, 9, 61, 4);
@@ -103,7 +104,7 @@ SoldierInfoState::SoldierInfoState(Base *base, size_t soldierId) : _base(base), 
 	_txtKills = new Text(100, 9, 191, 59);
 	_btnCraft = new TextButton(90, 14, 0, 45);
 	_btnInventory = new TextButton(70, 14, 91, 45);
-	_txtRecovery = new Text(180, 9, 130, 61);
+	_txtRecovery = new Text(180, 9, 93, 48);
 	_txtPsionic = new Text(150, 9, 0, 69);
 	_txtDead = new Text(150, 9, 130, 33);
 
@@ -169,6 +170,7 @@ SoldierInfoState::SoldierInfoState(Base *base, size_t soldierId) : _base(base), 
 
 	add(_bg);
 	add(_btnRank);
+	add(_flag);
 	add(_btnRole);
 	add(_btnOk, "button", "soldierInfo");
 	add(_btnPrev, "button", "soldierInfo");
@@ -273,6 +275,13 @@ SoldierInfoState::SoldierInfoState(Base *base, size_t soldierId) : _base(base), 
 	_edtSoldier->setBig();
 	_edtSoldier->onChange((ActionHandler)&SoldierInfoState::edtSoldierChange);
 	_edtSoldier->onMousePress((ActionHandler)&SoldierInfoState::edtSoldierPress);
+
+	// Can't change nationality of dead soldiers
+	if (_base != 0)
+	{
+		_flag->onMouseClick((ActionHandler)&SoldierInfoState::btnFlagClick, SDL_BUTTON_LEFT);
+		_flag->onMouseClick((ActionHandler)&SoldierInfoState::btnFlagClick, SDL_BUTTON_RIGHT);
+	}
 
 	_btnSack->setText(tr("STR_SACK"));
 	_btnSack->onMouseClick((ActionHandler)&SoldierInfoState::btnSackClick);
@@ -421,6 +430,17 @@ void SoldierInfoState::init()
 	{
 		_btnRank->clear();
 		_btnRole->clear();
+	}
+
+	std::ostringstream flagId;
+	flagId << "Flag";
+	flagId << _soldier->getNationality() + _soldier->getRules()->getFlagOffset();
+	Surface *flagTexture = _game->getMod()->getSurface(flagId.str().c_str(), false);
+	_flag->clear();
+	if (flagTexture != 0)
+	{
+		flagTexture->setX(_flag->getWidth()-flagTexture->getWidth()); // align right
+		flagTexture->blit(_flag);
 	}
 
 	std::wostringstream ss;
@@ -710,7 +730,7 @@ void SoldierInfoState::btnInventoryClick(Action *)
 		//_game->getFpsCounter()->setColor(Palette::blockOffset(9));
 
 		//_game->getScreen()->clear();
-		_game->pushState(new InventoryState(false, 0));
+		_game->pushState(new InventoryState(false, 0, _base));
 	}
 }
 
@@ -722,7 +742,7 @@ void SoldierInfoState::btnArmorClick(Action *)
 {
 	if (!_soldier->getCraft() || (_soldier->getCraft() && _soldier->getCraft()->getStatus() != "STR_OUT"))
 	{
-		_game->pushState(new SoldierArmorState(_base, _soldierId));
+		_game->pushState(new SoldierArmorState(_base, _soldierId, SA_GEOSCAPE));
 	}
 }
 
@@ -742,6 +762,44 @@ void SoldierInfoState::btnSackClick(Action *)
 void SoldierInfoState::btnDiaryClick(Action *)
 {
 	_game->pushState(new SoldierDiaryOverviewState(_base, _soldierId, this));
+}
+
+/**
+* Changes soldier's nationality.
+* @param action Pointer to an action.
+*/
+void SoldierInfoState::btnFlagClick(Action *action)
+{
+	int temp = _soldier->getNationality();
+	if (action->getDetails()->button.button == SDL_BUTTON_LEFT)
+	{
+		temp += 1;
+	}
+	else if (action->getDetails()->button.button == SDL_BUTTON_RIGHT)
+	{
+		temp += -1;
+	}
+
+	const std::vector<SoldierNamePool*> &names = _soldier->getRules()->getNames();
+	if (!names.empty())
+	{
+		const int max = names.size();
+		if (temp > max - 1)
+		{
+			temp = 0;
+		}
+		else if (temp < 0)
+		{
+			temp = max - 1;
+		}
+	}
+	else
+	{
+		temp = 0;
+	}
+
+	_soldier->setNationality(temp);
+	init();
 }
 
 /// Handler for clicking the Craft button.

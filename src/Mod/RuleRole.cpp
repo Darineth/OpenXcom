@@ -43,6 +43,10 @@ RuleRole::~RuleRole()
  */
 void RuleRole::load(const YAML::Node &node, int listOrder)
 {
+	if (const YAML::Node &parent = node["refNode"])
+	{
+		load(parent, listOrder);
+	}
 	_name = node["name"].as<std::string>(_name);
 	_iconSprite = node["iconSprite"].as<std::string>(_iconSprite);
 	_smallIconSprite = node["smallIconSprite"].as<std::string>(_smallIconSprite);

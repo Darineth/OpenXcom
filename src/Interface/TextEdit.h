@@ -42,6 +42,7 @@ private:
 	size_t _caretPos;
 	TextEditConstraint _textEditConstraint;
 	ActionHandler _change;
+	ActionHandler _enter;
 	State *_state;
 	/// Checks if a character will exceed the maximum width.
 	bool exceedsMaxWidth(wchar_t c);
@@ -100,6 +101,8 @@ public:
 	void keyboardPress(Action *action, State *state);
 	/// Hooks an action handler to when the slider changes.
 	void onChange(ActionHandler handler);
+	/// Sets a function to be called every time ENTER is pressed.
+	void onEnter(ActionHandler handler);
 };
 
 }

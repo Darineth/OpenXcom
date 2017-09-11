@@ -50,7 +50,7 @@ struct DebriefingStat
 	std::string item; std::wstring text; int qty; int score; bool recovery; Soldier* soldier; UnitStats statIncreases; int gainedExperience; bool gainedLevel; int kills;
 };
 
-struct ReequipStat { std::string item; int qty; std::wstring craft; };
+struct ReequipStat { std::string item; int qty; std::wstring craft; int listOrder; };
 
 struct RecoveryItem { std::string name; int value; };
 

@@ -59,11 +59,13 @@ public:
 	/// Loads the option from YAML.
 	void load(const YAML::Node &node) const;
 	/// Loads the option from a map.
-	void load(const std::map<std::string, std::string> &map) const;
+	void load(const std::map<std::string, std::string> &map, bool makeLowercase) const;
 	/// Saves the option to YAML.
 	void save(YAML::Node &node) const;
 	/// Resets the option to default.
 	void reset() const;
+	/// Gets the option ID.
+	std::string id() const;
 	/// Gets the option type.
 	OptionType type() const;
 	/// Gets the option description.

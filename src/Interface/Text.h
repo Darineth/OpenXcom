@@ -57,7 +57,7 @@ public:
 	/// Creates a new text with the specified size and position.
 	Text(int width, int height, int x = 0, int y = 0);
 	/// Cleans up the text.
-	~Text();
+	virtual ~Text();
 	/// Formats an integer value as number with separators.
 	static std::wstring formatNumber(int64_t value, const std::wstring &currency = L"");
 	/// Formats an integer value as currency.
@@ -112,6 +112,27 @@ public:
 	int getTextHeight(int line = -1) const;
 	/// Draws the text.
 	void draw();
+};
+
+template <typename TagType>
+class TaggedText : public Text
+{
+private:
+	TagType _tag;
+public:
+	TaggedText(int width, int height, int x = 0, int y = 0) : Text(width, height, x, y) {}
+
+	virtual ~TaggedText() {}
+
+	const TagType &getTag() const
+	{
+		return _tag;
+	}
+
+	void setTag(TagType tag)
+	{
+		_tag = tag;
+	}
 };
 
 }

@@ -613,6 +613,17 @@ void Inventory::setSelectedItem(BattleItem *item)
 }
 
 /**
+* Changes the item currently grabbed by the player.
+* @param item Pointer to selected item, or NULL if none.
+*/
+void Inventory::setSearchString(const std::wstring &searchString)
+{
+	_searchString = searchString;
+	for (auto & c : _searchString) c = towupper(c);
+	arrangeGround(true);
+}
+
+/**
  * Returns the item currently under mouse cursor.
  * @return Pointer to selected item, or 0 if none.
  */

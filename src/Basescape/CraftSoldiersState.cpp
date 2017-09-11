@@ -47,19 +47,35 @@ namespace OpenXcom
  * @param craft ID of the selected craft.
  */
 CraftSoldiersState::CraftSoldiersState(Base *base, size_t craft)
-		:  _base(base), _craft(craft), _otherCraftColor(0), _origSoldierOrder(*_base->getSoldiers()), _craftOut(false)
+		:  _base(base), _craft(craft), _otherCraftColor(0), _origSoldierOrder(*_base->getSoldiers()), _craftOut(false), _showStats(false)
 {
 	// Create objects
 	_window = new Window(this, 320, 200, 0, 0);
-	_btnOk = new TextButton(148, 16, 164, 176);
-	_txtTitle = new Text(300, 17, 16, 7);
-	_txtName = new Text(114, 9, 16, 32);
-	_txtRank = new Text(102, 9, 122, 32);
-	_txtCraft = new Text(84, 9, 224, 32);
-	_txtAvailable = new Text(110, 9, 16, 24);
-	_txtUsed = new Text(110, 9, 122, 24);
-	_cbxSortBy = new ComboBox(this, 148, 16, 8, 176, true);
-	_lstSoldiers = new TextList(288, 128, 8, 40);
+	_btnOk = new TextButton(96, 16, 216, 176);
+	_txtTitle = new Text(300, 17, 8, 7);
+	_txtName = new Text(114, 9, 8, 32);
+	_txtRank = new Text(102, 9, 120, 32);
+	_txtCraft = new Text(84, 9, 210, 32);
+	_txtAvailable = new Text(110, 9, 8, 24);
+	_txtUsed = new Text(110, 9, 120, 24);
+	_cbxSortBy = new ComboBox(this, 96, 16, 8, 176, true);
+	_btnStats = new TextButton(96, 16, 112, 176);
+	_btnRoles = new TextButton(96, 16, 112, 176);
+	_lstSoldiers = new TextList(288, 120, 8, 40);
+
+	_txtTU          = new TaggedText<int>(16, 9, 120, 32); //106
+	_txtStamina     = new TaggedText<int>(16, 9, 136, 32); //124
+	_txtHealth      = new TaggedText<int>(16, 9, 152, 32); //142
+	_txtBravery     = new TaggedText<int>(16, 9, 168, 32); //160
+	_txtReactions   = new TaggedText<int>(16, 9, 184, 32); //178
+	_txtFiring      = new TaggedText<int>(16, 9, 200, 32); //196
+	_txtThrowing    = new TaggedText<int>(16, 9, 216, 32); //214
+	_txtMelee       = new TaggedText<int>(16, 9, 232, 32); //232
+	_txtStrength    = new TaggedText<int>(16, 9, 248, 32); //250
+	_txtPsiStrength = new TaggedText<int>(16, 9, 264, 32); //268
+	_txtPsiSkill    = new TaggedText<int>(16, 9, 280, 32); //286..304 = 18
+
+	_txtTooltip = new Text(200, 9, 8, 164);
 
 	// Set palette
 	setInterface("craftSoldiers");
@@ -72,7 +88,21 @@ CraftSoldiersState::CraftSoldiersState(Base *base, size_t craft)
 	add(_txtCraft, "text", "craftSoldiers");
 	add(_txtAvailable, "text", "craftSoldiers");
 	add(_txtUsed, "text", "craftSoldiers");
+	add(_txtTU, "text", "craftSoldiers");
+	add(_txtStamina, "text", "craftSoldiers");
+	add(_txtHealth, "text", "craftSoldiers");
+	add(_txtBravery, "text", "craftSoldiers");
+	add(_txtReactions, "text", "craftSoldiers");
+	add(_txtFiring, "text", "craftSoldiers");
+	add(_txtThrowing, "text", "craftSoldiers");
+	add(_txtMelee, "text", "craftSoldiers");
+	add(_txtStrength, "text", "craftSoldiers");
+	add(_txtPsiStrength, "text", "craftSoldiers");
+	add(_txtPsiSkill, "text", "craftSoldiers");
+	add(_txtTooltip, "text", "craftSoldiers");
 	add(_lstSoldiers, "list", "craftSoldiers");
+	add(_btnStats, "button", "soldierList");
+	add(_btnRoles, "button", "soldierList");
 	add(_cbxSortBy, "button", "craftSoldiers");
 
 	_otherCraftColor = _game->getMod()->getInterface("craftSoldiers")->getElement("otherCraft")->color;
@@ -81,6 +111,12 @@ CraftSoldiersState::CraftSoldiersState(Base *base, size_t craft)
 
 	// Set up objects
 	_window->setBackground(_game->getMod()->getSurface("BACK02.SCR"));
+
+	_btnStats->setText(tr("STR_SHOW_STATS"));
+	_btnStats->onMouseClick((ActionHandler)&CraftSoldiersState::btnToggleStatsClick);
+
+	_btnRoles->setText(tr("STR_SHOW_ROLES"));
+	_btnRoles->onMouseClick((ActionHandler)&CraftSoldiersState::btnToggleStatsClick);
 
 	_btnOk->setText(tr("STR_OK"));
 	_btnOk->onMouseClick((ActionHandler)&CraftSoldiersState::btnOkClick);
@@ -102,26 +138,30 @@ CraftSoldiersState::CraftSoldiersState(Base *base, size_t craft)
 	sortOptions.push_back(tr("STR_ORIGINAL_ORDER"));
 	_sortFunctors.push_back(NULL);
 
-#define PUSH_IN(strId, functor) \
+#define PUSH_IN(strId, functor, asc, txt) \
+	if(txt) { ((TaggedText<int>*)txt)->setTag(sortOptions.size()); ((TaggedText<int>*)txt)->onMouseClick((ActionHandler)&CraftSoldiersState::txtColumnHeaderClick); } \
 	sortOptions.push_back(tr(strId)); \
-	_sortFunctors.push_back(new SortFunctor(_game, functor));
-	
-	PUSH_IN("STR_RANK", rankStat);
-	PUSH_IN("STR_MISSIONS2", missionsStat);
-	PUSH_IN("STR_KILLS2", killsStat);
-	PUSH_IN("STR_WOUND_RECOVERY2", woundRecoveryStat);
-	PUSH_IN("STR_TIME_UNITS", tuStat);
-	PUSH_IN("STR_STAMINA", staminaStat);
-	PUSH_IN("STR_HEALTH", healthStat);
-	PUSH_IN("STR_BRAVERY", braveryStat);
-	PUSH_IN("STR_REACTIONS", reactionsStat);
-	PUSH_IN("STR_FIRING_ACCURACY", firingStat);
-	PUSH_IN("STR_THROWING_ACCURACY", throwingStat);
-	PUSH_IN("STR_STRENGTH", strengthStat);
+	_sortFunctors.push_back(new SortFunctor(_game, functor, asc));
+
+	PUSH_IN("STR_ID", idStat, true, (void*)0);
+	PUSH_IN("STR_FIRST_LETTER", nameStat, true, (void*)0);
+	PUSH_IN("STR_RANK", rankStat, false, (void*)0);
+	PUSH_IN("STR_MISSIONS2", missionsStat, false, (void*)0);
+	PUSH_IN("STR_KILLS2", killsStat, false, (void*)0);
+	PUSH_IN("STR_WOUND_RECOVERY2", woundRecoveryStat, false, (void*)0);
+	PUSH_IN("STR_TIME_UNITS", tuStat, false, _txtTU);
+	PUSH_IN("STR_STAMINA", staminaStat, false, _txtStamina);
+	PUSH_IN("STR_HEALTH", healthStat, false, _txtHealth);
+	PUSH_IN("STR_BRAVERY", braveryStat, false, _txtBravery);
+	PUSH_IN("STR_REACTIONS", reactionsStat, false, _txtReactions);
+	PUSH_IN("STR_FIRING_ACCURACY", firingStat, false, _txtFiring);
+	PUSH_IN("STR_THROWING_ACCURACY", throwingStat, false, _txtThrowing);
+	PUSH_IN("STR_MELEE_ACCURACY", meleeStat, false, _txtMelee);
+	PUSH_IN("STR_STRENGTH", strengthStat, false, _txtStrength);
 
 	// don't show psionic sort options until they actually have data they can use
-	bool showPsiStrength = Options::psiStrengthEval
-			&& _game->getSavedGame()->isResearched(_game->getMod()->getPsiRequirements());
+	_showPsi = Options::psiStrengthEval
+		&& _game->getSavedGame()->isResearched(_game->getMod()->getPsiRequirements());
 	bool showPsiSkill = false;
 	for (std::vector<Soldier*>::iterator i = _base->getSoldiers()->begin(); i != _base->getSoldiers()->end(); ++i)
 	{
@@ -131,34 +171,114 @@ CraftSoldiersState::CraftSoldiersState(Base *base, size_t craft)
 			showPsiSkill = true;
 		}
 	}
-	if (showPsiStrength)
+	if (_showPsi)
 	{
-		PUSH_IN("STR_PSIONIC_STRENGTH", psiStrengthStat);
+		PUSH_IN("STR_PSIONIC_STRENGTH", psiStrengthStat, false, _txtPsiStrength);
 	}
-	if (showPsiSkill)
+	else
 	{
-		PUSH_IN("STR_PSIONIC_SKILL", psiSkillStat);
+		_txtPsiStrength->setVisible(false);
 	}
-
-	PUSH_IN("STR_MELEE_ACCURACY", meleeStat);
+	if (_showPsi && _showPsi)
+	{
+		PUSH_IN("STR_PSIONIC_SKILL", psiSkillStat, false, _txtPsiSkill);
+	}
+	else
+	{
+		_txtPsiSkill->setVisible(false);
+	}
 
 #undef PUSH_IN
+
+	_lstSoldiers->setArrowColumn(192, ARROW_VERTICAL);
+	_lstSoldiers->setColumns(3, 106, 102, 72);
+	_lstSoldiers->setSelectable(true);
+	_lstSoldiers->setBackground(_window);
+	//_lstSoldiers->setMargin(8);
+
+	_lstSoldiers->onLeftArrowClick((ActionHandler)&CraftSoldiersState::lstItemsLeftArrowClick);
+	_lstSoldiers->onRightArrowClick((ActionHandler)&CraftSoldiersState::lstItemsRightArrowClick);
+	_lstSoldiers->onMouseClick((ActionHandler)&CraftSoldiersState::lstSoldiersClick, 0);
+	_lstSoldiers->onMousePress((ActionHandler)&CraftSoldiersState::lstSoldiersMousePress);
 
 	_cbxSortBy->setOptions(sortOptions);
 	_cbxSortBy->setSelected(0);
 	_cbxSortBy->onChange((ActionHandler)&CraftSoldiersState::cbxSortByChange);
 	_cbxSortBy->setText(tr("STR_SORT_BY"));
 
-	_lstSoldiers->setArrowColumn(192, ARROW_VERTICAL);
-	_lstSoldiers->setColumns(3, 106, 102, 72);
+	_lstSoldiers->setAlign(ALIGN_RIGHT, 3);
 	_lstSoldiers->setSelectable(true);
 	_lstSoldiers->setBackground(_window);
-	_lstSoldiers->setMargin(8);
-
+	//_lstSoldiers->setMargin(8);
 	_lstSoldiers->onLeftArrowClick((ActionHandler)&CraftSoldiersState::lstItemsLeftArrowClick);
 	_lstSoldiers->onRightArrowClick((ActionHandler)&CraftSoldiersState::lstItemsRightArrowClick);
-	_lstSoldiers->onMouseClick((ActionHandler)&CraftSoldiersState::lstSoldiersClick, 0);
-	_lstSoldiers->onMousePress((ActionHandler)&CraftSoldiersState::lstSoldiersMousePress);
+	_lstSoldiers->onMouseClick((ActionHandler)&CraftSoldiersState::lstSoldiersClick);
+
+	_txtTU->setAlign(ALIGN_CENTER);
+	_txtTU->setText(tr("STR_TIME_UNITS_ABBREVIATION"));
+	_txtTU->setTooltip("STR_TIME_UNITS");
+	_txtTU->onMouseIn((ActionHandler)&CraftSoldiersState::txtTooltipIn);
+	_txtTU->onMouseOut((ActionHandler)&CraftSoldiersState::txtTooltipOut);
+
+	_txtStamina->setAlign(ALIGN_CENTER);
+	_txtStamina->setText(tr("STR_STAMINA_ABBREVIATION"));
+	_txtStamina->setTooltip("STR_STAMINA");
+	_txtStamina->onMouseIn((ActionHandler)&CraftSoldiersState::txtTooltipIn);
+	_txtStamina->onMouseOut((ActionHandler)&CraftSoldiersState::txtTooltipOut);
+
+	_txtHealth->setAlign(ALIGN_CENTER);
+	_txtHealth->setText(tr("STR_HEALTH_ABBREVIATION"));
+	_txtHealth->setTooltip("STR_HEALTH");
+	_txtHealth->onMouseIn((ActionHandler)&CraftSoldiersState::txtTooltipIn);
+	_txtHealth->onMouseOut((ActionHandler)&CraftSoldiersState::txtTooltipOut);
+
+	_txtBravery->setAlign(ALIGN_CENTER);
+	_txtBravery->setText(tr("STR_BRAVERY_ABBREVIATION"));
+	_txtBravery->setTooltip("STR_BRAVERY");
+	_txtBravery->onMouseIn((ActionHandler)&CraftSoldiersState::txtTooltipIn);
+	_txtBravery->onMouseOut((ActionHandler)&CraftSoldiersState::txtTooltipOut);
+
+	_txtReactions->setAlign(ALIGN_CENTER);
+	_txtReactions->setText(tr("STR_REACTIONS_ABBREVIATION"));
+	_txtReactions->setTooltip("STR_REACTIONS");
+	_txtReactions->onMouseIn((ActionHandler)&CraftSoldiersState::txtTooltipIn);
+	_txtReactions->onMouseOut((ActionHandler)&CraftSoldiersState::txtTooltipOut);
+
+	_txtFiring->setAlign(ALIGN_CENTER);
+	_txtFiring->setText(tr("STR_FIRING_ACCURACY_ABBREVIATION"));
+	_txtFiring->setTooltip("STR_FIRING_ACCURACY");
+	_txtFiring->onMouseIn((ActionHandler)&CraftSoldiersState::txtTooltipIn);
+	_txtFiring->onMouseOut((ActionHandler)&CraftSoldiersState::txtTooltipOut);
+
+	_txtThrowing->setAlign(ALIGN_CENTER);
+	_txtThrowing->setText(tr("STR_THROWING_ACCURACY_ABBREVIATION"));
+	_txtThrowing->setTooltip("STR_THROWING_ACCURACY");
+	_txtThrowing->onMouseIn((ActionHandler)&CraftSoldiersState::txtTooltipIn);
+	_txtThrowing->onMouseOut((ActionHandler)&CraftSoldiersState::txtTooltipOut);
+
+	_txtMelee->setAlign(ALIGN_CENTER);
+	_txtMelee->setText(tr("STR_MELEE_ACCURACY_ABBREVIATION"));
+	_txtMelee->setTooltip("STR_MELEE_ACCURACY");
+	_txtMelee->onMouseIn((ActionHandler)&CraftSoldiersState::txtTooltipIn);
+	_txtMelee->onMouseOut((ActionHandler)&CraftSoldiersState::txtTooltipOut);
+
+	_txtStrength->setAlign(ALIGN_CENTER);
+	_txtStrength->setText(tr("STR_STRENGTH_ABBREVIATION"));
+	_txtStrength->setTooltip("STR_STRENGTH");
+	_txtStrength->onMouseIn((ActionHandler)&CraftSoldiersState::txtTooltipIn);
+	_txtStrength->onMouseOut((ActionHandler)&CraftSoldiersState::txtTooltipOut);
+
+	_txtPsiStrength->setAlign(ALIGN_CENTER);
+	_txtPsiStrength->setText(tr("STR_PSIONIC_STRENGTH_ABBREVIATION"));
+	_txtPsiStrength->setTooltip("STR_PSIONIC_STRENGTH");
+	_txtPsiStrength->onMouseIn((ActionHandler)&CraftSoldiersState::txtTooltipIn);
+	_txtPsiStrength->onMouseOut((ActionHandler)&CraftSoldiersState::txtTooltipOut);
+
+	_txtPsiSkill->setAlign(ALIGN_CENTER);
+	_txtPsiSkill->setText(tr("STR_PSIONIC_SKILL_ABBREVIATION"));
+	_txtPsiSkill->setTooltip("STR_PSIONIC_SKILL");
+	_txtPsiSkill->onMouseIn((ActionHandler)&CraftSoldiersState::txtTooltipIn);
+	_txtPsiSkill->onMouseOut((ActionHandler)&CraftSoldiersState::txtTooltipOut);
 }
 
 /**
@@ -225,6 +345,40 @@ void CraftSoldiersState::btnOkClick(Action *)
  */
 void CraftSoldiersState::initList()
 {
+	if (_showStats)
+	{
+		_lstSoldiers->setColumns(13, 112, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 0);
+		_lstSoldiers->setArrowColumn(88, ARROW_VERTICAL);
+		_lstSoldiers->setAlign(ALIGN_CENTER);
+		_lstSoldiers->setAlign(ALIGN_LEFT, 0);
+		_btnStats->setVisible(false);
+		_btnRoles->setVisible(true);
+	}
+	else
+	{
+		_lstSoldiers->setColumns(4, 112, 90, 72, 6);
+		_lstSoldiers->setArrowColumn(176, ARROW_VERTICAL);
+		_lstSoldiers->setAlign(ALIGN_LEFT);
+		_lstSoldiers->setAlign(ALIGN_RIGHT, 3);
+		_btnStats->setVisible(true);
+		_btnRoles->setVisible(false);
+	}
+
+	_txtRank->setVisible(!_showStats);
+	_txtCraft->setVisible(!_showStats);
+	_txtTU->setVisible(_showStats);
+	_txtStamina->setVisible(_showStats);
+	_txtHealth->setVisible(_showStats);
+	_txtBravery->setVisible(_showStats);
+	_txtReactions->setVisible(_showStats);
+	_txtFiring->setVisible(_showStats);
+	_txtThrowing->setVisible(_showStats);
+	_txtMelee->setVisible(_showStats);
+	_txtStrength->setVisible(_showStats);
+	_txtPsiStrength->setVisible(_showStats);
+	_txtPsiSkill->setVisible(_showStats);
+	_txtTooltip->setVisible(_showStats);
+
 	size_t originalScrollPos = _lstSoldiers->getScroll();
 	int row = 0;
 	_lstSoldiers->clearList();
@@ -232,20 +386,55 @@ void CraftSoldiersState::initList()
 	for (std::vector<Soldier*>::iterator i = _base->getSoldiers()->begin(); i != _base->getSoldiers()->end(); ++i)
 	{
 		Soldier *ss = *i;
-		std::wostringstream rank;
-
-		Role *role;
-		if ((role = ss->getRole()) && !role->isBlank())
+		if (_showStats)
 		{
-			rank << tr(ss->getRole()->getName() + "_SHORT") << "-";
+			UnitStats *stats = ss->getCurrentStats();
+
+			const wchar_t* ps;
+			const wchar_t* pk;
+
+			if (_showPsi && stats->psiSkill > 0)
+			{
+				ps = Text::formatNumber(stats->psiStrength).c_str();
+				pk = Text::formatNumber(stats->psiSkill).c_str();
+			}
+			else
+			{
+				ps = L"-";
+				pk = L"-";
+			}
+
+			_lstSoldiers->addRow(13, ss->getName().c_str(),
+				Text::formatNumber(stats->tu).c_str(),
+				Text::formatNumber(stats->stamina).c_str(),
+				Text::formatNumber(stats->health).c_str(),
+				Text::formatNumber(stats->bravery).c_str(),
+				Text::formatNumber(stats->reactions).c_str(),
+				Text::formatNumber(stats->firing).c_str(),
+				Text::formatNumber(stats->throwing).c_str(),
+				Text::formatNumber(stats->melee).c_str(),
+				Text::formatNumber(stats->strength).c_str(),
+				ps,
+				pk,
+				L"");
 		}
+		else
+		{
+			std::wostringstream rank;
 
-		rank << tr(ss->getRankString());
+			Role *role;
+			if ((role = ss->getRole()) && !role->isBlank())
+			{
+				rank << tr(ss->getRole()->getName() + "_SHORT") << "-";
+			}
 
-		_lstSoldiers->addRow(3,
-			ss->getName(true, 19).c_str(),
-			rank.str().c_str(),
-			ss->getCraftString(_game->getLanguage()).c_str());
+			rank << tr(ss->getRankString());
+
+			_lstSoldiers->addRow(3,
+				ss->getName(true, 19).c_str(),
+				rank.str().c_str(),
+				ss->getCraftString(_game->getLanguage()).c_str());
+		}
 
 		Uint8 color;
 		if (ss->getCraft() == c)
@@ -455,6 +644,62 @@ void CraftSoldiersState::lstSoldiersMousePress(Action *action)
 		{
 			moveSoldierDown(action, row);
 		}
+	}
+}
+
+/**
+* Shows a tooltip for the appropriate text.
+* @param action Pointer to an action.
+*/
+void CraftSoldiersState::txtTooltipIn(Action *action)
+{
+	_currentTooltip = action->getSender()->getTooltip();
+	_txtTooltip->setText(tr(_currentTooltip));
+}
+
+/**
+* Clears the tooltip text.
+* @param action Pointer to an action.
+*/
+void CraftSoldiersState::txtTooltipOut(Action *action)
+{
+	if (_currentTooltip == action->getSender()->getTooltip())
+	{
+		_txtTooltip->setText(L"");
+	}
+}
+
+/**
+* Toggles the stats/roles list display.
+* @param action Pointer to an action.
+*/
+void CraftSoldiersState::btnToggleStatsClick(Action *action)
+{
+	_showStats = !_showStats;
+	initList();
+}
+
+/**
+ * Handler for sortable column headers.
+ * @param action Pointer to an action.
+ */
+void CraftSoldiersState::txtColumnHeaderClick(Action *action)
+{
+	TaggedText<int> *txt = dynamic_cast<TaggedText<int>*>(action->getSender());
+
+	if (txt)
+	{
+		if (_cbxSortBy->getSelected() == txt->getTag())
+		{
+			_cbxSortBy->setSelected(0);
+			_cbxSortBy->setText(tr("STR_SORT_BY"));
+		}
+		else
+		{
+			_cbxSortBy->setSelected(txt->getTag());
+		}
+
+		cbxSortByChange(action);
 	}
 }
 

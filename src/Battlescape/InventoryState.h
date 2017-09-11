@@ -27,12 +27,14 @@ namespace OpenXcom
 
 class Surface;
 class Text;
+class TextEdit;
 class InteractiveSurface;
 class Inventory;
 class SavedBattleGame;
 class BattlescapeState;
 class BattleUnit;
 class BattlescapeButton;
+class Base;
 class Soldier;
 class BattleItem;
 
@@ -43,8 +45,9 @@ class InventoryState : public State
 {
 private:
 	Surface *_bg, *_soldier;
-	Text *_txtName, *_txtRole, *_txtItem, *_txtAmmo, *_txtWeight, *_txtTus, *_txtHealth, *_txtReact, *_txtFAcc, *_txtTAcc, *_txtPSkill, *_txtPStr, *_txtArmor;
-	BattlescapeButton *_btnOk, *_btnPrev, *_btnNext, *_btnUnload, *_btnGround, *_btnRank, *_btnRole;
+	Text *_txtRole, *_txtItem, *_txtAmmo, *_txtWeight, *_txtTus, *_txtHealth, *_txtReact, *_txtFAcc, *_txtTAcc, *_txtPSkill, *_txtPStr, *_txtArmor;
+	TextEdit *_txtName, *_btnQuickSearch;
+	BattlescapeButton *_btnOk, *_btnPrev, *_btnNext, *_btnUnload, *_btnGround, *_btnRank, *_btnRole, *_btnArmor;
 	BattlescapeButton *_btnCreateTemplate, *_btnApplyTemplate;
 	Surface *_selAmmo;
 	Inventory *_inv;
@@ -52,24 +55,38 @@ private:
 	std::vector<EquipmentLayoutItem*> _curInventoryTemplate;
 	std::string _curInventoryTemplateArmorColor;
 	SavedBattleGame *_battleGame;
-	const bool _tu;
+	const bool _tu, _noCraft;
 	BattlescapeState *_parent;
+	Base *_base;
 	std::string _currentTooltip;
 	ComboBox *_cmbArmorColor;
 	std::map<int, std::string> *_armorColors;
+	bool _reloadUnit;
+
 public:
 	/// Creates the Inventory state.
-	InventoryState(bool tu, BattlescapeState *parent);
+	InventoryState(bool tu, BattlescapeState *parent, Base *base, bool noCraft = false);
 	/// Cleans up the Inventory state.
 	~InventoryState();
 	/// Updates all soldier info.
 	void init();
+	/// Handler for pressing on the Name edit.
+	void edtSoldierPress(Action *action);
+	/// Handler for changing text on the Name edit.
+	void edtSoldierChange(Action *action);
 	/// Updates the soldier info (Weight, TU).
 	void updateStats();
 	/// Saves the soldiers' equipment-layout.
 	void saveEquipmentLayout();
+	/// Handler for clicking the Armor button.
+	void btnArmorClick(Action *action);
+	void btnArmorClickRight(Action *action);
+	void btnArmorClickMiddle(Action *action);
 	/// Handler for clicking the OK button.
 	void btnOkClick(Action *action);
+	/// Handlers for Quick Search.
+	void btnQuickSearchToggle(Action *action);
+	void btnQuickSearchApply(Action *action);
 	/// Handler for clicking the Previous button.
 	void btnPrevClick(Action *action);
 	/// Handler for clicking the Next button.
@@ -108,6 +125,10 @@ public:
 	void txtTooltipIn(Action *action);
 	/// Handler for hiding tooltip.
 	void txtTooltipOut(Action *action);
+	/// Handler for showing armor tooltip.
+	void txtArmorTooltipIn(Action *action);
+	/// Handler for hiding armor tooltip.
+	void txtArmorTooltipOut(Action *action);
 	/// Gets the current battle unit.
 	BattleUnit *getSelectedUnit() const;
 	/// Gets the current soldier.
@@ -118,10 +139,10 @@ public:
 	void onCtrlToggled(Action *action);
 
 private:
-	/// Update the visibility and icons for the template buttons
-	void _updateTemplateButtons(bool isVisible);
-	/// Refresh the hover status of the mouse
-	void _refreshMouse() const;
+	/// Update the visibility and icons for the template buttons.
+	void updateTemplateButtons(bool isVisible);
+	/// Refresh the hover status of the mouse.
+	void refreshMouse() const;
 };
 
 }

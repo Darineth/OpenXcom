@@ -558,4 +558,13 @@ void TextEdit::onChange(ActionHandler handler)
 	_change = handler;
 }
 
+/**
+* Sets a function to be called every time ENTER is pressed.
+* @param handler Action handler.
+*/
+void TextEdit::onEnter(ActionHandler handler)
+{
+	_enter = handler;
+}
+
 }

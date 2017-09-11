@@ -116,27 +116,46 @@ AllocateTrainingState::AllocateTrainingState(Base *base) : _sel(0), _base(base),
 	sortOptions.push_back(tr("STR_ORIGINAL_ORDER"));
 	_sortFunctors.push_back(NULL);
 
-#define PUSH_IN(strId, functor) \
+#define PUSH_IN(strId, functor, asc) \
 	sortOptions.push_back(tr(strId)); \
-	_sortFunctors.push_back(new SortFunctor(_game, functor));
+	_sortFunctors.push_back(new SortFunctor(_game, functor, asc));
 
-	PUSH_IN("STR_ID", idStat);
-	PUSH_IN("STR_FIRST_LETTER", nameStat);
-	PUSH_IN("STR_RANK", rankStat);
-	PUSH_IN("STR_MISSIONS2", missionsStat);
-	PUSH_IN("STR_KILLS2", killsStat);
-	PUSH_IN("STR_WOUND_RECOVERY2", woundRecoveryStat);
-	PUSH_IN("STR_TIME_UNITS", tuStat);
-	PUSH_IN("STR_STAMINA", staminaStat);
-	PUSH_IN("STR_HEALTH", healthStat);
-	PUSH_IN("STR_BRAVERY", braveryStat);
-	PUSH_IN("STR_REACTIONS", reactionsStat);
-	PUSH_IN("STR_FIRING_ACCURACY", firingStat);
-	PUSH_IN("STR_THROWING_ACCURACY", throwingStat);
-	PUSH_IN("STR_MELEE_ACCURACY", meleeStat);
-	PUSH_IN("STR_STRENGTH", strengthStat);
-	PUSH_IN("STR_PSIONIC_STRENGTH", psiStrengthStat);
-	PUSH_IN("STR_PSIONIC_SKILL", psiSkillStat);
+	PUSH_IN("STR_ID", idStat, true);
+	PUSH_IN("STR_FIRST_LETTER", nameStat, true);
+	PUSH_IN("STR_RANK", rankStat, false);
+	PUSH_IN("STR_MISSIONS2", missionsStat, false);
+	PUSH_IN("STR_KILLS2", killsStat, false);
+	PUSH_IN("STR_WOUND_RECOVERY2", woundRecoveryStat, false);
+	PUSH_IN("STR_TIME_UNITS", tuStat, false);
+	PUSH_IN("STR_STAMINA", staminaStat, false);
+	PUSH_IN("STR_HEALTH", healthStat, false);
+	PUSH_IN("STR_BRAVERY", braveryStat, false);
+	PUSH_IN("STR_REACTIONS", reactionsStat, false);
+	PUSH_IN("STR_FIRING_ACCURACY", firingStat, false);
+	PUSH_IN("STR_THROWING_ACCURACY", throwingStat, false);
+	PUSH_IN("STR_MELEE_ACCURACY", meleeStat, false);
+	PUSH_IN("STR_STRENGTH", strengthStat, false);
+
+	// don't show psionic sort options until they actually have data they can use
+	bool showPsiStrength = Options::psiStrengthEval
+		&& _game->getSavedGame()->isResearched(_game->getMod()->getPsiRequirements());
+	bool showPsiSkill = false;
+	for (std::vector<Soldier*>::iterator i = _base->getSoldiers()->begin(); i != _base->getSoldiers()->end(); ++i)
+	{
+		if (showPsiSkill) { break; }
+		if ((*i)->getCurrentStats()->psiSkill > 0)
+		{
+			showPsiSkill = true;
+		}
+	}
+	if (showPsiStrength)
+	{
+		PUSH_IN("STR_PSIONIC_STRENGTH", psiStrengthStat, false);
+	}
+	if (showPsiSkill)
+	{
+		PUSH_IN("STR_PSIONIC_SKILL", psiSkillStat, false);
+	}
 
 #undef PUSH_IN
 

@@ -50,13 +50,14 @@ class Soldier
 {
 private:
 	std::wstring _name;
-	int _id, _vehicleId, _improvement, _psiStrImprovement;
+	int _id, _nationality, _vehicleId, _improvement, _psiStrImprovement;
 	RuleSoldier *_rules;
 	UnitStats _initialStats, _currentStats;
 	SoldierRank _rank;
 	Craft *_craft;
 	SoldierGender _gender;
 	SoldierLook _look;
+	int _lookVariant;
 	int _missions, _kills, _recovery;
 	bool _recentlyPromoted, _psiTraining, _training, _isVehicle;
 	Armor *_armor;
@@ -88,6 +89,10 @@ public:
 	std::wstring getName(bool statstring = false, unsigned int maxLength = 20) const;
 	/// Sets the soldier's name.
 	void setName(const std::wstring &name);
+	/// Gets the soldier's nationality.
+	int getNationality() const;
+	/// Sets the soldier's nationality.
+	void setNationality(int nationality);
 	/// Gets the soldier's craft.
 	Craft *getCraft() const;
 	/// Sets the soldier's craft.
@@ -108,8 +113,16 @@ public:
 	int getKills() const;
 	/// Gets the soldier's gender.
 	SoldierGender getGender() const;
+	/// Sets the soldier's gender.
+	void setGender(SoldierGender gender);
 	/// Gets the soldier's look.
 	SoldierLook getLook() const;
+	/// Sets the soldier's look.
+	void setLook(SoldierLook look);
+	/// Gets the soldier's look sub type.
+	int getLookVariant() const;
+	/// Sets the soldier's look sub type.
+	void setLookVariant(int lookVariant);
 	/// Gets soldier rules.
 	RuleSoldier *getRules() const;
 	/// Gets the soldier's unique ID.
@@ -158,6 +171,8 @@ public:
 	void die(SoldierDeath *death);
 	/// Gets the soldier's diary.
 	SoldierDiary *getDiary();
+	/// Resets the soldier's diary.
+	void resetDiary();
 	/// Calculate statString.
 	void calcStatString(const std::vector<StatString *> &statStrings, bool psiStrengthEval);
 	/// Trains a soldier's physical stats
