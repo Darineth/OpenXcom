@@ -1,22 +1,22 @@
 #pragma once
 /*
-* Copyright 2010-2016 OpenXcom Developers.
-*
-* This file is part of OpenXcom.
-*
-* OpenXcom is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* OpenXcom is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * Copyright 2010-2016 OpenXcom Developers.
+ *
+ * This file is part of OpenXcom.
+ *
+ * OpenXcom is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * OpenXcom is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
+ */
 #include <map>
 #include <vector>
 #include <string>
@@ -24,6 +24,7 @@
 #include <yaml-cpp/yaml.h>
 #include "../Engine/Options.h"
 #include "../Savegame/GameTime.h"
+#include "RuleDamageType.h"
 #include "Unit.h"
 #include "RuleAlienMission.h"
 
@@ -62,6 +63,7 @@ class RuleInventoryLayout;
 class RuleResearch;
 class RuleManufacture;
 class AlienRace;
+class RuleStartingCondition;
 class AlienDeployment;
 class UfoTrajectory;
 class RuleAlienMission;
@@ -69,6 +71,7 @@ class Base;
 class MCDPatch;
 class ExtraSprites;
 class ExtraSounds;
+class CustomPalettes;
 class ExtraStrings;
 class RuleCommendations;
 class StatString;
@@ -85,9 +88,9 @@ class Language;
 class RuleEffect;
 
 /**
-* Contains all the game-specific static data that never changes
-* throughout the game, like rulesets and resources.
-*/
+ * Contains all the game-specific static data that never changes
+ * throughout the game, like rulesets and resources.
+ */
 class Mod
 {
 private:
@@ -104,7 +107,7 @@ private:
 	std::vector<Uint16> _voxelData;
 	std::vector<std::vector<Uint8> > _transparencyLUTs;
 
-	std::map<std::string, RuleCountry*> _countries;
+	std::map<std::string, RuleCountry*> _countries, _extraGlobeLabels;
 	std::map<std::string, RuleRegion*> _regions;
 	std::map<std::string, RuleBaseFacility*> _facilities;
 	std::map<std::string, RuleCraft*> _crafts;
@@ -118,6 +121,7 @@ private:
 	std::map<std::string, RuleSoldier*> _soldiers;
 	std::map<std::string, Unit*> _units;
 	std::map<std::string, AlienRace*> _alienRaces;
+	std::map<std::string, RuleStartingCondition*> _startingConditions;
 	std::map<std::string, AlienDeployment*> _alienDeployments;
 	std::map<std::string, Armor*> _armors;
 	std::map<std::string, ArticleDefinition*> _ufopaediaArticles;
@@ -135,31 +139,60 @@ private:
 	std::map<std::string, RuleCommendations *> _commendations;
 	std::map<std::string, RuleMissionScript*> _missionScripts;
 	std::vector<std::pair<std::string, ExtraSprites *> > _extraSprites;
+	std::map<std::string, CustomPalettes *> _customPalettes;
 	std::vector<std::pair<std::string, ExtraSounds *> > _extraSounds;
 	std::map<std::string, ExtraStrings *> _extraStrings;
 	std::vector<StatString*> _statStrings;
+	std::vector<RuleDamageType*> _damageTypes;
 	std::map<std::string, RuleMusic *> _musicDefs;
 	std::map<std::string, RuleEffect*> _effects;
 	RuleGlobe *_globe;
 	RuleConverter *_converter;
-	int _costEngineer, _costScientist, _timePersonnel, _initialFunding, _turnAIUseGrenade, _turnAIUseBlaster, _defeatScore, _defeatFunds;
-	int _maxLookVariant;
+	int _maxViewDistance, _maxDarknessToSeeUnits;
+	int _maxStaticLightDistance, _maxDynamicLightDistance, _enhancedLighting;
+	int _costHireEngineer, _costHireScientist;
+	int _costEngineer, _costScientist, _timePersonnel, _initialFunding;
+	int _aiUseDelayBlaster, _aiUseDelayFirearm, _aiUseDelayGrenade, _aiUseDelayMelee, _aiUseDelayPsionic;
+	int _maxLookVariant, _tooMuchSmokeThreshold, _customTrainingFactor, _minReactionAccuracy;
+	int _chanceToStopRetaliation;
+	int _surrenderMode;
+	int _ufoGlancingHitThreshold, _ufoBeamWidthParameter;
+	int _ufoTractorBeamSizeModifiers[5];
+	int _soldiersPerSergeant, _soldiersPerCaptain, _soldiersPerColonel, _soldiersPerCommander;
+	int _pilotAccuracyZeroPoint, _pilotAccuracyRange, _pilotReactionsZeroPoint, _pilotReactionsRange;
+	int _pilotBraveryThresholds[3];
+	int _performanceBonusFactor;
+	bool _useCustomCategories, _showDogfightDistanceInKm;
+	int _theMostUselessOptionEver, _theBiggestRipOffEver;
+	int _defeatScore, _defeatFunds;
 	std::pair<std::string, int> _alienFuel;
 	int _baseMissionExperience;
-	std::string _fontName, _finalResearch;
+	std::string _fontName, _finalResearch, _psiUnlockResearch;
 	YAML::Node _startingBase;
 	GameTime _startingTime;
+	int _baseDefenseMapFromLocation;
+	std::map<int, std::string> _missionRatings, _monthlyRatings;
+	std::map<std::string, std::string> _fixedUserOptions;
+	std::vector<std::string> _hiddenMovementBackgrounds;
 	StatAdjustment _statAdjustment[5];
 
-	std::vector<std::string> _countriesIndex, _regionsIndex, _facilitiesIndex, _craftsIndex, _craftWeaponsIndex, _itemCategoriesIndex, _itemsIndex, _invsIndex, _ufosIndex;
-	std::vector<std::string> _soldiersIndex, _aliensIndex, _deploymentsIndex, _armorsIndex, _ufopaediaIndex, _ufopaediaCatIndex, _researchIndex, _manufactureIndex, _MCDPatchesIndex, _rolesIndex;
-	std::vector<std::string> _alienMissionsIndex, _terrainIndex, _extraSpritesIndex, _extraSoundsIndex, _extraStringsIndex, _missionScriptIndex;
-	std::vector<std::string> _inventoryLayoutsIndex;
+	std::vector<std::string> _countriesIndex, _extraGlobeLabelsIndex, _regionsIndex, _facilitiesIndex, _craftsIndex, _craftWeaponsIndex, _itemCategoriesIndex, _itemsIndex, _invsIndex, _ufosIndex;
+	std::vector<std::string> _soldiersIndex, _aliensIndex, _startingConditionsIndex, _deploymentsIndex, _armorsIndex, _ufopaediaIndex, _ufopaediaCatIndex, _researchIndex, _manufactureIndex, _MCDPatchesIndex;
+	std::vector<std::string> _alienMissionsIndex, _terrainIndex, _extraSpritesIndex, _customPalettesIndex, _extraSoundsIndex, _extraStringsIndex, _missionScriptIndex;
+	std::vector<std::string> _rolesIndex, _inventoryLayoutsIndex;
 	std::vector<std::vector<int> > _alienItemLevels;
 	std::vector<SDL_Color> _transparencies;
-	int _facilityListOrder, _craftListOrder, _itemListOrder, _researchListOrder, _manufactureListOrder, _ufopaediaListOrder, _invListOrder, _roleListOrder;
+	int _facilityListOrder, _craftListOrder, _itemCategoryListOrder, _itemListOrder, _researchListOrder, _manufactureListOrder, _ufopaediaListOrder, _invListOrder, _roleListOrder;
 	size_t _modOffset;
 	std::vector<std::string> _psiRequirements; // it's a cache for psiStrengthEval
+	size_t _surfaceOffsetBigobs = 0;
+	size_t _surfaceOffsetFloorob = 0;
+	size_t _surfaceOffsetHandob = 0;
+	size_t _surfaceOffsetSmoke = 0;
+	size_t _surfaceOffsetHit = 0;
+	size_t _surfaceOffsetBasebits = 0;
+	size_t _soundOffsetBattle = 0;
+	size_t _soundOffsetGeo = 0;
 	std::map<std::string, Uint8> _soldierUtileColors;
 	std::vector<std::string> _soldierUtileColorIndex;
 	std::map<std::string, int> _actionExperience;
@@ -229,6 +262,7 @@ public:
 	static std::string DEBRIEF_MUSIC_GOOD;
 	static std::string DEBRIEF_MUSIC_BAD;
 	static int DIFFICULTY_COEFFICIENT[5];
+	static int DIFFICULTY_BASED_RETAL_DELAY[5];
 	static float ENCUMBRANCE_MULTIPLIER;
 	// reset all the statics in all classes to default values
 	static void resetGlobalStatics();
@@ -245,6 +279,8 @@ public:
 	SurfaceSet *getSurfaceSet(const std::string &name, bool error = true) const;
 	/// Gets a particular music.
 	Music *getMusic(const std::string &name, bool error = true) const;
+	/// Gets the available music tracks.
+	const std::map<std::string, Music*> &getMusicTrackList() const;
 	/// Plays a particular music.
 	void playMusic(const std::string &name, int id = 0);
 	/// Gets a particular sound.
@@ -274,6 +310,10 @@ public:
 	RuleCountry *getCountry(const std::string &id, bool error = false) const;
 	/// Gets the available countries.
 	const std::vector<std::string> &getCountriesList() const;
+	/// Gets the ruleset for an extra globe label type.
+	RuleCountry *getExtraGlobeLabel(const std::string &id, bool error = false) const;
+	/// Gets the available extra globe labels.
+	const std::vector<std::string> &getExtraGlobeLabelsList() const;
 	/// Gets the ruleset for a region type.
 	RuleRegion *getRegion(const std::string &id, bool error = false) const;
 	/// Gets the available regions.
@@ -324,6 +364,10 @@ public:
 	AlienRace *getAlienRace(const std::string &name, bool error = false) const;
 	/// Gets the available alien races.
 	const std::vector<std::string> &getAlienRacesList() const;
+	/// Gets a starting condition.
+	RuleStartingCondition *getStartingCondition(const std::string &name) const;
+	/// Gets the available starting conditions.
+	const std::vector<std::string> &getStartingConditionsList() const;
 	/// Gets deployment rules.
 	AlienDeployment *getDeployment(const std::string &name, bool error = false) const;
 	/// Gets the available alien deployments.
@@ -342,16 +386,86 @@ public:
 	std::map<std::string, RuleInventory*> *getInventories();
 	/// Gets the ruleset for a specific inventory.
 	RuleInventory *getInventory(const std::string &id, bool error = false) const;
+	/// Gets max view distance in BattleScape.
+	int getMaxViewDistance() const { return _maxViewDistance; }
+	/// Gets threshold of darkness for LoS calculation.
+	int getMaxDarknessToSeeUnits() const { return _maxDarknessToSeeUnits; }
+	/// Gets max static (tiles & fire) ligth distance in BattleScape.
+	int getMaxStaticLightDistance() const { return _maxStaticLightDistance; }
+	/// Gets max dynamic (items & units) ligth distance in BattleScape.
+	int getMaxDynamicLightDistance() const { return _maxDynamicLightDistance; }
+	/// Get flags for enhanced lighting, 0x1 - tiles and fire, 0x2 - items, 0x4 - units.
+	int getEnhancedLighting() const { return _enhancedLighting; }
+	/// Get basic damage type
+	const RuleDamageType *getDamageType(ItemDamageType type) const;
+	/// Gets the cost of a soldier.
+	int getSoldierCost() const;
 	/// Gets the cost of a vehicle.
 	int getVehicleCost() const;
-	/// Gets the cost of an engineer.
+	/// Gets the cost of hiring an engineer.
+	int getHireEngineerCost() const;
+	/// Gets the cost of hiring a scientist.
+	int getHireScientistCost() const;
+	/// Gets the monthly cost of an engineer.
 	int getEngineerCost() const;
-	/// Gets the cost of a scientist.
+	/// Gets the monthly cost of a scientist.
 	int getScientistCost() const;
 	/// Gets the transfer time of personnel.
 	int getPersonnelTime() const;
+	/// Gets first turn when AI can use Blaster launcher.
+	int getAIUseDelayBlaster() const  {return _aiUseDelayBlaster;}
+	/// Gets first turn when AI can use firearms.
+	int getAIUseDelayFirearm() const  {return _aiUseDelayFirearm;}
+	/// Gets first turn when AI can use grenades.
+	int getAIUseDelayGrenade() const  {return _aiUseDelayGrenade;}
+	/// Gets first turn when AI can use martial arts.
+	int getAIUseDelayMelee() const    {return _aiUseDelayMelee;}
+	/// Gets first turn when AI can use psionic abilities.
+	int getAIUseDelayPsionic() const  {return _aiUseDelayPsionic;}
 	/// Gets maximum supported lookVariant (0-15)
 	int getMaxLookVariant() const  {return abs(_maxLookVariant) % 16;}
+	/// Gets the surrender mode (default = 0).
+	int getSurrenderMode() const { return _surrenderMode; }
+	/// Gets the threshold for defining a glancing hit on a ufo during interception
+	int getUfoGlancingHitThreshold() const { return _ufoGlancingHitThreshold; }
+	/// Gets the parameter for drawing the width of a ufo's beam weapon based on power
+	int getUfoBeamWidthParameter() const { return _ufoBeamWidthParameter; }
+	/// Gets the modifier to a tractor beam's power based on a ufo's size
+	int getUfoTractorBeamSizeModifier(int ufoSize) const { return _ufoTractorBeamSizeModifiers[ufoSize]; }
+	/// Gets how many soldiers are needed for one sergeant promotion
+	int getSoldiersPerSergeant() const { return _soldiersPerSergeant; }
+	/// Gets how many soldiers are needed for one captain promotion
+	int getSoldiersPerCaptain() const { return _soldiersPerCaptain; }
+	/// Gets how many soldiers are needed for one colonel promotion
+	int getSoldiersPerColonel() const { return _soldiersPerColonel; }
+	/// Gets how many soldiers are needed for one commander promotion
+	int getSoldiersPerCommander() const { return _soldiersPerCommander; }
+	/// Gets the firing accuracy needed for no bonus/penalty
+	int getPilotAccuracyZeroPoint() const { return _pilotAccuracyZeroPoint; }
+	/// Gets the firing accuracy impact (as percentage of distance to zero point) on pilot's aim in dogfight
+	int getPilotAccuracyRange() const { return _pilotAccuracyRange; }
+	/// Gets the reactions needed for no bonus/penalty
+	int getPilotReactionsZeroPoint() const { return _pilotReactionsZeroPoint; }
+	/// Gets the reactions impact (as percentage of distance to zero point) on pilot's dodge ability in dogfight
+	int getPilotReactionsRange() const { return _pilotReactionsRange; }
+	/// Gets the pilot's bravery needed for very bold approach speed
+	int getPilotBraveryThresholdVeryBold() const { return _pilotBraveryThresholds[0]; }
+	/// Gets the pilot's bravery needed for bold approach speed
+	int getPilotBraveryThresholdBold() const { return _pilotBraveryThresholds[1]; }
+	/// Gets the pilot's bravery needed for normal approach speed
+	int getPilotBraveryThresholdNormal() const { return _pilotBraveryThresholds[2]; }
+	/// Gets a performance bonus factor
+	int getPerformanceBonusFactor() const { return _performanceBonusFactor; }
+	/// Should custom categories be used in Buy/Sell/Transfer GUIs?
+	bool getUseCustomCategories() const { return _useCustomCategories; }
+	/// Should distance in dogfight GUI be shown in kilometers?
+	bool getShowDogfightDistanceInKm() const { return _showDogfightDistanceInKm; }
+	/// Self-explanatory
+	int getTheMostUselessOptionEver() const { return _theMostUselessOptionEver; }
+	/// Shame on you!
+	int getTheBiggestRipOffEver() const { return _theBiggestRipOffEver; }
+	/// Gets whether or not to load base defense terrain from globe texture
+	int getBaseDefenseMapFromLocation() const { return _baseDefenseMapFromLocation; }
 	/// Gets the ruleset for a specific research project.
 	RuleResearch *getResearch (const std::string &id, bool error = false) const;
 	/// Gets the list of all research projects.
@@ -380,6 +494,8 @@ public:
 	MCDPatch *getMCDPatch(const std::string &name) const;
 	/// Gets the list of external Sprites.
 	std::vector<std::pair<std::string, ExtraSprites *> > getExtraSprites() const;
+	/// Gets the list of custom palettes.
+	const std::vector<std::string> &getCustomPalettes() const;
 	/// Gets the list of external Sounds.
 	std::vector<std::pair<std::string, ExtraSounds *> > getExtraSounds() const;
 	/// Gets the list of external Strings.
@@ -400,10 +516,6 @@ public:
 	int getAlienFuelQuantity() const;
 	/// Gets the font name.
 	std::string getFontName() const;
-	/// Gets first turn when AI can use grenade.
-	int getTurnAIUseGrenade() const { return _turnAIUseGrenade; }
-	/// Gets first turn when AI can use Blaster launcher.
-	int getTurnAIUseBlaster() const { return _turnAIUseBlaster; }
 	/// Gets the amount of base experience soldiers earn for going on a mission.
 	int getBaseMissionExperience() const { return _baseMissionExperience; }
 	/// Gets the number of user selectable colors for armor coloration.
@@ -428,6 +540,10 @@ public:
 	const std::vector<std::string> *getMissionScriptList() const;
 	RuleMissionScript *getMissionScript(const std::string &name, bool error = false) const;
 	std::string getFinalResearch() const;
+	const std::map<int, std::string> *getMissionRatings() const;
+	const std::map<int, std::string> *getMonthlyRatings() const;
+	const std::map<std::string, std::string> &getFixedUserOptions() const;
+	const std::vector<std::string> &getHiddenMovementBackgrounds() const;
 	StatAdjustment *getStatAdjustment(int difficulty);
 	int getDefeatScore() const;
 	int getDefeatFunds() const;

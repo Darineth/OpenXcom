@@ -19,6 +19,7 @@
 #include "BaseFacility.h"
 #include "../Mod/RuleBaseFacility.h"
 #include "Base.h"
+#include <algorithm>
 
 namespace OpenXcom
 {
@@ -28,7 +29,7 @@ namespace OpenXcom
  * @param rules Pointer to ruleset.
  * @param base Pointer to base of origin.
  */
-BaseFacility::BaseFacility(RuleBaseFacility *rules, Base *base) : _rules(rules), _base(base), _x(-1), _y(-1), _buildTime(0), _craftForDrawing(0)
+BaseFacility::BaseFacility(RuleBaseFacility *rules, Base *base) : _rules(rules), _base(base), _x(-1), _y(-1), _buildTime(0), _disabled(false), _craftForDrawing(0)
 {
 }
 
@@ -48,6 +49,7 @@ void BaseFacility::load(const YAML::Node &node)
 	_x = node["x"].as<int>(_x);
 	_y = node["y"].as<int>(_y);
 	_buildTime = node["buildTime"].as<int>(_buildTime);
+	_disabled = node["disabled"].as<bool>(_disabled);
 }
 
 /**
@@ -62,6 +64,7 @@ YAML::Node BaseFacility::save() const
 	node["y"] = _y;
 	if (_buildTime != 0)
 		node["buildTime"] = _buildTime;
+	node["disabled"] = _disabled;
 	return node;
 }
 
@@ -153,13 +156,43 @@ bool BaseFacility::inUse() const
 	{
 		return false;
 	}
+
+	const std::vector<std::string> &otherBaseFunc = _base->getProvidedBaseFunc(this);
+	const std::vector<std::string> &usedBaseFunc = _base->getRequireBaseFunc(this);
+
+	const std::vector<std::string> &thisProve = getRules()->getProvidedBaseFunc();
+	for (std::vector<std::string>::const_iterator i = thisProve.begin(); i != thisProve.end(); ++i)
+	{
+		if (!std::binary_search(std::begin(otherBaseFunc),std::end(otherBaseFunc), *i) && std::binary_search(std::begin(usedBaseFunc),std::end(usedBaseFunc), *i)) //we provide something unique and someone else using it.
+			return true;
+	}
+
 	return ((_rules->getPersonnel() > 0 && _base->getAvailableQuarters() - _rules->getPersonnel() < _base->getUsedQuarters()) ||
 			(_rules->getStorage() > 0 && _base->getAvailableStores() - _rules->getStorage() < _base->getUsedStores()) ||
 			(_rules->getLaboratories() > 0 && _base->getAvailableLaboratories() - _rules->getLaboratories() < _base->getUsedLaboratories()) ||
 			(_rules->getWorkshops() > 0 && _base->getAvailableWorkshops() - _rules->getWorkshops() < _base->getUsedWorkshops()) ||
 			(_rules->getCrafts() > 0 && _base->getAvailableHangars() - _rules->getCrafts() < _base->getUsedHangars()) ||
 			(_rules->getPsiLaboratories() > 0 && _base->getAvailablePsiLabs() - _rules->getPsiLaboratories() < _base->getUsedPsiLabs()) ||
-			(_rules->getAliens() > 0 && _base->getAvailableContainment() - _rules->getAliens() < _base->getUsedContainment()));
+			(_rules->getTrainingFacilities() > 0 && _base->getAvailableTraining() - _rules->getTrainingFacilities() < _base->getUsedTraining()) ||
+			(_rules->getAliens() > 0 && _base->getAvailableContainment(_rules->getPrisonType()) - _rules->getAliens() < _base->getUsedContainment(_rules->getPrisonType())));
+}
+
+/**
+ * Checks if the facility is disabled.
+ * @return True if facility is disabled, False otherwise.
+ */
+bool BaseFacility::getDisabled() const
+{
+	return _disabled;
+}
+
+/**
+ * Sets the facility's disabled flag.
+ * @param disabled flag to set.
+ */
+void BaseFacility::setDisabled(bool disabled)
+{
+	_disabled = disabled;
 }
 
 /**

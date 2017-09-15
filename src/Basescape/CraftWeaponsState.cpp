@@ -28,9 +28,11 @@
 #include "../Interface/TextList.h"
 #include "../Savegame/Craft.h"
 #include "../Savegame/CraftWeapon.h"
+#include "../Mod/RuleCraft.h"
 #include "../Mod/RuleCraftWeapon.h"
 #include "../Savegame/ItemContainer.h"
 #include "../Savegame/Base.h"
+#include "../Ufopaedia/Ufopaedia.h"
 
 namespace OpenXcom
 {
@@ -42,7 +44,7 @@ namespace OpenXcom
  * @param craft ID of the selected craft.
  * @param weapon ID of the selected weapon.
  */
-CraftWeaponsState::CraftWeaponsState(Base *base, size_t craft, size_t weapon) : _base(base), _craft(craft), _weapon(weapon)
+CraftWeaponsState::CraftWeaponsState(Base *base, size_t craft, size_t weapon) : _base(base), _craft(base->getCrafts()->at(craft)), _weapon(weapon)
 {
 	_screen = false;
 
@@ -53,7 +55,8 @@ CraftWeaponsState::CraftWeaponsState(Base *base, size_t craft, size_t weapon) : 
 	_txtArmament = new Text(76, 9, 66, 52);
 	_txtQuantity = new Text(50, 9, 140, 52);
 	_txtAmmunition = new Text(68, 17, 200, 44);
-	_lstWeapons = new TextList(188, 80, 58, 68);
+	_lstWeapons = new TextList(188, 64, 58, 68);
+	_txtCurrentWeapon = new Text(188, 9, 66, 140);
 
 	// Set palette
 	setInterface("craftWeapons");
@@ -65,6 +68,7 @@ CraftWeaponsState::CraftWeaponsState(Base *base, size_t craft, size_t weapon) : 
 	add(_txtQuantity, "text", "craftWeapons");
 	add(_txtAmmunition, "text", "craftWeapons");
 	add(_lstWeapons, "list", "craftWeapons");
+	add(_txtCurrentWeapon, "text", "craftWeapons");
 
 	centerAllSurfaces();
 
@@ -87,6 +91,17 @@ CraftWeaponsState::CraftWeaponsState(Base *base, size_t craft, size_t weapon) : 
 	_txtAmmunition->setWordWrap(true);
 	_txtAmmunition->setVerticalAlign(ALIGN_BOTTOM);
 
+	const std::string slotName = _craft->getRules()->getWeaponSlotString(weapon);
+	CraftWeapon *current = _craft->getWeapons()->at(_weapon);
+	if (current != 0)
+	{
+		_txtCurrentWeapon->setText(tr(slotName).arg(tr(current->getRules()->getType())));
+	}
+	else
+	{
+		_txtCurrentWeapon->setText(tr(slotName).arg(tr("STR_NONE_UC")));
+	}
+
 	_lstWeapons->setColumns(3, 94, 50, 36);
 	_lstWeapons->setSelectable(true);
 	_lstWeapons->setBackground(_window);
@@ -99,7 +114,8 @@ CraftWeaponsState::CraftWeaponsState(Base *base, size_t craft, size_t weapon) : 
 	for (std::vector<std::string>::const_iterator i = weapons.begin(); i != weapons.end(); ++i)
 	{
 		RuleCraftWeapon *w = _game->getMod()->getCraftWeapon(*i);
-		if (_base->getStorageItems()->getItem(w->getLauncherItem()) > 0)
+		RuleCraft *c = _craft->getRules();
+		if (_base->getStorageItems()->getItem(w->getLauncherItem()) > 0 && c->isValidWeaponSlot(weapon, w->getWeaponType()))
 		{
 			_weapons.push_back(w);
 			std::wostringstream ss, ss2;
@@ -116,6 +132,7 @@ CraftWeaponsState::CraftWeaponsState(Base *base, size_t craft, size_t weapon) : 
 		}
 	}
 	_lstWeapons->onMouseClick((ActionHandler)&CraftWeaponsState::lstWeaponsClick);
+	_lstWeapons->onMouseClick((ActionHandler)&CraftWeaponsState::lstWeaponsMiddleClick, SDL_BUTTON_MIDDLE);
 }
 
 /**
@@ -141,30 +158,45 @@ void CraftWeaponsState::btnCancelClick(Action *)
  */
 void CraftWeaponsState::lstWeaponsClick(Action *)
 {
-	CraftWeapon *current = _base->getCrafts()->at(_craft)->getWeapons()->at(_weapon);
+	CraftWeapon *current = _craft->getWeapons()->at(_weapon);
 	// Remove current weapon
 	if (current != 0)
 	{
 		_base->getStorageItems()->addItem(current->getRules()->getLauncherItem());
 		_base->getStorageItems()->addItem(current->getRules()->getClipItem(), current->getClipsLoaded(_game->getMod()));
+		_craft->addCraftStats(-current->getRules()->getBonusStats());
+		// Make sure any extra shield is removed from craft too when the shield capacity decreases (exploit protection)
+		_craft->setShield(_craft->getShield());
 		delete current;
-		_base->getCrafts()->at(_craft)->getWeapons()->at(_weapon) = 0;
+		_craft->getWeapons()->at(_weapon) = 0;
 	}
 
 	// Equip new weapon
 	if (_weapons[_lstWeapons->getSelectedRow()] != 0)
 	{
 		CraftWeapon *sel = new CraftWeapon(_weapons[_lstWeapons->getSelectedRow()], 0);
-		sel->setRearming(true);
+		_craft->addCraftStats(sel->getRules()->getBonusStats());
 		_base->getStorageItems()->removeItem(sel->getRules()->getLauncherItem());
-		_base->getCrafts()->at(_craft)->getWeapons()->at(_weapon) = sel;
-		if (_base->getCrafts()->at(_craft)->getStatus() == "STR_READY")
-		{
-			_base->getCrafts()->at(_craft)->setStatus("STR_REARMING");
-		}
+		_craft->getWeapons()->at(_weapon) = sel;
 	}
 
+	_craft->checkup();
 	_game->popState();
+}
+
+/**
+* Opens the corresponding Ufopaedia article.
+* @param action Pointer to an action.
+*/
+void CraftWeaponsState::lstWeaponsMiddleClick(Action *)
+{
+	RuleCraftWeapon *rule = _weapons[_lstWeapons->getSelectedRow()];
+
+	if (rule != 0)
+	{
+		std::string articleId = rule->getType();
+		Ufopaedia::openArticle(_game, articleId);
+	}
 }
 
 }

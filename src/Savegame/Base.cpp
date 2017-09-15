@@ -269,7 +269,7 @@ YAML::Node Base::save() const
 		node["productions"].push_back((*i)->save());
 	}
 	if (_retaliationTarget)
-		node["retaliationTarget"] = _retaliationTarget;
+	node["retaliationTarget"] = _retaliationTarget;
 	return node;
 }
 
@@ -458,9 +458,10 @@ int Base::insideRadarRange(Target *target) const
  * Returns the amount of soldiers contained
  * in the base without any assignments.
  * @param checkCombatReadiness does what it says on the tin.
+ * @param everyoneFightsNobodyQuits even wounded soldiers can fight in the base defense, if respective option is turned on.
  * @return Number of soldiers.
  */
-int Base::getAvailableSoldiers(bool checkCombatReadiness) const
+int Base::getAvailableSoldiers(bool checkCombatReadiness, bool everyoneFightsNobodyQuits) const
 {
 	int total = 0;
 	for (std::vector<Soldier*>::const_iterator i = _soldiers.begin(); i != _soldiers.end(); ++i)
@@ -470,7 +471,7 @@ int Base::getAvailableSoldiers(bool checkCombatReadiness) const
 			total++;
 		}
 		else if (checkCombatReadiness && (((*i)->getCraft() != 0 && (*i)->getCraft()->getStatus() != "STR_OUT") ||
-			((*i)->getCraft() == 0 && (*i)->getWoundRecovery() == 0)))
+			((*i)->getCraft() == 0 && ((*i)->hasFullHealth() || everyoneFightsNobodyQuits))))
 		{
 			total++;
 		}
@@ -598,13 +599,81 @@ int Base::getTotalEngineers() const
 }
 
 /**
+* Returns the total amount of other employees contained in the base.
+* @return Number of employees.
+*/
+int Base::getTotalOtherEmployees() const
+{
+	int total = 0;
+	for (std::vector<Transfer*>::const_iterator i = _transfers.begin(); i != _transfers.end(); ++i)
+	{
+		if ((*i)->getType() == TRANSFER_ITEM)
+		{
+			int salary = _mod->getItem((*i)->getItems())->getMonthlySalary();
+			if (salary != 0)
+			{
+				total += (*i)->getQuantity();
+			}
+		}
+	}
+	for (std::map<std::string, int>::const_iterator i = _items->getContents()->begin(); i != _items->getContents()->end(); ++i)
+	{
+		int salary = _mod->getItem(i->first)->getMonthlySalary();
+		if (salary != 0)
+		{
+			total += i->second;
+		}
+	}
+	return total;
+}
+
+/**
+* Returns the total cost of other employees contained
+* in the base.
+* @return Cost of employees.
+*/
+int Base::getTotalOtherEmployeeCost() const
+{
+	int total = 0;
+	for (std::vector<Transfer*>::const_iterator i = _transfers.begin(); i != _transfers.end(); ++i)
+	{
+		if ((*i)->getType() == TRANSFER_ITEM)
+		{
+			int salary = _mod->getItem((*i)->getItems())->getMonthlySalary();
+			if (salary != 0)
+			{
+				total += salary * (*i)->getQuantity();
+			}
+		}
+	}
+	for (std::map<std::string, int>::const_iterator i = _items->getContents()->begin(); i != _items->getContents()->end(); ++i)
+	{
+		int salary = _mod->getItem(i->first)->getMonthlySalary();
+		if (salary != 0)
+		{
+			total += salary * i->second;
+		}
+	}
+	return total;
+}
+
+/**
  * Returns the amount of living quarters used up
  * by personnel in the base.
  * @return Living space.
  */
 int Base::getUsedQuarters() const
 {
-	return getTotalSoldiers() + getTotalScientists() + getTotalEngineers();
+	int total = getTotalSoldiers() + getTotalScientists() + getTotalEngineers();
+	for (std::vector<Production*>::const_iterator i = _productions.begin(); i != _productions.end(); ++i)
+	{
+		if ((*i)->getRules()->getSpawnedPersonType() != "")
+		{
+			// reserve one living space for each production project (even if it's on hold)
+			total += 1;
+		}
+	}
+	return total;
 }
 
 /**
@@ -876,9 +945,9 @@ int Base::getFreePsiLabs() const
  * Return containment space not in use
  * @return containment space not in use
  */
-int Base::getFreeContainment() const
+int Base::getFreeContainment(int prisonType) const
 {
-	return getAvailableContainment() - getUsedContainment();
+	return getAvailableContainment(prisonType) - getUsedContainment(prisonType);
 }
 
 /**
@@ -1020,19 +1089,21 @@ int Base::getCraftMaintenance() const
 }
 
 /**
- * Returns the total amount of soldiers of
+ * Returns the total count and total salary of soldiers of
  * a certain type stored in the base.
  * @param soldier Soldier type.
- * @return Number of soldiert.
+ * @return Number of soldiers and their salary.
  */
-int Base::getSoldierCount(const std::string &soldier) const
+std::pair<int, int> Base::getSoldierCountAndSalary(const std::string &soldier) const
 {
 	int total = 0;
+	int totalSalary = 0;
 	for (std::vector<Transfer*>::const_iterator i = _transfers.begin(); i != _transfers.end(); ++i)
 	{
 		if ((*i)->getType() == TRANSFER_SOLDIER && (*i)->getSoldier()->getRules()->getType() == soldier)
 		{
 			total++;
+			totalSalary += (*i)->getSoldier()->getRules()->getSalaryCost((*i)->getSoldier()->getRank());
 		}
 	}
 	for (std::vector<Soldier*>::const_iterator i = _soldiers.begin(); i != _soldiers.end(); ++i)
@@ -1040,9 +1111,10 @@ int Base::getSoldierCount(const std::string &soldier) const
 		if ((*i)->getRules()->getType() == soldier)
 		{
 			total++;
+			totalSalary += (*i)->getRules()->getSalaryCost((*i)->getRank());
 		}
 	}
-	return total;
+	return std::make_pair(total, totalSalary);
 }
 
 /**
@@ -1057,15 +1129,46 @@ int Base::getPersonnelMaintenance() const
 	{
 		if ((*i)->getType() == TRANSFER_SOLDIER)
 		{
-			total += (*i)->getSoldier()->getRules()->getSalaryCost();
+			total += (*i)->getSoldier()->getRules()->getSalaryCost((*i)->getSoldier()->getRank());
 		}
 	}
 	for (std::vector<Soldier*>::const_iterator i = _soldiers.begin(); i != _soldiers.end(); ++i)
 	{
-		total += (*i)->getRules()->getSalaryCost();
+		total += (*i)->getRules()->getSalaryCost((*i)->getRank());
 	}
 	total += getTotalEngineers() * _mod->getEngineerCost();
 	total += getTotalScientists() * _mod->getScientistCost();
+	total += getTotalOtherEmployeeCost(); // other employees
+	return total;
+}
+
+/**
+* Returns the total amount of monthly costs
+* for maintaining the items in the base.
+* @return Maintenance costs.
+*/
+int Base::getItemMaintenance() const
+{
+	int total = 0;
+	for (std::vector<Transfer*>::const_iterator i = _transfers.begin(); i != _transfers.end(); ++i)
+	{
+		if ((*i)->getType() == TRANSFER_ITEM)
+		{
+			int maintenance = _mod->getItem((*i)->getItems())->getMonthlyMaintenance();
+			if (maintenance != 0)
+			{
+				total += maintenance * (*i)->getQuantity();
+			}
+		}
+	}
+	for (std::map<std::string, int>::const_iterator i = _items->getContents()->begin(); i != _items->getContents()->end(); ++i)
+	{
+		int maintenance = _mod->getItem(i->first)->getMonthlyMaintenance();
+		if (maintenance != 0)
+		{
+			total += maintenance * i->second;
+		}
+	}
 	return total;
 }
 
@@ -1094,7 +1197,7 @@ int Base::getFacilityMaintenance() const
  */
 int Base::getMonthlyMaintenace() const
 {
-	return getCraftMaintenance() + getPersonnelMaintenance() + getFacilityMaintenance();
+	return getCraftMaintenance() + getPersonnelMaintenance() + getFacilityMaintenance() + getItemMaintenance();
 }
 
 /**
@@ -1235,10 +1338,10 @@ int Base::getUsedPsiLabs() const
 }
 
 /**
-* Returns the total amount of training space
-* available in the base.
-* @return Training space.
-*/
+ * Returns the total amount of training space
+ * available in the base.
+ * @return Training space.
+ */
 int Base::getAvailableTraining() const
 {
 	int total = 0;
@@ -1253,10 +1356,10 @@ int Base::getAvailableTraining() const
 }
 
 /**
-* Returns the total amount of used training space
-* available in the base.
-* @return used training space.
-*/
+ * Returns the total amount of used training space
+ * available in the base.
+ * @return used training space.
+ */
 int Base::getUsedTraining() const
 {
 	int total = 0;
@@ -1275,12 +1378,14 @@ int Base::getUsedTraining() const
  * Containment Space in the base.
  * @return Containment Lab space.
  */
-int Base::getUsedContainment() const
+int Base::getUsedContainment(int prisonType) const
 {
 	int total = 0;
+	RuleItem *rule = 0;
 	for (std::map<std::string, int>::iterator i = _items->getContents()->begin(); i != _items->getContents()->end(); ++i)
 	{
-		if (_mod->getItem((i)->first, true)->isAlien())
+		rule = _mod->getItem((i)->first, true);
+		if (rule->isAlien() && rule->getPrisonType() == prisonType)
 		{
 			total += (i)->second;
 		}
@@ -1289,7 +1394,8 @@ int Base::getUsedContainment() const
 	{
 		if ((*i)->getType() == TRANSFER_ITEM)
 		{
-			if (_mod->getItem((*i)->getItems(), true)->isAlien())
+			rule = _mod->getItem((*i)->getItems(), true);
+			if (rule->isAlien() && rule->getPrisonType() == prisonType)
 			{
 				total += (*i)->getQuantity();
 			}
@@ -1300,7 +1406,11 @@ int Base::getUsedContainment() const
 		const RuleResearch *projRules = (*i)->getRules();
 		if (projRules->needItem() && _mod->getUnit(projRules->getName()))
 		{
-			++total;
+			rule = _mod->getItem(projRules->getName());
+			if (rule->isAlien() && rule->getPrisonType() == prisonType)
+			{
+				++total;
+			}
 		}
 	}
 	return total;
@@ -1311,12 +1421,12 @@ int Base::getUsedContainment() const
  * available in the base.
  * @return Containment Lab space.
  */
-int Base::getAvailableContainment() const
+int Base::getAvailableContainment(int prisonType) const
 {
 	int total = 0;
 	for (std::vector<BaseFacility*>::const_iterator i = _facilities.begin(); i != _facilities.end(); ++i)
 	{
-		if ((*i)->getBuildTime() == 0)
+		if ((*i)->getBuildTime() == 0 && (*i)->getRules()->getPrisonType() == prisonType)
 		{
 			total += (*i)->getRules()->getAliens();
 		}
@@ -1376,9 +1486,9 @@ struct isMindShield: public std::unary_function<BaseFacility*, bool>
  */
 bool isMindShield::operator()(const BaseFacility *facility) const
 {
-	if (facility->getBuildTime() != 0)
+	if (facility->getBuildTime() != 0 || facility->getDisabled())
 	{
-		// Still building this
+		// Still building this (or is temporarily disabled)
 		return false;
 	}
 	return (facility->getRules()->isMindShield());
@@ -1656,16 +1766,14 @@ void Base::destroyFacility(std::vector<BaseFacility*>::iterator facility)
 		if ((*facility)->getCraft())
 		{
 			// remove all soldiers
-			if ((*facility)->getCraft()->getNumSoldiers())
+			for (Soldier *s : _soldiers)
 			{
-				for (std::vector<Soldier*>::iterator i = _soldiers.begin(); i != _soldiers.end(); ++i)
+				if (s->getCraft() == (*facility)->getCraft())
 				{
-					if ((*i)->getCraft() == (*facility)->getCraft())
-					{
-						(*i)->setCraft(0);
-					}
+					s->setCraft(0);
 				}
 			}
+
 			// remove all items
 			while (!(*facility)->getCraft()->getItems()->getContents()->empty())
 			{
@@ -1852,6 +1960,174 @@ void Base::cleanupDefenses(bool reclaimItems)
 		delete *i;
 		i = _vehicles.erase(i);
 	}
+}
+
+namespace
+{
+
+/**
+ * Store unique values from diffrent vectors.
+ * @param result Vector where final data will be send.
+ * @param temp Temporaly data container storing working buffer.
+ * @param data Data to add.
+ */
+void aggregateUnique(std::vector<std::string> &result, std::vector<std::string> &temp, const std::vector<std::string> &data)
+{
+	temp.clear();
+
+	std::set_union(std::make_move_iterator(std::begin(result)), std::make_move_iterator(std::end(result)), std::begin(data), std::end(data), std::back_inserter(temp));
+
+	std::swap(result, temp);
+}
+
+}
+
+/**
+ * Return list of all provided functionality in base.
+ * @param skip Skip functions provide by this facility.
+ * @return List of custom IDs.
+ */
+std::vector<std::string> Base::getProvidedBaseFunc(const BaseFacility *skip) const
+{
+	std::vector<std::string> ret, temp;
+
+	for (std::vector<BaseFacility*>::const_iterator bf = _facilities.begin(); bf != _facilities.end(); ++bf)
+	{
+		if (*bf == skip)
+		{
+			continue;
+		}
+		if ((*bf)->getBuildTime() > 0)
+		{
+			continue;
+		}
+		aggregateUnique(ret, temp, (*bf)->getRules()->getProvidedBaseFunc());
+	}
+
+	return ret;
+}
+
+/**
+ * Return list of all required functionality in base.
+ * @param skip Skip functions require by this facility.
+ * @return List of custom IDs.
+ */
+std::vector<std::string> Base::getRequireBaseFunc(const BaseFacility *skip) const
+{
+	std::vector<std::string> ret, temp;
+
+	for (std::vector<BaseFacility*>::const_iterator bf = _facilities.begin(); bf != _facilities.end(); ++bf)
+	{
+		if (*bf == skip)
+		{
+			continue;
+		}
+		aggregateUnique(ret, temp,  (*bf)->getRules()->getRequireBaseFunc());
+	}
+
+	for (std::vector<ResearchProject*>::const_iterator res = _research.begin(); res != _research.end(); ++res)
+	{
+		aggregateUnique(ret, temp, (*res)->getRules()->getRequireBaseFunc());
+	}
+
+	for (std::vector<Production*>::const_iterator prod = _productions.begin(); prod != _productions.end(); ++prod)
+	{
+		aggregateUnique(ret, temp, (*prod)->getRules()->getRequireBaseFunc());
+	}
+
+	return ret;
+}
+
+/**
+ * Return list of all forbiden functionality in base.
+ * @return List of custom IDs.
+ */
+std::vector<std::string> Base::getForbiddenBaseFunc() const
+{
+	std::vector<std::string> ret, temp;
+
+	for (std::vector<BaseFacility*>::const_iterator bf = _facilities.begin(); bf != _facilities.end(); ++bf)
+	{
+		aggregateUnique(ret, temp, (*bf)->getRules()->getForbiddenBaseFunc());
+	}
+
+	return ret;
+}
+
+/**
+ * Return list of all future provided functionality in base.
+ * @return List of custom IDs.
+ */
+std::vector<std::string> Base::getFutureBaseFunc() const
+{
+	std::vector<std::string> ret, temp;
+
+	for (std::vector<BaseFacility*>::const_iterator bf = _facilities.begin(); bf != _facilities.end(); ++bf)
+	{
+		aggregateUnique(ret, temp, (*bf)->getRules()->getProvidedBaseFunc());
+	}
+
+	return ret;
+}
+
+/**
+* Checks if it is possible to build another facility of a given type.
+* @return True if limit is reached (i.e. can't build anymore).
+*/
+bool Base::isMaxAllowedLimitReached(RuleBaseFacility *rule) const
+{
+	if (rule->getMaxAllowedPerBase() == 0)
+		return false;
+
+	int total = 0;
+
+	for (std::vector<BaseFacility*>::const_iterator bf = _facilities.begin(); bf != _facilities.end(); ++bf)
+	{
+		if ((*bf)->getRules()->getType() == rule->getType())
+		{
+			total++;
+		}
+	}
+
+	return total >= rule->getMaxAllowedPerBase();
+}
+
+/**
+* Gets the amount of additional HP healed in this base due to sick bay facilities (in absolute number).
+* @return Additional HP healed.
+*/
+float Base::getSickBayAbsoluteBonus() const
+{
+	float result = 0.0f;
+
+	for (std::vector<BaseFacility*>::const_iterator bf = _facilities.begin(); bf != _facilities.end(); ++bf)
+	{
+		if ((*bf)->getBuildTime() == 0)
+		{
+			result += (*bf)->getRules()->getSickBayAbsoluteBonus();
+		}
+	}
+
+	return result;
+}
+
+/**
+* Gets the amount of additional HP healed in this base due to sick bay facilities (as percentage of max HP per soldier).
+* @return Additional percentage of max HP healed.
+*/
+float Base::getSickBayRelativeBonus() const
+{
+	float result = 0.0f;
+
+	for (std::vector<BaseFacility*>::const_iterator bf = _facilities.begin(); bf != _facilities.end(); ++bf)
+	{
+		if ((*bf)->getBuildTime() == 0)
+		{
+			result += (*bf)->getRules()->getSickBayRelativeBonus();
+		}
+	}
+
+	return result;
 }
 
 }

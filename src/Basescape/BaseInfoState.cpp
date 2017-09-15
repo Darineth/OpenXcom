@@ -323,11 +323,11 @@ void BaseInfoState::init()
 	if (Options::storageLimitsEnforced)
 	{
 		std::wostringstream ss72;
-		ss72 << _base->getUsedContainment() << ":" << _base->getAvailableContainment();
+		ss72 << _base->getUsedContainment(0) << ":" << _base->getAvailableContainment(0);
 		_numContainment->setText(ss72.str());
 
-		_barContainment->setMax(_base->getAvailableContainment());
-		_barContainment->setValue(_base->getUsedContainment());
+		_barContainment->setMax(_base->getAvailableContainment(0));
+		_barContainment->setValue(_base->getUsedContainment(0));
 	}
 
 	std::wostringstream ss8;

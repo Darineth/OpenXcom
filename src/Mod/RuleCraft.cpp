@@ -18,6 +18,7 @@
  */
 #include "RuleCraft.h"
 #include "RuleTerrain.h"
+#include "../Engine/Exception.h"
 #include "Mod.h"
 
 namespace OpenXcom
@@ -28,9 +29,23 @@ namespace OpenXcom
  * type of craft.
  * @param type String defining the type.
  */
-RuleCraft::RuleCraft(const std::string &type) : _type(type), _sprite(-1), _marker(-1), _fuelMax(0), _damageMax(0), _speedMax(0), _accel(0), _weapons(0), _soldiers(0), _vehicles(0), _costBuy(0), _costRent(0), _costSell(0), _repairRate(1), _refuelRate(1), _radarRange(672), _radarChance(100), _sightRange(1696), _transferTime(0), _score(0), _battlescapeTerrainData(0), _spacecraft(false), _listOrder(0), _maxItems(0), _maxAltitude(-1)
+RuleCraft::RuleCraft(const std::string &type) :
+	_type(type), _sprite(-1), _marker(-1), _weapons(0), _soldiers(0), _pilots(0), _vehicles(0),
+	_costBuy(0), _costRent(0), _costSell(0), _repairRate(1), _refuelRate(1),
+	_transferTime(0), _score(0), _battlescapeTerrainData(0),
+	_allowLanding(true), _spacecraft(false), _notifyWhenRefueled(false), _autoPatrol(false), _listOrder(0), _maxItems(0), _maxAltitude(-1), _stats(),
+	_shieldRechargeAtBase(1000)
 {
-
+	for (int i = 0; i < WeaponMax; ++ i)
+	{
+		for (int j = 0; j < WeaponTypeMax; ++j)
+			_weaponTypes[i][j] = 0;
+	}
+	_stats.radarRange = 672;
+	_stats.radarChance = 100;
+	_stats.sightRange = 1696;
+	_weaponStrings[0] = "STR_WEAPON_ONE";
+	_weaponStrings[1] = "STR_WEAPON_TWO";
 }
 
 /**
@@ -63,13 +78,11 @@ void RuleCraft::load(const YAML::Node &node, Mod *mod, int listOrder)
 		if (_sprite > 4)
 			_sprite += mod->getModOffset();
 	}
+	_stats.load(node);
 	_marker = node["marker"].as<int>(_marker);
-	_fuelMax = node["fuelMax"].as<int>(_fuelMax);
-	_damageMax = node["damageMax"].as<int>(_damageMax);
-	_speedMax = node["speedMax"].as<int>(_speedMax);
-	_accel = node["accel"].as<int>(_accel);
 	_weapons = node["weapons"].as<int>(_weapons);
 	_soldiers = node["soldiers"].as<int>(_soldiers);
+	_pilots = node["pilots"].as<int>(_pilots);
 	_vehicles = node["vehicles"].as<int>(_vehicles);
 	_costBuy = node["costBuy"].as<int>(_costBuy);
 	_costRent = node["costRent"].as<int>(_costRent);
@@ -77,9 +90,6 @@ void RuleCraft::load(const YAML::Node &node, Mod *mod, int listOrder)
 	_refuelItem = node["refuelItem"].as<std::string>(_refuelItem);
 	_repairRate = node["repairRate"].as<int>(_repairRate);
 	_refuelRate = node["refuelRate"].as<int>(_refuelRate);
-	_radarRange = node["radarRange"].as<int>(_radarRange);
-	_radarChance = node["radarChance"].as<int>(_radarChance);
-	_sightRange = node["sightRange"].as<int>(_sightRange);
 	_transferTime = node["transferTime"].as<int>(_transferTime);
 	_score = node["score"].as<int>(_score);
 	if (const YAML::Node &terrain = node["battlescapeTerrainData"])
@@ -87,9 +97,16 @@ void RuleCraft::load(const YAML::Node &node, Mod *mod, int listOrder)
 		RuleTerrain *rule = new RuleTerrain(terrain["name"].as<std::string>());
 		rule->load(terrain, mod);
 		_battlescapeTerrainData = rule;
+		if (const YAML::Node &craftInventoryTile = node["craftInventoryTile"])
+		{
+			_craftInventoryTile = craftInventoryTile.as<std::vector<int> >(_craftInventoryTile);
+		}
 	}
 	_deployment = node["deployment"].as< std::vector< std::vector<int> > >(_deployment);
+	_allowLanding = node["allowLanding"].as<bool>(_allowLanding);
 	_spacecraft = node["spacecraft"].as<bool>(_spacecraft);
+	_notifyWhenRefueled = node["notifyWhenRefueled"].as<bool>(_notifyWhenRefueled);
+	_autoPatrol = node["autoPatrol"].as<bool>(_autoPatrol);
 	_listOrder = node["listOrder"].as<int>(_listOrder);
 	if (!_listOrder)
 	{
@@ -97,6 +114,36 @@ void RuleCraft::load(const YAML::Node &node, Mod *mod, int listOrder)
 	}
 	_maxAltitude = node["maxAltitude"].as<int>(_maxAltitude);
 	_maxItems = node["maxItems"].as<int>(_maxItems);
+
+	if (const YAML::Node &types = node["weaponTypes"])
+	{
+		for (int i = 0; (size_t)i < types.size() &&  i < WeaponMax; ++i)
+		{
+			const YAML::Node t = types[i];
+			if (t.IsScalar())
+			{
+				for (int j = 0; j < WeaponTypeMax; ++j)
+					_weaponTypes[i][j] = t.as<int>();
+			}
+			else if (t.IsSequence() && t.size() > 0)
+			{
+				for (int j = 0; (size_t)j < t.size() && j < WeaponTypeMax; ++j)
+					_weaponTypes[i][j] = t[j].as<int>();
+				for (int j = t.size(); j < WeaponTypeMax; ++j)
+					_weaponTypes[i][j] = _weaponTypes[i][0];
+			}
+			else
+			{
+				throw Exception("Invalid weapon type in craft " + _type + ".");
+			}
+		}
+	}
+	if (const YAML::Node &str = node["weaponStrings"])
+	{
+		for (int i = 0; (size_t)i < str.size() &&  i < WeaponMax; ++i)
+			_weaponStrings[i] = str[i].as<std::string>();
+	}
+	_shieldRechargeAtBase = node["shieldRechargedAtBase"].as<int>(_shieldRechargeAtBase);
 }
 
 /**
@@ -104,7 +151,7 @@ void RuleCraft::load(const YAML::Node &node, Mod *mod, int listOrder)
  * this craft. Each craft type has a unique name.
  * @return The craft's name.
  */
-std::string RuleCraft::getType() const
+const std::string &RuleCraft::getType() const
 {
 	return _type;
 }
@@ -144,7 +191,7 @@ int RuleCraft::getMarker() const
  */
 int RuleCraft::getMaxFuel() const
 {
-	return _fuelMax;
+	return _stats.fuelMax;
 }
 
 /**
@@ -154,7 +201,7 @@ int RuleCraft::getMaxFuel() const
  */
 int RuleCraft::getMaxDamage() const
 {
-	return _damageMax;
+	return _stats.damageMax;
 }
 
 /**
@@ -164,7 +211,7 @@ int RuleCraft::getMaxDamage() const
  */
 int RuleCraft::getMaxSpeed() const
 {
-	return _speedMax;
+	return _stats.speedMax;
 }
 
 /**
@@ -174,7 +221,7 @@ int RuleCraft::getMaxSpeed() const
  */
 int RuleCraft::getAcceleration() const
 {
-	return _accel;
+	return _stats.accel;
 }
 
 /**
@@ -182,7 +229,7 @@ int RuleCraft::getAcceleration() const
  * can be equipped onto the craft.
  * @return The weapon capacity.
  */
-unsigned int RuleCraft::getWeapons() const
+int RuleCraft::getWeapons() const
 {
 	return _weapons;
 }
@@ -195,6 +242,15 @@ unsigned int RuleCraft::getWeapons() const
 int RuleCraft::getSoldiers() const
 {
 	return _soldiers;
+}
+
+/**
+* Gets the number of pilots that the craft requires in order to take off.
+* @return The number of pilots.
+*/
+int RuleCraft::getPilots() const
+{
+	return _pilots;
 }
 
 /**
@@ -241,7 +297,7 @@ int RuleCraft::getSellCost() const
  * the craft is refuelling.
  * @return The item ID or "" if none.
  */
-std::string RuleCraft::getRefuelItem() const
+const std::string &RuleCraft::getRefuelItem() const
 {
 	return _refuelItem;
 }
@@ -273,7 +329,17 @@ int RuleCraft::getRefuelRate() const
  */
 int RuleCraft::getRadarRange() const
 {
-	return _radarRange;
+	return _stats.radarRange;
+}
+
+/**
+ * Gets the craft's radar chance
+ * for detecting UFOs.
+ * @return The chance in percentage.
+ */
+int RuleCraft::getRadarChance() const
+{
+	return _stats.radarChance;
 }
 
 /**
@@ -283,7 +349,7 @@ int RuleCraft::getRadarRange() const
  */
 int RuleCraft::getSightRange() const
 {
-	return _sightRange;
+	return _stats.sightRange;
 }
 
 /**
@@ -316,6 +382,15 @@ RuleTerrain *RuleCraft::getBattlescapeTerrainData()
 }
 
 /**
+ * Checks if this craft is capable of landing (on missions).
+ * @return True if this ship is capable of landing (on missions).
+ */
+bool RuleCraft::getAllowLanding() const
+{
+	return _allowLanding;
+}
+
+/**
  * Checks if this ship is capable of going to mars.
  * @return True if this ship is capable of going to mars.
  */
@@ -325,12 +400,30 @@ bool RuleCraft::getSpacecraft() const
 }
 
 /**
+ * Checks if a notification should be displayed when the craft is refueled.
+ * @return True if notification should appear.
+ */
+bool RuleCraft::notifyWhenRefueled() const
+{
+	return _notifyWhenRefueled;
+}
+
+/**
+* Checks if the craft supports auto patrol feature.
+* @return True if auto patrol is supported.
+*/
+bool RuleCraft::canAutoPatrol() const
+{
+	return _autoPatrol;
+}
+
+/**
  * Gets the list weight for this research item.
  * @return The list weight.
  */
 int RuleCraft::getListOrder() const
 {
-	 return _listOrder;
+	return _listOrder;
 }
 
 /**
@@ -343,12 +436,55 @@ std::vector<std::vector<int> > &RuleCraft::getDeployment()
 }
 
 /**
+* Gets the craft inventory tile position.
+* @return The tile position.
+*/
+std::vector<int> &RuleCraft::getCraftInventoryTile()
+{
+	return _craftInventoryTile;
+}
+
+/**
  * Gets the maximum amount of items this craft can store.
  * @return number of items.
  */
 int RuleCraft::getMaxItems() const
 {
 	return _maxItems;
+}
+
+/**
+ * Test for possibility of usage of weapon type in weapon slot.
+ * @param slot value less than WeaponMax.
+ * @param weaponType weapon type of weapon that we try insert.
+ * @return True if can use.
+ */
+bool RuleCraft::isValidWeaponSlot(int slot, int weaponType) const
+{
+	for (int j = 0; j < WeaponTypeMax; ++j)
+	{
+		if (_weaponTypes[slot][j] == weaponType)
+			return true;
+	}
+	return false;
+}
+
+/**
+ * Return string ID of weapon slot name for geoscape craft state.
+ * @param slot value less than WeaponMax.
+ * @return String ID for translation.
+ */
+const std::string &RuleCraft::getWeaponSlotString(int slot) const
+{
+	return _weaponStrings[slot];
+}
+/**
+ * Gets basic statistic of craft.
+ * @return Basic stats of craft.
+ */
+const RuleCraftStats& RuleCraft::getStats() const
+{
+	return _stats;
 }
 
 /**
@@ -368,6 +504,15 @@ int RuleCraft::getMaxAltitude() const
 bool RuleCraft::isWaterOnly() const
 {
 	return _maxAltitude > -1;
+}
+
+/**
+ * Gets how many shield points are recharged when landed at base per hour
+ * @return shield recharged per hour
+ */
+int RuleCraft::getShieldRechargeAtBase() const
+{
+	return _shieldRechargeAtBase;
 }
 
 }

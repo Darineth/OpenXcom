@@ -53,7 +53,7 @@ namespace YAML
 namespace OpenXcom
 {
 
-RuleAlienMission::RuleAlienMission(const std::string &type) : _type(type), _points(0), _objective(OBJECTIVE_SCORE), _spawnZone(-1), _retaliationOdds(-1)
+RuleAlienMission::RuleAlienMission(const std::string &type) : _type(type), _points(0), _objective(OBJECTIVE_SCORE), _spawnZone(-1), _retaliationOdds(-1), _endlessInfiltration(true), _despawnEvenIfTargeted(false)
 {
 }
 
@@ -86,6 +86,8 @@ void RuleAlienMission::load(const YAML::Node &node)
 	_spawnZone = node["spawnZone"].as<int>(_spawnZone);
 	_weights = node["missionWeights"].as< std::map<size_t, int> >(_weights);
 	_retaliationOdds = node["retaliationOdds"].as<int>(_retaliationOdds);
+	_endlessInfiltration = node["endlessInfiltration"].as<bool>(_endlessInfiltration);
+	_despawnEvenIfTargeted = node["despawnEvenIfTargeted"].as<bool>(_despawnEvenIfTargeted);
 	_siteType = node["siteType"].as<std::string>(_siteType);
 	//Only allow full replacement of mission racial distribution.
 	if (const YAML::Node &weights = node["raceWeights"])
@@ -191,6 +193,15 @@ int RuleAlienMission::getWeight(const size_t monthsPassed) const
 int RuleAlienMission::getRetaliationOdds() const
 {
 	return _retaliationOdds;
+}
+
+/**
+ * Should the infiltration end after first cycle or continue indefinitely?
+ * @return True, if infiltration should continue indefinitely.
+ */
+bool RuleAlienMission::isEndlessInfiltration() const
+{
+	return _endlessInfiltration;
 }
 
 }

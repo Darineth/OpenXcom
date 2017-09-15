@@ -48,6 +48,90 @@ enum MapScriptCommand {MSC_UNDEFINED = -1, MSC_ADDBLOCK, MSC_ADDLINE, MSC_ADDCRA
 class MapBlock;
 class RuleTerrain;
 
+// Structure for containing multiple levels of map blocks inside a command
+struct VerticalLevel
+{
+	std::string levelType;
+	std::vector<int> levelGroups, levelBlocks;
+	int levelSizeX, levelSizeY, levelSizeZ;
+	int maxRepeats;
+	int zoff;
+	std::string levelTerrain;
+
+	// Default constructor
+	VerticalLevel() :
+		levelSizeX(1), levelSizeY(1), levelSizeZ(1), maxRepeats(-1), zoff(0), levelTerrain("")
+	{
+
+	}
+
+	// Load in the data for a VerticalLevel from a YAML file, has to load similar data to a full mapscript command
+	void load(const YAML::Node &node)
+	{
+		levelType = node["type"].as<std::string>(levelType);
+
+		if (const YAML::Node &map = node["size"])
+		{
+			if (map.Type() == YAML::NodeType::Sequence)
+			{
+				int *sizes[3] = {&levelSizeX, &levelSizeY, &levelSizeZ};
+				int entry = 0;
+				for (YAML::const_iterator i = map.begin(); i != map.end(); ++i)
+				{
+					*sizes[entry] = (*i).as<int>(1);
+					entry++;
+					if (entry == 3)
+					{
+						break;
+					}
+				}
+			}
+			else
+			{
+				levelSizeX = map.as<int>(levelSizeX);
+				levelSizeY = levelSizeX;
+			}
+		}
+
+		maxRepeats = node["maxRepeats"].as<int>(maxRepeats);
+
+		if (const YAML::Node &map = node["groups"])
+		{
+			levelGroups.clear();
+			if (map.Type() == YAML::NodeType::Sequence)
+			{
+				for (YAML::const_iterator i = map.begin(); i != map.end(); ++i)
+				{
+					levelGroups.push_back((*i).as<int>(0));
+				}
+			}
+			else
+			{
+				levelGroups.push_back(map.as<int>(0));
+			}
+		}
+
+		if (const YAML::Node &map = node["blocks"])
+		{
+			levelGroups.clear();
+			if (map.Type() == YAML::NodeType::Sequence)
+			{
+				for (YAML::const_iterator i = map.begin(); i != map.end(); ++i)
+				{
+					levelBlocks.push_back((*i).as<int>(0));
+				}
+			}
+			else
+			{
+				levelBlocks.push_back(map.as<int>(0));
+			}
+
+		}
+
+		levelTerrain = node["terrain"].as<std::string>(levelTerrain);
+	}
+};
+
 class MapScript
 {
 private:
@@ -58,7 +142,8 @@ private:
 	int _sizeX, _sizeY, _sizeZ, _executionChances, _executions, _cumulativeFrequency, _label;
 	MapDirection _direction;
 	TunnelData *_tunnelData;
-	std::string _ufoName;
+	std::string _ufoName, _craftName, _terrain;
+	std::vector<VerticalLevel> _verticalLevels;
 
 	/// Randomly generate a group from within the array.
 	int getGroupNumber();
@@ -71,6 +156,8 @@ public:
 	void load(const YAML::Node& node);
 	/// Initializes all the variables and junk for a mapscript command.
 	void init();
+	/// Initializes the variables for a mapscript command from a VerticalLevel
+	void initVerticalLevel(VerticalLevel level);
 	/// Gets what type of command this is.
 	MapScriptCommand getType() const {return _type;};
 	/// Gets the rects, describing the areas this command applies to.
@@ -101,6 +188,14 @@ public:
 	MapBlock *getNextBlock(RuleTerrain *terrain);
 	/// Gets the UFO's name (for setUFO)
 	std::string getUFOName() const;
+	/// Gets the craft's name (for addCraft)
+	std::string getCraftName();
+	/// Gets alternate terrain for a command other than the one in alienDeploments
+	std::string getAlternateTerrain() const;
+	/// Gets the vertical levels for a command
+	const std::vector<VerticalLevel> &getVerticalLevels() const;
+	/// Sets the vertical levels for a command from a base facility's vertical levels
+	void setVerticalLevels(const std::vector<VerticalLevel> &verticalLevels);
 };
 
 }

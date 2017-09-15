@@ -19,6 +19,7 @@
  */
 #include <string>
 #include <yaml-cpp/yaml.h>
+#include "RuleCraft.h"
 #include "../Savegame/CraftWeaponProjectile.h"
 
 namespace OpenXcom
@@ -36,10 +37,12 @@ class RuleCraftWeapon
 {
 private:
 	std::string _type;
-	int _sprite, _sound, _damage, _range, _accuracy, _reloadCautious, _reloadStandard, _reloadAggressive, _ammoMax, _rearmRate, _projectileSpeed;
+	int _sprite, _sound, _damage, _shieldDamageModifier, _range, _accuracy, _reloadCautious, _reloadStandard, _reloadAggressive, _ammoMax, _rearmRate, _projectileSpeed, _weaponType;
 	CraftWeaponProjectileType _projectileType;
 	std::string _launcher, _clip;
+	RuleCraftStats _stats;
 	bool _underwaterOnly;
+	int _tractorBeamPower;
 public:
 	/// Creates a blank craft weapon ruleset.
 	RuleCraftWeapon(const std::string &type);
@@ -55,6 +58,8 @@ public:
 	int getSound() const;
 	/// Gets the craft weapon's damage.
 	int getDamage() const;
+	/// Gets the craft weapon's effectiveness against shields.
+	int getShieldDamageModifier() const;
 	/// Gets the craft weapon's range.
 	int getRange() const;
 	/// Gets the craft weapon's accuracy.
@@ -77,8 +82,14 @@ public:
 	CraftWeaponProjectileType getProjectileType() const;
 	/// Gets the craft weapon's projectile speed.
 	int getProjectileSpeed() const;
+	/// Gets weapon type used by craft slots.
+	int getWeaponType() const;
+	/// Gets bonus stats given by this weapon.
+	const RuleCraftStats& getBonusStats() const;
 	/// Is this item restricted to use underwater?
 	bool isWaterOnly() const;
+	/// Get the craft weapon's tractor beam power
+	int getTractorBeamPower() const;
 };
 
 }

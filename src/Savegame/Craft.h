@@ -21,6 +21,7 @@
 #include <utility>
 #include <vector>
 #include <string>
+#include "../Mod/RuleCraft.h"
 
 namespace OpenXcom
 {
@@ -47,14 +48,16 @@ class Craft : public MovingTarget
 private:
 	RuleCraft *_rules;
 	Base *_base;
-	int _id, _fuel, _damage, _interceptionOrder, _takeoff;
+	int _id, _fuel, _damage, _shield, _interceptionOrder, _takeoff;
 	std::vector<CraftWeapon*> _weapons;
 	ItemContainer *_items;
 	std::vector<Vehicle*> _vehicles;
 	std::string _status;
 	bool _lowFuel, _mission, _inBattlescape, _inDogfight;
-
-	using MovingTarget::load;
+	RuleCraftStats _stats;
+	bool _isAutoPatrolling;
+	double _lonAuto, _latAuto;
+	std::vector<int> _pilots;
 public:
 	/// Creates a craft of the specified type.
 	Craft(RuleCraft *rules, Base *base, int id = 0);
@@ -90,6 +93,18 @@ public:
 	std::string getAltitude() const;
 	/// Sets the craft's destination.
 	void setDestination(Target *dest);
+	/// Gets whether the craft is on auto patrol.
+	bool getIsAutoPatrolling() const;
+	/// Sets whether the craft is on auto patrol.
+	void setIsAutoPatrolling(bool isAuto);
+	/// Gets the auto patrol longitude.
+	double getLongitudeAuto() const;
+	/// Sets the auto patrol longitude.
+	void setLongitudeAuto(double lon);
+	/// Gets the auto patrol latitude.
+	double getLatitudeAuto() const;
+	/// Sets the auto patrol latitude.
+	void setLatitudeAuto(double lat);
 	/// Gets the craft's amount of weapons.
 	int getNumWeapons() const;
 	/// Gets the craft's amount of soldiers.
@@ -104,18 +119,34 @@ public:
 	ItemContainer *getItems();
 	/// Gets the craft's vehicles.
 	std::vector<Vehicle*> *getVehicles();
+	/// Update the craft's stats.
+	void addCraftStats(const RuleCraftStats& s);
+	/// Gets the craft's stats.
+	const RuleCraftStats& getCraftStats() const;
+	/// Gets the craft's max amount of fuel.
+	int getFuelMax() const;
 	/// Gets the craft's amount of fuel.
 	int getFuel() const;
 	/// Sets the craft's amount of fuel.
 	void setFuel(int fuel);
 	/// Gets the craft's percentage of fuel.
 	int getFuelPercentage() const;
+	/// Gets the craft's max amount of damage.
+	int getDamageMax() const;
 	/// Gets the craft's amount of damage.
 	int getDamage() const;
 	/// Sets the craft's amount of damage.
 	void setDamage(int damage);
 	/// Gets the craft's percentage of damage.
 	int getDamagePercentage() const;
+	/// Gets the craft's max shield capacity
+	int getShieldCapacity () const;
+        /// Gets the craft's shield remaining
+	int getShield() const;
+	/// Sets the craft's shield remaining
+	void setShield(int shield);
+	/// Gets the percent shield remaining
+	int getShieldPercentage() const;
 	/// Gets whether the craft is running out of fuel.
 	bool getLowFuel() const;
 	/// Sets whether the craft is running out of fuel.
@@ -144,6 +175,12 @@ public:
 	void checkup();
 	/// Consumes the craft's fuel.
 	void consumeFuel();
+	/// Calculates the time to repair
+	unsigned int calcRepairTime();
+	/// Calculates the time to refuel
+	unsigned int calcRefuelTime();
+	/// Calculates the time to rearm
+	unsigned int calcRearmTime();
 	/// Repairs the craft.
 	void repair();
 	/// Refuels the craft.
@@ -160,6 +197,22 @@ public:
 	int getSpaceAvailable() const;
 	/// Gets the amount of space used inside a craft.
 	int getSpaceUsed() const;
+	/// Checks if there are enough pilots onboard.
+	bool arePilotsOnboard();
+	/// Checks if a pilot is already on the list.
+	bool isPilot(int pilotId);
+	/// Adds a pilot to the list.
+	void addPilot(int pilotId);
+	/// Removes all pilots from the list.
+	void removeAllPilots();
+	/// Gets the list of craft pilots.
+	const std::vector<Soldier*> getPilotList(bool autoAdd);
+	/// Calculates the accuracy bonus based on pilot skills.
+	int getPilotAccuracyBonus(const std::vector<Soldier*> &pilots, const Mod *mod) const;
+	/// Calculates the dodge bonus based on pilot skills.
+	int getPilotDodgeBonus(const std::vector<Soldier*> &pilots, const Mod *mod) const;
+	/// Calculates the approach speed modifier based on pilot skills.
+	int getPilotApproachSpeedModifier(const std::vector<Soldier*> &pilots, const Mod *mod) const;
 	/// Gets the craft's vehicles of a certain type.
 	int getVehicleCount(const std::string &vehicle) const;
 	/// Sets the craft's dogfight status.

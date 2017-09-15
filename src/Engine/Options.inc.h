@@ -50,6 +50,7 @@ OPT SDLKey keyGeoUfoTracker,
 	keySelectMusicTrack;
 
 OPT bool removeWoundedFromTraining;
+OPT bool techTreeViewerSpoilerProtection;
 
 // Flags and other stuff that don't need OptionInfo's.
 OPT bool mute, reload, newOpenGL, newScaleFilter, newHQXFilter, newXBRZFilter, newRootWindowedMode, newFullscreen, newAllowResize, newBorderless;

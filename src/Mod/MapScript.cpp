@@ -21,12 +21,13 @@
 #include <yaml-cpp/yaml.h>
 #include "../Engine/RNG.h"
 #include "../Engine/Exception.h"
+#include "../Engine/Logger.h"
 
 
 namespace OpenXcom
 {
 
-MapScript::MapScript() : _type(MSC_UNDEFINED), _sizeX(1), _sizeY(1), _sizeZ(0), _executionChances(100), _executions(1), _cumulativeFrequency(0), _label(0), _direction(MD_NONE), _tunnelData(0)
+MapScript::MapScript() : _type(MSC_UNDEFINED), _sizeX(1), _sizeY(1), _sizeZ(0), _executionChances(100), _executions(1), _cumulativeFrequency(0), _label(0), _direction(MD_NONE), _tunnelData(0), _terrain(""), _verticalLevels()
 {
 }
 
@@ -146,7 +147,7 @@ void MapScript::load(const YAML::Node& node)
 			_sizeY = _sizeX;
 		}
 	}
-	
+
 	if (const YAML::Node &map = node["groups"])
 	{
 		_groups.clear();
@@ -179,7 +180,7 @@ void MapScript::load(const YAML::Node& node)
 		}
 		selectionSize = _blocks.size();
 	}
-	
+
 	_frequencies.resize(selectionSize, 1);
 	_maxUses.resize(selectionSize, -1);
 
@@ -261,8 +262,25 @@ void MapScript::load(const YAML::Node& node)
 	_executionChances = node["executionChances"].as<int>(_executionChances);
 	_executions = node["executions"].as<int>(_executions);
 	_ufoName = node["UFOName"].as<std::string>(_ufoName);
+	_craftName = node["craftName"].as<std::string>(_craftName);
+	_terrain = node["terrain"].as<std::string>(_terrain);
 	// take no chances, don't accept negative values here.
 	_label = std::abs(node["label"].as<int>(_label));
+
+	// Load any VerticalLevels into a map if we have them
+	if (node["verticalLevels"])
+	{
+		_verticalLevels.clear();
+		for (YAML::const_iterator i = node["verticalLevels"].begin(); i != node["verticalLevels"].end(); ++i)
+		{
+			if ((*i)["type"])
+			{
+				VerticalLevel level;
+				level.load(*i);
+				_verticalLevels.push_back(level);
+			}
+		}
+	}
 }
 
 /**
@@ -284,6 +302,26 @@ void MapScript::init()
 	_groupsTemp = _groups;
 	_frequenciesTemp = _frequencies;
 	_maxUsesTemp = _maxUses;
+}
+
+/**
+ * Initializes scratch values for working in a vertical level
+ */
+void MapScript::initVerticalLevel(VerticalLevel level)
+{
+	_cumulativeFrequency = 0;
+	_blocksTemp.clear();
+	_groupsTemp.clear();
+	_frequenciesTemp.clear();
+	_maxUsesTemp.clear();
+
+	_blocks = level.levelBlocks;
+	_groups = level.levelGroups;
+	_cumulativeFrequency = std::max(_blocks.size(), _groups.size());
+	_frequenciesTemp.resize(_cumulativeFrequency, 1);
+	_maxUsesTemp.resize(_cumulativeFrequency, -1);
+	_blocksTemp = _blocks;
+	_groupsTemp = _groups;
 }
 
 /**
@@ -385,6 +423,43 @@ MapBlock *MapScript::getNextBlock(RuleTerrain *terrain)
 std::string MapScript::getUFOName() const
 {
 	return _ufoName;
+}
+
+/**
+* Gets the name of the craft in the case of "addCraft"
+* @return the craft name.
+*/
+std::string MapScript::getCraftName()
+{
+	return _craftName;
+}
+
+/**
+ * Gets the terrain name in the case of addBlockFromTerrain or fillAreaFromTerrain
+ * @return the terrain name.
+ */
+std::string MapScript::getAlternateTerrain() const
+{
+	return _terrain;
+}
+
+/**
+ * Gets the vertical levels defined in a map script command
+ * @return the vector of VerticalLevels
+ */
+const std::vector<VerticalLevel> &MapScript::getVerticalLevels() const
+{
+	return _verticalLevels;
+}
+
+/**
+ * For use only with base defense maps as a special case,
+ * set _verticalLevels directly for a new MapScript
+ * @param verticalLevels the vector of VerticalLevels
+ */
+void MapScript::setVerticalLevels(const std::vector<VerticalLevel> &verticalLevels)
+{
+	_verticalLevels = verticalLevels;
 }
 
 }

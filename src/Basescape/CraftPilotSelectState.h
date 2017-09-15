@@ -1,6 +1,5 @@
-#pragma once
 /*
- * Copyright 2010-2016 OpenXcom Developers.
+ * Copyright 2010-2015 OpenXcom Developers.
  *
  * This file is part of OpenXcom.
  *
@@ -17,6 +16,9 @@
  * You should have received a copy of the GNU General Public License
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
+#ifndef OPENXCOM_CRAFTPILOTSELECTSTATE_H
+#define OPENXCOM_CRAFTPILOTSELECTSTATE_H
+
 #include <vector>
 #include "../Engine/State.h"
 
@@ -24,40 +26,37 @@ namespace OpenXcom
 {
 
 class Base;
-class Craft;
+class Soldier;
 class TextButton;
 class Window;
 class Text;
 class TextList;
-class RuleCraftWeapon;
 
 /**
- * Select Armament window for
- * changing the weapon equipped on a craft.
+ * Select Pilot window that allows assigning a pilot to a craft.
  */
-class CraftWeaponsState : public State
+class CraftPilotSelectState : public State
 {
 private:
 	Base *_base;
-	Craft *_craft;
-	size_t _weapon;
+	size_t _craft;
 
 	TextButton *_btnCancel;
 	Window *_window;
-	Text *_txtTitle, *_txtArmament, *_txtQuantity, *_txtAmmunition, *_txtCurrentWeapon;
-	TextList *_lstWeapons;
-	std::vector<RuleCraftWeapon*> _weapons;
+	Text *_txtTitle, *_txtName, *_txtFiringAcc, *_txtReactions, *_txtBravery;
+	TextList *_lstPilot;
+	std::vector<int> _pilot;
 public:
-	/// Creates the Craft Weapons state.
-	CraftWeaponsState(Base *base, size_t craft, size_t weapon);
-	/// Cleans up the Craft Weapons state.
-	~CraftWeaponsState();
+	/// Creates the Select Pilot state.
+	CraftPilotSelectState(Base *base, size_t craft);
+	/// Cleans up the Select Pilot state.
+	~CraftPilotSelectState();
 	/// Handler for clicking the Cancel button.
 	void btnCancelClick(Action *action);
-	/// Handler for clicking the Weapons list.
-	void lstWeaponsClick(Action *action);
-	/// Handler for middle clicking the Weapons list.
-	void lstWeaponsMiddleClick(Action *action);
+	/// Handler for clicking the Pilot list.
+	void lstPilotClick(Action *action);
 };
 
 }
+
+#endif

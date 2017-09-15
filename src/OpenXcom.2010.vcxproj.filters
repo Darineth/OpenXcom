@@ -958,6 +958,13 @@
     <ClCompile Include="Basescape\SoldierAvatarState.cpp" />
     <ClCompile Include="Savegame\SoldierAvatar.cpp" />
     <ClCompile Include="Mod\RuleItemCategory.cpp" />
+    <ClCompile Include="Basescape\CraftPilotSelectState.cpp" />
+    <ClCompile Include="Basescape\CraftPilotsState.cpp" />
+    <ClCompile Include="Basescape\TechTreeSelectState.cpp" />
+    <ClCompile Include="Basescape\TechTreeViewerState.cpp" />
+    <ClCompile Include="Mod\RuleStartingCondition.cpp" />
+    <ClCompile Include="Mod\RuleDamageType.cpp" />
+    <ClCompile Include="Mod\RuleStatBonus.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h" />
@@ -1958,6 +1965,14 @@
     <ClInclude Include="Basescape\SoldierAvatarState.h" />
     <ClInclude Include="Savegame\SoldierAvatar.h" />
     <ClInclude Include="Mod\RuleItemCategory.h" />
+    <ClInclude Include="Basescape\CraftPilotSelectState.h" />
+    <ClInclude Include="Basescape\CraftPilotsState.h" />
+    <ClInclude Include="Basescape\TechTreeSelectState.h" />
+    <ClInclude Include="Basescape\TechTreeViewerState.h" />
+    <ClInclude Include="Mod\RuleStartingCondition.h" />
+    <ClInclude Include="Mod\RuleDamageType.h" />
+    <ClInclude Include="Mod\RuleStatBonus.h" />
+    <ClInclude Include="Mod\ModScript.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Geoscape">

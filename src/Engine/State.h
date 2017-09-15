@@ -48,6 +48,7 @@ protected:
 	static Game *_game;
 	std::vector<Surface*> _surfaces;
 	bool _screen;
+	bool _soundPlayed;
 	InteractiveSurface *_modal;
 	RuleInterface *_ruleInterface;
 	RuleInterface *_ruleInterfaceParent;
@@ -86,6 +87,8 @@ public:
 	/// Get the localized text.
 	const LocalizedText &tr(const std::string &id) const;
 	/// Get the localized text.
+	const LocalizedText &trAlt(const std::string &id, int alt) const;
+	/// Get the localized text.
 	LocalizedText tr(const std::string &id, unsigned n) const;
 	/// redraw all the text-type surfaces.
 	void redrawText();
@@ -103,6 +106,8 @@ public:
 	void setPalette(SDL_Color *colors, int firstcolor = 0, int ncolors = 256, bool immediately = true);
 	/// Changes the state's 8bpp palette with certain resources.
 	void setPalette(const std::string &palette, int backpals = -1);
+	/// Changes the state's 8bpp palette with certain resources.
+	void setCustomPalette(SDL_Color *colors, int cursorColor);
 	/// Gets the state's 8bpp palette.
 	SDL_Color *getPalette();
 	/// Let the state know the window has been resized.

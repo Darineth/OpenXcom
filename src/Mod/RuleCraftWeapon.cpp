@@ -26,7 +26,12 @@ namespace OpenXcom
  * Creates a blank ruleset for a certain type of craft weapon.
  * @param type String defining the type.
  */
-RuleCraftWeapon::RuleCraftWeapon(const std::string &type) : _type(type), _sprite(-1), _sound(-1), _damage(0), _range(0), _accuracy(0), _reloadCautious(0), _reloadStandard(0), _reloadAggressive(0), _ammoMax(0), _rearmRate(1), _projectileSpeed(0), _projectileType(CWPT_CANNON_ROUND), _underwaterOnly(false)
+RuleCraftWeapon::RuleCraftWeapon(const std::string &type) :
+	_type(type), _sprite(-1), _sound(-1), _damage(0), _shieldDamageModifier(100), _range(0), _accuracy(0),
+	_reloadCautious(0), _reloadStandard(0), _reloadAggressive(0), _ammoMax(0),
+	_rearmRate(1), _projectileSpeed(0), _weaponType(0), _projectileType(CWPT_CANNON_ROUND),
+	_stats(), _underwaterOnly(false),
+	_tractorBeamPower(0)
 {
 }
 
@@ -48,6 +53,10 @@ void RuleCraftWeapon::load(const YAML::Node &node, Mod *mod)
 	{
 		load(parent, mod);
 	}
+	if (node["stats"])
+	{
+		_stats.load(node["stats"]);
+	}
 	_type = node["type"].as<std::string>(_type);
 	if (node["sprite"])
 	{
@@ -61,6 +70,7 @@ void RuleCraftWeapon::load(const YAML::Node &node, Mod *mod)
 		_sound = mod->getSoundOffset(node["sound"].as<int>(_sound), "GEO.CAT");
 	}
 	_damage = node["damage"].as<int>(_damage);
+	_shieldDamageModifier = node["shieldDamageModifier"].as<int>(_shieldDamageModifier);
 	_range = node["range"].as<int>(_range);
 	_accuracy = node["accuracy"].as<int>(_accuracy);
 	_reloadCautious = node["reloadCautious"].as<int>(_reloadCautious);
@@ -72,7 +82,9 @@ void RuleCraftWeapon::load(const YAML::Node &node, Mod *mod)
 	_projectileSpeed = node["projectileSpeed"].as<int>(_projectileSpeed);
 	_launcher = node["launcher"].as<std::string>(_launcher);
 	_clip = node["clip"].as<std::string>(_clip);
+	_weaponType = node["weaponType"].as<int>(_weaponType);
 	_underwaterOnly = node["underwaterOnly"].as<bool>(_underwaterOnly);
+	_tractorBeamPower = node["tractorBeamPower"].as<int>(_tractorBeamPower);
 }
 
 /**
@@ -113,6 +125,15 @@ int RuleCraftWeapon::getSound() const
 int RuleCraftWeapon::getDamage() const
 {
 	return _damage;
+}
+
+/**
+ * Gets the percent effectiveness of this craft weapon against shields
+ * @return modifier to damage against shields
+ */
+int RuleCraftWeapon::getShieldDamageModifier() const
+{
+	return _shieldDamageModifier;
 }
 
 /**
@@ -223,12 +244,38 @@ int RuleCraftWeapon::getProjectileSpeed() const
 }
 
 /**
+ * Gets weapon type used by craft slots.
+ * @return What type of slot is valid to equip this weapon.
+ */
+int RuleCraftWeapon::getWeaponType() const
+{
+	return _weaponType;
+}
+
+/**
+ * Gets bonus stats given by this weapon.
+ */
+const RuleCraftStats& RuleCraftWeapon::getBonusStats() const
+{
+	return _stats;
+}
+
+/**
  * Can this item be used on land or is it underwater only?
  * @return if this is an underwater weapon or not.
  */
 bool RuleCraftWeapon::isWaterOnly() const
 {
 	return _underwaterOnly;
+}
+
+/**
+ * Get the craft weapon's tractor beam power
+ * @return The tractor beam power.
+ */
+int RuleCraftWeapon::getTractorBeamPower() const
+{
+	return _tractorBeamPower;
 }
 
 }

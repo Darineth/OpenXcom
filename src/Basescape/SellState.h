@@ -30,10 +30,12 @@ namespace OpenXcom
 class TextButton;
 class Window;
 class Text;
+class TextEdit;
 class TextList;
 class ComboBox;
 class Timer;
 class Base;
+class DebriefingState;
 
 /**
  * Sell/Sack screen that lets the player sell
@@ -43,7 +45,9 @@ class SellState : public State
 {
 private:
 	Base *_base;
-	TextButton *_btnOk, *_btnCancel;
+	DebriefingState *_debriefingState;
+	TextButton *_btnOk, *_btnCancel, *_btnTransfer;
+	TextEdit *_btnQuickSearch;
 	Window *_window;
 	Text *_txtTitle, *_txtSales, *_txtFunds, *_txtQuantity, *_txtSell, *_txtValue, *_txtSpaceUsed;
 	ComboBox *_cbxCategory;
@@ -58,15 +62,20 @@ private:
 	Timer *_timerInc, *_timerDec;
 	Uint8 _ammoColor;
 	OptionsOrigin _origin;
+	bool _reset;
 	/// Gets the category of the current selection.
 	std::string getCategory(int sel) const;
+	/// Determines if the current selection belongs to a given category.
+	bool belongsToCategory(int sel, const std::string &cat) const;
 	/// Gets the row of the current selection.
 	TransferRow &getRow() { return _items[_rows[_sel]]; }
 public:
 	/// Creates the Sell state.
-	SellState(Base *base, OptionsOrigin origin = OPT_GEOSCAPE);
+	SellState(Base *base, DebriefingState *debriefingState, OptionsOrigin origin = OPT_GEOSCAPE);
 	/// Cleans up the Sell state.
 	~SellState();
+	/// Resets state.
+	void init();
 	/// Runs the timers.
 	void think();
 	/// Updates the item list.
@@ -75,6 +84,13 @@ public:
 	void btnOkClick(Action *action);
 	/// Handler for clicking the Cancel button.
 	void btnCancelClick(Action *action);
+	/// Handler for clicking the Transfer button.
+	void btnTransferClick(Action *action);
+	/// Handlers for Quick Search.
+	void btnQuickSearchToggle(Action *action);
+	void btnQuickSearchApply(Action *action);
+	/// Handler for pressing the "Sell all" hotkey.
+	void btnSellAllClick(Action *action);
 	/// Handler for pressing an Increase arrow in the list.
 	void lstItemsLeftArrowPress(Action *action);
 	/// Handler for releasing an Increase arrow in the list.

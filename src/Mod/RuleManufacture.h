@@ -40,32 +40,46 @@ class RuleManufacture
 {
 private:
 	std::string _name, _category;
-	std::vector<std::string> _requires;
+	std::string _spawnedPersonType, _spawnedPersonName;
+	std::vector<std::string> _requires, _requiresBaseFunc;
 	int _space, _time, _cost;
+	bool _refund;
 	std::map<std::string, int> _requiredItems, _producedItems;
 	int _listOrder;
 public:
+	static const int MANU_STATUS_NEW = 0;
+	static const int MANU_STATUS_NORMAL = 1;
+	static const int MANU_STATUS_HIDDEN = 2;
+	static const int MANU_STATUSES = 3;
 	/// Creates a new manufacture.
 	RuleManufacture(const std::string &name);
 	/// Loads the manufacture from YAML.
 	void load(const YAML::Node& node, int listOrder);
 	/// Gets the manufacture name.
-	std::string getName() const;
+	const std::string &getName() const;
 	/// Gets the manufacture category.
-	std::string getCategory() const;
+	const std::string &getCategory() const;
 	/// Gets the manufacture's requirements.
 	const std::vector<std::string> &getRequirements() const;
+	/// Gets the base requirements.
+	const std::vector<std::string> &getRequireBaseFunc() const;
 	/// Gets the required workshop space.
 	int getRequiredSpace() const;
 	/// Gets the time required to manufacture one object.
 	int getManufactureTime() const;
 	/// Gets the cost of manufacturing one object.
 	int getManufactureCost() const;
+	/// Should all resources of a cancelled project be refunded?
+	bool getRefund() const;
 	/// Gets the list of items required to manufacture one object.
-	const std::map<std::string, int> & getRequiredItems() const;
+	const std::map<std::string, int> &getRequiredItems() const;
 	/// Gets the list of items produced by completing "one object" of this project.
 	/// by default: it contains only the "name" item with a value of 1.
-	const std::map<std::string, int> & getProducedItems() const;
+	const std::map<std::string, int> &getProducedItems() const;
+	/// Gets the "manufactured person", i.e. person spawned when manufacturing project ends.
+	const std::string &getSpawnedPersonType() const;
+	/// Gets the custom name of the "manufactured person".
+	const std::string &getSpawnedPersonName() const;
 	/// Gets the list weight for this manufacture item.
 	int getListOrder() const;
 };

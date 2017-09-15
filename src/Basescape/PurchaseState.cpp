@@ -22,6 +22,7 @@
 #include <climits>
 #include <cfloat>
 #include <iomanip>
+#include <algorithm>
 #include "../fmath.h"
 #include "../Engine/Game.h"
 #include "../Mod/Mod.h"
@@ -31,6 +32,7 @@
 #include "../Interface/TextButton.h"
 #include "../Interface/Window.h"
 #include "../Interface/Text.h"
+#include "../Interface/TextEdit.h"
 #include "../Interface/ComboBox.h"
 #include "../Interface/TextList.h"
 #include "../Savegame/SavedGame.h"
@@ -46,6 +48,7 @@
 #include "../Mod/RuleSoldier.h"
 #include "../Mod/RuleCraftWeapon.h"
 #include "../Mod/Armor.h"
+#include "../Ufopaedia/Ufopaedia.h"
 
 namespace OpenXcom
 {
@@ -59,6 +62,7 @@ PurchaseState::PurchaseState(Base *base) : _base(base), _sel(0), _total(0), _pQt
 {
 	// Create objects
 	_window = new Window(this, 320, 200, 0, 0);
+	_btnQuickSearch = new TextEdit(this, 48, 9, 10, 13);
 	_btnOk = new TextButton(148, 16, 8, 176);
 	_btnCancel = new TextButton(148, 16, 164, 176);
 	_txtTitle = new Text(310, 17, 5, 8);
@@ -69,7 +73,6 @@ PurchaseState::PurchaseState(Base *base) : _base(base), _sel(0), _total(0), _pQt
 	_txtCost = new Text(102, 9, 152, 46);
 	_txtQuantity = new Text(60, 9, 256, 46);
 	_cbxCategory = new ComboBox(this, 110, 16, 10, 37);
-	_lstItems = new TextList(287, 120, 8, 54);
 	_lstItems = new TextList(287, 112, 8, 55);
 
 	// Set palette
@@ -78,6 +81,7 @@ PurchaseState::PurchaseState(Base *base) : _base(base), _sel(0), _total(0), _pQt
 	_ammoColor = _game->getMod()->getInterface("buyMenu")->getElement("ammoColor")->color;
 
 	add(_window, "window", "buyMenu");
+	add(_btnQuickSearch, "button", "buyMenu");
 	add(_btnOk, "button", "buyMenu");
 	add(_btnCancel, "button", "buyMenu");
 	add(_txtTitle, "text", "buyMenu");
@@ -159,7 +163,7 @@ PurchaseState::PurchaseState(Base *base) : _base(base), _sel(0), _total(0), _pQt
 		RuleSoldier *rule = _game->getMod()->getSoldier(*i);
 		if (rule->getBuyCost() != 0 && _game->getSavedGame()->isResearched(rule->getRequirements()))
 		{
-			TransferRow row = { TRANSFER_SOLDIER, rule, tr(rule->getType()), rule->getBuyCost(), _base->getSoldierCount(rule->getType()), 0, 0 };
+			TransferRow row = { TRANSFER_SOLDIER, rule, tr(rule->getType()), rule->getBuyCost(), _base->getSoldierCountAndSalary(rule->getType()).first, 0, 0 };
 			_items.push_back(row);
 			std::string cat = getCategory(_items.size() - 1);
 			if (std::find(_cats.begin(), _cats.end(), cat) == _cats.end())
@@ -169,7 +173,7 @@ PurchaseState::PurchaseState(Base *base) : _base(base), _sel(0), _total(0), _pQt
 		}
 	}
 	{
-		TransferRow row = { TRANSFER_SCIENTIST, 0, tr("STR_SCIENTIST"), _game->getMod()->getScientistCost() * 2, _base->getTotalScientists(), 0, 0 };
+		TransferRow row = { TRANSFER_SCIENTIST, 0, tr("STR_SCIENTIST"), _game->getMod()->getHireScientistCost(), _base->getTotalScientists(), 0, 0 };
 		_items.push_back(row);
 		std::string cat = getCategory(_items.size() - 1);
 		if (std::find(_cats.begin(), _cats.end(), cat) == _cats.end())
@@ -178,7 +182,7 @@ PurchaseState::PurchaseState(Base *base) : _base(base), _sel(0), _total(0), _pQt
 		}
 	}
 	{
-		TransferRow row = { TRANSFER_ENGINEER, 0, tr("STR_ENGINEER"), _game->getMod()->getEngineerCost() * 2, _base->getTotalEngineers(), 0, 0 };
+		TransferRow row = { TRANSFER_ENGINEER, 0, tr("STR_ENGINEER"), _game->getMod()->getHireEngineerCost(), _base->getTotalEngineers(), 0, 0 };
 		_items.push_back(row);
 		std::string cat = getCategory(_items.size() - 1);
 		if (std::find(_cats.begin(), _cats.end(), cat) == _cats.end())
@@ -205,7 +209,7 @@ PurchaseState::PurchaseState(Base *base) : _base(base), _sel(0), _total(0), _pQt
 	for (std::vector<std::string>::const_iterator i = items.begin(); i != items.end(); ++i)
 	{
 		RuleItem *rule = _game->getMod()->getItem(*i);
-		if (rule->getBuyCost() != 0 && _game->getSavedGame()->isResearched(rule->getRequirements()))
+		if (rule->getBuyCost() != 0 && _game->getSavedGame()->isResearched(rule->getRequirements()) && _game->getSavedGame()->isResearched(rule->getBuyRequirements()))
 		{
 			TransferRow row = { TRANSFER_ITEM, rule, tr(rule->getType()), rule->getBuyCost(), _base->getStorageItems()->getItem(rule->getType()), 0, 0 };
 			_items.push_back(row);
@@ -217,8 +221,45 @@ PurchaseState::PurchaseState(Base *base) : _base(base), _sel(0), _total(0), _pQt
 		}
 	}
 
+	if (_game->getMod()->getUseCustomCategories())
+	{
+		// first find all relevant item categories
+		std::vector<std::string> tempCats;
+		for (std::vector<TransferRow>::iterator i = _items.begin(); i != _items.end(); ++i)
+		{
+			if ((*i).type == TRANSFER_ITEM)
+			{
+				RuleItem *rule = (RuleItem*)((*i).rule);
+				for (std::vector<std::string>::const_iterator j = rule->getCategories().begin(); j != rule->getCategories().end(); ++j)
+				{
+					if (std::find(tempCats.begin(), tempCats.end(), (*j)) == tempCats.end())
+					{
+						tempCats.push_back((*j));
+					}
+				}
+			}
+		}
+		// then use them nicely in order
+		_cats.clear();
+		_cats.push_back("STR_ALL_ITEMS");
+		const std::vector<std::string> &categories = _game->getMod()->getItemCategoriesList();
+		for (std::vector<std::string>::const_iterator k = categories.begin(); k != categories.end(); ++k)
+		{
+			if (std::find(tempCats.begin(), tempCats.end(), (*k)) != tempCats.end())
+			{
+				_cats.push_back((*k));
+			}
+		}
+	}
+
 	_cbxCategory->setOptions(_cats);
 	_cbxCategory->onChange((ActionHandler)&PurchaseState::cbxCategoryChange);
+
+	_btnQuickSearch->setText(L""); // redraw
+	_btnQuickSearch->onEnter((ActionHandler)&PurchaseState::btnQuickSearchApply);
+	_btnQuickSearch->setVisible(false);
+
+	_btnOk->onKeyboardRelease((ActionHandler)&PurchaseState::btnQuickSearchToggle, Options::keyToggleQuickSearch);
 
 	updateList();
 
@@ -238,8 +279,8 @@ PurchaseState::~PurchaseState()
 }
 
 /**
-* Runs the arrow timers.
-*/
+ * Runs the arrow timers.
+ */
 void PurchaseState::think()
 {
 	State::think();
@@ -288,19 +329,95 @@ std::string PurchaseState::getCategory(int sel) const
 }
 
 /**
+ * Determines if a row item belongs to a given category.
+ * @param sel Selected row.
+ * @param cat Category.
+ * @returns True if row item belongs to given category, otherwise False.
+ */
+bool PurchaseState::belongsToCategory(int sel, const std::string &cat) const
+{
+	switch (_items[sel].type)
+	{
+	case TRANSFER_SOLDIER:
+	case TRANSFER_SCIENTIST:
+	case TRANSFER_ENGINEER:
+	case TRANSFER_CRAFT:
+		return false;
+	case TRANSFER_ITEM:
+		RuleItem *rule = (RuleItem*)_items[sel].rule;
+		return rule->belongsToCategory(cat);
+	}
+	return false;
+}
+
+/**
+* Quick search toggle.
+* @param action Pointer to an action.
+*/
+void PurchaseState::btnQuickSearchToggle(Action *action)
+{
+	if (_btnQuickSearch->getVisible())
+	{
+		_btnQuickSearch->setText(L"");
+		_btnQuickSearch->setVisible(false);
+		btnQuickSearchApply(action);
+	}
+	else
+	{
+		_btnQuickSearch->setVisible(true);
+		_btnQuickSearch->setFocus(true);
+	}
+}
+
+/**
+* Quick search.
+* @param action Pointer to an action.
+*/
+void PurchaseState::btnQuickSearchApply(Action *)
+{
+	updateList();
+}
+
+/**
  * Filters the current list of items.
  */
 void PurchaseState::updateList()
 {
+	std::wstring searchString = _btnQuickSearch->getText();
+	for (auto & c : searchString) c = towupper(c);
+
 	_lstItems->clearList();
 	_rows.clear();
 	for (size_t i = 0; i < _items.size(); ++i)
 	{
+		// filter
 		std::string cat = _cats[_cbxCategory->getSelected()];
-		if (cat != "STR_ALL_ITEMS" && cat != getCategory(i))
+		if (_game->getMod()->getUseCustomCategories())
 		{
-			continue;
+			if (cat != "STR_ALL_ITEMS" && !belongsToCategory(i, cat))
+			{
+				continue;
+			}
 		}
+		else
+		{
+			if (cat != "STR_ALL_ITEMS" && cat != getCategory(i))
+			{
+				continue;
+			}
+		}
+
+		// quick search
+		if (searchString != L"")
+		{
+			std::wstring projectName = _items[i].name;
+			for (auto & c : projectName) c = towupper(c);
+			if (projectName.find(searchString) == std::string::npos)
+			{
+				continue;
+			}
+		}
+
 		std::wstring name = _items[i].name;
 		bool ammo = false;
 		if (_items[i].type == TRANSFER_ITEM)
@@ -498,6 +615,27 @@ void PurchaseState::lstItemsMousePress(Action *action)
 			decreaseByValue(Options::changeValueByMouseWheel);
 		}
 	}
+	else if (action->getDetails()->button.button == SDL_BUTTON_MIDDLE)
+	{
+		if (getRow().type == TRANSFER_ITEM)
+		{
+			RuleItem *rule = (RuleItem*)getRow().rule;
+			if (rule != 0)
+			{
+				std::string articleId = rule->getType();
+				Ufopaedia::openArticle(_game, articleId);
+			}
+		}
+		else if (getRow().type == TRANSFER_CRAFT)
+		{
+			RuleCraft *rule = (RuleCraft*)getRow().rule;
+			if (rule != 0)
+			{
+				std::string articleId = rule->getType();
+				Ufopaedia::openArticle(_game, articleId);
+			}
+		}
+	}
 }
 
 /**
@@ -580,7 +718,7 @@ void PurchaseState::increaseByValue(int change)
 			double storesNeededPerItem = rule->getSize();
 			double freeStores = _base->getAvailableStores() - _base->getUsedStores() - _iQty;
 			double maxByStores = (double)(INT_MAX);
-			if (!AreSame(storesNeededPerItem, 0.0))
+			if (!AreSame(storesNeededPerItem, 0.0) && storesNeededPerItem > 0.0)
 			{
 				maxByStores = (freeStores + 0.05) / storesNeededPerItem;
 			}

@@ -19,7 +19,9 @@
  */
 #include <string>
 #include <vector>
+#include <map>
 #include <yaml-cpp/yaml.h>
+#include "MapScript.h"
 
 namespace OpenXcom
 {
@@ -36,14 +38,20 @@ class RuleBaseFacility
 {
 private:
 	std::string _type;
-	std::vector<std::string> _requires;
+	std::vector<std::string> _requires, _requiresBaseFunc, _provideBaseFunc, _forbiddenBaseFunc;
 	int _spriteShape, _spriteFacility;
 	bool _lift, _hyper, _mind, _grav;
-	int _size, _buildCost, _buildTime, _monthlyCost;
+	int _size, _buildCost, _refundValue, _buildTime, _monthlyCost;
+	std::map<std::string, std::pair<int, int> > _buildCostItems;
 	int _storage, _personnel, _aliens, _crafts, _labs, _workshops, _psiLabs;
 	int _radarRange, _radarChance, _defense, _hitRatio, _fireSound, _hitSound;
 	std::string _mapName;
 	int _listOrder, _trainingRooms;
+	int _maxAllowedPerBase;
+	float _sickBayAbsoluteBonus, _sickBayRelativeBonus;
+	int _prisonType;
+	int _rightClickActionType;
+	std::vector<VerticalLevel> _verticalLevels;
 public:
 	/// Creates a blank facility ruleset.
 	RuleBaseFacility(const std::string &type);
@@ -55,6 +63,12 @@ public:
 	std::string getType() const;
 	/// Gets the facility's requirements.
 	const std::vector<std::string> &getRequirements() const;
+	/// Gets the facility's required function in base to build.
+	const std::vector<std::string> &getRequireBaseFunc() const;
+	/// Gets the functions that facility provide in base.
+	const std::vector<std::string> &getProvidedBaseFunc() const;
+	/// Gets the functions that facility prevent in base.
+	const std::vector<std::string> &getForbiddenBaseFunc() const;
 	/// Gets the facility's shape sprite.
 	int getSpriteShape() const;
 	/// Gets the facility's content sprite.
@@ -71,6 +85,10 @@ public:
 	bool isGravShield() const;
 	/// Gets the facility's construction cost.
 	int getBuildCost() const;
+	/// Gets the facility's refund value.
+	int getRefundValue() const;
+	/// Gets the facility's construction cost in items, `first` is build cost, `second` is refund.
+	const std::map<std::string, std::pair<int, int> >& getBuildCostItems() const;
 	/// Gets the facility's construction time.
 	int getBuildTime() const;
 	/// Gets the facility's monthly cost.
@@ -107,6 +125,18 @@ public:
 	int getListOrder() const;
 	/// Gets the facility's training capacity.
 	int getTrainingFacilities() const;
+	/// Gets the maximum allowed number of facilities per base.
+	int getMaxAllowedPerBase() const;
+	/// Gets the facility's bonus to hp healed.
+	float getSickBayAbsoluteBonus() const;
+	/// Gets the facility's bonus to hp healed (as percentage of max hp of the soldier).
+	float getSickBayRelativeBonus() const;
+	/// Gets the prison type.
+	int getPrisonType() const;
+	/// Gets the action type to perform on right click.
+	int getRightClickActionType() const;
+	/// Gets the vertical levels for this facility map generation.
+	const std::vector<VerticalLevel> &getVerticalLevels() const;
 };
 
 }

@@ -126,20 +126,52 @@ MonthlyCostsState::MonthlyCostsState(Base *base) : _base(base)
 	_lstSalaries->setDot(true);
 
 	const std::vector<std::string> &soldiers = _game->getMod()->getSoldiersList();
+
+	bool dynamicSalaries = false;
 	for (std::vector<std::string>::const_iterator i = soldiers.begin(); i != soldiers.end(); ++i)
 	{
-		RuleSoldier *soldier = _game->getMod()->getSoldier(*i);
-		if (soldier->getBuyCost() != 0 && _game->getSavedGame()->isResearched(soldier->getRequirements()))
+		if (_game->getMod()->getSoldier(*i)->isSalaryDynamic())
 		{
-			std::wostringstream ss4;
-			ss4 << _base->getSoldierCount(*i);
-			std::string name = (*i);
-			if (soldiers.size() == 1)
-			{
-				name = "STR_SOLDIERS";
-			}
-			_lstSalaries->addRow(4, tr(name).c_str(), Text::formatFunding(soldier->getSalaryCost()).c_str(), ss4.str().c_str(), Text::formatFunding(_base->getSoldierCount(*i) * soldier->getSalaryCost()).c_str());
+			dynamicSalaries = true;
+			break;
 		}
+	}
+
+	if (!dynamicSalaries)
+	{
+		// vanilla
+		for (std::vector<std::string>::const_iterator i = soldiers.begin(); i != soldiers.end(); ++i)
+		{
+			RuleSoldier *soldier = _game->getMod()->getSoldier(*i);
+			if (soldier->getBuyCost() != 0 && _game->getSavedGame()->isResearched(soldier->getRequirements()))
+			{
+				std::pair<int, int> info = _base->getSoldierCountAndSalary(*i);
+				std::wostringstream ss4;
+				ss4 << info.first;
+				std::string name = (*i);
+				if (soldiers.size() == 1)
+				{
+					name = "STR_SOLDIERS";
+				}
+				std::wstring costPerUnit = Text::formatFunding(soldier->getSalaryCost(0)); // 0 = default rookie salary
+				_lstSalaries->addRow(4, tr(name).c_str(), costPerUnit.c_str(), ss4.str().c_str(), Text::formatFunding(info.second).c_str());
+			}
+		}
+	}
+	else
+	{
+		// one or more soldier types with *different* salaries per rank
+		std::wostringstream ss4;
+		int count = 0;
+		int salary = 0;
+		for (std::vector<std::string>::const_iterator i = soldiers.begin(); i != soldiers.end(); ++i)
+		{
+			std::pair<int, int> info = _base->getSoldierCountAndSalary(*i);
+			count += info.first;
+			salary += info.second;
+		}
+		ss4 << count;
+		_lstSalaries->addRow(4, tr("STR_SOLDIERS").c_str(), L"", ss4.str().c_str(), Text::formatFunding(salary).c_str());
 	}
 	std::wostringstream ss5;
 	ss5 << _base->getTotalEngineers();
@@ -147,11 +179,14 @@ MonthlyCostsState::MonthlyCostsState(Base *base) : _base(base)
 	std::wostringstream ss6;
 	ss6 << _base->getTotalScientists();
 	_lstSalaries->addRow(4, tr("STR_SCIENTISTS").c_str(), Text::formatFunding(_game->getMod()->getScientistCost()).c_str(), ss6.str().c_str(), Text::formatFunding(_base->getTotalScientists() * _game->getMod()->getScientistCost()).c_str());
+	std::wostringstream ss6b;
+	ss6b << _base->getTotalOtherEmployees();
+	_lstSalaries->addRow(4, tr("STR_OTHER_EMPLOYEES").c_str(), L"", ss6b.str().c_str(), Text::formatFunding(_base->getTotalOtherEmployeeCost()).c_str());
 
 	_lstMaintenance->setColumns(2, 239, 60);
 	_lstMaintenance->setDot(true);
 	std::wostringstream ss7;
-	ss7 << L'\x01' << Text::formatFunding(_base->getFacilityMaintenance());
+	ss7 << L'\x01' << Text::formatFunding(_base->getFacilityMaintenance() + _base->getItemMaintenance());
 	_lstMaintenance->addRow(2, tr("STR_BASE_MAINTENANCE").c_str(), ss7.str().c_str());
 
 	_lstTotal->setColumns(2, 44, 55);

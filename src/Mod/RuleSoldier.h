@@ -27,6 +27,7 @@ namespace OpenXcom
 
 class Mod;
 class SoldierNamePool;
+class StatString;
 
 /**
  * Represents the creation data for an X-COM unit.
@@ -38,15 +39,17 @@ class RuleSoldier
 private:
 	std::string _type;
 	std::vector<std::string> _requires;
-	UnitStats _minStats, _maxStats, _statCaps, _trainingStatCaps;
+	UnitStats _minStats, _maxStats, _statCaps, _trainingStatCaps, _dogfightExperience;
 	std::string _armor;
-	int _costBuy, _costSalary, _standHeight, _kneelHeight, _floatHeight, _femaleFrequency;
+	int _costBuy, _costSalary, _costSalarySquaddie, _costSalarySergeant, _costSalaryCaptain, _costSalaryColonel, _costSalaryCommander;
+	int _standHeight, _kneelHeight, _floatHeight, _femaleFrequency;
 	std::vector<int> _deathSoundMale, _deathSoundFemale;
 	std::vector<SoldierNamePool*> _names;
 	bool _isVehicle;
 	std::string _armorForAvatar;
 	int _avatarOffsetX, _avatarOffsetY, _flagOffset;
-	bool _allowPromotion;
+	bool _allowPromotion, _allowPiloting;
+	std::vector<StatString*> _statStrings;
 	std::string _inventoryLayout;
 	std::vector<int> _levelExperience;
 
@@ -70,10 +73,14 @@ public:
 	UnitStats getStatCaps() const;
 	/// Gets the training stat caps.
 	UnitStats getTrainingStatCaps() const;
+	/// Gets the improvement chances for pilots (after dogfight).
+	UnitStats getDogfightExperience() const;
 	/// Gets the cost of the soldier.
 	int getBuyCost() const;
-	/// Gets the monthly salary of the soldier.
-	int getSalaryCost() const;
+	/// Does salary depend on rank?
+	bool isSalaryDynamic() const;
+	/// Gets the monthly salary of the soldier (for a given rank).
+	int getSalaryCost(int rank) const;
 	/// Gets the height of the soldier when it's standing.
 	int getStandHeight() const;
 	/// Gets the height of the soldier when it's kneeling.
@@ -92,6 +99,8 @@ public:
 	int getFlagOffset() const;
 	/// Gets the allow promotion flag.
 	bool getAllowPromotion() const;
+	/// Gets the allow piloting flag.
+	bool getAllowPiloting() const;
 	/// Gets the female appearance ratio.
 	int getFemaleFrequency() const;
 	/// Gets the soldier's male death sounds.
@@ -100,6 +109,8 @@ public:
 	const std::vector<int> &getFemaleDeathSounds() const;
 	/// Gets the pool list for soldier names.
 	const std::vector<SoldierNamePool*> &getNames() const;
+	/// Gets the list of StatStrings.
+	const std::vector<StatString *> &getStatStrings() const;
 	/// Gets if the soldier is a vehicle.
 	bool isVehicle() const;
 	const std::string &getInventoryLayout() const;

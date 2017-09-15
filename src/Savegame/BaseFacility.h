@@ -39,6 +39,7 @@ private:
 	RuleBaseFacility *_rules;
 	Base *_base;
 	int _x, _y, _buildTime;
+	bool _disabled;
 	Craft *_craftForDrawing;	// craft, used for drawing facility
 public:
 	/// Creates a base facility of the specified type.
@@ -67,6 +68,10 @@ public:
 	void build();
 	/// Checks if the facility is currently in use.
 	bool inUse() const;
+	/// Checks if the facility is disabled.
+	bool getDisabled() const;
+	/// Sets the facility's disabled flag.
+	void setDisabled(bool disabled);
 	/// Gets craft, used for drawing facility.
 	Craft *getCraft() const;
 	/// Sets craft, used for drawing facility.

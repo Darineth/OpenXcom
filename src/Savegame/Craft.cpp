@@ -27,14 +27,17 @@
 #include "SavedGame.h"
 #include "ItemContainer.h"
 #include "Soldier.h"
+#include "../Mod/RuleSoldier.h"
 #include "Base.h"
 #include "Ufo.h"
 #include "Waypoint.h"
 #include "MissionSite.h"
 #include "AlienBase.h"
 #include "Vehicle.h"
+#include "../Mod/Armor.h"
 #include "../Mod/RuleItem.h"
 #include "../Mod/AlienDeployment.h"
+#include "SerializationHelper.h"
 #include "../Engine/Logger.h"
 
 namespace OpenXcom
@@ -47,14 +50,20 @@ namespace OpenXcom
  * @param base Pointer to base of origin.
  * @param id ID to assign to the craft (0 to not assign).
  */
-Craft::Craft(RuleCraft *rules, Base *base, int id) : MovingTarget(), _rules(rules), _base(base), _id(0), _fuel(0), _damage(0), _interceptionOrder(0), _takeoff(0), _status("STR_READY"), _lowFuel(false), _mission(false), _inBattlescape(false), _inDogfight(false)
+Craft::Craft(RuleCraft *rules, Base *base, int id) : MovingTarget(),
+	_rules(rules), _base(base), _id(0), _fuel(0), _damage(0), _shield(0),
+	_interceptionOrder(0), _takeoff(0), _weapons(),
+	_status("STR_READY"), _lowFuel(false), _mission(false),
+	_inBattlescape(false), _inDogfight(false), _stats(),
+	_isAutoPatrolling(false), _lonAuto(0.0), _latAuto(0.0)
 {
+	_stats = rules->getStats();
 	_items = new ItemContainer();
 	if (id != 0)
 	{
 		_id = id;
 	}
-	for (unsigned int i = 0; i < _rules->getWeapons(); ++i)
+	for (int i = 0; i < _rules->getWeapons(); ++i)
 	{
 		_weapons.push_back(0);
 	}
@@ -92,18 +101,21 @@ void Craft::load(const YAML::Node &node, const Mod *mod, SavedGame *save)
 	_id = node["id"].as<int>(_id);
 	_fuel = node["fuel"].as<int>(_fuel);
 	_damage = node["damage"].as<int>(_damage);
+	_shield = node["shield"].as<int>(_shield);
 
-	size_t j = 0;
+	int j = 0;
 	for (YAML::const_iterator i = node["weapons"].begin(); i != node["weapons"].end(); ++i)
 	{
 		if (_rules->getWeapons() > j)
 		{
 			std::string type = (*i)["type"].as<std::string>();
-			if (type != "0" && mod->getCraftWeapon(type))
+			RuleCraftWeapon* weapon = mod->getCraftWeapon(type);
+			if (type != "0" && weapon)
 			{
-				CraftWeapon *w = new CraftWeapon(mod->getCraftWeapon(type), 0);
+				CraftWeapon *w = new CraftWeapon(weapon, 0);
 				w->load(*i);
 				_weapons[j] = w;
+				_stats += weapon->getBonusStats();
 			}
 			else
 			{
@@ -205,6 +217,10 @@ void Craft::load(const YAML::Node &node, const Mod *mod, SavedGame *save)
 	}
 	_takeoff = node["takeoff"].as<int>(_takeoff);
 	_inBattlescape = node["inBattlescape"].as<bool>(_inBattlescape);
+	_isAutoPatrolling = node["isAutoPatrolling"].as<bool>(_isAutoPatrolling);
+	_lonAuto = node["lonAuto"].as<double>(_lonAuto);
+	_latAuto = node["latAuto"].as<double>(_latAuto);
+	_pilots = node["pilots"].as< std::vector<int> >(_pilots);
 	if (_inBattlescape)
 		setSpeed(0);
 }
@@ -220,6 +236,7 @@ YAML::Node Craft::save() const
 	node["id"] = _id;
 	node["fuel"] = _fuel;
 	node["damage"] = _damage;
+	node["shield"] = _shield;
 	for (std::vector<CraftWeapon*>::const_iterator i = _weapons.begin(); i != _weapons.end(); ++i)
 	{
 		YAML::Node subnode;
@@ -249,6 +266,14 @@ YAML::Node Craft::save() const
 		node["interceptionOrder"] = _interceptionOrder;
 	if (_takeoff != 0)
 		node["takeoff"] = _takeoff;
+	if (_isAutoPatrolling)
+		node["isAutoPatrolling"] = _isAutoPatrolling;
+	node["lonAuto"] = serializeDouble(_lonAuto);
+	node["latAuto"] = serializeDouble(_latAuto);
+	for (std::vector<int>::const_iterator i = _pilots.begin(); i != _pilots.end(); ++i)
+	{
+		node["pilots"].push_back((*i));
+	}
 	return node;
 }
 
@@ -293,7 +318,7 @@ void Craft::changeRules(RuleCraft *rules)
 {
 	_rules = rules;
 	_weapons.clear();
-	for (unsigned int i = 0; i < _rules->getWeapons(); ++i)
+	for (int i = 0; i < _rules->getWeapons(); ++i)
 	{
 		_weapons.push_back(0);
 	}
@@ -403,10 +428,40 @@ void Craft::setDestination(Target *dest)
 		_takeoff = 60;
 	}
 	if (dest == 0)
-		setSpeed(_rules->getMaxSpeed()/2);
+		setSpeed(_stats.speedMax/2);
 	else
-		setSpeed(_rules->getMaxSpeed());
+		setSpeed(_stats.speedMax);
 	MovingTarget::setDestination(dest);
+}
+
+bool Craft::getIsAutoPatrolling() const
+{
+	return _isAutoPatrolling;
+}
+
+void Craft::setIsAutoPatrolling(bool isAuto)
+{
+	_isAutoPatrolling = isAuto;
+}
+
+double Craft::getLongitudeAuto() const
+{
+	return _lonAuto;
+}
+
+void Craft::setLongitudeAuto(double lon)
+{
+	_lonAuto = lon;
+}
+
+double Craft::getLatitudeAuto() const
+{
+	return _latAuto;
+}
+
+void Craft::setLatitudeAuto(double lat)
+{
+	_latAuto = lat;
 }
 
 /**
@@ -446,10 +501,10 @@ int Craft::getNumSoldiers() const
 
 	int total = 0;
 
-	for (std::vector<Soldier*>::iterator i = _base->getSoldiers()->begin(); i != _base->getSoldiers()->end(); ++i)
+	for (Soldier *s : *_base->getSoldiers())
 	{
-		if ((*i)->getCraft() == this)
-			total++;
+		if (s->getCraft() == this && s->getArmor()->getSize() == 1)
+			++total;
 	}
 
 	return total;
@@ -472,7 +527,14 @@ int Craft::getNumEquipment() const
  */
 int Craft::getNumVehicles() const
 {
-	return _vehicles.size();
+	int total = 0;
+
+	for (Soldier *s : *_base->getSoldiers())
+	{
+		if (s->getCraft() == this && s->getArmor()->getSize() == 2)
+			++total;
+	}
+	return _vehicles.size() + total;
 }
 
 /**
@@ -505,6 +567,41 @@ std::vector<Vehicle*> *Craft::getVehicles()
 }
 
 /**
+ * Update stats of craft.
+ * @param s
+ */
+void Craft::addCraftStats(const RuleCraftStats& s)
+{
+	setDamage(_damage + s.damageMax); //you need "fix" new damage capability first before use.
+	_stats += s;
+
+	int overflowFuel = _fuel - _stats.fuelMax;
+	if (overflowFuel > 0 && !_rules->getRefuelItem().empty())
+	{
+		_base->getStorageItems()->addItem(_rules->getRefuelItem(), overflowFuel / _rules->getRefuelRate());
+	}
+	setFuel(_fuel);
+}
+
+/**
+ * Gets all basic stats of craft.
+ * @return Stats of craft
+ */
+const RuleCraftStats& Craft::getCraftStats() const
+{
+	return _stats;
+}
+
+/**
+ * Returns current max amount of fuel that craft can carry.
+ * @return Max amount of fuel.
+ */
+int Craft::getFuelMax() const
+{
+	return _stats.fuelMax;
+}
+
+/**
  * Returns the amount of fuel currently contained
  * in this craft.
  * @return Amount of fuel.
@@ -522,9 +619,9 @@ int Craft::getFuel() const
 void Craft::setFuel(int fuel)
 {
 	_fuel = fuel;
-	if (_fuel > _rules->getMaxFuel())
+	if (_fuel > _stats.fuelMax)
 	{
-		_fuel = _rules->getMaxFuel();
+		_fuel = _stats.fuelMax;
 	}
 	else if (_fuel < 0)
 	{
@@ -539,7 +636,16 @@ void Craft::setFuel(int fuel)
  */
 int Craft::getFuelPercentage() const
 {
-	return (int)floor((double)_fuel / _rules->getMaxFuel() * 100.0);
+	return (int)floor((double)_fuel / _stats.fuelMax * 100.0);
+}
+
+/**
+ * Return current max amount of damage this craft can take.
+ * @return Max amount of damage.
+ */
+int Craft::getDamageMax() const
+{
+	return _stats.damageMax;
 }
 
 /**
@@ -572,7 +678,43 @@ void Craft::setDamage(int damage)
  */
 int Craft::getDamagePercentage() const
 {
-	return (int)floor((double)_damage / _rules->getMaxDamage() * 100);
+	return (int)floor((double)_damage / _stats.damageMax * 100);
+}
+
+/**
+ * Gets the max shield capacity of this craft
+ * @return max shield capacity.
+ */
+int Craft::getShieldCapacity() const
+{
+	return _stats.shieldCapacity;
+}
+
+/**
+ * Gets the amount of shield this craft has remaining
+ * @return shield points remaining.
+ */
+int Craft::getShield() const
+{
+	return _shield;
+}
+
+/**
+ * Sets the amount of shield for this craft, capped at the capacity plus bonuses
+ * @param shield value to set the shield.
+ */
+void Craft::setShield(int shield)
+{
+	_shield = std::max(0, std::min(_stats.shieldCapacity, shield));
+}
+
+/**
+ * Returns the percentage of shields remaining out of the max capacity
+ * @return Percentage of shield
+ */
+int Craft::getShieldPercentage() const
+{
+	return _stats.shieldCapacity != 0 ? _shield * 100 / _stats.shieldCapacity : 0;
 }
 
 /**
@@ -721,9 +863,13 @@ void Craft::checkup()
 	{
 		_status = "STR_REARMING";
 	}
-	else
+	else if (_fuel < _stats.fuelMax)
 	{
 		_status = "STR_REFUELLING";
+	}
+	else
+	{
+		_status = "STR_READY";
 	}
 }
 
@@ -743,7 +889,7 @@ bool Craft::detect(Target *target) const
 		return true;
 
 	Ufo *u = dynamic_cast<Ufo*>(target);
-	int chance = _rules->getRadarChance() * (100 + u->getVisibility()) / 100;
+	int chance = _stats.radarChance * (100 + u->getVisibility()) / 100;
 	return RNG::percent(chance);
 }
 
@@ -755,7 +901,7 @@ bool Craft::detect(Target *target) const
  */
 bool Craft::insideRadarRange(Target *target) const
 {
-	double range = _rules->getRadarRange() * (1 / 60.0) * (M_PI / 180);
+	double range = _stats.radarRange * (1 / 60.0) * (M_PI / 180);
 	return (getDistance(target) <= range);
 }
 
@@ -766,6 +912,61 @@ bool Craft::insideRadarRange(Target *target) const
 void Craft::consumeFuel()
 {
 	setFuel(_fuel - getFuelConsumption());
+}
+
+/**
+ * Returns how long in hours until the
+ * craft is repaired.
+ */
+unsigned int Craft::calcRepairTime()
+{
+	unsigned int repairTime = 0;
+
+	if (_damage > 0)
+	{
+		repairTime = (int)ceil((double)_damage / _rules->getRepairRate());
+	}
+	return repairTime;
+}
+
+/**
+ * Returns how long in hours until the
+ * craft is refuelled (assumes fuel is available).
+ */
+unsigned int Craft::calcRefuelTime()
+{
+	unsigned int refuelTime = 0;
+
+	int needed = _rules->getMaxFuel() - _fuel;
+	if (needed > 0)
+	{
+		refuelTime = (int)ceil((double)(needed) / _rules->getRefuelRate() / 2.0);
+	}
+	return refuelTime;
+}
+
+/**
+ * Returns how long in hours until the
+ * craft is re-armed (assumes ammo is available).
+ */
+unsigned int Craft::calcRearmTime()
+{
+	unsigned int rearmTime = 0;
+
+	for (int idx = 0; idx < _rules->getWeapons(); idx++)
+	{
+		CraftWeapon *w1 = _weapons.at(idx);
+		if (w1 != 0)
+		{
+			int needed = w1->getRules()->getAmmoMax() - w1->getAmmo();
+			if (needed > 0)
+			{
+				rearmTime += (int)ceil((double)(needed) / w1->getRules()->getRearmRate());
+			}
+		}
+	}
+
+	return rearmTime;
 }
 
 /**
@@ -788,7 +989,7 @@ void Craft::repair()
 void Craft::refuel()
 {
 	setFuel(_fuel + _rules->getRefuelRate());
-	if (_fuel >= _rules->getMaxFuel())
+	if (_fuel >= _stats.fuelMax)
 	{
 		_status = "STR_READY";
 		for (std::vector<CraftWeapon*>::iterator i = _weapons.begin(); i != _weapons.end(); ++i)
@@ -869,8 +1070,8 @@ void Craft::setInBattlescape(bool inbattle)
 	_inBattlescape = inbattle;
 }
 
-/// Returns the craft destroyed status.
 /**
+ * Returns the craft destroyed status.
  * If the amount of damage the craft take
  * is more than it's health it will be
  * destroyed.
@@ -878,7 +1079,7 @@ void Craft::setInBattlescape(bool inbattle)
  */
 bool Craft::isDestroyed() const
 {
-	return (_damage >= _rules->getMaxDamage());
+	return (_damage >= _stats.damageMax);
 }
 
 /**
@@ -898,22 +1099,215 @@ int Craft::getSpaceAvailable() const
  */
 int Craft::getSpaceUsed() const
 {
-	int spaceUsed = 0;
-
-	for (std::vector<Vehicle*>::const_iterator i = _vehicles.begin(); i != _vehicles.end(); ++i)
+	int vehicleSpaceUsed = 0;
+	for (Vehicle* v : _vehicles)
 	{
-		spaceUsed += (*i)->getSize();
+		vehicleSpaceUsed += v->getSize();
+	}
+	for (Soldier *s : *_base->getSoldiers())
+	{
+		if (s->getCraft() == this)
+		{
+			vehicleSpaceUsed += s->getArmor()->getTotalSize();
+		}
+	}
+	return vehicleSpaceUsed;
+}
+
+/**
+* Checks if there are enough pilots onboard.
+* @return True if the craft has enough pilots.
+*/
+bool Craft::arePilotsOnboard()
+{
+	if (_rules->getPilots() == 0)
+		return true;
+
+	// refresh the list of pilots (must be performed here, list may be out-of-date!)
+	const std::vector<Soldier*> pilots = getPilotList(true);
+
+	return (int)(pilots.size()) >= _rules->getPilots();
+}
+
+/**
+* Checks if a pilot is already on the list.
+*/
+bool Craft::isPilot(int pilotId)
+{
+	if (std::find(_pilots.begin(), _pilots.end(), pilotId) != _pilots.end())
+	{
+		return true;
 	}
 
-	for (std::vector<Soldier*>::const_iterator i = _base->getSoldiers()->begin(); i != _base->getSoldiers()->end(); ++i)
+	return false;
+}
+
+/**
+* Adds a pilot to the list.
+*/
+void Craft::addPilot(int pilotId)
+{
+	if (std::find(_pilots.begin(), _pilots.end(), pilotId) == _pilots.end())
 	{
-		if((*i)->getCraft() == this)
+		_pilots.push_back(pilotId);
+	}
+}
+
+/**
+* Removes all pilots from the list.
+*/
+void Craft::removeAllPilots()
+{
+	_pilots.clear();
+}
+
+/**
+* Gets the list of craft pilots.
+* @return List of pilots.
+*/
+const std::vector<Soldier*> Craft::getPilotList(bool autoAdd)
+{
+	std::vector<Soldier*> result;
+
+	// 1. no pilots needed
+	if (_rules->getPilots() == 0)
+		return result;
+
+	{
+		// 2. just enough pilots or pilot candidates onboard (assign them all automatically)
+		int total = 0;
+		for (std::vector<Soldier*>::iterator i = _base->getSoldiers()->begin(); i != _base->getSoldiers()->end(); ++i)
 		{
-			spaceUsed += (*i)->getSize();
+			if ((*i)->getCraft() == this && (*i)->getRules()->getAllowPiloting())
+			{
+				result.push_back((*i));
+				total++;
+			}
+		}
+		if (total == _rules->getPilots())
+		{
+			// nothing more to do
+		}
+		else
+		{
+			// 3. mix of manually selected pilots and pilot candidates onboard
+			int total2 = 0;
+			result.clear();
+			// 3a. first take all available (manually selected) pilots
+			for (std::vector<int>::iterator i = _pilots.begin(); i != _pilots.end(); ++i)
+			{
+				for (std::vector<Soldier*>::iterator j = _base->getSoldiers()->begin(); j != _base->getSoldiers()->end(); ++j)
+				{
+					if ((*j)->getCraft() == this && (*j)->getRules()->getAllowPiloting() && (*j)->getId() == (*i))
+					{
+						result.push_back((*j));
+						total2++;
+						break; // pilot found, don't search anymore
+					}
+				}
+				if (total2 >= _rules->getPilots())
+				{
+					break; // enough pilots found
+				}
+			}
+			if (autoAdd)
+			{
+				// 3b. if not enough manually selected pilots, take some pilot candidates automatically (take from the rear first)
+				for (std::vector<Soldier*>::reverse_iterator k = _base->getSoldiers()->rbegin(); k != _base->getSoldiers()->rend(); ++k)
+				{
+					if ((*k)->getCraft() == this && (*k)->getRules()->getAllowPiloting() && !isPilot((*k)->getId()))
+					{
+						result.push_back((*k));
+						total2++;
+					}
+					if (total2 >= _rules->getPilots())
+					{
+						break; // enough pilots found
+					}
+				}
+			}
 		}
 	}
 
-	return spaceUsed;
+	// remember the pilots and return
+	removeAllPilots();
+	for (std::vector<Soldier*>::iterator i = result.begin(); i != result.end(); ++i)
+	{
+		addPilot((*i)->getId());
+	}
+	return result;
+}
+
+/**
+* Calculates the accuracy bonus based on pilot skills.
+* @return Accuracy bonus.
+*/
+int Craft::getPilotAccuracyBonus(const std::vector<Soldier*> &pilots, const Mod *mod) const
+{
+	if (pilots.empty())
+		return 0;
+
+	int firingAccuracy = 0;
+	for (std::vector<Soldier*>::const_iterator i = pilots.begin(); i != pilots.end(); ++i)
+	{
+			firingAccuracy += (*i)->getCurrentStats()->firing;
+	}
+	firingAccuracy = firingAccuracy / pilots.size(); // average firing accuracy of all pilots
+
+	return ((firingAccuracy - mod->getPilotAccuracyZeroPoint()) * mod->getPilotAccuracyRange()) / 100;
+}
+
+/**
+* Calculates the dodge bonus based on pilot skills.
+* @return Dodge bonus.
+*/
+int Craft::getPilotDodgeBonus(const std::vector<Soldier*> &pilots, const Mod *mod) const
+{
+	if (pilots.empty())
+		return 0;
+
+	int reactions = 0;
+	for (std::vector<Soldier*>::const_iterator i = pilots.begin(); i != pilots.end(); ++i)
+	{
+		reactions += (*i)->getCurrentStats()->reactions;
+	}
+	reactions = reactions / pilots.size(); // average reactions of all pilots
+
+	return ((reactions - mod->getPilotReactionsZeroPoint()) * mod->getPilotReactionsRange()) / 100;
+}
+
+/**
+* Calculates the approach speed modifier based on pilot skills.
+* @return Approach speed modifier.
+*/
+int Craft::getPilotApproachSpeedModifier(const std::vector<Soldier*> &pilots, const Mod *mod) const
+{
+	if (pilots.empty())
+		return 2; // vanilla
+
+	int bravery = 0;
+	for (std::vector<Soldier*>::const_iterator i = pilots.begin(); i != pilots.end(); ++i)
+	{
+		bravery += (*i)->getCurrentStats()->bravery;
+	}
+	bravery = bravery / pilots.size(); // average bravery of all pilots
+
+	if (bravery >= mod->getPilotBraveryThresholdVeryBold())
+	{
+		return 4; // double the speed
+	}
+	else if (bravery >= mod->getPilotBraveryThresholdBold())
+	{
+		return 3; // 50% speed increase
+	}
+	else if (bravery >= mod->getPilotBraveryThresholdNormal())
+	{
+		return 2; // normal speed
+	}
+	else
+	{
+		return 1; // half the speed
+	}
 }
 
 /**

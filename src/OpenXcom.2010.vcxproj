@@ -347,6 +347,8 @@
     <ClCompile Include="Basescape\CraftEquipmentSaveState.cpp" />
     <ClCompile Include="Basescape\CraftEquipmentState.cpp" />
     <ClCompile Include="Basescape\CraftInfoState.cpp" />
+    <ClCompile Include="Basescape\CraftPilotSelectState.cpp" />
+    <ClCompile Include="Basescape\CraftPilotsState.cpp" />
     <ClCompile Include="Basescape\CraftSoldiersState.cpp" />
     <ClCompile Include="Basescape\CraftsState.cpp" />
     <ClCompile Include="Basescape\CraftWeaponsState.cpp" />
@@ -379,6 +381,8 @@
     <ClCompile Include="Basescape\SoldierSortUtil.cpp" />
     <ClCompile Include="Basescape\SoldiersState.cpp" />
     <ClCompile Include="Basescape\StoresState.cpp" />
+    <ClCompile Include="Basescape\TechTreeSelectState.cpp" />
+    <ClCompile Include="Basescape\TechTreeViewerState.cpp" />
     <ClCompile Include="Basescape\TransferBaseState.cpp" />
     <ClCompile Include="Basescape\TransferConfirmState.cpp" />
     <ClCompile Include="Basescape\TransferItemsState.cpp" />
@@ -565,10 +569,13 @@
     <ClCompile Include="Menu\VideoState.cpp" />
     <ClCompile Include="Mod\RuleCommendations.cpp" />
     <ClCompile Include="Mod\RuleConverter.cpp" />
+    <ClCompile Include="Mod\RuleDamageType.cpp" />
     <ClCompile Include="Mod\RuleEffect.cpp" />
     <ClCompile Include="Mod\RuleInventoryLayout.cpp" />
     <ClCompile Include="Mod\RuleItemCategory.cpp" />
     <ClCompile Include="Mod\RuleRole.cpp" />
+    <ClCompile Include="Mod\RuleStartingCondition.cpp" />
+    <ClCompile Include="Mod\RuleStatBonus.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development|Win32'">Create</PrecompiledHeader>
@@ -687,6 +694,8 @@
     <ClInclude Include="Basescape\CraftEquipmentSaveState.h" />
     <ClInclude Include="Basescape\CraftEquipmentState.h" />
     <ClInclude Include="Basescape\CraftInfoState.h" />
+    <ClInclude Include="Basescape\CraftPilotSelectState.h" />
+    <ClInclude Include="Basescape\CraftPilotsState.h" />
     <ClInclude Include="Basescape\CraftSoldiersState.h" />
     <ClInclude Include="Basescape\CraftsState.h" />
     <ClInclude Include="Basescape\CraftWeaponsState.h" />
@@ -719,6 +728,8 @@
     <ClInclude Include="Basescape\SoldierSortUtil.h" />
     <ClInclude Include="Basescape\SoldiersState.h" />
     <ClInclude Include="Basescape\StoresState.h" />
+    <ClInclude Include="Basescape\TechTreeSelectState.h" />
+    <ClInclude Include="Basescape\TechTreeViewerState.h" />
     <ClInclude Include="Basescape\TransferBaseState.h" />
     <ClInclude Include="Basescape\TransferConfirmState.h" />
     <ClInclude Include="Basescape\TransferItemsState.h" />
@@ -914,12 +925,16 @@
     <ClInclude Include="Menu\StatisticsState.h" />
     <ClInclude Include="Menu\TestState.h" />
     <ClInclude Include="Menu\VideoState.h" />
+    <ClInclude Include="Mod\ModScript.h" />
     <ClInclude Include="Mod\RuleCommendations.h" />
     <ClInclude Include="Mod\RuleConverter.h" />
+    <ClInclude Include="Mod\RuleDamageType.h" />
     <ClInclude Include="Mod\RuleEffect.h" />
     <ClInclude Include="Mod\RuleInventoryLayout.h" />
     <ClInclude Include="Mod\RuleItemCategory.h" />
     <ClInclude Include="Mod\RuleRole.h" />
+    <ClInclude Include="Mod\RuleStartingCondition.h" />
+    <ClInclude Include="Mod\RuleStatBonus.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Mod\ArticleDefinition.h" />

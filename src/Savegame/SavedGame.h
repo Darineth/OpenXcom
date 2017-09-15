@@ -19,6 +19,7 @@
  */
 #include <map>
 #include <vector>
+#include <set>
 #include <string>
 #include <time.h>
 #include <stdint.h>
@@ -26,6 +27,7 @@
 #include "../Mod/RuleAlienMission.h"
 #include "../Savegame/Craft.h"
 #include "../Mod/RuleManufacture.h"
+#include "../Mod/RuleBaseFacility.h"
 
 namespace OpenXcom
 {
@@ -44,6 +46,8 @@ class RuleResearch;
 class ResearchProject;
 class Soldier;
 class RuleManufacture;
+class RuleItem;
+class ArticleDefinition;
 class MissionSite;
 class AlienBase;
 class AlienStrategy;
@@ -127,6 +131,9 @@ private:
 	AlienStrategy *_alienStrategy;
 	SavedBattleGame *_battleGame;
 	std::vector<const RuleResearch*> _discovered;
+	std::map<std::string, int> _ufopediaRuleStatus;
+	std::map<std::string, int> _manufactureRuleStatus;
+	std::map<std::string, int> _researchRuleStatus;
 	std::vector<AlienMission*> _activeMissions;
 	bool _debug, _warned;
 	int _monthsPassed;
@@ -144,6 +151,8 @@ private:
 	std::wstring _globalCraftLoadoutName[MAX_CRAFT_LOADOUT_TEMPLATES];
 	ItemContainer *_globalCraftLoadout[MAX_CRAFT_LOADOUT_TEMPLATES];
 	std::vector<MissionStatistics*> _missionStatistics;
+	std::set<int> _ignoredUfos;
+	std::set<const RuleItem *> _autosales;
 
 	static SaveInfo getSaveInfo(const std::string &file, Language *lang);
 public:
@@ -228,6 +237,14 @@ public:
 	SavedBattleGame *getSavedBattle();
 	/// Sets the current battle game.
 	void setBattleGame(SavedBattleGame *battleGame);
+	/// Sets the status of a ufopedia rule
+	void setUfopediaRuleStatus(const std::string &ufopediaRule, int newStatus);
+	/// Sets the status of a manufacture rule
+	void setManufactureRuleStatus(const std::string &manufactureRule, int newStatus);
+	/// Sets the status of a research rule
+	void setResearchRuleStatus(const std::string &researchRule, int newStatus);
+	/// Remove a research from the "already discovered" list
+	void removeDiscoveredResearch(const RuleResearch *research);
 	/// Add a finished ResearchProject
 	void addFinishedResearchSimple(const RuleResearch *research);
 	/// Add a finished ResearchProject
@@ -242,16 +259,32 @@ public:
 	void getAvailableProductions(std::vector<RuleManufacture*> & productions, const Mod *mod, Base *base, ManufacturingFilterType filter = MANU_FILTER_DEFAULT) const;
 	/// Get the list of newly available manufacture projects once a research has been completed.
 	void getDependableManufacture(std::vector<RuleManufacture*> & dependables, const RuleResearch *research, const Mod *mod, Base *base) const;
-	/// Gets if a research still has undiscovered "protected unlocks".
+	/// Get the list of newly available items to purchase once a research has been completed.
+	void getDependablePurchase(std::vector<RuleItem*> & dependables, const RuleResearch *research, const Mod *mod) const;
+	/// Get the list of newly available craft to purchase/rent once a research has been completed.
+	void getDependableCraft(std::vector<RuleCraft*> & dependables, const RuleResearch *research, const Mod *mod) const;
+	/// Get the list of newly available facilities to build once a research has been completed.
+	void getDependableFacilities(std::vector<RuleBaseFacility*> & dependables, const RuleResearch *research, const Mod *mod) const;
+	/// Gets the status of a ufopedia rule.
+	int getUfopediaRuleStatus(const std::string &ufopediaRule);
+	/// Gets the status of a manufacture rule.
+	int getManufactureRuleStatus(const std::string &manufactureRule);
+	/// Is the research new?
+	bool isResearchRuleStatusNew(const std::string &researchRule) const;
+	/// Is the research permanently disabled?
+	bool isResearchRuleStatusDisabled(const std::string &researchRule) const;
+	/// Gets if a research still has undiscovered non-disabled "getOneFree".
+	bool hasUndiscoveredGetOneFree(const RuleResearch * r, bool checkOnlyAvailableTopics) const;
+	/// Gets if a research still has undiscovered non-disabled "protected unlocks".
 	bool hasUndiscoveredProtectedUnlock(const RuleResearch * r, const Mod * mod) const;
 	/// Gets if a certain research has been completed.
 	bool isResearched(const std::string &research, bool considerDebugMode = true) const;
 	/// Gets if a certain list of research topics has been completed.
-	bool isResearched(const std::vector<std::string> &research, bool considerDebugMode = true) const;
+	bool isResearched(const std::vector<std::string> &research, bool considerDebugMode = true, bool skipDisabled = false) const;
 	/// Gets the soldier matching this ID.
 	Soldier *getSoldier(int id) const;
 	/// Handles the higher promotions.
-	bool handlePromotions(std::vector<Soldier*> &participants);
+	bool handlePromotions(std::vector<Soldier*> &participants, const Mod *mod);
 	/// Processes a soldier's promotion.
 	void processSoldier(Soldier *soldier, PromotionInfo &soldierData);
 	/// Checks how many soldiers of a rank exist and which one has the highest score.
@@ -340,8 +373,16 @@ public:
 	ItemContainer *getGlobalCraftLoadout(int index);
 	/// Gets the list of missions statistics
 	std::vector<MissionStatistics*> *getMissionStatistics();
+	/// Adds a UFO to the ignore list.
+	void addUfoToIgnoreList(int ufoId);
+	/// Checks if a UFO is on the ignore list.
+	bool isUfoOnIgnoreList(int ufoId);
 	/// Handles a soldier's death.
 	std::vector<Soldier*>::iterator killSoldier(Soldier *soldier, BattleUnitKills *cause = 0);
+	/// enables/disables autosell for an item type
+	void setAutosell(const RuleItem *itype, const bool enabled);
+	/// get autosell state for an item type
+	bool getAutosell(const RuleItem *) const;
 	/// Gets the named role.
 	Role* getRole(const std::string &name) const;
 	/// Gets the default role.
