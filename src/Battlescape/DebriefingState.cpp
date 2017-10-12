@@ -16,8 +16,9 @@
  * You should have received a copy of the GNU General Public License
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "DebriefingState.h"
 #include <algorithm>
+#include <climits>
+#include "DebriefingState.h"
 #include "CannotReequipState.h"
 #include "../Engine/Action.h"
 #include "../Engine/Game.h"
@@ -34,6 +35,7 @@
 #include "../Mod/RuleCraft.h"
 #include "../Mod/RuleItem.h"
 #include "../Mod/RuleRegion.h"
+#include "../Mod/RuleSoldier.h"
 #include "../Mod/RuleUfo.h"
 #include "../Mod/Armor.h"
 #include "../Savegame/AlienBase.h"
@@ -57,10 +59,12 @@
 #include "../Menu/MainMenuState.h"
 #include "../Interface/Cursor.h"
 #include "../Engine/Options.h"
+#include "../Engine/RNG.h"
 #include "../Basescape/ManageAlienContainmentState.h"
 #include "../Engine/Screen.h"
 #include "../Basescape/SellState.h"
 #include "../Menu/SaveGameState.h"
+#include "../Mod/RuleStartingCondition.h"
 #include "../Mod/AlienDeployment.h"
 #include "../Mod/RuleInterface.h"
 #include "../Savegame/MissionStatistics.h"
@@ -73,7 +77,7 @@ namespace OpenXcom
  * Initializes all the elements in the Debriefing screen.
  * @param game Pointer to the core game.
  */
-DebriefingState::DebriefingState() : _region(0), _country(0), _positiveScore(true), _noContainment(false), _manageContainment(false), _destroyBase(false), _showSoldierStats(false)
+DebriefingState::DebriefingState() : _region(0), _country(0), _positiveScore(true), _destroyBase(false), _showSellButton(true), _pageNumber(0)
 {
 	_missionStatistics = new MissionStatistics();
 
@@ -88,7 +92,8 @@ DebriefingState::DebriefingState() : _region(0), _country(0), _positiveScore(tru
 	// Create objects
 	_window = new Window(this, 320, 200, 0, 0);
 	_btnOk = new TextButton(40, 12, 16, 180);
-	_btnStats = new TextButton(40, 12, 264, 180);
+	_btnStats = new TextButton(60, 12, 244, 180);
+	_btnSell = new TextButton(60, 12, 176, 180);
 	_txtTitle = new Text(300, 17, 16, 8);
 	_txtItem = new Text(180, 9, 16, 24);
 	_txtQuantity = new Text(60, 9, 200, 24);
@@ -100,7 +105,7 @@ DebriefingState::DebriefingState() : _region(0), _country(0), _positiveScore(tru
 	_lstTotal = new TextList(290, 9, 16, 12);
 	_txtSoldier = new Text(180, 9, 16, 24);
 	_txtStatus = new Text(60, 9, 230, 24);
-	_lstSoldiers = new TextList(290, 144, 16, 32);
+	_lstSoldiers = new TextList(290, 144, 8, 32);
 
 	// Second page (soldier stats)
 	/*_txtSoldier     = new Text(90, 9,  16, 24); //16..106 = 90
@@ -120,14 +125,20 @@ DebriefingState::DebriefingState() : _region(0), _country(0), _positiveScore(tru
 
 	//_txtTooltip = new Text(200, 9, 64, 180);
 
+	// Third page (recovered items)
+	_lstRecoveredItems = new TextList(272, 144, 16, 32); // 18 rows
+
 	applyVisibility();
 
 	// Set palette
 	setInterface("debriefing");
 
+	_ammoColor = _game->getMod()->getInterface("debriefing")->getElement("totals")->color;
+
 	add(_window, "window", "debriefing");
 	add(_btnOk, "button", "debriefing");
 	add(_btnStats, "button", "debriefing");
+	add(_btnSell, "button", "debriefing");
 	add(_txtTitle, "heading", "debriefing");
 	add(_txtItem, "text", "debriefing");
 	add(_txtQuantity, "text", "debriefing");
@@ -137,6 +148,7 @@ DebriefingState::DebriefingState() : _region(0), _country(0), _positiveScore(tru
 	add(_lstStats, "list", "debriefing");
 	add(_lstRecovery, "list", "debriefing");
 	add(_lstTotal, "totals", "debriefing");
+
 	add(_txtSoldier, "text", "debriefing");
 	add(_txtStatus, "text", "debriefing");
 	add(_lstSoldiers, "list", "debriefing");
@@ -156,6 +168,8 @@ DebriefingState::DebriefingState() : _region(0), _country(0), _positiveScore(tru
 	//add(_lstSoldierStats, "list", "debriefing");
 	//add(_txtTooltip, "text", "debriefing");
 
+	add(_lstRecoveredItems, "list", "debriefing");
+
 	centerAllSurfaces();
 
 	// Set up objects
@@ -167,6 +181,9 @@ DebriefingState::DebriefingState() : _region(0), _country(0), _positiveScore(tru
 	_btnOk->onKeyboardPress((ActionHandler)&DebriefingState::btnOkClick, Options::keyCancel);
 
 	_btnStats->onMouseClick((ActionHandler)&DebriefingState::btnStatsClick);
+
+	_btnSell->setText(tr("STR_SELL"));
+	_btnSell->onMouseClick((ActionHandler)&DebriefingState::btnSellClick);
 
 	_txtTitle->setBig();
 
@@ -265,6 +282,11 @@ DebriefingState::DebriefingState() : _region(0), _country(0), _positiveScore(tru
 	_lstSoldiers->setColumns(2, 214, 88);
 	_lstSoldiers->setDot(true);
 
+	// Third page
+	_lstRecoveredItems->setColumns(2, 254, 18);
+	_lstRecoveredItems->setAlign(ALIGN_LEFT);
+	_lstRecoveredItems->setDot(true);
+
 	prepareDebriefing();
 
 	/*for (std::vector<SoldierStatsEntry>::iterator i = _soldierStats.begin(); i != _soldierStats.end(); ++i)
@@ -284,6 +306,54 @@ DebriefingState::DebriefingState() : _region(0), _country(0), _positiveScore(tru
 				L"");
 		// note: final dummy element to cause dot filling until the end of the line
 	}*/
+
+	// compare stuff from after and before recovery
+	if (_base)
+	{
+		int row = 0;
+		ItemContainer *origBaseItems = _game->getSavedGame()->getSavedBattle()->getBaseStorageItems();
+		const std::vector<std::string> &items = _game->getMod()->getItemsList();
+		for (std::vector<std::string>::const_iterator i = items.begin(); i != items.end(); ++i)
+		{
+			int qty = _base->getStorageItems()->getItem(*i);
+			if (qty > 0 && (Options::canSellLiveAliens || !_game->getMod()->getItem(*i)->isAlien()))
+			{
+				RuleItem *rule = _game->getMod()->getItem(*i);
+
+				// IGNORE vehicles and their ammo
+				// Note: because their number in base has been messed up by Base::setupDefenses() already in geoscape :(
+				if (_game->getMod()->getUnit(*i) && !rule->isAlien())
+				{
+					// if this vehicle requires ammo, remember to ignore it later too
+					if (!rule->getPrimaryCompatibleAmmo()->empty())
+					{
+						origBaseItems->addItem(rule->getPrimaryCompatibleAmmo()->front(), 1000000);
+					}
+					continue;
+				}
+
+				qty -= origBaseItems->getItem(*i);
+				_recoveredItems[rule] = qty;
+				if (qty > 0)
+				{
+					std::wostringstream ss;
+					ss << L'\x01' << qty << L'\x01';
+					std::wstring item = tr(*i);
+					if (rule->getBattleType() == BT_AMMO || (rule->getBattleType() == BT_NONE && rule->getClipSize() > 0))
+					{
+						item.insert(0, L"  ");
+						_lstRecoveredItems->addRow(2, item.c_str(), ss.str().c_str());
+						_lstRecoveredItems->setRowColor(row, _ammoColor);
+					}
+					else
+					{
+						_lstRecoveredItems->addRow(2, item.c_str(), ss.str().c_str());
+					}
+					++row;
+				}
+			}
+		}
+	}
 
 	bool psiResearched = _game->getSavedGame()->isResearched(_game->getMod()->getPsiRequirements());
 
@@ -474,13 +544,29 @@ DebriefingState::DebriefingState() : _region(0), _country(0), _positiveScore(tru
 	{
 		rating = "STR_RATING_EXCELLENT";
 	}
+
+	if (!_game->getMod()->getMissionRatings()->empty())
+	{
+		rating = "";
+		int temp = INT_MIN;
+		const std::map<int, std::string> *missionRatings = _game->getMod()->getMissionRatings();
+		for (std::map<int, std::string>::const_iterator i = missionRatings->begin(); i != missionRatings->end(); ++i)
+		{
+			if (i->first > temp && i->first <= total)
+			{
+				temp = i->first;
+				rating = i->second;
+			}
+		}
+	}
+
 	_missionStatistics->rating = rating;
 	_missionStatistics->score = total;
 	_txtRating->setText(tr("STR_RATING").arg(tr(rating)));
 
 	SavedGame *save = _game->getSavedGame();
 	SavedBattleGame *battle = save->getSavedBattle();
-	
+
 	_missionStatistics->daylight = save->getSavedBattle()->getGlobalShade();
 	_missionStatistics->id = _game->getSavedGame()->getMissionStatistics()->size();
 	_game->getSavedGame()->getMissionStatistics()->push_back(_missionStatistics);
@@ -494,7 +580,7 @@ DebriefingState::DebriefingState() : _region(0), _country(0), _positiveScore(tru
 	// Check to see if any of the dead soldiers were exceptional.
 	for (std::vector<BattleUnit*>::iterator deadUnit = battle->getUnits()->begin(); deadUnit != battle->getUnits()->end(); ++deadUnit)
 	{
-		if (!(*deadUnit)->getGeoscapeSoldier() || (*deadUnit)->getStatus() != STATUS_DEAD) 
+		if (!(*deadUnit)->getGeoscapeSoldier() || (*deadUnit)->getStatus() != STATUS_DEAD)
 		{
 			continue;
 		}
@@ -531,7 +617,7 @@ DebriefingState::DebriefingState() : _region(0), _country(0), _positiveScore(tru
 
 		SoldierRank rank = (*deadUnit)->getGeoscapeSoldier()->getRank();
 		// Rookies don't get this next award. No one likes them.
-		if (rank == 0) 
+		if (rank == 0)
 		{
 			continue;
 		}
@@ -563,7 +649,7 @@ DebriefingState::DebriefingState() : _region(0), _country(0), _positiveScore(tru
 	// Now award those soldiers commendations!
 	for (std::vector<BattleUnit*>::iterator deadUnit = battle->getUnits()->begin(); deadUnit != battle->getUnits()->end(); ++deadUnit)
 	{
-		if (!(*deadUnit)->getGeoscapeSoldier() || (*deadUnit)->getStatus() != STATUS_DEAD) 
+		if (!(*deadUnit)->getGeoscapeSoldier() || (*deadUnit)->getStatus() != STATUS_DEAD)
 		{
 			continue;
 		}
@@ -602,8 +688,8 @@ DebriefingState::DebriefingState() : _region(0), _country(0), _positiveScore(tru
 			{
 				(*j)->getStatistics()->mercyCross = true;
 			}
-			(*j)->getStatistics()->daysWounded = (*j)->getGeoscapeSoldier()->getWoundRecovery();
-			_missionStatistics->injuryList[(*j)->getGeoscapeSoldier()->getId()] = (*j)->getGeoscapeSoldier()->getWoundRecovery();
+			(*j)->getStatistics()->daysWounded = (*j)->getGeoscapeSoldier()->getWoundRecovery(0.0f, 0.0f);
+			_missionStatistics->injuryList[(*j)->getGeoscapeSoldier()->getId()] = (*j)->getGeoscapeSoldier()->getWoundRecovery(0.0f, 0.0f);
 
 			// Award Martyr Medal
 			if ((*j)->getMurdererId() == (*j)->getId() && (*j)->getStatistics()->kills.size() != 0)
@@ -625,9 +711,9 @@ DebriefingState::DebriefingState() : _region(0), _country(0), _positiveScore(tru
 						martyrKills++;
 					}
 				}
-				if (martyrKills > 0) 
+				if (martyrKills > 0)
 				{
-					if (martyrKills > 10) 
+					if (martyrKills > 10)
 					{
 						martyrKills = 10;
 					}
@@ -673,6 +759,10 @@ DebriefingState::~DebriefingState()
 	}
 	_recoveryStats.clear();
 	_rounds.clear();
+	_roundsPainKiller.clear();
+	_roundsStimulant.clear();
+	_roundsHeal.clear();
+	_recoveredItems.clear();
 }
 
 std::wstring DebriefingState::makeSoldierString(int stat)
@@ -686,15 +776,19 @@ std::wstring DebriefingState::makeSoldierString(int stat)
 
 void DebriefingState::applyVisibility()
 {
+	bool showScore = _pageNumber == 0;
+	bool showStats = _pageNumber == 1;
+	bool showItems = _pageNumber == 2;
+
 	// First page (scores)
-	_txtItem->setVisible(!_showSoldierStats);
-	_txtQuantity->setVisible(!_showSoldierStats);
-	_txtScore->setVisible(!_showSoldierStats);
-	_txtRecovery->setVisible(!_showSoldierStats);
-	_txtRating->setVisible(!_showSoldierStats);
-	_lstStats->setVisible(!_showSoldierStats);
-	_lstRecovery->setVisible(!_showSoldierStats);
-	_lstTotal->setVisible(!_showSoldierStats);
+	_txtItem->setVisible(showScore || showItems);
+	_txtQuantity->setVisible(showScore);
+	_txtScore->setVisible(showScore);
+	_txtRecovery->setVisible(showScore);
+	_txtRating->setVisible(showScore);
+	_lstStats->setVisible(showScore);
+	_lstRecovery->setVisible(showScore);
+	_lstTotal->setVisible(showScore);
 
 	// Second page (soldier stats)
 	/*_txtSoldier->setVisible(_showSoldierStats);
@@ -712,13 +806,27 @@ void DebriefingState::applyVisibility()
 	_lstSoldierStats->setVisible(_showSoldierStats);
 	_txtTooltip->setVisible(_showSoldierStats);*/
 
-	_txtSoldier->setVisible(_showSoldierStats);
-	_txtStatus->setVisible(_showSoldierStats);
-	_lstSoldiers->setVisible(_showSoldierStats);
+	_txtSoldier->setVisible(showStats);
+	_txtStatus->setVisible(showStats);
+	_lstSoldiers->setVisible(showStats);
+
+	// Third page (recovered items)
+	_lstRecoveredItems->setVisible(showItems);
 
 	// Set text on toggle button accordingly
-	_btnStats->setText(_showSoldierStats ? tr("STR_SCORE") : tr("STR_STATS"));
-
+	_btnSell->setVisible(showItems && _showSellButton);
+	if (showScore)
+	{
+		_btnStats->setText(tr("STR_STATS"));
+	}
+	else if (showStats)
+	{
+		_btnStats->setText(tr("STR_LOOT"));
+	}
+	else if (showItems)
+	{
+		_btnStats->setText(tr("STR_SCORE"));
+	}
 }
 
 void DebriefingState::init()
@@ -732,34 +840,29 @@ void DebriefingState::init()
 	{
 		_game->getMod()->playMusic(Mod::DEBRIEF_MUSIC_BAD);
 	}
-	if (_noContainment)
-	{
-		_game->pushState(new ErrorMessageState(tr("STR_ALIEN_DIES_NO_ALIEN_CONTAINMENT_FACILITY"), _palette, _game->getMod()->getInterface("debriefing")->getElement("errorMessage")->color, "BACK01.SCR", _game->getMod()->getInterface("debriefing")->getElement("errorPalette")->color));
-		_noContainment = false;
-	}
 }
 
 /**
 * Shows a tooltip for the appropriate text.
 * @param action Pointer to an action.
 */
-/*void DebriefingState::txtTooltipIn(Action *action)
+void DebriefingState::txtTooltipIn(Action *action)
 {
 	_currentTooltip = action->getSender()->getTooltip();
 	_txtTooltip->setText(tr(_currentTooltip));
-}*/
+}
 
 /**
 * Clears the tooltip text.
 * @param action Pointer to an action.
 */
-/*void DebriefingState::txtTooltipOut(Action *action)
+void DebriefingState::txtTooltipOut(Action *action)
 {
 	if (_currentTooltip == action->getSender()->getTooltip())
 	{
 		_txtTooltip->setText(L"");
 	}
-}*/
+}
 
 /**
  * Displays soldiers' stat increases.
@@ -767,8 +870,20 @@ void DebriefingState::init()
  */
 void DebriefingState::btnStatsClick(Action *)
 {
-	_showSoldierStats = !_showSoldierStats;
+	_pageNumber = (_pageNumber + 1) % 3;
 	applyVisibility();
+}
+
+/**
+* Opens the Sell/Sack UI (for recovered items ONLY).
+* @param action Pointer to an action.
+*/
+void DebriefingState::btnSellClick(Action *)
+{
+	if (!_destroyBase)
+	{
+		_game->pushState(new SellState(_base, this, OPT_BATTLESCAPE));
+	}
 }
 
 /**
@@ -786,27 +901,25 @@ void DebriefingState::btnOkClick(Action *)
 			participants.push_back((*i)->getGeoscapeSoldier());
 		}
 	}
-
 	_game->getSavedGame()->setBattleGame(0);
 	_game->popState();
-
 	if (_game->getSavedGame()->getMonthsPassed() == -1)
 	{
 		_game->setState(new MainMenuState);
 	}
 	else
 	{
+		if (!_deadSoldiersCommended.empty())
+		{
+			_game->pushState(new CommendationLateState(_deadSoldiersCommended));
+		}
+		if (!_soldiersCommended.empty())
+		{
+			_game->pushState(new CommendationState(_soldiersCommended));
+		}
 		if (!_destroyBase)
 		{
-			if (!_deadSoldiersCommended.empty())
-			{
-				_game->pushState(new CommendationLateState(_deadSoldiersCommended));
-			}
-			if (!_soldiersCommended.empty())
-			{
-				_game->pushState(new CommendationState(_soldiersCommended));
-			}
-			if (_game->getSavedGame()->handlePromotions(participants))
+			if (_game->getSavedGame()->handlePromotions(participants, _game->getMod()))
 			{
 				_game->pushState(new PromotionsState);
 			}
@@ -814,15 +927,41 @@ void DebriefingState::btnOkClick(Action *)
 			{
 				_game->pushState(new CannotReequipState(_missingItems));
 			}
-			else if (_manageContainment)
+
+			// refresh! (we may have sold some prisoners in the meantime; directly from Debriefing)
+			for (std::map<int, int>::iterator i = _containmentStateInfo.begin(); i != _containmentStateInfo.end(); ++i)
 			{
-				_game->pushState(new ManageAlienContainmentState(_base, OPT_BATTLESCAPE));
-				_game->pushState(new ErrorMessageState(tr("STR_CONTAINMENT_EXCEEDED").arg(_base->getName()).c_str(), _palette, _game->getMod()->getInterface("debriefing")->getElement("errorMessage")->color, "BACK01.SCR", _game->getMod()->getInterface("debriefing")->getElement("errorPalette")->color));
+				if (i->second == 2)
+				{
+					if (_base->getAvailableContainment(i->first) - (_base->getUsedContainment(i->first) * _limitsEnforced) >= 0)
+					{
+						_containmentStateInfo[i->first] = 0; // 0 = OK
+					}
+				}
 			}
-			if (!_manageContainment && Options::storageLimitsEnforced && _base->storesOverfull())
+
+			for (std::map<int, int>::const_iterator i = _containmentStateInfo.begin(); i != _containmentStateInfo.end(); ++i)
 			{
-				_game->pushState(new SellState(_base, OPT_BATTLESCAPE));
-				_game->pushState(new ErrorMessageState(tr("STR_STORAGE_EXCEEDED").arg(_base->getName()).c_str(), _palette, _game->getMod()->getInterface("debriefing")->getElement("errorMessage")->color, "BACK01.SCR", _game->getMod()->getInterface("debriefing")->getElement("errorPalette")->color));
+				if (i->second == 2)
+				{
+					_game->pushState(new ManageAlienContainmentState(_base, i->first, OPT_BATTLESCAPE));
+					_game->pushState(new ErrorMessageState(trAlt("STR_CONTAINMENT_EXCEEDED", i->first).arg(_base->getName()), _palette, _game->getMod()->getInterface("debriefing")->getElement("errorMessage")->color, "BACK01.SCR", _game->getMod()->getInterface("debriefing")->getElement("errorPalette")->color));
+				}
+				else if (i->second == 1)
+				{
+					_game->pushState(new ErrorMessageState(
+						trAlt("STR_ALIEN_DIES_NO_ALIEN_CONTAINMENT_FACILITY", i->first),
+						_palette,
+						_game->getMod()->getInterface("debriefing")->getElement("errorMessage")->color,
+						"BACK01.SCR",
+						_game->getMod()->getInterface("debriefing")->getElement("errorPalette")->color));
+				}
+			}
+
+			if (Options::storageLimitsEnforced && _base->storesOverfull())
+			{
+				_game->pushState(new SellState(_base, 0, OPT_BATTLESCAPE));
+				_game->pushState(new ErrorMessageState(tr("STR_STORAGE_EXCEEDED").arg(_base->getName()), _palette, _game->getMod()->getInterface("debriefing")->getElement("errorMessage")->color, "BACK01.SCR", _game->getMod()->getInterface("debriefing")->getElement("errorPalette")->color));
 			}
 		}
 
@@ -924,6 +1063,7 @@ void DebriefingState::prepareDebriefing()
 	_stats.push_back(new DebriefingStat("STR_ALIENS_KILLED", false));
 	_stats.push_back(new DebriefingStat("STR_ALIEN_CORPSES_RECOVERED", false));
 	_stats.push_back(new DebriefingStat("STR_LIVE_ALIENS_RECOVERED", false));
+	_stats.push_back(new DebriefingStat("STR_LIVE_ALIENS_SURRENDERED", false));
 	_stats.push_back(new DebriefingStat("STR_ALIEN_ARTIFACTS_RECOVERED", false));
 
 	std::string objectiveCompleteText, objectiveFailedText;
@@ -1175,7 +1315,7 @@ void DebriefingState::prepareDebriefing()
 				if (!battle->allObjectivesDestroyed())
 					destroyAlienBase = false;
 			}
-			
+
 			if (ruleDeploy && !ruleDeploy->getNextStage().empty())
 			{
 				_missionStatistics->alienRace = (*i)->getAlienRace();
@@ -1257,6 +1397,21 @@ void DebriefingState::prepareDebriefing()
 					{
 						addStat("STR_XCOM_OPERATIVES_KILLED", 1, -value);
 					}
+
+					// starting conditions: recover armor backup
+					if (soldier->getReplacedArmor())
+					{
+						if (soldier->getReplacedArmor()->getStoreItem() != Armor::NONE)
+						{
+							base->getStorageItems()->addItem(soldier->getReplacedArmor()->getStoreItem());
+						}
+						soldier->setReplacedArmor(0);
+					}
+					// transformed armor doesn't get recovered
+					soldier->setTransformedArmor(0);
+					// soldiers are buried in the default armor (...nicer stats in memorial)
+					soldier->setArmor(_game->getMod()->getArmor(soldier->getRules()->getArmor()));
+
 					_stats.push_back(new DebriefingStat(soldier, tr("STR_SOLDIER_DEBRIEFING_DEAD")));
 					(*j)->updateGeoscapeStats(soldier);
 					(*j)->getStatistics()->KIA = true;
@@ -1308,38 +1463,30 @@ void DebriefingState::prepareDebriefing()
 					{ // non soldier player = tank
 						recoverItems((*j)->getInventory(), base);
 						base->getStorageItems()->addItem((*j)->getType());
-						RuleItem *tankRule = _game->getMod()->getItem((*j)->getType(), true);
-						if ((*j)->getItem("STR_RIGHT_HAND"))
+
+						auto unloadWeapon = [&](BattleItem *weapon)
 						{
-							BattleItem *ammoItem = (*j)->getItem("STR_RIGHT_HAND")->getAmmoItem();
-							if (!tankRule->getCompatibleAmmo()->empty() && ammoItem != 0 && ammoItem->getAmmoQuantity() > 0)
+							if (weapon)
 							{
-								int total = ammoItem->getAmmoQuantity();
-
-								if (tankRule->getClipSize()) // meaning this tank can store multiple clips
+								const RuleItem *primaryRule = weapon->getRules();
+								const BattleItem *ammoItem = weapon->getAmmoForSlot(0);
+								const auto *compatible = primaryRule->getPrimaryCompatibleAmmo();
+								if (!compatible->empty() && ammoItem != 0 && ammoItem->getAmmoQuantity() > 0)
 								{
-									total /= ammoItem->getRules()->getClipSize();
+									int total = ammoItem->getAmmoQuantity();
+
+									if (primaryRule->getClipSize()) // meaning this tank can store multiple clips
+									{
+										total /= ammoItem->getRules()->getClipSize();
+									}
+
+									base->getStorageItems()->addItem(compatible->front(), total);
 								}
-
-								base->getStorageItems()->addItem(tankRule->getCompatibleAmmo()->front(), total);
 							}
-						}
-						if ((*j)->getItem("STR_LEFT_HAND"))
-						{
-							RuleItem *secondaryRule = (*j)->getItem("STR_LEFT_HAND")->getRules();
-							BattleItem *ammoItem = (*j)->getItem("STR_LEFT_HAND")->getAmmoItem();
-							if (!secondaryRule->getCompatibleAmmo()->empty() && ammoItem != 0 && ammoItem->getAmmoQuantity() > 0)
-							{
-								int total = ammoItem->getAmmoQuantity();
+						};
 
-								if (secondaryRule->getClipSize()) // meaning this tank can store multiple clips
-								{
-									total /= ammoItem->getRules()->getClipSize();
-								}
-
-								base->getStorageItems()->addItem(secondaryRule->getCompatibleAmmo()->front(), total);
-							}
-						}
+						unloadWeapon((*j)->getWeapon1());
+						unloadWeapon((*j)->getWeapon2());
 					}
 				}
 				else
@@ -1349,6 +1496,21 @@ void DebriefingState::prepareDebriefing()
 					{
 						_stats.push_back(new DebriefingStat(soldier, tr("STR_SOLDIER_DEBRIEFING_MISSING")));
 						(*j)->updateGeoscapeStats(soldier);
+
+						// starting conditions: recover armor backup
+						if (soldier->getReplacedArmor())
+						{
+							if (soldier->getReplacedArmor()->getStoreItem() != Armor::NONE)
+							{
+								base->getStorageItems()->addItem(soldier->getReplacedArmor()->getStoreItem());
+							}
+							soldier->setReplacedArmor(0);
+						}
+						// transformed armor doesn't get recovered
+						soldier->setTransformedArmor(0);
+						// soldiers are buried in the default armor (...nicer stats in memorial)
+						soldier->setArmor(_game->getMod()->getArmor(soldier->getRules()->getArmor()));
+
 						(*j)->getStatistics()->MIA = true;
 						save->killSoldier(soldier);
 					}
@@ -1370,6 +1532,22 @@ void DebriefingState::prepareDebriefing()
 				}
 				recoverAlien(*j, base);
 			}
+			else if (oldFaction == FACTION_HOSTILE && !aborted && !_destroyBase
+				// surrendered units may as well count as unconscious too
+				&& playersSurvived > 0 && faction != FACTION_PLAYER && !(*j)->isOut())
+			{
+				if ((*j)->getTile())
+				{
+					for (std::vector<BattleItem*>::iterator k = (*j)->getInventory()->begin(); k != (*j)->getInventory()->end(); ++k)
+					{
+						if (!(*k)->getRules()->isFixed())
+						{
+							(*j)->getTile()->addItem(*k, _game->getMod()->getInventory("STR_GROUND"));
+						}
+					}
+				}
+				recoverAlien(*j, base);
+			}
 			else if (oldFaction == FACTION_NEUTRAL)
 			{
 				// if mission fails, all civilians die
@@ -1380,6 +1558,7 @@ void DebriefingState::prepareDebriefing()
 				else
 				{
 					addStat("STR_CIVILIANS_SAVED", 1, (*j)->getValue());
+					recoverCivilian(*j, base);
 				}
 			}
 		}
@@ -1434,7 +1613,7 @@ void DebriefingState::prepareDebriefing()
 			// if this was a 2-stage mission, and we didn't abort (ie: we have time to clean up)
 			// we can recover items from the earlier stages as well
 			recoverItems(battle->getConditionalRecoveredItems(), base);
-			int nonRecoverType = 0;
+			size_t nonRecoverType = 0;
 			if (ruleDeploy && ruleDeploy->getObjectiveType())
 			{
 				nonRecoverType = ruleDeploy->getObjectiveType();
@@ -1444,9 +1623,9 @@ void DebriefingState::prepareDebriefing()
 				// get recoverable map data objects from the battlescape map
 				for (int part = 0; part < 4; ++part)
 				{
-					if (battle->getTiles()[i]->getMapData(part))
+					if (battle->getTile(i)->getMapData(part))
 					{
-						int specialType = battle->getTiles()[i]->getMapData(part)->getSpecialType();
+						size_t specialType = battle->getTile(i)->getMapData(part)->getSpecialType();
 						if (specialType != nonRecoverType && _recoveryStats.find(specialType) != _recoveryStats.end())
 						{
 							addStat(_recoveryStats[specialType]->name, 1, _recoveryStats[specialType]->value);
@@ -1454,15 +1633,15 @@ void DebriefingState::prepareDebriefing()
 					}
 				}
 				// recover items from the floor
-				recoverItems(battle->getTiles()[i]->getInventory(), base);
+				recoverItems(battle->getTile(i)->getInventory(), base);
 			}
 		}
 		else
 		{
 			for (int i = 0; i < battle->getMapSizeXYZ(); ++i)
 			{
-				if (battle->getTiles()[i]->getMapData(O_FLOOR) && (battle->getTiles()[i]->getMapData(O_FLOOR)->getSpecialType() == START_POINT))
-					recoverItems(battle->getTiles()[i]->getInventory(), base);
+				if (battle->getTile(i)->getMapData(O_FLOOR) && (battle->getTile(i)->getMapData(O_FLOOR)->getSpecialType() == START_POINT))
+					recoverItems(battle->getTile(i)->getInventory(), base);
 			}
 		}
 	}
@@ -1495,8 +1674,8 @@ void DebriefingState::prepareDebriefing()
 			// recover items from the craft floor
 			for (int i = 0; i < battle->getMapSizeXYZ(); ++i)
 			{
-				if (battle->getTiles()[i]->getMapData(O_FLOOR) && (battle->getTiles()[i]->getMapData(O_FLOOR)->getSpecialType() == START_POINT))
-					recoverItems(battle->getTiles()[i]->getInventory(), base);
+				if (battle->getTile(i)->getMapData(O_FLOOR) && (battle->getTile(i)->getMapData(O_FLOOR)->getSpecialType() == START_POINT))
+					recoverItems(battle->getTile(i)->getInventory(), base);
 			}
 		}
 	}
@@ -1557,7 +1736,7 @@ void DebriefingState::prepareDebriefing()
 				// calculate new statString
 				soldier->calcStatString(_game->getMod()->getStatStrings(), (Options::psiStrengthEval && _game->getSavedGame()->isResearched(_game->getMod()->getPsiRequirements())));
 
-				if (int recovery = soldier->getWoundRecovery())
+				if (int recovery = soldier->getWoundRecovery(0.0f, 0.0f))
 				{
 					_stats.push_back(new DebriefingStat(soldier, tr("STR_SOLDIER_DEBRIEFING_WOUNDED").arg(Text::formatNumber(recovery)), statIncreases, gainedExperience, gainedLevel, kills));
 				}
@@ -1570,11 +1749,26 @@ void DebriefingState::prepareDebriefing()
 	}
 
 	// calculate the clips for each type based on the recovered rounds.
-	for (std::map<RuleItem*, int>::const_iterator i = _rounds.begin(); i != _rounds.end(); ++i)
+	for (auto i = _rounds.begin(); i != _rounds.end(); ++i)
 	{
 		int total_clips = i->first->getBattleClipSize() ? i->second : i->second / i->first->getClipSize();
 		if (total_clips > 0)
 			base->getStorageItems()->addItem(i->first->getType(), total_clips);
+	}
+
+	// calculate the "remaining medikit items" for each type based on the recovered "clips".
+	for (std::map<const RuleItem*, int>::const_iterator i = _roundsPainKiller.begin(); i != _roundsPainKiller.end(); ++i)
+	{
+		int totalRecovered = INT_MAX;
+		if (i->first->getPainKillerQuantity() > 0)
+			totalRecovered = std::min(totalRecovered, i->second / i->first->getPainKillerQuantity());
+		if (i->first->getStimulantQuantity() > 0)
+			totalRecovered = std::min(totalRecovered, _roundsStimulant[i->first] / i->first->getStimulantQuantity());
+		if (i->first->getHealQuantity() > 0)
+			totalRecovered = std::min(totalRecovered, _roundsHeal[i->first] / i->first->getHealQuantity());
+
+		if (totalRecovered > 0)
+			base->getStorageItems()->addItem(i->first->getType(), totalRecovered);
 	}
 
 	// reequip craft after a non-base-defense mission (of course only if it's not lost already (that case craft=0))
@@ -1639,7 +1833,56 @@ void DebriefingState::prepareDebriefing()
 			}
 		}
 	}
+
+	if (!_destroyBase)
+	{
+		// clean up remaining armor backups
+		// Note: KIA and MIA soldiers have been handled already, only survivors can have non-empty values
+		for (std::vector<Soldier*>::iterator i = base->getSoldiers()->begin(); i != base->getSoldiers()->end(); ++i)
+		{
+			if ((*i)->getReplacedArmor())
+			{
+				(*i)->setArmor((*i)->getReplacedArmor());
+			}
+			else if ((*i)->getTransformedArmor())
+			{
+				(*i)->setArmor((*i)->getTransformedArmor());
+
+			}
+			(*i)->setReplacedArmor(0);
+			(*i)->setTransformedArmor(0);
+		}
+
+		// clean up automagically spawned items
+		const RuleStartingCondition *startingCondition = _game->getMod()->getStartingCondition(battle->getStartingConditionType());
+		if (startingCondition != 0)
+		{
+			const std::map<std::string, int> *defaultItems = startingCondition->getDefaultItems();
+			for (std::map<std::string, int>::const_iterator i = defaultItems->begin(); i != defaultItems->end(); ++i)
+			{
+				base->getStorageItems()->removeItem(i->first, i->second);
+			}
+		}
+	}
+
 	_missionStatistics->success = success;
+
+	if (success && ruleDeploy && base)
+	{
+		// Unlock research defined in alien deployment, if the mission was a success
+		const RuleResearch *research = _game->getMod()->getResearch(ruleDeploy->getUnlockedResearch());
+		if (research)
+		{
+			_game->getSavedGame()->addFinishedResearch(research, _game->getMod(), base, true);
+		}
+
+		// Give bounty item defined in alien deployment, if the mission was a success
+		const RuleItem *bountyItem = _game->getMod()->getItem(ruleDeploy->getMissionBountyItem());
+		if (bountyItem)
+		{
+			base->getStorageItems()->addItem(bountyItem->getType());
+		}
+	}
 
 	// remember the base for later use (of course only if it's not lost already (in that case base=0))
 	_base = base;
@@ -1699,7 +1942,7 @@ void DebriefingState::reequipCraft(Base *base, Craft *craft, bool vehicleItemsCa
 			ReequipStat stat = {i->first, missing, craft->getName(_game->getLanguage())};
 			_missingItems.push_back(stat);
 		}
-		if (tankRule->getCompatibleAmmo()->empty())
+		if (tankRule->getPrimaryCompatibleAmmo()->empty())
 		{ // so this tank does NOT require ammo
 			for (int j = 0; j < canBeAdded; ++j)
 				craft->getVehicles()->push_back(new Vehicle(tankRule, tankRule->getClipSize(), size));
@@ -1707,7 +1950,7 @@ void DebriefingState::reequipCraft(Base *base, Craft *craft, bool vehicleItemsCa
 		}
 		else
 		{ // so this tank requires ammo
-			RuleItem *ammo = _game->getMod()->getItem(tankRule->getCompatibleAmmo()->front(), true);
+			RuleItem *ammo = _game->getMod()->getItem(tankRule->getPrimaryCompatibleAmmo()->front(), true);
 			int ammoPerVehicle, clipSize;
 			if (ammo->getClipSize() > 0 && tankRule->getClipSize() > 0)
 			{
@@ -1756,21 +1999,27 @@ void DebriefingState::recoverItems(std::vector<BattleItem*> *from, Base *base)
 {
 	for (std::vector<BattleItem*>::iterator it = from->begin(); it != from->end(); ++it)
 	{
-		if ((*it)->getRules()->getName() == _game->getMod()->getAlienFuelName())
+		const RuleItem *rule = (*it)->getRules();
+		if (rule->getName() == _game->getMod()->getAlienFuelName())
 		{
 			// special case of an item counted as a stat
-			addStat(_game->getMod()->getAlienFuelName(), _game->getMod()->getAlienFuelQuantity(), (*it)->getRules()->getRecoveryPoints());
+			addStat(_game->getMod()->getAlienFuelName(), _game->getMod()->getAlienFuelQuantity(), rule->getRecoveryPoints());
 		}
 		else
 		{
-			if ((*it)->getRules()->getRecoveryPoints() && !(*it)->getXCOMProperty())
+			if (rule->getRecoveryPoints() && !(*it)->getXCOMProperty())
 			{
-				if ((*it)->getRules()->getBattleType() == BT_CORPSE && (*it)->getUnit()->getStatus() == STATUS_DEAD)
+				if (rule->getBattleType() == BT_CORPSE && (*it)->getUnit()->getStatus() == STATUS_DEAD)
 				{
-					addStat("STR_ALIEN_CORPSES_RECOVERED", 1, (*it)->getUnit()->getValue());
-					base->getStorageItems()->addItem((*it)->getUnit()->getArmor()->getCorpseGeoscape(), 1);
+					std::string corpseItem = (*it)->getUnit()->getArmor()->getCorpseGeoscape();
+					RuleItem *rule = _game->getMod()->getItem(corpseItem);
+					if (rule->isRecoverable())
+					{
+						addStat("STR_ALIEN_CORPSES_RECOVERED", 1, (*it)->getUnit()->getValue());
+						base->getStorageItems()->addItem(corpseItem, 1);
+					}
 				}
-				else if ((*it)->getRules()->getBattleType() == BT_CORPSE)
+				else if (rule->getBattleType() == BT_CORPSE)
 				{
 					// it's unconscious
 					if ((*it)->getUnit()->getStatus() == STATUS_UNCONSCIOUS ||
@@ -1787,47 +2036,149 @@ void DebriefingState::recoverItems(std::vector<BattleItem*> *from, Base *base)
 						else if ((*it)->getUnit()->getOriginalFaction() == FACTION_NEUTRAL)
 						{
 							addStat("STR_CIVILIANS_SAVED", 1, (*it)->getUnit()->getValue());
+							recoverCivilian((*it)->getUnit(), base);
 						}
 					}
 				}
 				// only "recover" unresearched items
-				else if (!_game->getSavedGame()->isResearched((*it)->getRules()->getType()))
+				else if (!_game->getSavedGame()->isResearched(rule->getType()))
 				{
-					addStat("STR_ALIEN_ARTIFACTS_RECOVERED", 1, (*it)->getRules()->getRecoveryPoints());
+					addStat("STR_ALIEN_ARTIFACTS_RECOVERED", 1, rule->getRecoveryPoints());
 				}
 			}
 
 			// put items back in the base
-			if (!(*it)->getRules()->isFixed() && (*it)->getRules()->isRecoverable())
+			if (!rule->isFixed() && rule->isRecoverable() && (!rule->isConsumable() || (*it)->getFuseTimer() < 0))
 			{
-				switch ((*it)->getRules()->getBattleType())
+				bool recoverWeapon = true;
+				switch (rule->getBattleType())
 				{
 					case BT_CORPSE:
 						break;
+					case BT_MEDIKIT:
+						if (rule->isConsumable())
+						{
+							// Need to remember all three!
+							_roundsPainKiller[rule] += (*it)->getPainKillerQuantity();
+							_roundsStimulant[rule] += (*it)->getStimulantQuantity();
+							_roundsHeal[rule] += (*it)->getHealQuantity();
+						}
+						else
+						{
+							// Vanilla behaviour (recover a full medikit).
+							base->getStorageItems()->addItem(rule->getType(), 1);
+						}
+						break;
 					case BT_AMMO:
 						// It's a clip, count any rounds left.
-						_rounds[(*it)->getRules()] += (*it)->getAmmoQuantity();
+						_rounds[rule] += (*it)->getAmmoQuantity();
 						break;
 					case BT_FIREARM:
 					case BT_MELEE:
 					case BT_PSIAMP:
 						// It's a weapon, count any rounds left in the clip.
 						{
-							BattleItem *clip = (*it)->getAmmoItem();
-							if (clip && (clip->getRules()->getClipSize() > 0 || clip->getRules()->getBattleClipSize()) && clip != *it)
+							// Special case: built-in ammo (e.g. throwing knives)
+							if (!(*it)->needsAmmoForSlot(0) && rule->getClipSize() > 0)
 							{
-								_rounds[clip->getRules()] += clip->getAmmoQuantity();
+								_rounds[rule] += (*it)->getAmmoQuantity();
+								recoverWeapon = false;
+							}
+							// It's a weapon, count any rounds left in the clip(s).
+							for (int slot = 0; slot < RuleItem::AmmoSlotMax; ++slot)
+							{
+								BattleItem *clip = (*it)->getAmmoForSlot(slot);
+								if (clip && (clip->getRules()->getClipSize() > 0 || clip->getRules()->getBattleClipSize()) && clip != *it)
+								{
+									_rounds[clip->getRules()] += clip->getAmmoQuantity();
+								}
 							}
 						}
 						// Fall-through, to recover the weapon itself.
 					default:
-						base->getStorageItems()->addItem((*it)->getRules()->getType(), 1);
+						if (recoverWeapon)
+						{
+							base->getStorageItems()->addItem(rule->getType(), 1);
+						}
 				}
-				if ((*it)->getRules()->getBattleType() == BT_NONE)
+				if (rule->getBattleType() == BT_NONE)
 				{
 					for (std::vector<Craft*>::iterator c = base->getCrafts()->begin(); c != base->getCrafts()->end(); ++c)
 					{
-						(*c)->reuseItem((*it)->getRules()->getType());
+						(*c)->reuseItem(rule->getType());
+					}
+				}
+			}
+		}
+	}
+}
+
+/**
+* Recovers a live civilian from the battlescape.
+* @param from Battle unit to recover.
+* @param base Base to add items to.
+*/
+void DebriefingState::recoverCivilian(BattleUnit *from, Base *base)
+{
+	std::string type = from->getUnitRules()->getCivilianRecoveryType();
+	if (type == "STR_SCIENTIST")
+	{
+		Transfer *t = new Transfer(24);
+		t->setScientists(1);
+		base->getTransfers()->push_back(t);
+	}
+	else if (type == "STR_ENGINEER")
+	{
+		Transfer *t = new Transfer(24);
+		t->setEngineers(1);
+		base->getTransfers()->push_back(t);
+	}
+	else
+	{
+		RuleSoldier *ruleSoldier = _game->getMod()->getSoldier(type);
+		if (ruleSoldier != 0)
+		{
+			Transfer *t = new Transfer(24);
+			Soldier *s = _game->getMod()->genSoldier(_game->getSavedGame(), ruleSoldier->getType());
+			t->setSoldier(s);
+			base->getTransfers()->push_back(t);
+		}
+		else
+		{
+			RuleItem *ruleItem = _game->getMod()->getItem(type);
+			if (ruleItem != 0)
+			{
+				if (!ruleItem->isAlien())
+				{
+					base->getStorageItems()->addItem(type, 1);
+				}
+				else
+				{
+					RuleItem *ruleLiveAlienItem = ruleItem;
+					bool killPrisonersAutomatically = base->getAvailableContainment(ruleLiveAlienItem->getPrisonType()) == 0;
+					if (killPrisonersAutomatically)
+					{
+						// check also other bases, maybe we can transfer/redirect prisoners there
+						for (std::vector<Base*>::iterator i = _game->getSavedGame()->getBases()->begin(); i != _game->getSavedGame()->getBases()->end(); ++i)
+						{
+							if ((*i)->getAvailableContainment(ruleLiveAlienItem->getPrisonType()) > 0)
+							{
+								killPrisonersAutomatically = false;
+								break;
+							}
+						}
+					}
+					if (killPrisonersAutomatically)
+					{
+						_containmentStateInfo[ruleLiveAlienItem->getPrisonType()] = 1; // 1 = not available
+					}
+					else
+					{
+						base->getStorageItems()->addItem(type, 1);
+						if (base->getAvailableContainment(ruleLiveAlienItem->getPrisonType()) - (base->getUsedContainment(ruleLiveAlienItem->getPrisonType()) * _limitsEnforced) < 0)
+						{
+							_containmentStateInfo[ruleLiveAlienItem->getPrisonType()] = 2; // 2 = full
+						}
 					}
 				}
 			}
@@ -1855,13 +2206,31 @@ void DebriefingState::recoverAlien(BattleUnit *from, Base *base)
 		return;
 	}
 	std::string type = from->getType();
-	if (base->getAvailableContainment() == 0 && _game->getSavedGame()->getMonthsPassed() > -1)
+	RuleItem *ruleLiveAlienItem = _game->getMod()->getItem(type);
+	bool killPrisonersAutomatically = base->getAvailableContainment(ruleLiveAlienItem->getPrisonType()) == 0;
+	if (killPrisonersAutomatically)
 	{
-		_noContainment = true;
-		addStat("STR_ALIEN_CORPSES_RECOVERED", 1, from->getValue());
+		// check also other bases, maybe we can transfer/redirect prisoners there
+		for (std::vector<Base*>::iterator i = _game->getSavedGame()->getBases()->begin(); i != _game->getSavedGame()->getBases()->end(); ++i)
+		{
+			if ((*i)->getAvailableContainment(ruleLiveAlienItem->getPrisonType()) > 0)
+			{
+				killPrisonersAutomatically = false;
+				break;
+			}
+		}
+	}
+	if (killPrisonersAutomatically)
+	{
+		_containmentStateInfo[ruleLiveAlienItem->getPrisonType()] = 1; // 1 = not available
 
 		std::string corpseItem = from->getArmor()->getCorpseGeoscape();
-		base->getStorageItems()->addItem(corpseItem, 1);
+		RuleItem *rule = _game->getMod()->getItem(corpseItem);
+		if (rule->isRecoverable())
+		{
+			addStat("STR_ALIEN_CORPSES_RECOVERED", 1, from->getValue());
+			base->getStorageItems()->addItem(corpseItem, 1);
+		}
 	}
 	else
 	{
@@ -1869,17 +2238,39 @@ void DebriefingState::recoverAlien(BattleUnit *from, Base *base)
 		if (research != 0 && !_game->getSavedGame()->isResearched(type))
 		{
 			// more points if it's not researched
-			addStat("STR_LIVE_ALIENS_RECOVERED", 1, from->getValue() * 2);
+			addStat(from->isOut() ? "STR_LIVE_ALIENS_RECOVERED" : "STR_LIVE_ALIENS_SURRENDERED", 1, from->getValue() * 2);
 		}
 		else
 		{
 			// 10 points for recovery
-			addStat("STR_LIVE_ALIENS_RECOVERED", 1, 10);
+			addStat(from->isOut() ? "STR_LIVE_ALIENS_RECOVERED" : "STR_LIVE_ALIENS_SURRENDERED", 1, 10);
 		}
 
 		base->getStorageItems()->addItem(type, 1);
-		_manageContainment = base->getAvailableContainment() - (base->getUsedContainment() * _limitsEnforced) < 0;
+		if (base->getAvailableContainment(ruleLiveAlienItem->getPrisonType()) - (base->getUsedContainment(ruleLiveAlienItem->getPrisonType()) * _limitsEnforced) < 0)
+		{
+			_containmentStateInfo[ruleLiveAlienItem->getPrisonType()] = 2; // 2 = full
+		}
 	}
+}
+
+/**
+* Gets the number of recovered items of certain type.
+* @param rule Type of item.
+*/
+int DebriefingState::getRecoveredItemCount(RuleItem *rule)
+{
+	return _recoveredItems[rule];
+}
+
+/**
+* Sets the visibility of the SELL button.
+* @param showSellButton New value.
+*/
+void DebriefingState::setShowSellButton(bool showSellButton)
+{
+	_showSellButton = showSellButton;
+	_btnSell->setVisible(_showSellButton);
 }
 
 }

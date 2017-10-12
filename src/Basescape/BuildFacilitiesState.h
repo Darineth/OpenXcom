@@ -51,9 +51,9 @@ public:
 	/// Cleans up the Build Facilities state.
 	~BuildFacilitiesState();
 	/// Populates the build option list.
-	virtual void PopulateBuildList();
+	virtual void populateBuildList();
 	/// Updates the base stats.
-	void init();
+	void init() override;
 	/// Handler for clicking the OK button.
 	void btnOkClick(Action *action);
 	/// Handler for clicking the Facilities list.

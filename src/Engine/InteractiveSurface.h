@@ -65,6 +65,8 @@ public:
 	virtual void setFocus(bool focus);
 	/// Gets the focus of this surface.
 	bool isFocused() const;
+	/// Gets if the surface is hovered.
+	bool isHovered() const;
 	/// Unpresses the surface.
 	virtual void unpress(State *state);
 	/// Hooks an action handler to a mouse click on the surface.

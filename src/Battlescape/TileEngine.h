@@ -19,8 +19,8 @@
  */
 #include <vector>
 #include "Position.h"
-#include "../Mod/RuleItem.h"
 #include "BattlescapeGame.h"
+#include "../Mod/RuleItem.h"
 #include <SDL.h>
 
 namespace OpenXcom
@@ -31,49 +31,132 @@ class BattleUnit;
 class BattleItem;
 class Tile;
 struct BattleAction;
+struct GraphSubset;
+
+enum BattleActionType : Uint8;
+enum LightLayers : Uint8;
+
+
 /**
  * A utility class that modifies tile properties on a battlescape map. This includes lighting, destruction, smoke, fire, fog of war.
  * Note that this function does not handle any sounds or animations.
  */
 class TileEngine
 {
+public:
+	/// Value represent not exisiting position.
+	static constexpr Position invalid = { -1, -1, -1 };
+
 private:
+	/**
+	 * Helper class storing cached visibility blockage data.
+	 */
+	struct VisibilityBlockCache
+	{
+		Uint8 blockDir;
+		Uint8 blockDirUp;
+		Uint8 blockDirDown;
+
+		Uint8 bigWall;
+
+		Uint8 height;
+
+		Uint8 blockUp : 1;
+		Uint8 blockDown : 1;
+		Uint8 smoke : 1;
+		Uint8 fire : 1;
+	};
+	/**
+	 * Helper class storing reaction data.
+	 */
+	struct ReactionScore
+	{
+		BattleUnit *unit;
+		BattleActionType attackType;
+		double reactionScore;
+		double reactionReduction;
+		double opposingEvasionScore;
+		bool overwatch;
+	};
+
 	SavedBattleGame *_save;
 	std::vector<Uint16> *_voxelData;
+	std::vector<VisibilityBlockCache> _blockVisibility;
 	static const int heightFromCenter[11];
 	static const int _directionSignX[8];
 	static const int _directionSignY[8];
-	void addLight(Position center, int power, int layer);
-	void addDirectionalLight(const Position &center, int power, int layer, int direction);
-	int blockage(Tile *tile, const int part, ItemDamageType type, int direction = -1, bool checkingFromOrigin = false);
 	bool _personalLighting;
+	const int _maxViewDistance;        // 20 tiles by default
+	const int _maxViewDistanceSq;      // 20 * 20
+	const int _maxVoxelViewDistance;   // maxViewDistance * 16
+	const int _maxDarknessToSeeUnits;  // 9 by default
+	const int _maxStaticLightDistance;
+	const int _maxDynamicLightDistance;
+	const int _enhancedLighting;
+	Position _eventVisibilitySectorL, _eventVisibilitySectorR, _eventVisibilityObserverPos;
+
+	/// Add light source.
+	void addLight(GraphSubset gs, Position center, int power, LightLayers layer);
+	/// Add directional light source.
+	void addDirectionalLight(Position center, int power, LightLayers layer, int direction);
+	/// Calculate blockage amount.
+	int blockage(Tile *tile, const int part, ItemDamageType type, int direction = -1, bool checkingFromOrigin = false);
+	/// Get max distance that fire light can reach.
+	int getMaxStaticLightDistance() const { return _maxStaticLightDistance; }
+	/// Get max distance that light can reach.
+	int getMaxDynamicLightDistance() const { return _maxDynamicLightDistance; }
+	/// Get flags for enhanced lighting.
+	int getEnhancedLighting() const { return _enhancedLighting; }
+
+	bool setupEventVisibilitySector(const Position &observerPos, const Position &eventPos, const int &eventRadius);
+	inline bool inEventVisibilitySector(const Position &toCheck) const;
+
+	/// Calculates sun shading of the whole map.
+	void calculateSunShading(GraphSubset gs);
+	/// Recalculates lighting of the battlescape for terrain.
+	void calculateTerrainBackground(GraphSubset gs);
+	/// Recalculates lighting of the battlescape for terrain.
+	void calculateTerrainItems(GraphSubset gs);
+	/// Recalculates lighting of the battlescape for units.
+	void calculateUnitLighting(GraphSubset gs);
+
+	/// Checks validity of a snap shot to this position.
+	ReactionScore determineReactionType(BattleUnit *unit, BattleUnit *target, bool overwatch);
+	/// Creates a vector of units that can spot this unit.
+	std::vector<ReactionScore> getSpottingUnits(BattleUnit* unit);
+	/// Creates a vector of units that are overwatching this unit.
+	std::vector<ReactionScore> getOverwatchingUnits(BattleUnit* unit);
+	/// Given a vector of spotters, and a unit, picks the spotter with the highest reaction score.
+	ReactionScore *getReactor(std::vector<ReactionScore> &spotters, BattleUnit *unit);
+	/// Tries to perform a reaction snap shot to this location.
+	bool tryReaction(BattleUnit *unit, BattleUnit *target, BattleActionType attackType, const BattleAction &originalAction, bool overwatch);
 public:
-	static const int MAX_VIEW_DISTANCE = 20;
-	static const int MAX_VIEW_DISTANCE_SQR = MAX_VIEW_DISTANCE * MAX_VIEW_DISTANCE;
-	static const int MAX_VOXEL_VIEW_DISTANCE = MAX_VIEW_DISTANCE * 16;
-	static const int MAX_DARKNESS_TO_SEE_UNITS = 9;
 	/// Creates a new TileEngine class.
-	TileEngine(SavedBattleGame *save, std::vector<Uint16> *voxelData);
+	TileEngine(SavedBattleGame *save, Mod *mod);
 	/// Cleans up the TileEngine.
 	~TileEngine();
-	/// Calculates sun shading of the whole map.
-	void calculateSunShading();
-	/// Calculates sun shading of a single tile.
-	void calculateSunShading(Tile *tile);
+	/// Calculates visible tiles within the field of view. Supply an eventPosition to do an update limited to a small slice of the view sector.
+	void calculateTilesInFOV(BattleUnit *unit, const Position eventPos = invalid, const int eventRadius = 0);
+	/// Calculates visible units within the field of view. Supply an eventPosition to do an update limited to a small slice of the view sector.
+	bool calculateUnitsInFOV(BattleUnit* unit, const Position eventPos = invalid, const int eventRadius = 0);
 	/// Calculates the field of view from a units view point.
-	bool calculateFOV(BattleUnit *unit);
+	bool calculateFOV(BattleUnit *unit, bool doTileRecalc = true, bool doUnitRecalc = true);
 	/// Calculates the field of view within range of a certain position.
-	void calculateFOV(Position position);
+	void calculateFOV(Position position, int eventRadius = -1, const bool updateTiles = true, const bool appendToTileVisibility = false);
 	/// Checks reaction fire.
-	bool checkReactionFire(BattleUnit *unit, std::vector<BattleUnit*> *ignoredReactors = 0);
-	/// Recalculates lighting of the battlescape for terrain.
-	void calculateTerrainLighting();
-	/// Recalculates lighting of the battlescape for units.
-	void calculateUnitLighting();
+	bool checkReactionFire(BattleUnit *unit, const BattleAction &originalAction, std::vector<BattleUnit*> *ignoredReactors = 0);
+	/// Recalcualte all lighting in some area.
+	void calculateLighting(LightLayers layer, Position position = invalid, int eventRadius = 0, bool terrianChanged = false);
+	/// Handles tile hit.
+	int hitTile(Tile *tile, int damage, const RuleDamageType* type);
+	/// Handles experience training.
+	bool awardExperience(BattleUnit *unit, BattleItem *weapon, BattleUnit *target, bool rangeAtack);
+	/// Handles unit hit.
+	bool hitUnit(BattleActionAttack attack, BattleUnit *target, const Position &relative, int damage, const RuleDamageType *type, bool rangeAtack = true);
 	/// Handles bullet/weapon hits.
-	BattleUnit *hit(Position center, int power, BattleActionType action, ItemDamageType type, BattleUnit *unit, BattleItem *item = 0);
+	BattleUnit *hit(BattleActionAttack attack, Position center, int power, BattleActionType action, const RuleDamageType *type, bool rangeAtack = true, BattleItem *item = 0);
 	/// Handles explosions.
-	void explode(Position center, int power, BattleActionType action, ItemDamageType type, int maxRadius, int falloff, BattleUnit *unit = 0);
+	void explode(BattleActionAttack attack, Position center, int power, const RuleDamageType *type, int maxRadius, bool rangeAtack = true);
 	/// Checks if a destroyed tile starts an explosion.
 	Tile *checkForTerrainExplosions();
 	/// Unit opens door?
@@ -102,12 +185,26 @@ public:
 	int verticalBlockage(Tile *startTile, Tile *endTile, ItemDamageType type, bool skipObject = false);
 	/// Highlight targets detected with motion scanner.
 	void detectMotion(BattleAction *action);
+	/// Calculate success rate of psi attack.
+	int psiAttackCalculate(BattleActionType type, BattleUnit *attacker, BattleUnit *victim, BattleItem *weapon);
+	/// Attempts a panic or mind control action.
+	bool psiAttack(BattleActionAttack attack, BattleUnit *victim);
+	/// Attempts a melee attack action.
+	bool meleeAttack(BattleActionAttack attack, BattleUnit *victim);
+	/// Remove the medikit from the game if consumable and empty.
+	void medikitRemoveIfEmpty(BattleAction *action);
+	/// Try using medikit heal ability.
+	void medikitHeal(BattleAction *action, BattleUnit *target, int bodyPart);
+	/// Try using medikit stimulant ability.
+	void medikitStimulant(BattleAction *action, BattleUnit *target);
+	/// Try using medikit pain killer ability.
+	void medikitPainKiller(BattleAction *action, BattleUnit *target);
 	/// Applies gravity to anything that occupy this tile.
 	Tile *applyGravity(Tile *t);
 	/// Returns melee validity between two units.
 	bool validMeleeRange(BattleUnit *attacker, BattleUnit *target, int dir);
 	/// Returns validity of a melee attack from a given position.
-	bool validMeleeRange(const Position& pos, int direction, BattleUnit *attacker, BattleUnit *target, Position *dest, bool preferEnemy = true);
+	bool validMeleeRange(Position pos, int direction, BattleUnit *attacker, BattleUnit *target, Position *dest, bool preferEnemy = true);
 	/// Gets the AI to look through a window.
 	int faceWindow(Position position);
 	/// Checks a unit's % exposure on a tile.
@@ -123,32 +220,34 @@ public:
 	/// Checks what type of voxel occupies this space.
 	int voxelCheck(Position voxel, BattleUnit *excludeUnit, bool excludeAllUnits = false, bool onlyVisible = false, BattleUnit *excludeAllBut = 0, int *smokeEncountered = 0);
 	/// Blows this tile up.
-	bool detonate(Tile* tile);
+	bool detonate(Tile* tile, int power);
 	/// Validates a throwing action.
-	bool validateThrow(BattleAction &action, const Position& originVoxel, const Position& targetVoxel, double *curve = 0, int *voxelType = 0);
+	bool validateThrow(BattleAction &action, Position originVoxel, Position targetVoxel, double *curve = 0, int *voxelType = 0);
 	/// Opens any doors this door is connected to.
-	void checkAdjacentDoors(const Position& pos, int part);
-	/// Creates a vector of units that can spot this unit.
-	std::vector<std::pair<BattleUnit *, int> > getSpottingUnits(BattleUnit* unit);
-	/// Creates a vector of units that are overwatching this unit.
-	std::vector<std::pair<BattleUnit *, int> > getOverwatchingUnits(BattleUnit* unit);
-	/// Given a vector of spotters, and a unit, picks the spotter with the highest reaction score.
-	BattleUnit* getReactor(const std::vector<std::pair<BattleUnit *, int> > &spotters, int &attackType, BattleUnit *unit, bool overwatch = false);
-	/// Checks validity of a snap shot to this position.
-	int determineReactionType(BattleUnit *unit, BattleUnit *target, bool overwatch, BattleItem *weapon = 0);
-	/// Tries to perform a reaction snap shot to this location.
-	bool tryReaction(BattleUnit *unit, BattleUnit *target, int attackType, bool overwatch);
+	std::pair<int, Position> checkAdjacentDoors(Position pos, int part);
 	/// Recalculates FOV of all units in-game.
 	void recalculateFOV();
 	/// Get direction to a certain point
 	int getDirectionTo(Position origin, Position target) const;
+	/// Get arc between two direction.
+	int getArcDirection(int directionA, int directionB) const;
 	/// determine the origin voxel of a given action.
 	Position getOriginVoxel(BattleAction &action, Tile *tile);
 	/// mark a region of the map as "dangerous" for a turn.
-	void setDangerZone(const Position& pos, int radius, BattleUnit *unit);
+	void setDangerZone(Position pos, int radius, BattleUnit *unit);
 
-	void displayDamage(BattleUnit *attacker, BattleUnit *target, BattleActionType action, ItemDamageType type, int damage, int wounds, int additionalStun, const std::string &source = "");
+	//void displayDamage(BattleUnit *attacker, BattleUnit *target, BattleActionType action, ItemDamageType type, int damage, int wounds, int additionalStun, const std::string &source = "");
+	void displayDamage(BattleUnit *attacker, BattleUnit *target, BattleActionType action, const RuleDamageType *type, int damage, int wounds, const std::string &source);
+
 	void getTargetVoxel(BattleAction *action, const Position &target, Position &targetVoxel);
+	/// Get max view distance.
+	int getMaxViewDistance() const { return _maxViewDistance; }
+	/// Get square of max view distance.
+	int getMaxViewDistanceSq() const { return _maxViewDistanceSq; }
+	/// Get max view distance in voxel space.
+	int getMaxVoxelViewDistance() const { return _maxVoxelViewDistance; }
+	/// Get threshold of darkness for LoS calculation.
+	int getMaxDarknessToSeeUnits() const { return _maxDarknessToSeeUnits; }
 };
 
 }

@@ -35,13 +35,14 @@ class MissionSite : public Target
 private:
 	const RuleAlienMission *_rules;
 	const AlienDeployment *_deployment;
+	const AlienDeployment *_missionCustomDeploy;
 	int _id, _texture;
 	size_t _secondsRemaining;
 	std::string _race, _city;
 	bool _inBattlescape, _detected;
 public:
 	/// Creates a mission site.
-	MissionSite(const RuleAlienMission *rules, const AlienDeployment *deployment);
+	MissionSite(const RuleAlienMission *rules, const AlienDeployment *deployment, const AlienDeployment *alienWeaponDeploy = 0);
 	/// Cleans up the mission site.
 	~MissionSite();
 	/// Loads the mission site from YAML.
@@ -54,6 +55,8 @@ public:
 	const RuleAlienMission *getRules() const;
 	/// Gets the mission site's deployment.
 	const AlienDeployment *getDeployment() const;
+	/// Gets the optional alien weapon deployment for site.
+	const AlienDeployment *getMissionCustomDeploy() const;
 	/// Gets the mission site's ID.
 	int getId() const;
 	/// Sets the mission site's ID.

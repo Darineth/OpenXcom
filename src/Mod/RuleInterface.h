@@ -24,6 +24,8 @@
 namespace OpenXcom
 {
 
+class Mod;
+
 struct Element
 {
 	/// basic rect info, and 3 colors.
@@ -39,6 +41,7 @@ private:
 	std::string _palette;
 	std::string _parent;
 	std::string _music;
+	int _sound;
 
 	std::map <std::string, Element> _elements;
 public:
@@ -47,7 +50,7 @@ public:
 	/// Destructor.
 	~RuleInterface();
 	/// Load from YAML.
-	void load(const YAML::Node& node);
+	void load(const YAML::Node& node, Mod *mod);
 	/// Get an element.
 	Element *getElement(const std::string &id);
 	/// Get palette.
@@ -56,6 +59,8 @@ public:
 	const std::string &getParent() const;
 	/// Get music.
 	const std::string &getMusic() const;
+	/// Get sound.
+	int getSound() const;
 };
 
 }

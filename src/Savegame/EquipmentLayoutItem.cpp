@@ -17,6 +17,8 @@
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "EquipmentLayoutItem.h"
+#include "../Mod/RuleInventory.h"
+#include "BattleItem.h"
 
 namespace OpenXcom
 {
@@ -27,6 +29,10 @@ namespace OpenXcom
  */
 EquipmentLayoutItem::EquipmentLayoutItem(const YAML::Node &node)
 {
+	for (int slot = 0; slot < RuleItem::AmmoSlotMax; ++slot)
+	{
+		_ammoItem[slot] = "NONE";
+	}
 	load(node);
 }
 
@@ -39,12 +45,23 @@ EquipmentLayoutItem::EquipmentLayoutItem(const YAML::Node &node)
  * @param ammoItem The ammo has to be loaded into the item. (it's type)
  * @param fuseTimer The turn until explosion of the item. (if it's an activated grenade-type)
  */
-EquipmentLayoutItem::EquipmentLayoutItem(const std::string &itemType, const std::string &slot, int slotX, int slotY, const std::string &ammoItem, int fuseTimer) : _itemType(itemType), _slot(slot), _slotX(slotX), _slotY(slotY), _ammoItem(ammoItem), _fuseTimer(fuseTimer)
+EquipmentLayoutItem::EquipmentLayoutItem(const BattleItem* item) :
+	_itemType(item->getRules()->getType()),
+	_slot(item->getSlot()->getId()),
+	_slotX(item->getSlotX()), _slotY(item->getSlotY()),
+	_ammoItem{}, _fuseTimer(item->getFuseTimer())
 {
-}
-
-EquipmentLayoutItem::EquipmentLayoutItem(const EquipmentLayoutItem &item) : _itemType(item._itemType), _slot(item._slot), _slotX(item._slotX), _slotY(item._slotY), _ammoItem(item._ammoItem), _fuseTimer(item._fuseTimer)
-{
+	for (int slot = 0; slot < RuleItem::AmmoSlotMax; ++slot)
+	{
+		if (item->needsAmmoForSlot(slot) && item->getAmmoForSlot(slot))
+		{
+			_ammoItem[slot] = item->getAmmoForSlot(slot)->getRules()->getType();
+		}
+		else
+		{
+			_ammoItem[slot] = "NONE";
+		}
+	}
 }
 
 /**
@@ -58,7 +75,7 @@ EquipmentLayoutItem::~EquipmentLayoutItem()
  * Returns the item's type which has to be in a slot.
  * @return item type.
  */
-std::string EquipmentLayoutItem::getItemType() const
+const std::string& EquipmentLayoutItem::getItemType() const
 {
 	return _itemType;
 }
@@ -67,7 +84,7 @@ std::string EquipmentLayoutItem::getItemType() const
  * Returns the slot to be occupied.
  * @return slot name.
  */
-std::string EquipmentLayoutItem::getSlot() const
+const std::string& EquipmentLayoutItem::getSlot() const
 {
 	return _slot;
 }
@@ -94,9 +111,9 @@ int EquipmentLayoutItem::getSlotY() const
  * Returns the ammo has to be loaded into the item.
  * @return ammo type.
  */
-std::string EquipmentLayoutItem::getAmmoItem() const
+const std::string& EquipmentLayoutItem::getAmmoItemForSlot(int slot) const
 {
-	return _ammoItem;
+	return _ammoItem[slot];
 }
 
 /**
@@ -118,7 +135,14 @@ void EquipmentLayoutItem::load(const YAML::Node &node)
 	_slot = node["slot"].as<std::string>(_slot);
 	_slotX = node["slotX"].as<int>(0);
 	_slotY = node["slotY"].as<int>(0);
-	_ammoItem = node["ammoItem"].as<std::string>("NONE");
+	_ammoItem[0] = node["ammoItem"].as<std::string>(_ammoItem[0]);
+	if (const YAML::Node &ammoSlots = node["ammoItemSlots"])
+	{
+		for (int slot = 0; slot < RuleItem::AmmoSlotMax; ++slot)
+		{
+			_ammoItem[slot] = ammoSlots[slot].as<std::string>(_ammoItem[slot]);
+		}
+	}
 	_fuseTimer = node["fuseTimer"].as<int>(-1);
 }
 
@@ -140,11 +164,15 @@ YAML::Node EquipmentLayoutItem::save() const
 	{
 		node["slotY"] = _slotY;
 	}
-	if (_ammoItem != "NONE")
+	if (_ammoItem[0] != "NONE")
 	{
-		node["ammoItem"] = _ammoItem;
+		node["ammoItem"] = _ammoItem[0];
 	}
-	if (_fuseTimer != -1)
+	for (int slot = 0; slot < RuleItem::AmmoSlotMax; ++slot)
+	{
+		node["ammoItemSlots"].push_back(_ammoItem[slot]);
+	}
+	if (_fuseTimer >= 0)
 	{
 		node["fuseTimer"] = _fuseTimer;
 	}

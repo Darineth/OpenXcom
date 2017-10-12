@@ -16,6 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <cmath>
 #include "Soldier.h"
 #include "../Engine/RNG.h"
 #include "../Engine/Language.h"
@@ -45,9 +46,9 @@ namespace OpenXcom
 Soldier::Soldier(RuleSoldier *rules, SavedGame *save, Armor *armor, int id, Language *lang, int vehicleId) :
 	_id(id), _nationality(0),
 	_improvement(0), _psiStrImprovement(0), _rules(rules), _rank(RANK_ROOKIE), _craft(0),
-	_gender(GENDER_MALE), _look(LOOK_BLONDE), _lookVariant(0), _missions(0), _kills(0), _recovery(0),
+	_gender(GENDER_MALE), _look(LOOK_BLONDE), _lookVariant(0), _missions(0), _kills(0), _recovery(0.0f),
 	_recentlyPromoted(false), _psiTraining(false), _training(false),
-	_armor(armor), _death(0), _diary(new SoldierDiary()),
+	_armor(armor), _replacedArmor(0), _transformedArmor(0), _death(0), _diary(new SoldierDiary()),
 	_initialStats(), _equipmentLayout(), _role(save->getDefaultRole()),
 	_isVehicle(rules->isVehicle()), _vehicleId(vehicleId), _type(rules->getType()),
 	_inventoryLayout(rules->getInventoryLayout()), _armorColor("STR_NONE"),
@@ -61,7 +62,7 @@ Soldier::Soldier(RuleSoldier *rules, SavedGame *save, Armor *armor, int id, Lang
 		_initialStats.tu = RNG::generate(minStats.tu, maxStats.tu);
 		_initialStats.stamina = RNG::generate(minStats.stamina, maxStats.stamina);
 		_initialStats.health = RNG::generate(minStats.health, maxStats.health);
-		_initialStats.bravery = RNG::generate(minStats.bravery/10, maxStats.bravery/10)*10;
+		_initialStats.bravery = RNG::generate(minStats.bravery / 10, maxStats.bravery / 10) * 10;
 		_initialStats.reactions = RNG::generate(minStats.reactions, maxStats.reactions);
 		_initialStats.firing = RNG::generate(minStats.firing, maxStats.firing);
 		_initialStats.throwing = RNG::generate(minStats.throwing, maxStats.throwing);
@@ -93,7 +94,7 @@ Soldier::Soldier(RuleSoldier *rules, SavedGame *save, Armor *armor, int id, Lang
 		{
 			// No possible names, just wing it
 			_gender = (RNG::percent(rules->getFemaleFrequency()) ? GENDER_FEMALE : GENDER_MALE);
-			_look = (SoldierLook)RNG::generate(0,3);
+			_look = (SoldierLook)RNG::generate(0, 3);
 			_name = (_gender == GENDER_FEMALE) ? L"Jane" : L"John";
 			_name += L" Doe";
 		}
@@ -137,13 +138,17 @@ void Soldier::load(const YAML::Node& node, const Mod *mod, SavedGame *save)
 	_lookVariant = node["lookVariant"].as<int>(_lookVariant);
 	_missions = node["missions"].as<int>(_missions);
 	_kills = node["kills"].as<int>(_kills);
-	_recovery = node["recovery"].as<int>(_recovery);
+	_recovery = node["recovery"].as<float>(_recovery);
 	Armor *armor = mod->getArmor(node["armor"].as<std::string>());
 	if (armor == 0)
 	{
 		armor = mod->getArmor(mod->getSoldier(mod->getSoldiersList().front())->getArmor());
 	}
 	_armor = armor;
+	if (node["replacedArmor"])
+		_replacedArmor = mod->getArmor(node["replacedArmor"].as<std::string>());;
+	if (node["transformedArmor"])
+		_transformedArmor = mod->getArmor(node["transformedArmor"].as<std::string>());;
 	_psiTraining = node["psiTraining"].as<bool>(_psiTraining);
 	_training = node["training"].as<bool>(_training);
 	_improvement = node["improvement"].as<int>(_improvement);
@@ -175,12 +180,12 @@ void Soldier::load(const YAML::Node& node, const Mod *mod, SavedGame *save)
 	}
 	calcStatString(mod->getStatStrings(), (Options::psiStrengthEval && save->isResearched(mod->getPsiRequirements())));
 
-	if(const YAML::Node &role = node["role"])
+	if (const YAML::Node &role = node["role"])
 	{
 		_role = save->getRole(role.as<std::string>());
 	}
 
-	if(!_role)
+	if (!_role)
 	{
 		_role = save->getDefaultRole();
 	}
@@ -222,9 +227,13 @@ YAML::Node Soldier::save() const
 	node["lookVariant"] = _lookVariant;
 	node["missions"] = _missions;
 	node["kills"] = _kills;
-	if (_recovery > 0)
+	if (_recovery > 0.0f)
 		node["recovery"] = _recovery;
 	node["armor"] = _armor->getType();
+	if (_replacedArmor != 0)
+		node["replacedArmor"] = _replacedArmor->getType();
+	if (_transformedArmor != 0)
+		node["transformedArmor"] = _transformedArmor->getType();
 	if (_psiTraining)
 		node["psiTraining"] = _psiTraining;
 	if (_training)
@@ -245,7 +254,7 @@ YAML::Node Soldier::save() const
 		node["diary"] = _diary->save();
 	}
 
-	if(_role)
+	if (_role)
 	{
 		node["role"] = _role->getName();
 	}
@@ -337,13 +346,16 @@ void Soldier::setCraft(Craft *craft)
  * @param lang Language to get strings from.
  * @return Full name.
  */
-std::wstring Soldier::getCraftString(Language *lang) const
+std::wstring Soldier::getCraftString(Language *lang, float absBonus, float relBonus) const
 {
 	std::wstring s;
-	if (_recovery > 0)
+	if (isWounded())
 	{
-		s = lang->getString("STR_WOUNDED");
-		s = s.append(L": ").append(Text::formatNumber(_recovery));
+		std::wostringstream ss;
+		ss << lang->getString("STR_WOUNDED");
+		ss << L": ";
+		ss << getWoundRecovery(absBonus, relBonus);
+		s = ss.str();
 	}
 	else if (_craft == 0)
 	{
@@ -368,20 +380,20 @@ std::string Soldier::getRankString() const
 
 	switch (_rank)
 	{
-	case RANK_ROOKIE:
-		return "STR_ROOKIE";
-	case RANK_SQUADDIE:
-		return "STR_SQUADDIE";
-	case RANK_SERGEANT:
-		return "STR_SERGEANT";
-	case RANK_CAPTAIN:
-		return "STR_CAPTAIN";
-	case RANK_COLONEL:
-		return "STR_COLONEL";
-	case RANK_COMMANDER:
-		return "STR_COMMANDER";
-	default:
-		return isVehicle() ? _type : "";
+		case RANK_ROOKIE:
+			return "STR_ROOKIE";
+		case RANK_SQUADDIE:
+			return "STR_SQUADDIE";
+		case RANK_SERGEANT:
+			return "STR_SERGEANT";
+		case RANK_CAPTAIN:
+			return "STR_CAPTAIN";
+		case RANK_COLONEL:
+			return "STR_COLONEL";
+		case RANK_COMMANDER:
+			return "STR_COMMANDER";
+		default:
+			return isVehicle() ? _type : "";
 	}
 }
 
@@ -545,6 +557,41 @@ UnitStats *Soldier::getCurrentStats()
 }
 
 /**
+ * Returns the total of the soldier's stats for sorting.
+ */
+int Soldier::getTotalStats() const
+{
+	return _currentStats.tu
+		+ _currentStats.stamina
+		+ _currentStats.health
+		+ _currentStats.bravery
+		+ _currentStats.reactions
+		+ _currentStats.firing
+		+ _currentStats.throwing
+		+ _currentStats.melee
+		+ _currentStats.strength
+		+ _currentStats.psiStrength
+		+ _currentStats.psiSkill;
+}
+
+void Soldier::setBothStats(UnitStats *stats)
+{
+	_currentStats.tu = stats->tu;
+	_currentStats.stamina = stats->stamina;
+	_currentStats.health = stats->health;
+	_currentStats.bravery = stats->bravery;
+	_currentStats.reactions = stats->reactions;
+	_currentStats.firing = stats->firing;
+	_currentStats.throwing = stats->throwing;
+	_currentStats.melee = stats->melee;
+	_currentStats.strength = stats->strength;
+	_currentStats.psiStrength = stats->psiStrength;
+	_currentStats.psiSkill = stats->psiSkill;
+
+	_initialStats = _currentStats;
+}
+
+/**
  * Returns the unit's promotion status and resets it.
  * @return True if recently promoted, False otherwise.
  */
@@ -574,6 +621,42 @@ void Soldier::setArmor(Armor *armor)
 }
 
 /**
+* Gets the soldier's original armor (before replacement).
+* @return Pointer to armor data.
+*/
+Armor *Soldier::getReplacedArmor() const
+{
+	return _replacedArmor;
+}
+
+/**
+* Backs up the soldier's original armor (before replacement).
+* @param armor Pointer to armor data.
+*/
+void Soldier::setReplacedArmor(Armor *armor)
+{
+	_replacedArmor = armor;
+}
+
+/**
+* Gets the soldier's original armor (before transformation).
+* @return Pointer to armor data.
+*/
+Armor *Soldier::getTransformedArmor() const
+{
+	return _transformedArmor;
+}
+
+/**
+* Backs up the soldier's original armor (before transformation).
+* @param armor Pointer to armor data.
+*/
+void Soldier::setTransformedArmor(Armor *armor)
+{
+	_transformedArmor = armor;
+}
+
+/**
 * Is the soldier wounded or not?.
 * @return True if wounded.
 */
@@ -595,9 +678,10 @@ bool Soldier::hasFullHealth() const
  * Returns the amount of time until the soldier is healed.
  * @return Number of days.
  */
-int Soldier::getWoundRecovery() const
+int Soldier::getWoundRecovery(float absBonus, float relBonus) const
 {
-	return _recovery;
+	float hpPerDay = 1.0f + absBonus + (relBonus * _currentStats.health * 0.01f);
+	return (int)(std::ceil(_recovery / hpPerDay));
 }
 
 /**
@@ -623,9 +707,19 @@ void Soldier::setWoundRecovery(int recovery)
 /**
  * Heals soldier wounds.
  */
-void Soldier::heal()
+void Soldier::heal(float absBonus, float relBonus)
 {
-	_recovery--;
+	// 1 hp per day as minimum
+	_recovery -= 1.0f;
+
+	// absolute bonus from sick bay facilities
+	_recovery -= absBonus;
+
+	// relative bonus from sick bay facilities
+	_recovery -= (relBonus * _currentStats.health * 0.01f);
+
+	if (_recovery < 0.0f)
+		_recovery = 0.0f;
 }
 
 /**
@@ -666,10 +760,8 @@ void Soldier::trainPsi()
 			else if (_currentStats.psiStrength < psiStrengthCap) _psiStrImprovement = RNG::generate(1, 3);
 		}
 	}
-	_currentStats.psiSkill += _improvement;
-	_currentStats.psiStrength += _psiStrImprovement;
-	if (_currentStats.psiSkill > psiSkillCap) _currentStats.psiSkill = psiSkillCap;
-	if (_currentStats.psiStrength > psiStrengthCap) _currentStats.psiStrength = psiStrengthCap;
+	_currentStats.psiSkill = std::max(_currentStats.psiSkill, std::min(_currentStats.psiSkill + _improvement, psiSkillCap));
+	_currentStats.psiStrength = std::max(_currentStats.psiStrength, std::min(_currentStats.psiStrength + _psiStrImprovement, psiStrengthCap));
 }
 
 /**
@@ -769,7 +861,7 @@ void Soldier::die(SoldierDeath *death)
 	_craft = 0;
 	_psiTraining = false;
 	_recentlyPromoted = false;
-	_recovery = 0;
+	_recovery = 0.0f;
 	for (std::vector<EquipmentLayoutItem*>::iterator i = _equipmentLayout.begin(); i != _equipmentLayout.end(); ++i)
 	{
 		delete *i;
@@ -803,7 +895,14 @@ void Soldier::resetDiary()
  */
 void Soldier::calcStatString(const std::vector<StatString *> &statStrings, bool psiStrengthEval)
 {
-	_statString = StatString::calcStatString(_currentStats, statStrings, psiStrengthEval && !_isVehicle, _psiTraining);
+	if (_rules->getStatStrings().empty())
+	{
+		_statString = StatString::calcStatString(_currentStats, statStrings, psiStrengthEval && !_isVehicle, _psiTraining);
+	}
+	else
+	{
+		_statString = StatString::calcStatString(_currentStats, _rules->getStatStrings(), psiStrengthEval && !_isVehicle, _psiTraining);
+	}
 }
 
 /**
@@ -963,7 +1062,7 @@ int Soldier::getExperience() const
 
 int Soldier::getNextLevelExperience() const
 {
-	if (int maxLevel =_rules->getMaxLevel())
+	if (int maxLevel = _rules->getMaxLevel())
 	{
 		int level = _level;
 

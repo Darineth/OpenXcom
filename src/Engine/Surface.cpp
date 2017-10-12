@@ -852,8 +852,6 @@ void Surface::unlock()
 	SDL_UnlockSurface(_surface);
 }
 
-
-
 /**
  * Specific blit function to blit battlescape terrain data in different shades in a fast way.
  * Notice there is no surface locking here - you have to make sure you lock the surface yourself
@@ -878,11 +876,10 @@ void Surface::blitNShade(Surface *surface, int x, int y, int off, bool half, int
 	{
 		--newBaseColor;
 		newBaseColor <<= 4;
-		ShaderDraw<RecolorAndShade>(ShaderSurface(surface), src, ShaderScalar(off), ShaderScalar(newBaseColor));
+		ShaderDraw<helper::ColorReplace>(ShaderSurface(surface), src, ShaderScalar(off), ShaderScalar(newBaseColor));
 	}
 	else
-		ShaderDraw<StandardShade>(ShaderSurface(surface), src, ShaderScalar(off));
-
+		ShaderDraw<helper::StandardShade>(ShaderSurface(surface), src, ShaderScalar(off));
 }
 
 /**
@@ -928,7 +925,7 @@ void Surface::resize(int width, int height)
 	int pitch = GetPitch(bpp, width);
 	void *alignedBuffer = NewAligned(bpp, width, height);
 	SDL_Surface *surface = SDL_CreateRGBSurfaceFrom(alignedBuffer, width, height, bpp, pitch, 0, 0, 0, 0);
-	
+
 	if (surface == 0)
 	{
 		throw Exception(SDL_GetError());

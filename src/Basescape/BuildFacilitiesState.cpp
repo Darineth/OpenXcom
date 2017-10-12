@@ -16,6 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <algorithm>
 #include "BuildFacilitiesState.h"
 #include "../Engine/Game.h"
 #include "../Mod/Mod.h"
@@ -27,7 +28,9 @@
 #include "../Interface/TextList.h"
 #include "../Mod/RuleBaseFacility.h"
 #include "../Savegame/SavedGame.h"
+#include "../Savegame/Base.h"
 #include "PlaceFacilityState.h"
+#include "../Mod/Mod.h"
 
 namespace OpenXcom
 {
@@ -77,7 +80,6 @@ BuildFacilitiesState::BuildFacilitiesState(Base *base, State *state) : _base(bas
 	_lstFacilities->setScrolling(true, 0);
 	_lstFacilities->onMouseClick((ActionHandler)&BuildFacilitiesState::lstFacilitiesClick);
 
-	PopulateBuildList();
 }
 
 /**
@@ -88,15 +90,72 @@ BuildFacilitiesState::~BuildFacilitiesState()
 
 }
 
+namespace
+{
+/**
+ * Find if two vector ranges intersects.
+ * @param a First Vector.
+ * @param b Second Vector.
+ * @return True if have common value.
+ */
+bool intersection(const std::vector<std::string> &a, const std::vector<std::string> &b)
+{
+	auto a_begin = std::begin(a);
+	auto a_end = std::end(a);
+	auto b_begin = std::begin(b);
+	auto b_end = std::end(b);
+	while (true)
+	{
+		if (b_begin == b_end)
+		{
+			return false;
+		}
+		a_begin = std::lower_bound(a_begin, a_end, *b_begin);
+		if (a_begin == a_end)
+		{
+			return false;
+		}
+		if (*a_begin == *b_begin)
+		{
+			return true;
+		}
+		b_begin = std::lower_bound(b_begin, b_end, *a_begin);
+	}
+}
+
+}
+
 /**
  * Populates the build list from the current "available" facilities.
  */
-void BuildFacilitiesState::PopulateBuildList()
+void BuildFacilitiesState::populateBuildList()
 {
+	_facilities.clear();
+	_lstFacilities->clearList();
+
+	const std::vector<std::string> &providedBaseFunc = _base->getProvidedBaseFunc();
+	const std::vector<std::string> &forbiddenBaseFunc = _base->getForbiddenBaseFunc();
+	const std::vector<std::string> &futureBaseFunc = _base->getFutureBaseFunc();
+
 	const std::vector<std::string> &facilities = _game->getMod()->getBaseFacilitiesList();
 	for (std::vector<std::string>::const_iterator i = facilities.begin(); i != facilities.end(); ++i)
 	{
 		RuleBaseFacility *rule = _game->getMod()->getBaseFacility(*i);
+		const std::vector<std::string> &req = rule->getRequireBaseFunc();
+		const std::vector<std::string> &forb = rule->getForbiddenBaseFunc();
+		const std::vector<std::string> &prov = rule->getProvidedBaseFunc();
+		if (!std::includes(providedBaseFunc.begin(), providedBaseFunc.end(), req.begin(), req.end()))
+		{
+			continue;
+		}
+		if (intersection(forbiddenBaseFunc, prov))
+		{
+			continue;
+		}
+		if (intersection(futureBaseFunc, forb))
+		{
+			continue;
+		}
 		if (_game->getSavedGame()->isResearched(rule->getRequirements()) && !rule->isLift())
 			_facilities.push_back(rule);
 	}
@@ -115,6 +174,8 @@ void BuildFacilitiesState::init()
 {
 	_state->init();
 	State::init();
+
+	populateBuildList();
 }
 
 /**

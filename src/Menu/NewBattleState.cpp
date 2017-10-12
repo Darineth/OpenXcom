@@ -53,6 +53,8 @@
 #include "../Mod/RuleAlienMission.h"
 #include "../Mod/RuleGlobe.h"
 #include "../Mod/RuleSoldier.h"
+#include "../Engine/Game.h"
+#include "../Engine/Screen.h"
 
 namespace OpenXcom
 {
@@ -63,6 +65,8 @@ namespace OpenXcom
  */
 NewBattleState::NewBattleState() : _craft(0)
 {
+	Game::getGame()->getScreen()->pushMaximizeInfoScreen();
+
 	// Create objects
 	_window = new Window(this, 320, 200, 0, 0, POPUP_BOTH);
 	_txtTitle = new Text(320, 17, 0, 9);
@@ -213,6 +217,11 @@ NewBattleState::NewBattleState() : _craft(0)
 		_cbxAlienRace->setOptions(_alienRaces);
 
 	_slrAlienTech->setRange(0, _game->getMod()->getAlienItemLevels().size()-1);
+	if (_game->getMod()->getAlienItemLevels().size() <= 1)
+	{
+		_slrAlienTech->setVisible(false);
+		_txtAlienTech->setVisible(false);
+	}
 
 	_btnEquip->setText(tr("STR_EQUIP_CRAFT"));
 	_btnEquip->onMouseClick((ActionHandler)&NewBattleState::btnEquipClick);
@@ -236,7 +245,7 @@ NewBattleState::NewBattleState() : _craft(0)
  */
 NewBattleState::~NewBattleState()
 {
-
+	Game::getGame()->getScreen()->popMaximizeInfoScreen();
 }
 
 /**
@@ -510,7 +519,7 @@ void NewBattleState::btnOkClick(Action *)
 		return;
 	}
 
-	SavedBattleGame *bgame = new SavedBattleGame();
+	SavedBattleGame *bgame = new SavedBattleGame(_game->getMod());
 	_game->getSavedGame()->setBattleGame(bgame);
 	bgame->setMissionType(_missionTypes[_cbxMission->getSelected()]);
 	BattlescapeGenerator bgen = BattlescapeGenerator(_game);
@@ -538,7 +547,7 @@ void NewBattleState::btnOkClick(Action *)
 	// ufo assault
 	else if (_craft && _game->getMod()->getUfo(_missionTypes[_cbxMission->getSelected()]))
 	{
-		Ufo *u = new Ufo(_game->getMod()->getUfo(_missionTypes[_cbxMission->getSelected()]));
+		Ufo *u = new Ufo(_game->getMod()->getUfo(_missionTypes[_cbxMission->getSelected()]), false);
 		u->setId(1);
 		_craft->setDestination(u);
 		bgen.setUfo(u);

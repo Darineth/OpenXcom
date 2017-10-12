@@ -231,6 +231,9 @@ void MovingTarget::calculateMeetPoint()
 		_meetPointLon = _lon;
 	}
 
+	// ***IMPORTANT*** this functionality has been disabled until further notice, most probably forever
+	return;
+
 	if (!_dest || !Options::meetingPoint) return;
 
 	MovingTarget *u = dynamic_cast<MovingTarget*>(_dest);

@@ -48,7 +48,7 @@ class Craft : public MovingTarget
 private:
 	RuleCraft *_rules;
 	Base *_base;
-	int _id, _fuel, _damage, _shield, _interceptionOrder, _takeoff;
+	int _id, _fuel, _combatFuel, _damage, _shield, _interceptionOrder, _takeoff;
 	std::vector<CraftWeapon*> _weapons;
 	ItemContainer *_items;
 	std::vector<Vehicle*> _vehicles;
@@ -131,6 +131,10 @@ public:
 	void setFuel(int fuel);
 	/// Gets the craft's percentage of fuel.
 	int getFuelPercentage() const;
+	/// Gets the craft's amount of combat fuel.
+	int getCombatFuel() const;
+	/// Sets the craft's amount of combat fuel.
+	void setCombatFuel(int fuel);
 	/// Gets the craft's max amount of damage.
 	int getDamageMax() const;
 	/// Gets the craft's amount of damage.

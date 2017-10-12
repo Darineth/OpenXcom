@@ -75,6 +75,9 @@ namespace OpenXcom
 		/// get index of the given article id in the visible list.
 		static size_t getArticleIndex(SavedGame *save, Mod *rule, std::string &article_id);
 
+		/// check if the article is hidden.
+		static bool isArticleHidden(SavedGame *save, ArticleDefinition *article);
+
 		/// get list of researched articles
 		static ArticleDefinitionList getAvailableArticles(SavedGame *save, Mod *rule);
 

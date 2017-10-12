@@ -55,7 +55,7 @@ namespace OpenXcom
 	 * Constructor.
 	 * @param type_id Article type of this instance.
 	 */
-	ArticleDefinition::ArticleDefinition(UfopaediaTypeId type_id) : _type_id(type_id), _listOrder(0)
+	ArticleDefinition::ArticleDefinition(UfopaediaTypeId type_id) : _type_id(type_id), customPalette(false), _listOrder(0)
 	{}
 
 	/**
@@ -136,6 +136,8 @@ namespace OpenXcom
 	{
 		ArticleDefinition::load(node, listOrder);
 		image_id = node["image_id"].as<std::string>(image_id);
+		if (image_id.find("_CPAL") != std::string::npos)
+			customPalette = true;
 		rect_stats = node["rect_stats"].as<ArticleDefinitionRect>(rect_stats);
 		rect_text = node["rect_text"].as<ArticleDefinitionRect>(rect_text);
 		text = node["text"].as<std::string>(text);
@@ -156,6 +158,8 @@ namespace OpenXcom
 	{
 		ArticleDefinition::load(node, listOrder);
 		image_id = node["image_id"].as<std::string>(image_id);
+		if (image_id.find("_CPAL") != std::string::npos)
+			customPalette = true;
 		text = node["text"].as<std::string>(text);
 	}
 
@@ -191,8 +195,11 @@ namespace OpenXcom
 	{
 		ArticleDefinition::load(node, listOrder);
 		image_id = node["image_id"].as<std::string>(image_id);
+		if (image_id.find("_CPAL") != std::string::npos)
+			customPalette = true;
 		text = node["text"].as<std::string>(text);
 		text_width = node["text_width"].as<int>(text_width);
+		rect_text = node["rect_text"].as<ArticleDefinitionRect>(rect_text);
 	}
 	
 	/**
@@ -298,6 +305,9 @@ namespace OpenXcom
 	void ArticleDefinitionVehicle::load(const YAML::Node &node, int listOrder)
 	{
 		ArticleDefinition::load(node, listOrder);
+		image_id = node["image_id"].as<std::string>(image_id);
+		if (image_id.find("_CPAL") != std::string::npos)
+			customPalette = true;
 		weapon = node["weapon"].as<std::string>(weapon);
 		text = node["text"].as<std::string>(text);
 	}

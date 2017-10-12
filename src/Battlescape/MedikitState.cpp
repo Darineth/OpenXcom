@@ -34,6 +34,7 @@
 #include "../Savegame/SavedGame.h"
 #include "../Savegame/SavedBattleGame.h"
 #include "../Savegame/BattleUnitStatistics.h"
+#include "TileEngine.h"
 
 namespace OpenXcom
 {
@@ -119,11 +120,10 @@ MedikitButton::MedikitButton(int y) : InteractiveSurface(30, 20, 190, y)
  * @param targetUnit The wounded unit.
  * @param action The healing action.
  */
-MedikitState::MedikitState (BattleUnit *targetUnit, BattleAction *action) : _targetUnit(targetUnit), _action(action)
+MedikitState::MedikitState (BattleUnit *targetUnit, BattleAction *action, TileEngine *tile) : _targetUnit(targetUnit), _action(action), _tileEngine(tile)
 {
 	_game->getScreen()->pushMaximizeInfoScreen(true);
 
-	_tu = action->TU;
 	_unit = action->actor;
 	_item = action->weapon;
 	_bg = new Surface(320, 200);
@@ -220,6 +220,7 @@ void MedikitState::onEndClick(Action *)
 {
 	_game->getScreen()->popMaximizeInfoScreen();
 	_game->popState();
+	_tileEngine->medikitRemoveIfEmpty(_action);
 }
 
 /**
@@ -228,21 +229,20 @@ void MedikitState::onEndClick(Action *)
  */
 void MedikitState::onHealClick(Action *)
 {
-	int heal = _item->getHealQuantity();
-	RuleItem *rule = _item->getRules();
-	if (heal == 0)
+	if (_item->getHealQuantity() == 0)
 	{
 		return;
 	}
-	if (_unit->spendTimeUnits(_tu))
+
+	if (_action->spendTU(&_action->result))
 	{
 		_unit->cancelEffects(ECT_ACTIVATE);
 		_unit->addBattleExperience("STR_HEAL");
 
-		_targetUnit->heal(_medikitView->getSelectedPart(), rule->getWoundRecovery(), rule->getHealthRecovery());
-		_item->setHealQuantity(--heal);
+		_tileEngine->medikitHeal(_action, _targetUnit, _medikitView->getSelectedPart());
 		_medikitView->updateSelectedPart();
 		_medikitView->invalidate();
+		_action->actor->getStatistics()->woundsHealed++;
 		update();
 
 		if (_targetUnit->getStatus() == STATUS_UNCONSCIOUS && _targetUnit->getStunlevel() < _targetUnit->getHealth() && _targetUnit->getHealth() > 0)
@@ -250,7 +250,6 @@ void MedikitState::onHealClick(Action *)
 			_targetUnit->setTimeUnits(0);
 			_action->actor->getStatistics()->revivedSoldier++;
 		}
-		_unit->getStatistics()->woundsHealed++;
 	}
 	else
 	{
@@ -265,19 +264,17 @@ void MedikitState::onHealClick(Action *)
  */
 void MedikitState::onStimulantClick(Action *)
 {
-	int stimulant = _item->getStimulantQuantity();
-	RuleItem *rule = _item->getRules();
-	if (stimulant == 0)
+	if (_item->getStimulantQuantity() == 0)
 	{
 		return;
 	}
-	if (_unit->spendTimeUnits (_tu))
+
+	if (_action->spendTU(&_action->result))
 	{
 		_unit->cancelEffects(ECT_ACTIVATE);
 		_unit->addBattleExperience("STR_HEAL");
 
-		_targetUnit->stimulant(rule->getEnergyRecovery(), rule->getStunRecovery());
-		_item->setStimulantQuantity(--stimulant);
+		_tileEngine->medikitStimulant(_action, _targetUnit);
 		_action->actor->getStatistics()->appliedStimulant++;
 		update();
 
@@ -285,6 +282,7 @@ void MedikitState::onStimulantClick(Action *)
 		if (_targetUnit->getStatus() == STATUS_UNCONSCIOUS && _targetUnit->getStunlevel() < _targetUnit->getHealth() && _targetUnit->getHealth() > 0)
 		{
 			_targetUnit->setTimeUnits(0);
+			_action->actor->getStatistics()->revivedSoldier++;
 			onEndClick(0);
 		}
 	}
@@ -301,18 +299,17 @@ void MedikitState::onStimulantClick(Action *)
  */
 void MedikitState::onPainKillerClick(Action *)
 {
-	int pk = _item->getPainKillerQuantity();
-	if (pk == 0)
+	if (_item->getPainKillerQuantity() == 0)
 	{
 		return;
 	}
-	if (_unit->spendTimeUnits (_tu))
+
+	if (_action->spendTU(&_action->result))
 	{
 		_unit->cancelEffects(ECT_ACTIVATE);
 		_unit->addBattleExperience("STR_HEAL");
 
-		_targetUnit->painKillers();
-		_item->setPainKillerQuantity(--pk);
+		_tileEngine->medikitPainKiller(_action, _targetUnit);
 		_action->actor->getStatistics()->appliedPainKill++;
 		update();
 	}

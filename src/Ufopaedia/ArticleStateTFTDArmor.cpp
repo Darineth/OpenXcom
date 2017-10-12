@@ -35,18 +35,18 @@ namespace OpenXcom
 	ArticleStateTFTDArmor::ArticleStateTFTDArmor(ArticleDefinitionTFTD *defs) : ArticleStateTFTD(defs), _row(0)
 	{
 		Armor *armor = _game->getMod()->getArmor(defs->id, true);
-		
+
 		_lstInfo = new TextList(150, 64, 168, 110);
 		add(_lstInfo);
 
 		_lstInfo->setColor(Palette::blockOffset(0)+2);
 		_lstInfo->setColumns(2, 125, 25);
 		_lstInfo->setDot(true);
-		
+
 		// Add armor values
 		addStat("STR_FRONT_ARMOR", armor->getFrontArmor());
-		addStat("STR_LEFT_ARMOR", armor->getSideArmor());
-		addStat("STR_RIGHT_ARMOR", armor->getSideArmor());
+		addStat("STR_LEFT_ARMOR", armor->getLeftSideArmor());
+		addStat("STR_RIGHT_ARMOR", armor->getRightSideArmor());
 		addStat("STR_REAR_ARMOR", armor->getRearArmor());
 		addStat("STR_UNDER_ARMOR", armor->getUnderArmor());
 
@@ -54,7 +54,7 @@ namespace OpenXcom
 		++_row;
 
 		// Add damage modifiers
-		for (int i = 0; i < Armor::DAMAGE_TYPES; ++i)
+		for (int i = 0; i < DAMAGE_TYPES; ++i)
 		{
 			ItemDamageType dt = (ItemDamageType)i;
 			int percentage = (int)Round(armor->getDamageModifier(dt) * 100.0f);

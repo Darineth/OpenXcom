@@ -48,8 +48,6 @@ SelectStartFacilityState::SelectStartFacilityState(Base *base, State *state, Glo
 	_btnOk->onKeyboardPress(0, Options::keyCancel);
 
 	_lstFacilities->onMouseClick((ActionHandler)&SelectStartFacilityState::lstFacilitiesClick);
-
-	populateBuildList();
 }
 
 /**

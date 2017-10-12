@@ -57,6 +57,8 @@ private:
 	int _timeUntilNextFrame;
 	static const double VOLUME_GRADIENT;
 
+	bool _inBattlescape;
+
 public:
 	/// Creates a new game and initializes SDL.
 	Game(const std::string &title);
@@ -83,7 +85,7 @@ public:
 	/// Pushes a new state into the state stack.
 	void pushState(State *state);
 	/// Pops the last state from the state stack.
-	void popState();
+	void popState(bool deleteState = true);
 	/// Gets the currently loaded language.
 	static Language *getLanguage();
 	/// Loads a new language for the game.
@@ -106,6 +108,10 @@ public:
 	void defaultLanguage();
 	/// Sets up the audio.
 	void initAudio();
+	/// Sets if we're in the battlescape.
+	void setInBattlescape(bool inBattlescape);
+	/// Gets if we're in the battlescape.
+	bool getInBattlescape() const;
 };
 
 }

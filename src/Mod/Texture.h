@@ -45,6 +45,7 @@ private:
 	int _id;
 	std::map<std::string, int> _deployments;
 	std::vector<TerrainCriteria> _terrain;
+	std::vector<TerrainCriteria> _baseTerrain;
 public:
 	/// Creates a new texture with mission data.
 	Texture(int id);
@@ -56,6 +57,10 @@ public:
 	std::vector<TerrainCriteria> *getTerrain();
 	/// Gets a random texture terrain for a given target.
 	std::string getRandomTerrain(Target *target) const;
+	/// Gets the list of terrain criteria for base defenses.
+	std::vector<TerrainCriteria> *getBaseTerrain();
+	/// Gets a random texture terrain for base defenses for a given target.
+	std::string getRandomBaseTerrain(Target *target) const;
 	/// Gets the alien deployment for this texture.
 	const std::map<std::string, int> &getDeployments() const;
 	/// Gets a random deployment.

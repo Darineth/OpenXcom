@@ -42,6 +42,7 @@ private:
 	std::vector<MapDataSet*> _mapDataSets;
 	std::vector<MapBlock*> _mapBlocks;
 	std::string _name, _script;
+	std::string _startingCondition;
 	std::vector<std::string> _civilianTypes, _music;
 	int _minDepth, _maxDepth, _ambience;
 	double _ambientVolume;
@@ -52,6 +53,8 @@ public:
 	void load(const YAML::Node& node, Mod *mod);
 	/// Gets the terrain's name (used for MAP generation).
 	std::string getName() const;
+	/// Gets the Terrain's starting condition.
+	std::string getStartingCondition() const;
 	/// Gets the terrain's mapblocks.
 	std::vector<MapBlock*> *getMapBlocks();
 	/// Gets the terrain's mapdatafiles.

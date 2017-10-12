@@ -319,7 +319,7 @@ static void _moveBelow(const std::pair<std::string, bool> &srcMod, const std::pa
 			break;
 		}
 	}
-	
+
 	// remove old copy of srcMod in separate loop since the insert above invalidated the iterator
 	for (std::vector< std::pair<std::string, bool> >::iterator i = Options::mods.begin(); i != Options::mods.end(); ++i)
 	{
@@ -342,8 +342,8 @@ void OptionsModsState::moveModDown(Action *action, unsigned int row, bool max)
 	else
 	{
 		// calculate target scroll pos
-		int curScrollPos = _lstMods->getScroll();
-		int targetScrollPos = 0;
+		size_t curScrollPos = _lstMods->getScroll();
+		size_t targetScrollPos = 0;
 		for (size_t i = 0; i <= row + 1; ++i)
 		{
 			if (i == row)

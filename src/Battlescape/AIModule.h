@@ -50,13 +50,18 @@ private:
 	int _knownEnemies, _visibleEnemies, _spottingEnemies;
 	int _escapeTUs, _ambushTUs;
 	BattleAction *_escapeAction, *_ambushAction, *_attackAction, *_patrolAction, *_psiAction;
-	bool _rifle, _melee, _blaster;
+	bool _rifle, _melee, _blaster, _grenade;
 	bool _traceAI, _didPsi;
 	int _AIMode, _intelligence, _closestDist;
 	Node *_fromNode, *_toNode;
 	std::vector<int> _reachable, _reachableWithAttack, _wasHitBy;
 	BattleActionType _reserve;
 	UnitFaction _targetFaction;
+
+	bool selectPointNearTargetLeeroy(BattleUnit *target) const;
+	int selectNearestTargetLeeroy();
+	void meleeActionLeeroy();
+	void dont_think(BattleAction *action);
 public:
 	/// Creates a new AIModule linked to the game and a certain unit.
 	AIModule(SavedBattleGame *save, BattleUnit *unit, Node *node);
@@ -97,7 +102,7 @@ public:
 	/// Selects a suitable position from which to attack.
 	bool findFirePoint();
 	/// Decides if we should throw a grenade/launch a missile to this position.
-	bool explosiveEfficacy(Position targetPos, BattleUnit *attackingUnit, int radius, int diff, bool grenade = false) const;
+	int explosiveEfficacy(Position targetPos, BattleUnit *attackingUnit, int radius, int diff, bool grenade = false) const;
 	bool getNodeOfBestEfficacy(BattleAction *action);
 	/// Attempts to take a melee attack/charge an enemy we can see.
 	void meleeAction();
@@ -105,8 +110,6 @@ public:
 	void wayPointAction();
 	/// Attempts to fire at an enemy we can see.
 	void projectileAction();
-	/// Selects a fire method.
-	void selectFireMethod();
 	/// Attempts to throw a grenade at an enemy (or group of enemies) we can see.
 	void grenadeAction();
 	/// Performs a psionic attack.
@@ -117,7 +120,7 @@ public:
 	bool validTarget(BattleUnit* unit, bool assessDanger, bool includeCivs, bool allowFormerSpotted = true) const;
 	
 	bool checkSquadSight(BattleUnit* target, bool visibleOnly) const;
-	bool selectRangeOption(int currentTU, int tuAuto, int tuSnap, int tuAimed, int tuBurst, const std::vector<std::string> &actions);
+	bool selectRangeOption(int currentTU, BattleActionCost costAuto, BattleActionCost costSnap, BattleActionCost costAimed, BattleActionCost costBurst, const std::vector<std::string> &actions);
 	/// Checks the alien's TU reservation setting.
 	BattleActionType getReserveMode();
 	/// Assuming we have both a ranged and a melee weapon, we have to select one.

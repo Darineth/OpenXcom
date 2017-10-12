@@ -425,22 +425,24 @@ void SoldierInfoState::init()
 		{
 			_btnRole->clear();
 		}
+
+		std::ostringstream flagId;
+		flagId << "Flag";
+		flagId << _soldier->getNationality() + _soldier->getRules()->getFlagOffset();
+		Surface *flagTexture = _game->getMod()->getSurface(flagId.str().c_str(), false);
+		_flag->clear();
+		if (flagTexture != 0)
+		{
+			flagTexture->setX(_flag->getWidth() - flagTexture->getWidth()); // align right
+			flagTexture->blit(_flag);
+		}
+		_flag->setVisible(true);
 	}
 	else
 	{
 		_btnRank->clear();
 		_btnRole->clear();
-	}
-
-	std::ostringstream flagId;
-	flagId << "Flag";
-	flagId << _soldier->getNationality() + _soldier->getRules()->getFlagOffset();
-	Surface *flagTexture = _game->getMod()->getSurface(flagId.str().c_str(), false);
-	_flag->clear();
-	if (flagTexture != 0)
-	{
-		flagTexture->setX(_flag->getWidth()-flagTexture->getWidth()); // align right
-		flagTexture->blit(_flag);
+		_flag->setVisible(false);
 	}
 
 	std::wostringstream ss;
@@ -556,9 +558,14 @@ void SoldierInfoState::init()
 	_txtKills->setText(tr("STR_KILLS").arg(_soldier->getKills()));
 	//_txtRole->setText(tr("STR_ROLE_").arg(tr(_soldier->getRole() ? _soldier->getRole()->getName() : "STR_ROLE_NONE")));
 
-	if (_soldier->getWoundRecovery() > 0)
+	if (_soldier->getWoundRecovery(_base->getSickBayAbsoluteBonus(), _base->getSickBayRelativeBonus()) > 0)
 	{
-		_txtRecovery->setText(tr("STR_WOUND_RECOVERY").arg(tr("STR_DAY", _soldier->getWoundRecovery())));
+		int recoveryTime = 0;
+		if (_base != 0)
+		{
+			recoveryTime = _soldier->getWoundRecovery(_base->getSickBayAbsoluteBonus(), _base->getSickBayRelativeBonus());
+		}
+		_txtRecovery->setText(tr("STR_WOUND_RECOVERY").arg(tr("STR_DAY", recoveryTime)));
 	}
 	else
 	{
@@ -669,7 +676,7 @@ void SoldierInfoState::btnOkClick(Action *)
 	_game->popState();
 	if (_game->getSavedGame()->getMonthsPassed() > -1 && Options::storageLimitsEnforced && _base != 0 && _base->storesOverfull())
 	{
-		_game->pushState(new SellState(_base));
+		_game->pushState(new SellState(_base, 0));
 		_game->pushState(new ErrorMessageState(tr("STR_STORAGE_EXCEEDED").arg(_base->getName()), _palette, _game->getMod()->getInterface("soldierInfo")->getElement("errorMessage")->color, "BACK01.SCR", _game->getMod()->getInterface("soldierInfo")->getElement("errorPalette")->color));
 	}
 }
@@ -707,7 +714,7 @@ void SoldierInfoState::btnInventoryClick(Action *)
 {
 	if (_soldier->getCraft() && _soldier->getCraft()->getStatus() != "STR_OUT")
 	{
-		SavedBattleGame *bgame = new SavedBattleGame();
+		SavedBattleGame *bgame = new SavedBattleGame(_game->getMod());
 		_game->getSavedGame()->setBattleGame(bgame);
 
 		BattlescapeGenerator bgen = BattlescapeGenerator(_game);

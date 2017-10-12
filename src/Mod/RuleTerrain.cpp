@@ -55,6 +55,7 @@ void RuleTerrain::load(const YAML::Node &node, Mod *mod)
 	{
 		load(parent, mod);
 	}
+	bool adding = node["addOnly"].as<bool>(false);
 	if (const YAML::Node &map = node["mapDataSets"])
 	{
 		_mapDataSets.clear();
@@ -65,7 +66,10 @@ void RuleTerrain::load(const YAML::Node &node, Mod *mod)
 	}
 	if (const YAML::Node &map = node["mapBlocks"])
 	{
-		_mapBlocks.clear();
+		if (!adding)
+		{
+			_mapBlocks.clear();
+		}
 		for (YAML::const_iterator i = map.begin(); i != map.end(); ++i)
 		{
 			MapBlock *mapBlock = new MapBlock((*i)["name"].as<std::string>());
@@ -74,6 +78,7 @@ void RuleTerrain::load(const YAML::Node &node, Mod *mod)
 		}
 	}
 	_name = node["name"].as<std::string>(_name);
+	_startingCondition = node["startingCondition"].as<std::string>(_startingCondition);
 	if (const YAML::Node &civs = node["civilianTypes"])
 	{
 		_civilianTypes = civs.as<std::vector<std::string> >(_civilianTypes);
@@ -125,6 +130,15 @@ std::vector<MapDataSet*> *RuleTerrain::getMapDataSets()
 std::string RuleTerrain::getName() const
 {
 	return _name;
+}
+
+/**
+* Returns the starting condition name for this terrain.
+* @return String ID for starting condition.
+*/
+std::string RuleTerrain::getStartingCondition() const
+{
+	return _startingCondition;
 }
 
 /**

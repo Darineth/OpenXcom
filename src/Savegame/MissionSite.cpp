@@ -27,7 +27,8 @@ namespace OpenXcom
 /**
  * Initializes a mission site.
  */
-MissionSite::MissionSite(const RuleAlienMission *rules, const AlienDeployment *deployment) : Target(), _rules(rules), _deployment(deployment), _id(0), _texture(-1), _secondsRemaining(0), _inBattlescape(false), _detected(false)
+MissionSite::MissionSite(const RuleAlienMission *rules, const AlienDeployment *deployment, const AlienDeployment *alienCustomDeploy) : Target(), _rules(rules), _deployment(deployment), _missionCustomDeploy(alienCustomDeploy), _id(0), _texture(-1), _secondsRemaining(0), _inBattlescape(false), _detected(false)
+
 {
 }
 
@@ -62,6 +63,8 @@ YAML::Node MissionSite::save() const
 	YAML::Node node = Target::save();
 	node["type"] = _rules->getType();
 	node["deployment"] = _deployment->getType();
+	if (_missionCustomDeploy)
+		node["missionCustomDeploy"] = _missionCustomDeploy->getType();
 	node["id"] = _id;
 	node["texture"] = _texture;
 	if (_secondsRemaining)
@@ -101,6 +104,15 @@ const RuleAlienMission *MissionSite::getRules() const
 const AlienDeployment *MissionSite::getDeployment() const
 {
 	return _deployment;
+}
+
+/**
+ * Get mission's custom deployment of weapons.
+ * @return Aline deployment.
+ */
+const AlienDeployment *MissionSite::getMissionCustomDeploy() const
+{
+	return _missionCustomDeploy;
 }
 
 /**

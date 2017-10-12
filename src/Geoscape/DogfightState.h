@@ -18,6 +18,7 @@
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "../Engine/State.h"
+#include "../Mod/RuleCraft.h"
 #include <vector>
 #include <string>
 
@@ -25,7 +26,7 @@ namespace OpenXcom
 {
 
 const int STANDOFF_DIST = 560;
-enum ColorNames { CRAFT_MIN, CRAFT_MAX, RADAR_MIN, RADAR_MAX, DAMAGE_MIN, DAMAGE_MAX, BLOB_MIN, RANGE_METER, DISABLED_WEAPON, DISABLED_AMMO, DISABLED_RANGE };
+enum ColorNames { CRAFT_MIN, CRAFT_MAX, RADAR_MIN, RADAR_MAX, DAMAGE_MIN, DAMAGE_MAX, BLOB_MIN, RANGE_METER, DISABLED_WEAPON, DISABLED_AMMO, DISABLED_RANGE, SHIELD_MIN, SHIELD_MAX };
 
 class ImageButton;
 class Text;
@@ -46,16 +47,16 @@ class DogfightState : public State
 private:
 	GeoscapeState *_state;
 	Timer *_craftDamageAnimTimer;
-	Surface *_window, *_battle, *_range1, *_range2, *_damage;
-	InteractiveSurface *_btnMinimize, *_preview, *_weapon1, *_weapon2;
+	Surface *_window, *_battle, *_range[RuleCraft::WeaponMax], *_damage, *_craftSprite, *_craftShield;
+	InteractiveSurface *_btnMinimize, *_preview, *_weapon[RuleCraft::WeaponMax];
 	ImageButton *_btnStandoff, *_btnCautious, *_btnStandard, *_btnAggressive, *_btnDisengage, *_btnUfo;
 	ImageButton *_mode;
 	InteractiveSurface *_btnMinimizedIcon;
-	Text *_txtAmmo1, *_txtAmmo2, *_txtDistance, *_txtStatus, *_txtInterceptionNumber;
+	Text *_txtAmmo[RuleCraft::WeaponMax], *_txtDistance, *_txtStatus, *_txtInterceptionNumber;
 	Craft *_craft;
 	Ufo *_ufo;
-	int _timeout, _currentDist, _targetDist, _w1FireInterval, _w2FireInterval, _w1FireCountdown, _w2FireCountdown;
-	bool _end, _destroyUfo, _destroyCraft, _ufoBreakingOff, _weapon1Enabled, _weapon2Enabled;
+	int _timeout, _currentDist, _targetDist, _weaponFireInterval[RuleCraft::WeaponMax], _weaponFireCountdown[RuleCraft::WeaponMax];
+	bool _end, _endUfoHandled, _endCraftHandled, _ufoBreakingOff, _destroyUfo, _destroyCraft, _weaponEnabled[RuleCraft::WeaponMax];
 	bool _minimized, _endDogfight, _animatingHit, _waitForPoly, _waitForAltitude;
 	std::vector<CraftWeaponProjectile*> _projectiles;
 	static const int _ufoBlobs[8][13][13];
@@ -63,9 +64,14 @@ private:
 	int _ufoSize, _craftHeight, _currentCraftDamageColor, _interceptionNumber;
 	size_t _interceptionsCount;
 	int _x, _y, _minimizedIconX, _minimizedIconY;
-	int _colors[11];
+	int _weaponNum;
+	int _pilotAccuracyBonus, _pilotDodgeBonus, _pilotApproachSpeedModifier, _craftAccelerationBonus;
+	bool _firedAtLeastOnce;
+	// craft min/max, radar min/max, damage min/max, shield min/max
+	int _colors[13];
 	// Ends the dogfight.
 	void endDogfight();
+	bool _tractorLockedOn[RuleCraft::WeaponMax];
 
 public:
 	/// Creates the Dogfight state.
@@ -78,10 +84,16 @@ public:
 	void animate();
 	/// Moves the craft.
 	void update();
+	// Fires the weapons.
+	void fireWeapon(int i);
 	// Fires the first weapon.
 	void fireWeapon1();
 	// Fires the second weapon.
 	void fireWeapon2();
+	// Fires the third weapon.
+	void fireWeapon3();
+	// Fires the fourth weapon.
+	void fireWeapon4();
 	// Fires UFO weapon.
 	void ufoFireWeapon();
 	// Sets the craft to minimum distance.
@@ -114,10 +126,10 @@ public:
 	void animateCraftDamage();
 	/// Updates craft damage.
 	void drawCraftDamage();
-	/// Toggles usage of weapon 1.
-	void weapon1Click(Action *action);
-	/// Toggles usage of weapon 2.
-	void weapon2Click(Action *action);
+	/// Draws craft shield on sprite
+	void drawCraftShield();
+	/// Toggles usage of weapons.
+	void weaponClick(Action *action);
 	/// Changes colors of weapon icons, range indicators and ammo texts base on current weapon state.
 	void recolor(const int weaponNo, const bool currentState);
 	/// Returns true if state is minimized.

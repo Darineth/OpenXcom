@@ -35,6 +35,7 @@ private:
 	Surface *_borderedChars[MAX_CHARS];
 	bool _bordered;
 	Uint8 _color;
+	bool _alignRight;
 public:
 	/// Creates a new number text with the specified size and position.
 	NumberText(int width, int height, int x = 0, int y = 0);
@@ -54,7 +55,10 @@ public:
 	void draw();
 	/// sets this numbertext to have a border or not
 	void setBordered(bool bordered);
-
+	/// Sets the horizontal alignment
+	void setAlignRight(bool alignRight);
+	/// Gets the horizontal alignment
+	bool getAlignRight() const;
 };
 
 }

@@ -116,7 +116,9 @@ void MiniBaseView::draw()
 			for (std::vector<BaseFacility*>::iterator f = _bases->at(i)->getFacilities()->begin(); f != _bases->at(i)->getFacilities()->end(); ++f)
 			{
 				int color;
-				if ((*f)->getBuildTime() == 0)
+				if ((*f)->getDisabled())
+					color = _blue;
+				else if ((*f)->getBuildTime() == 0)
 					color = _green;
 				else
 					color = _red;
@@ -166,6 +168,10 @@ void MiniBaseView::setColor(Uint8 color)
 void MiniBaseView::setSecondaryColor(Uint8 color)
 {
 	_red = color;
+}
+void MiniBaseView::setBorderColor(Uint8 color)
+{
+	_blue = color;
 }
 
 }

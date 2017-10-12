@@ -111,7 +111,7 @@ const std::vector<std::string> & RuleResearch::getNeededItemsAny() const
 	return _needsAnyItems;
 }
 
-/// Gets the needed items to research this (only one required).
+/// Gets the needed items to research this (all required).
 const std::vector<std::string> & RuleResearch::getNeededItemsAll() const
 {
 	return _needsAllItems;

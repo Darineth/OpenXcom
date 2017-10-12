@@ -19,6 +19,7 @@
  */
 #include "../Engine/State.h"
 #include <vector>
+#include "SoldierSortUtil.h"
 
 namespace OpenXcom
 {
@@ -56,9 +57,9 @@ private:
 	Uint8 _otherCraftColor;
 	std::vector<Soldier *> _origSoldierOrder;
 	std::vector<SortFunctor *> _sortFunctors;
-
-	/// initializes the display list based on the craft soldier's list
-	void initList();
+	getStatFn_t _dynGetter;
+	/// initializes the display list based on the craft soldier's list and the position to display
+	void initList(size_t scrl);
 public:
 	/// Creates the Craft Soldiers state.
 	CraftSoldiersState(Base *base, size_t craft);
@@ -82,6 +83,8 @@ public:
 	void lstSoldiersClick(Action *action);
 	/// Handler for pressing-down a mouse-button in the list.
 	void lstSoldiersMousePress(Action *action);
+	/// Handler for clicking the De-assign All Soldiers button.
+	void btnDeassignAllSoldiersClick(Action *action);
 	/// Handler for displaying tooltips.
 	void txtTooltipIn(Action *action);
 	/// Handler for hiding tooltips.

@@ -27,7 +27,7 @@ namespace OpenXcom
  * Creates a certain type of unit.
  * @param type String defining the type.
  */
-Unit::Unit(const std::string &type) : _type(type), _standHeight(0), _kneelHeight(0), _floatHeight(0), _value(0), _aggroSound(-1), _moveSound(-1), _intelligence(0), _aggression(0), _energyRecovery(30), _specab(SPECAB_NONE), _livingWeapon(false), _psiWeapon("ALIEN_PSI_WEAPON")
+Unit::Unit(const std::string &type) : _type(type), _standHeight(0), _kneelHeight(0), _floatHeight(0), _value(0), _aggroSound(-1), _moveSound(-1), _intelligence(0), _aggression(0), _energyRecovery(30), _specab(SPECAB_NONE), _livingWeapon(false), _psiWeapon("ALIEN_PSI_WEAPON"), _canSurrender(false), _autoSurrender(false), _isLeeroyJenkins(false)
 {
 }
 
@@ -51,6 +51,7 @@ void Unit::load(const YAML::Node &node, Mod *mod)
 		load(parent, mod);
 	}
 	_type = node["type"].as<std::string>(_type);
+	_civilianRecoveryType = node["civilianRecoveryType"].as<std::string>(_civilianRecoveryType);
 	_race = node["race"].as<std::string>(_race);
 	_rank = node["rank"].as<std::string>(_rank);
 	_stats.merge(node["stats"].as<UnitStats>(_stats));
@@ -69,6 +70,9 @@ void Unit::load(const YAML::Node &node, Mod *mod)
 	_specab = (SpecialAbility)node["specab"].as<int>(_specab);
 	_spawnUnit = node["spawnUnit"].as<std::string>(_spawnUnit);
 	_livingWeapon = node["livingWeapon"].as<bool>(_livingWeapon);
+	_canSurrender = node["canSurrender"].as<bool>(_canSurrender);
+	_autoSurrender = node["autoSurrender"].as<bool>(_autoSurrender);
+	_isLeeroyJenkins = node["isLeeroyJenkins"].as<bool>(_isLeeroyJenkins);
 	_meleeWeapon = node["meleeWeapon"].as<std::string>(_meleeWeapon);
 	_psiWeapon = node["psiWeapon"].as<std::string>(_psiWeapon);
 	_builtInWeapons = node["builtInWeaponSets"].as<std::vector<std::vector<std::string> > >(_builtInWeapons);
@@ -109,6 +113,15 @@ void Unit::load(const YAML::Node &node, Mod *mod)
 std::string Unit::getType() const
 {
 	return _type;
+}
+
+/**
+* Gets the type of staff (soldier/engineer/scientists) or type of item to be recovered when a civilian is saved.
+* @return The type of staff/item to recover.
+*/
+std::string Unit::getCivilianRecoveryType() const
+{
+	return _civilianRecoveryType;
 }
 
 /**
@@ -270,7 +283,7 @@ bool Unit::isLivingWeapon() const
  * What is this unit's built in melee weapon (if any).
  * @return the name of the weapon.
  */
-std::string Unit::getMeleeWeapon() const
+const std::string &Unit::getMeleeWeapon() const
 {
 	return _meleeWeapon;
 }
@@ -279,7 +292,7 @@ std::string Unit::getMeleeWeapon() const
 * What is this unit's built in psi weapon (if any).
 * @return the name of the weapon.
 */
-std::string Unit::getPsiWeapon() const
+const std::string &Unit::getPsiWeapon() const
 {
 	return _psiWeapon;
 }
@@ -295,6 +308,24 @@ std::string Unit::getPsiWeapon() const
 const std::vector<std::vector<std::string> > &Unit::getBuiltInWeapons() const
 {
 	return _builtInWeapons;
+}
+
+/**
+* Checks if this unit can surrender.
+* @return True if this unit can surrender.
+*/
+bool Unit::canSurrender() const
+{
+	return _canSurrender || _autoSurrender;
+}
+
+/**
+* Checks if this unit surrenders automatically, if all other units surrendered too.
+* @return True if this unit auto-surrenders.
+*/
+bool Unit::autoSurrender() const
+{
+	return _autoSurrender;
 }
 
 }

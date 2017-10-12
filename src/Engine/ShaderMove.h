@@ -160,3 +160,4 @@ inline ShaderMove<Uint8> ShaderCrop(Surface* s)
 }
 
 }//namespace OpenXcom
+

@@ -18,6 +18,7 @@
  */
 
 #include "RuleCommendations.h"
+#include "Mod.h"
 
 namespace OpenXcom
 {
@@ -40,11 +41,12 @@ RuleCommendations::~RuleCommendations()
  * Loads the commendations from YAML.
  * @param node YAML node.
  */
-void RuleCommendations::load(const YAML::Node &node)
+void RuleCommendations::load(const YAML::Node &node, Mod *mod)
 {
 	_description = node["description"].as<std::string>(_description);
 	_criteria = node["criteria"].as<std::map<std::string, std::vector<int> > >(_criteria);
 	_sprite = node["sprite"].as<int>(_sprite);
+	//_sprite = mod->getSpriteOffset(node["sprite"].as<int>(_sprite), "Commendations");
 	_killCriteria = node["killCriteria"].as<std::vector<std::vector<std::pair<int, std::vector<std::string> > > > >(_killCriteria);
 }
 

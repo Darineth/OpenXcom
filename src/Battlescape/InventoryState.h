@@ -28,6 +28,7 @@ namespace OpenXcom
 class Surface;
 class Text;
 class TextEdit;
+class NumberText;
 class InteractiveSurface;
 class Inventory;
 class SavedBattleGame;
@@ -46,34 +47,44 @@ class InventoryState : public State
 private:
 	Surface *_bg, *_soldier;
 	Text *_txtRole, *_txtItem, *_txtAmmo, *_txtWeight, *_txtTus, *_txtHealth, *_txtReact, *_txtFAcc, *_txtTAcc, *_txtPSkill, *_txtPStr, *_txtArmor;
-	TextEdit *_txtName, *_btnQuickSearch;
+	TextEdit *_txtName;
+	TextEdit *_btnQuickSearch;
 	BattlescapeButton *_btnOk, *_btnPrev, *_btnNext, *_btnUnload, *_btnGround, *_btnRank, *_btnRole, *_btnArmor;
 	BattlescapeButton *_btnCreateTemplate, *_btnApplyTemplate;
 	Surface *_selAmmo;
 	Inventory *_inv;
-	BattleItem *_mouseOverItem;
-	std::vector<EquipmentLayoutItem*> _curInventoryTemplate;
-	std::string _curInventoryTemplateArmorColor;
+	std::vector<EquipmentLayoutItem*> _curInventoryTemplate, _tempInventoryTemplate;
+	std::string _curInventoryTemplateArmorColor, _tempInventoryTemplateArmorColor;
 	SavedBattleGame *_battleGame;
 	const bool _tu, _noCraft;
+	bool _lightUpdated;
 	BattlescapeState *_parent;
 	Base *_base;
 	std::string _currentTooltip;
+	int _mouseHoverItemFrame = 0;
+	BattleItem *_mouseHoverItem = nullptr;
 	ComboBox *_cmbArmorColor;
 	std::map<int, std::string> *_armorColors;
 	bool _reloadUnit;
-
+	int _globalLayoutIndex;
+	/// Helper method for Create Template button
+	void _createInventoryTemplate(std::vector<EquipmentLayoutItem*> &inventoryTemplate);
+	/// Helper method for Apply Template button
+	void _applyInventoryTemplate(std::vector<EquipmentLayoutItem*> &inventoryTemplate, const std::string &armorColor, bool ignoreEmpty);
 public:
 	/// Creates the Inventory state.
 	InventoryState(bool tu, BattlescapeState *parent, Base *base, bool noCraft = false);
 	/// Cleans up the Inventory state.
 	~InventoryState();
 	/// Updates all soldier info.
+	void setGlobalLayoutIndex(int index);
 	void init();
 	/// Handler for pressing on the Name edit.
 	void edtSoldierPress(Action *action);
 	/// Handler for changing text on the Name edit.
 	void edtSoldierChange(Action *action);
+	/// Handler for cancelling the Name edit.
+	void edtSoldierCancel(Action *action);
 	/// Updates the soldier info (Weight, TU).
 	void updateStats();
 	/// Saves the soldiers' equipment-layout.
@@ -82,6 +93,14 @@ public:
 	void btnArmorClick(Action *action);
 	void btnArmorClickRight(Action *action);
 	void btnArmorClickMiddle(Action *action);
+	/// Methods for handling the global equipment layout save/load hotkeys.
+	void saveGlobalLayout(int index);
+	void loadGlobalLayout(int index);
+	void btnGlobalEquipmentLayoutClick(Action *action);
+	/// Handler for clicking the Load button.
+	void btnInventoryLoadClick(Action *action);
+	/// Handler for clicking the Save button.
+	void btnInventorySaveClick(Action *action);
 	/// Handler for clicking the OK button.
 	void btnOkClick(Action *action);
 	/// Handlers for Quick Search.
@@ -111,16 +130,18 @@ public:
 	void onAutoequip(Action *action);
 	/// Gets the selected unit's equipment layout.
 	void InventoryState::getUnitEquipmentLayout(std::vector<EquipmentLayoutItem*> *layout, std::string &armorColor) const;
-	/// Apply an equipment layout to the current unit.
-	void applyEquipmentLayout(const std::vector<EquipmentLayoutItem*> &layout, const std::string &armorColor, bool ignoreEmpty = false);
 	/// Handler for clicking on the inventory.
 	void invClick(Action *action);
 	/// Handler for showing item info.
 	void invMouseOver(Action *action);
 	/// Handler for hiding item info.
 	void invMouseOut(Action *action);
+	/// Handler for hitting the [Move Ground Inventory To Base] hotkey.
+	void onMoveGroundInventoryToBase(Action *action);
 	/// Handles keypresses.
-	void handle(Action *action);
+	void handle(Action *action) override;
+	/// Runs state functionality every cycle.
+	void think() override;
 	/// Handler for showing tooltip.
 	void txtTooltipIn(Action *action);
 	/// Handler for hiding tooltip.
@@ -135,8 +156,11 @@ public:
 	Soldier *getSelectedSoldier() const;
 	/// Change the current soldier's role.
 	void setRole(const std::string &role);
+	/// Reloads the soldier's equipment layout based on its role.
+	void loadRoleEquipmentLayout();
 	/// Handler for CTRL being pressed/released
 	void onCtrlToggled(Action *action);
+
 
 private:
 	/// Update the visibility and icons for the template buttons.

@@ -18,6 +18,7 @@
  */
 #include "RuleInventory.h"
 #include <cmath>
+#include "RuleItem.h"
 
 namespace YAML
 {
@@ -52,7 +53,7 @@ namespace OpenXcom
  * type of inventory section.
  * @param id String defining the id.
  */
-	RuleInventory::RuleInventory(const std::string &id) : _id(id), _x(0), _y(0), _type(INV_SLOT), _listOrder(0), _countStats(false), _armorSide(-1), _allowGenericItems(true), _allowCombatSwap(true), _battleType(BT_NONE), _height(0), _width(0), _textAlign(0)
+RuleInventory::RuleInventory(const std::string &id) : _id(id), _x(0), _y(0), _type(INV_SLOT), _listOrder(0), _hand(0), _countStats(false), _armorSide(-1), _allowGenericItems(true), _allowCombatSwap(true), _battleType(BT_NONE), _height(0), _width(0), _textAlign(0)
 {
 }
 
@@ -236,7 +237,7 @@ bool RuleInventory::checkSlotInPosition(int *x, int *y) const
  * @param y Slot Y position.
  * @return True if there's a slot there.
  */
-bool RuleInventory::fitItemInSlot(RuleItem *item, int x, int y) const
+bool RuleInventory::fitItemInSlot(const RuleItem *item, int x, int y) const
 {
 	switch (_type)
 	{

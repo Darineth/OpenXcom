@@ -20,6 +20,9 @@
 #include "Ufopaedia.h"
 #include "UfopaediaStartState.h"
 #include "../Savegame/SavedGame.h"
+#include "../Savegame/Base.h"
+#include "../Savegame/Soldier.h"
+#include "../Savegame/SoldierDiary.h"
 #include "../Mod/Mod.h"
 #include "../Mod/ArticleDefinition.h"
 #include "ArticleState.h"
@@ -214,7 +217,7 @@ namespace OpenXcom
 	void Ufopaedia::prev(Game *game)
 	{
 		ArticleDefinitionList articles = getAvailableArticles(game->getSavedGame(), game->getMod());
-		if (_current_index == 0)
+		if (_current_index == 0 || _current_index > articles.size() - 1)
 		{
 			// goto last
 			_current_index = articles.size() - 1;
@@ -247,6 +250,67 @@ namespace OpenXcom
 	}
 
 	/**
+	* Check if the article is hidden.
+	* @param save Pointer to saved game.
+	* @param article Article to check.
+	*/
+	bool Ufopaedia::isArticleHidden(SavedGame *save, ArticleDefinition *article)
+	{
+		// show Commendations entries if:
+		if (article->section == "STR_COMMENDATIONS_UC")
+		{
+			// 0. hiding feature is disabled
+			if (Options::showAllCommendations)
+			{
+				return false;
+			}
+
+			// 1. debug mode is on
+			if (save->getDebugMode())
+			{
+				return false;
+			}
+
+			// 2. or if the article was opened already
+			if (save->getUfopediaRuleStatus(article->id) != ArticleDefinition::PEDIA_STATUS_NEW)
+			{
+				return false;
+			}
+
+			// 3. or if the medal was awarded at least once
+			for (std::vector<Base*>::iterator i = save->getBases()->begin(); i != save->getBases()->end(); ++i)
+			{
+				for (std::vector<Soldier*>::iterator j = (*i)->getSoldiers()->begin(); j != (*i)->getSoldiers()->end(); ++j)
+				{
+					for (std::vector<SoldierCommendations*>::iterator k = (*j)->getDiary()->getSoldierCommendations()->begin(); k != (*j)->getDiary()->getSoldierCommendations()->end(); ++k)
+					{
+						if ((*k)->getType() == article->title)
+						{
+							return false;
+						}
+					}
+				}
+			}
+
+			// 4. memento mori
+			for (std::vector<Soldier*>::reverse_iterator j = save->getDeadSoldiers()->rbegin(); j != save->getDeadSoldiers()->rend(); ++j)
+			{
+				for (std::vector<SoldierCommendations*>::iterator k = (*j)->getDiary()->getSoldierCommendations()->begin(); k != (*j)->getDiary()->getSoldierCommendations()->end(); ++k)
+				{
+					if ((*k)->getType() == article->title)
+					{
+						return false;
+					}
+				}
+			}
+
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
 	 * Return an ArticleList with all the currently visible ArticleIds.
 	 * @param save Pointer to saved game.
 	 * @param mod Pointer to mod.
@@ -259,7 +323,7 @@ namespace OpenXcom
 		for (std::vector<std::string>::const_iterator it=list.begin(); it!=list.end(); ++it)
 		{
 			ArticleDefinition *article = mod->getUfopaediaArticle(*it);
-			if (isArticleAvailable(save, article) && article->section != UFOPAEDIA_NOT_AVAILABLE)
+			if (isArticleAvailable(save, article) && article->section != UFOPAEDIA_NOT_AVAILABLE && !isArticleHidden(save, article))
 			{
 				articles.push_back(article);
 			}

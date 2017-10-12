@@ -17,10 +17,12 @@
  * You should have received a copy of the GNU General Public License
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "MovingTarget.h"
+
 #include <string>
 #include <yaml-cpp/yaml.h>
 #include "Craft.h"
+#include "MovingTarget.h"
+#include "../Mod/RuleUfo.h"
 
 namespace OpenXcom
 {
@@ -44,7 +46,7 @@ public:
 	enum UfoStatus { FLYING, LANDED, CRASHED, DESTROYED };
 private:
 	const RuleUfo *_rules;
-	int _id, _crashId, _landId, _damage;
+	int _id, _crashId, _landId, _damage, _escortId, _escortingId;
 	std::string _direction, _altitude;
 	enum UfoStatus _status;
 	size_t _secondsRemaining;
@@ -55,18 +57,19 @@ private:
 	size_t _trajectoryPoint;
 	bool _detected, _hyperDetected, _processedIntercept, _retreating;
 	int _shootingAt, _hitFrame, _fireCountdown, _escapeCountdown;
+	RuleUfoStats _stats;
 	/// Calculates a new speed vector to the destination.
 	void calculateSpeed();
-
-	using MovingTarget::load;
-	using MovingTarget::save;
+	int _shield, _shieldRechargeHandle;
+	int _tractorBeamSlowdown;
+	std::vector<Ufo*> _escorts;
 public:
 	/// Creates a UFO of the specified type.
-	Ufo(const RuleUfo *rules);
+	Ufo(const RuleUfo *rules, bool createEscorts = true, int escortId = -1);
 	/// Cleans up the UFO.
 	~Ufo();
 	/// Loads the UFO from YAML.
-	void load(const YAML::Node& node, const Mod &ruleset, SavedGame &game);
+	void load(const YAML::Node& node, const Mod *ruleset, SavedGame *game);
 	/// Saves the UFO to YAML.
 	YAML::Node save(bool newBattle) const;
 	/// Saves the UFO's ID to YAML.
@@ -79,6 +82,10 @@ public:
 	int getId() const;
 	/// Sets the UFO's ID.
 	void setId(int id);
+	/// Gets the ID of the UFO being escorted.
+	int getEscortingId() const;
+	/// Sets the ID of the UFO being escorted.
+	void setEscortingId(int id);
 	/// Gets the UFO's default name.
 	std::wstring getDefaultName(Language *lang) const;
 	/// Gets the UFO's marker.
@@ -159,14 +166,32 @@ public:
 	void setHitFrame(int frame);
 	/// Gets the UFO's hit frame.
 	int getHitFrame() const;
+	/// Gets the UFO's stats.
+	const RuleUfoStats& getCraftStats() const;
 	void setFireCountdown(int time);
 	int getFireCountdown() const;
 	void setEscapeCountdown(int time);
 	int getEscapeCountdown() const;
 	void setInterceptionProcessed(bool processed);
 	bool getInterceptionProcessed() const;
+	/// Sets the UFO's shield
+	void setShield(int shield);
+	/// Gets the UFO's shield value
+	int getShield() const;
+	/// Sets which _interceptionNumber in a dogfight handles the UFO shield recharge
+	void setShieldRechargeHandle(int shieldRechargeHandle);
+	/// Gets which _interceptionNumber in a dogfight handles the UFO shield recharge
+	int getShieldRechargeHandle() const;
+	/// Sets the number of tractor beams locked on to a UFO
+	void setTractorBeamSlowdown(int tractorBeamSlowdown);
+	/// Gets the number of tractor beams locked on to a UFO
+	int getTractorBeamSlowdown() const;
 	bool getRetreating() const;
 	void setRetreating(bool retreating);
+
+	const std::vector<Ufo*> &getEscorts() const;
+
+	bool isEscort() const;
 };
 
 }

@@ -19,15 +19,20 @@
 #include "Production.h"
 #include <algorithm>
 #include "../Mod/RuleManufacture.h"
+#include "../Mod/RuleSoldier.h"
 #include "Base.h"
 #include "SavedGame.h"
+#include "Transfer.h"
 #include "ItemContainer.h"
+#include "Soldier.h"
 #include "Craft.h"
 #include "CraftWeapon.h"
 #include "../Mod/Mod.h"
 #include "../Mod/RuleItem.h"
 #include "../Mod/RuleCraft.h"
 #include "../Mod/RuleCraftWeapon.h"
+#include "../Engine/Language.h"
+#include "../Engine/Options.h"
 #include <climits>
 #include "../Engine/Game.h"
 #include "Soldier.h"
@@ -94,6 +99,19 @@ bool Production::haveEnoughMoneyForOneMoreUnit(SavedGame * g) const
 	return (g->getFunds() >= _rules->getManufactureCost());
 }
 
+bool Production::haveEnoughLivingSpaceForOneMoreUnit(Base * b)
+{
+	if (_rules->getSpawnedPersonType() != "")
+	{
+		// Note: if the production is running then the space we need is already counted by getUsedQuarters
+		if (b->getAvailableQuarters() < b->getUsedQuarters())
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
 bool Production::haveEnoughMaterialsForOneMoreUnit(Base * b, const Mod *m) const
 {
 	for (std::map<std::string, int>::const_iterator iter = _rules->getRequiredItems().begin(); iter != _rules->getRequiredItems().end(); ++iter)
@@ -106,7 +124,7 @@ bool Production::haveEnoughMaterialsForOneMoreUnit(Base * b, const Mod *m) const
 	return true;
 }
 
-productionProgress_e Production::step(Base * b, SavedGame * g, const Mod *m)
+productionProgress_e Production::step(Base * b, SavedGame * g, const Mod *m, Language *lang)
 {
 	int done = getAmountProduced();
 	_timeSpent += _engineers;
@@ -155,6 +173,38 @@ productionProgress_e Production::step(Base * b, SavedGame * g, const Mod *m)
 						b->getStorageItems()->addItem(i->first, i->second);
 				}
 			}
+			// Spawn persons (soldiers, engineers, scientists, ...)
+			const std::string &spawnedPersonType = _rules->getSpawnedPersonType();
+			if (spawnedPersonType != "")
+			{
+				if (spawnedPersonType == "STR_SCIENTIST")
+				{
+					Transfer *t = new Transfer(24);
+					t->setScientists(1);
+					b->getTransfers()->push_back(t);
+				}
+				else if (spawnedPersonType == "STR_ENGINEER")
+				{
+					Transfer *t = new Transfer(24);
+					t->setEngineers(1);
+					b->getTransfers()->push_back(t);
+				}
+				else
+				{
+					RuleSoldier *rule = m->getSoldier(spawnedPersonType);
+					if (rule != 0)
+					{
+						Transfer *t = new Transfer(24);
+						Soldier *s = m->genSoldier(g, rule->getType());
+						if (_rules->getSpawnedPersonName() != "")
+						{
+							s->setName(lang->getString(_rules->getSpawnedPersonName()));
+						}
+						t->setSoldier(s);
+						b->getTransfers()->push_back(t);
+					}
+				}
+			}
 			count++;
 			if (count < produced)
 			{
@@ -171,6 +221,7 @@ productionProgress_e Production::step(Base * b, SavedGame * g, const Mod *m)
 	{
 		// We need to ensure that player has enough cash/item to produce a new unit
 		if (!haveEnoughMoneyForOneMoreUnit(g)) return PROGRESS_NOT_ENOUGH_MONEY;
+		if (!haveEnoughLivingSpaceForOneMoreUnit(b)) return PROGRESS_NOT_ENOUGH_LIVING_SPACE;
 		if (!haveEnoughMaterialsForOneMoreUnit(b, m)) return PROGRESS_NOT_ENOUGH_MATERIALS;
 		startItem(b, g, m);
 	}
@@ -224,6 +275,22 @@ void Production::startItem(Base * b, SavedGame * g, const Mod *m) const
 					break;
 				}
 			}
+		}
+	}
+}
+
+void Production::refundItem(Base * b, SavedGame * g, const Mod *m) const
+{
+	g->setFunds(g->getFunds() + _rules->getManufactureCost());
+	for (std::map<std::string, int>::const_iterator iter = _rules->getRequiredItems().begin(); iter != _rules->getRequiredItems().end(); ++iter)
+	{
+		if (m->getItem(iter->first) != 0)
+		{
+			b->getStorageItems()->addItem(iter->first, iter->second);
+		}
+		else if (m->getCraft(iter->first) != 0)
+		{
+			// not supported
 		}
 	}
 }

@@ -49,7 +49,7 @@ class BattlescapeGame;
 class BattlescapeState : public State
 {
 private:
-	Surface *_rank, *_role;
+	Surface *_rank, *_rankTiny, *_role;
 	InteractiveSurface *_icons;
 	Map *_map;
 	BattlescapeButton *_btnUnitUp, *_btnUnitDown, *_btnMapUp, *_btnMapDown, *_btnShowMap, *_btnKneel;
@@ -68,11 +68,15 @@ private:
 	WarningMessage *_warning;
 	CombatLog *_combatLog;
 	Text *_txtName;
-	NumberText *_numTimeUnits, *_numEnergy, *_numHealth, *_numMorale, *_numLayers, *_numAmmoLeft, *_numAmmoRight, *_numAmmoUtility;
+	NumberText *_numTimeUnits, *_numEnergy, *_numHealth, *_numMorale, *_numLayers;
+	std::vector<NumberText*> _numAmmoLeft, _numAmmoRight, _numAmmoUtility;
+	NumberText *_numMedikitLeft1, *_numMedikitLeft2, *_numMedikitLeft3, *_numMedikitRight1, *_numMedikitRight2, *_numMedikitRight3;
 	Bar *_barTimeUnits, *_barEnergy, *_barHealth, *_barMorale, *_barExperience;
 	Timer *_animTimer, *_gameTimer;
 	SavedBattleGame *_save;
 	Text *_txtDebug, *_txtTooltip, *_txtEffects;
+	Uint8 _tooltipDefaultColor;
+	Uint8 _medikitRed, _medikitGreen, _medikitBlue, _medikitOrange;
 	std::vector<State*> _popups;
 	BattlescapeGame *_battleGame;
 	bool _firstInit;
@@ -87,17 +91,22 @@ private:
 	Position _cursorPosition;
 	Uint8 _barHealthColor;
 	bool _autosave;
+	int _animFrame; // for grenade timers
 	int _unitButtonColor, _unitButtonFlashColor, _unitButtonBorder;
 	/// Popups a context sensitive list of actions the user can choose from.
-	void handleItemClick(BattleItem *item);
+	void handleItemClick(BattleItem *item, bool rightClick);
 	/// Shifts the red colors of the visible unit buttons backgrounds.
 	void blinkVisibleUnitButtons();
+	/// Draw hand item with ammo number.
+	void drawItem(BattleItem *item, Surface *hand, std::vector<NumberText*> &ammoText);
+	/// Draw both hands sprites.
+	void drawHandsItems();
 	/// Shifts the colors of the health bar when unit has fatal wounds.
 	void blinkHealthBar();
+	/// Show priming warnings on grenades.
+	void drawPrimers();
 	/// Shows the unit kneel state.
 	void toggleKneelButton(BattleUnit* unit);
-	/// Animates grenade primer indicators.
-	void drawPrimers();
 public:
 	/// Selects the next soldier.
 	void selectNextPlayerUnit(bool checkReselect = false, bool setReselect = false, bool checkInventory = false);
@@ -170,8 +179,12 @@ public:
 	void btnReserveClick(Action *action);
 	/// Handler for clicking the reload button.
 	void btnReloadClick(Action *action);
+	/// Handler for clicking the [SelectMusicTrack] button.
+	void btnSelectMusicTrackClick(Action *action);
 	/// Handler for clicking the lighting button.
 	void btnPersonalLightingClick(Action *action);
+	/// Handler for toggling the "night vision" mode.
+	void btnNightVisionClick(Action *action);
 	/// Determines whether a playable unit is selected.
 	bool playableUnitSelected();
 	/// Updates soldier name/rank/tu/energy/health/morale.
@@ -188,9 +201,13 @@ public:
 	Map *getMap() const;
 	/// Show debug message.
 	void debug(const std::wstring &message);
+	/// Show bug hunt message.
+	void bugHuntMessage();
 	/// Show warning message.
 	void warning(const std::string &message);
 	void warning(const std::wstring &message);
+	/// Gets melee damage preview.
+	std::wstring getMeleeDamagePreview(BattleUnit *actor, BattleItem *weapon) const;
 	/// Show message.
 	void message(const std::wstring &message, WarningColor color);
 	/// Add a combat log entry.
@@ -229,6 +246,12 @@ public:
 	void btnZeroTUsClick(Action *action);
 	/// Handler for showing tooltip.
 	void txtTooltipIn(Action *action);
+	/// Handler for showing tooltip with extra information (used for medikit-type equipment)
+	void txtTooltipInExtra(Action *action, bool leftHand);
+	void txtTooltipInExtraLeftHand(Action *action);
+	void txtTooltipInExtraRightHand(Action *action);
+	/// Handler for showing tooltip with extra information (about current turn)
+	void txtTooltipInEndTurn(Action *action);
 	/// Handler for hiding tooltip.
 	void txtTooltipOut(Action *action);
 	/// Update the resolution settings, we just resized the window.

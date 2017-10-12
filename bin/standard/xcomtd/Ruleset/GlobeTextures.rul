@@ -1,0 +1,255 @@
+globe:
+  textures:
+    - id: 0
+      terrain:
+        - name: FOREST
+          area: [0, 360, -90, 0]
+        - name: JUNGLE
+          area: [0, 360, 0, 90]
+    - id: 1
+      terrain:
+        - name: CULTA
+    - id: 2
+      terrain:
+        - name: CULTA
+    - id: 3
+      terrain:
+        - name: CULTA
+    - id: 4
+      terrain:
+        - name: CULTA
+    - id: 5
+      terrain:
+        - name: MOUNT
+    - id: 6
+      terrain:
+        - name: FOREST
+          area: [0, 360, -90, 0]
+        - name: JUNGLE
+          area: [0, 360, 0, 90]
+    - id: 7
+      terrain:
+        - name: DESERT
+    - id: 8
+      terrain:
+        - name: DESERT
+    - id: 9
+      terrain:
+        - name: POLAR
+    - id: 10
+      terrain:
+        - name: FOREST
+          area: [0, 360, -90, 0]
+        - name: JUNGLE
+          area: [0, 360, 0, 90]
+    - id: 11
+      terrain:
+        - name: FOREST
+          area: [0, 360, -90, 0]
+        - name: JUNGLE
+          area: [0, 360, 0, 90]
+    - id: 12
+      terrain:
+        - name: POLAR
+    - id: 13
+      terrain:
+        - name: SEABED
+          weight: 75
+        - name: SEACORAL
+          weight: 25
+    - id: 14
+      terrain:
+        - name: SEABED_SUNKEN_USO
+          weight: 50
+        - name: SEABED
+          weight: 25
+        - name: SEACORAL
+          weight: 25
+    - id: 15
+      terrain:
+        - name: SEACORAL_SUNKEN_UFO
+          weight: 50
+        - name: SEABED
+          weight: 25
+        - name: SEACORAL
+          weight: 25
+    - id: 16
+      terrain:
+        - name: SEABED_SUNKEN_UFO
+          weight: 50
+        - name: SEABED
+          weight: 25
+        - name: SEACORAL
+          weight: 25
+    - id: 17
+      terrain:
+        - name: SEACORAL_SUNKEN_CARGO_SHIP
+          weight: 50
+        - name: SEABED
+          weight: 25
+        - name: SEACORAL
+          weight: 25
+    - id: 18
+      terrain:
+        - name: SEACORAL_SUNKEN_GALLEON
+          weight: 50
+        - name: SEABED
+          weight: 25
+        - name: SEACORAL
+          weight: 25
+    - id: 19
+      terrain:
+        - name: SEABED_SUNKEN_CARGO_SHIP
+          weight: 50
+        - name: SEABED
+          weight: 25
+        - name: SEACORAL
+          weight: 25
+    - id: 20
+      terrain:
+        - name: SEACORAL_SUNKEN_GALLEON
+          weight: 50
+        - name: SEABED
+          weight: 25
+        - name: SEACORAL
+          weight: 25
+    - id: 21
+      terrain:
+        - name: SEACORAL
+          weight: 75
+        - name: SEABED
+          weight: 25
+    - id: 22
+      terrain:
+        - name: SEACORAL_SUNKEN_GALLEON
+          weight: 50
+        - name: SEABED
+          weight: 25
+        - name: SEACORAL
+          weight: 25
+    - id: 23
+      terrain:
+        - name: SEABED_SUNKEN_CARGO_SHIP
+          weight: 50
+        - name: SEABED
+          weight: 25
+        - name: SEACORAL
+          weight: 25
+    - id: 24
+      terrain:
+        - name: SEABED_SUNKEN_USO
+          weight: 50
+        - name: SEABED
+          weight: 25
+        - name: SEACORAL
+          weight: 25
+    - id: 25
+      terrain:
+        - name: SEACORAL_SUNKEN_CARGO_SHIP
+          weight: 50
+        - name: SEABED
+          weight: 25
+        - name: SEACORAL
+          weight: 25
+    - id: -1
+      deployments:
+        STR_TERROR_MISSION: 100
+    - id: -2
+      deployments:
+        STR_PORT_TERROR: 100
+    - id: -3
+      deployments:
+        STR_ISLAND_TERROR: 100
+    - id: -4
+      deployments:
+        STR_ARTIFACT_SITE_P1: 100
+    - id: -5
+      deployments:
+        STR_CARGO_SHIP_P1: 50
+        STR_CRUISE_SHIP_P1: 50
+extraSprites:
+  - type: TEXTURE.DAT
+    files:
+      0: Resources/GlobeUFO/texture01.gif
+      1: Resources/GlobeUFO/texture02.gif
+      2: Resources/GlobeUFO/texture03.gif
+      3: Resources/GlobeUFO/texture04.gif
+      4: Resources/GlobeUFO/texture05.gif
+      5: Resources/GlobeUFO/texture06.gif
+      6: Resources/GlobeUFO/texture07.gif
+      7: Resources/GlobeUFO/texture08.gif
+      8: Resources/GlobeUFO/texture09.gif
+      9: Resources/GlobeUFO/texture10.gif
+      10: Resources/GlobeUFO/texture11.gif
+      11: Resources/GlobeUFO/texture12.gif
+      12: Resources/GlobeUFO/texture13.gif
+    
+      13: Resources/GlobeTFTD/texture01.gif
+      14: Resources/GlobeTFTD/texture02.gif
+      15: Resources/GlobeTFTD/texture03.gif
+      16: Resources/GlobeTFTD/texture04.gif
+      17: Resources/GlobeTFTD/texture05.gif
+      18: Resources/GlobeTFTD/texture06.gif
+      19: Resources/GlobeTFTD/texture07.gif
+      20: Resources/GlobeTFTD/texture08.gif
+      21: Resources/GlobeTFTD/texture09.gif
+      22: Resources/GlobeTFTD/texture10.gif
+      23: Resources/GlobeTFTD/texture11.gif
+      24: Resources/GlobeTFTD/texture12.gif
+      25: Resources/GlobeTFTD/texture13.gif
+
+      26: Resources/GlobeUFO/texture14.gif
+      27: Resources/GlobeUFO/texture15.gif
+      28: Resources/GlobeUFO/texture16.gif
+      29: Resources/GlobeUFO/texture17.gif
+      30: Resources/GlobeUFO/texture18.gif
+      31: Resources/GlobeUFO/texture19.gif
+      32: Resources/GlobeUFO/texture20.gif
+      33: Resources/GlobeUFO/texture21.gif
+      34: Resources/GlobeUFO/texture22.gif
+      35: Resources/GlobeUFO/texture23.gif
+      36: Resources/GlobeUFO/texture24.gif
+      37: Resources/GlobeUFO/texture25.gif
+      38: Resources/GlobeUFO/texture26.gif
+
+      39: Resources/GlobeTFTD/texture14.gif
+      40: Resources/GlobeTFTD/texture15.gif
+      41: Resources/GlobeTFTD/texture16.gif
+      42: Resources/GlobeTFTD/texture17.gif
+      43: Resources/GlobeTFTD/texture18.gif
+      44: Resources/GlobeTFTD/texture19.gif
+      45: Resources/GlobeTFTD/texture20.gif
+      46: Resources/GlobeTFTD/texture21.gif
+      47: Resources/GlobeTFTD/texture22.gif
+      48: Resources/GlobeTFTD/texture23.gif
+      49: Resources/GlobeTFTD/texture24.gif
+      50: Resources/GlobeTFTD/texture25.gif
+      51: Resources/GlobeTFTD/texture26.gif
+
+      52: Resources/GlobeUFO/texture27.gif
+      53: Resources/GlobeUFO/texture28.gif
+      54: Resources/GlobeUFO/texture29.gif
+      55: Resources/GlobeUFO/texture30.gif
+      56: Resources/GlobeUFO/texture31.gif
+      57: Resources/GlobeUFO/texture32.gif
+      58: Resources/GlobeUFO/texture33.gif
+      59: Resources/GlobeUFO/texture34.gif
+      60: Resources/GlobeUFO/texture35.gif
+      61: Resources/GlobeUFO/texture36.gif
+      62: Resources/GlobeUFO/texture37.gif
+      63: Resources/GlobeUFO/texture38.gif
+      64: Resources/GlobeUFO/texture39.gif
+
+      65: Resources/GlobeTFTD/texture27.gif
+      66: Resources/GlobeTFTD/texture28.gif
+      67: Resources/GlobeTFTD/texture29.gif
+      68: Resources/GlobeTFTD/texture30.gif
+      69: Resources/GlobeTFTD/texture31.gif
+      70: Resources/GlobeTFTD/texture32.gif
+      71: Resources/GlobeTFTD/texture33.gif
+      72: Resources/GlobeTFTD/texture34.gif
+      73: Resources/GlobeTFTD/texture35.gif
+      74: Resources/GlobeTFTD/texture36.gif
+      75: Resources/GlobeTFTD/texture37.gif
+      76: Resources/GlobeTFTD/texture38.gif
+      77: Resources/GlobeTFTD/texture39.gif

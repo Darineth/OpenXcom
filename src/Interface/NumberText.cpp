@@ -30,7 +30,7 @@ namespace OpenXcom
  * @param x X position in pixels.
  * @param y Y position in pixels.
  */
-NumberText::NumberText(int width, int height, int x, int y) : Surface(width, height, x, y), _value(0), _bordered(false), _color(0)
+NumberText::NumberText(int width, int height, int x, int y) : Surface(width, height, x, y), _value(0), _bordered(false), _color(0), _alignRight(0)
 {
 	_chars[0] = new Surface(3, 5);
 	_chars[0]->lock();
@@ -283,27 +283,58 @@ void NumberText::draw()
 	std::ostringstream ss;
 	ss << _value;
 	std::string s = ss.str();
-	int x = 0;
-	if (!_bordered)
+	if (_alignRight)
 	{
-		for (std::string::iterator i = s.begin(); i != s.end(); ++i)
+		int x = getWidth();
+		if (!_bordered)
 		{
-			int chr = (*i) == '-' ? 10 : (*i - '0');
-			_chars[chr]->setX(x);
-			_chars[chr]->setY(0);
-			_chars[chr]->blit(this);
-			x += _chars[chr]->getWidth() + 1;
+			for (std::string::reverse_iterator i = s.rbegin(); i != s.rend(); ++i)
+			{
+				int chr = (*i) == '-' ? 10 : (*i - '0');
+				x -= _chars[chr]->getWidth();
+				_chars[chr]->setX(x);
+				_chars[chr]->setY(0);
+				_chars[chr]->blit(this);
+				x -= 1;
+			}
+		}
+		else
+		{
+			for (std::string::reverse_iterator i = s.rbegin(); i != s.rend(); ++i)
+			{
+				int chr = (*i) == '-' ? 10 : (*i - '0');
+				x -= _chars[chr]->getWidth();
+				_borderedChars[chr]->setX(x);
+				_borderedChars[chr]->setY(0);
+				_borderedChars[chr]->blit(this);
+				x -= 1;
+			}
 		}
 	}
 	else
 	{
-		for (std::string::iterator i = s.begin(); i != s.end(); ++i)
+		int x = 0;
+		if (!_bordered)
 		{
-			int chr = (*i) == '-' ? 10 : (*i - '0');
-			_borderedChars[chr]->setX(x);
-			_borderedChars[chr]->setY(0);
-			_borderedChars[chr]->blit(this);
-			x += _chars[chr]->getWidth() + 1; // no this isn't a typo, i want to use the same spacing regardless.
+			for (std::string::iterator i = s.begin(); i != s.end(); ++i)
+			{
+				int chr = (*i) == '-' ? 10 : (*i - '0');
+				_chars[chr]->setX(x);
+				_chars[chr]->setY(0);
+				_chars[chr]->blit(this);
+				x += _chars[chr]->getWidth() + 1;
+			}
+		}
+		else
+		{
+			for (std::string::iterator i = s.begin(); i != s.end(); ++i)
+			{
+				int chr = (*i) == '-' ? 10 : (*i - '0');
+				_borderedChars[chr]->setX(x);
+				_borderedChars[chr]->setY(0);
+				_borderedChars[chr]->blit(this);
+				x += _chars[chr]->getWidth() + 1; // no this isn't a typo, i want to use the same spacing regardless.
+			}
 		}
 	}
 
@@ -313,6 +344,24 @@ void NumberText::draw()
 void NumberText::setBordered(bool bordered)
 {
 	_bordered = bordered;
+}
+
+/**
+ * Sets the horizontal alignment.
+ * @param alignRight The new alignment option.
+ */
+void NumberText::setAlignRight(bool alignRight)
+{
+	_alignRight = alignRight;
+}
+
+/**
+* Gets the horizontal alignment.
+* @return The current alignment option.
+*/
+bool NumberText::getAlignRight() const
+{
+	return _alignRight;
 }
 
 }

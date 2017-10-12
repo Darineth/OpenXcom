@@ -97,9 +97,9 @@ public:
 	/// Takes a screenshot.
 	void screenshot(const std::string &filename) const;
 	/// Checks whether a 32bit scaler is requested and works for the selected resolution
-	static bool use32bitScaler();
+	static bool is32bitEnabled();
 	/// Checks whether OpenGL output is requested
-	static bool useOpenGL();
+	static bool isOpenGLEnabled();
 	/// update the game scale as required.
 	static void updateScale(int &type, int selection, int &x, int &y, bool change);
 	/// Pushes a request to maximize the current screen if Maximize Info Screens option is enabled.

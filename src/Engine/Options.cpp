@@ -180,8 +180,7 @@ void create()
 	_info.push_back(OptionInfo("canTransferCraftsWhileAirborne", &canTransferCraftsWhileAirborne, false, "STR_CANTRANSFERCRAFTSWHILEAIRBORNE", "STR_GEOSCAPE")); // When the craft can reach the destination base with its fuel
 	_info.push_back(OptionInfo("retainCorpses", &retainCorpses, false, "STR_RETAINCORPSES", "STR_GEOSCAPE"));
 	_info.push_back(OptionInfo("fieldPromotions", &fieldPromotions, false, "STR_FIELDPROMOTIONS", "STR_GEOSCAPE"));
-	_info.push_back(OptionInfo("meetingPoint", &meetingPoint, false, "STR_MEETINGPOINT", "STR_GEOSCAPE"));
-	_info.push_back(OptionInfo("techTreeViewerSpoilerProtection", &techTreeViewerSpoilerProtection, false, "STR_TECH_SPOILER_PROTECTION", "STR_GEOSCAPE"));
+	//_info.push_back(OptionInfo("meetingPoint", &meetingPoint, false, "STR_MEETINGPOINT", "STR_GEOSCAPE"));
 
 	_info.push_back(OptionInfo("battleDragScrollInvert", &battleDragScrollInvert, false, "STR_DRAGSCROLLINVERT", "STR_BATTLESCAPE")); // true drags away from the cursor, false drags towards (like a grab)
 	_info.push_back(OptionInfo("sneakyAI", &sneakyAI, false, "STR_SNEAKYAI", "STR_BATTLESCAPE"));
@@ -204,7 +203,27 @@ void create()
 	_info.push_back(OptionInfo("noAlienPanicMessages", &noAlienPanicMessages, false, "STR_NOALIENPANICMESSAGES", "STR_BATTLESCAPE"));
 	_info.push_back(OptionInfo("alienBleeding", &alienBleeding, false, "STR_ALIENBLEEDING", "STR_BATTLESCAPE"));
 	_info.push_back(OptionInfo("battleAdjustReloadCost", &battleAdjustReloadCost, false, "STR_ADJUSTRELOADCOST", "STR_BATTLESCAPE"));
-	
+
+	// OXCE+
+	_info.push_back(OptionInfo("executeUnconsciousEnemies", &executeUnconsciousEnemies, true, "STR_COUP_DE_GRACE", "STR_OXCE"));
+	_info.push_back(OptionInfo("twoHandedIndicator", &twoHandedIndicator, true, "STR_TWO_HANDED_INDICATOR", "STR_OXCE"));
+	_info.push_back(OptionInfo("twoHandedIndicatorInventory", &twoHandedIndicatorInventory, false, "STR_TWO_HANDED_INDICATOR_INV", "STR_OXCE"));
+	_info.push_back(OptionInfo("minimapBorderIndicator", &minimapBorderIndicator, true, "STR_MINIMAP_BORDER_INDICATOR", "STR_OXCE"));
+	_info.push_back(OptionInfo("everyoneFightsNobodyQuits", &everyoneFightsNobodyQuits, false, "STR_EVERYONE_FIGHTS_NOBODY_QUITS", "STR_OXCE"));
+	_info.push_back(OptionInfo("bleedingIndicator", &bleedingIndicator, false, "STR_BLEEDING_INDICATOR", "STR_OXCE"));
+	_info.push_back(OptionInfo("knockOutIndicator", &knockOutIndicator, false, "STR_KNOCK_OUT_INDICATOR", "STR_OXCE"));
+	_info.push_back(OptionInfo("statisticalBulletConservation", &statisticalBulletConservation, false, "STR_BULLET_SAVING", "STR_OXCE"));
+	_info.push_back(OptionInfo("showItemNameAndWeightInInventory", &showItemNameAndWeightInInventory, false, "STR_SHOW_ITEM_WEIGHT_IN_INVENTORY", "STR_OXCE"));
+	_info.push_back(OptionInfo("showGunMeleeOnTop", &showGunMeleeOnTop, true, "STR_SHOW_GUN_MELEE_ON_TOP", "STR_OXCE"));
+	_info.push_back(OptionInfo("showAllCommendations", &showAllCommendations, false, "STR_SHOW_ALL_COMMENDATIONS", "STR_OXCE"));
+	_info.push_back(OptionInfo("removeWoundedFromTraining", &removeWoundedFromTraining, false, "STR_REMOVE_WOUNDED_FROM_TRAINING", "STR_OXCE"));
+	_info.push_back(OptionInfo("fullNightVision", &fullNightVision, false, "STR_FULL_NIGHT_VISION", "STR_OXCE"));
+	_info.push_back(OptionInfo("nightVisionColor", &nightVisionColor, 8, "STR_NIGHT_VISION_COLOR", "STR_OXCE"));
+	_info.push_back(OptionInfo("autoNightVision", &autoNightVision, false, "STR_AUTO_NIGHT_VISION", "STR_OXCE"));
+	_info.push_back(OptionInfo("autoSell", &autoSell, false, "STR_AUTO_SELL", "STR_OXCE"));
+	_info.push_back(OptionInfo("techTreeViewerSpoilerProtection", &techTreeViewerSpoilerProtection, false, "STR_TECH_SPOILER_PROTECTION", "STR_OXCE"));
+	_info.push_back(OptionInfo("playBriefingMusicDuringEquipment", &playBriefingMusicDuringEquipment, false, "STR_PLAY_BRIEFING_MUSIC_DURING_EQUIPMENT", "STR_OXCE"));
+
 	// controls
 	_info.push_back(OptionInfo("keyOk", &keyOk, SDLK_RETURN, "STR_OK", "STR_GENERAL"));
 	_info.push_back(OptionInfo("keyCancel", &keyCancel, SDLK_ESCAPE, "STR_CANCEL", "STR_GENERAL"));
@@ -284,9 +303,27 @@ void create()
 	_info.push_back(OptionInfo("keyInvClear", &keyInvClear, SDLK_x, "STR_CLEAR_INVENTORY", "STR_BATTLESCAPE"));
 	_info.push_back(OptionInfo("keyInvAutoEquip", &keyInvAutoEquip, SDLK_z, "STR_AUTO_EQUIP", "STR_BATTLESCAPE"));
 
+	// Air Combat
+	_info.push_back(OptionInfo("keyAirMove", &keyAirMove, SDLK_1, "STR_AIR_MOVE", "STR_AIR_COMBAT"));
+	_info.push_back(OptionInfo("keyAirAttack", &keyAirAttack, SDLK_2, "STR_AIR_ATTACK", "STR_AIR_COMBAT"));
+	_info.push_back(OptionInfo("keyAirSpecial", &keyAirSpecial, SDLK_3, "STR_AIR_SPECIAL", "STR_AIR_COMBAT"));
+	_info.push_back(OptionInfo("keyAirWait", &keyAirWait, SDLK_4, "STR_AIR_WAIT", "STR_AIR_COMBAT"));
+
+	_info.push_back(OptionInfo("keyAirAdvance", &keyAirAdvance, SDLK_1, "STR_AIR_MOVE_FORWARD", "STR_AIR_COMBAT"));
+	_info.push_back(OptionInfo("keyAirBackOff", &keyAirBackOff, SDLK_2, "STR_AIR_MOVE_BACKWARD", "STR_AIR_COMBAT"));
+	_info.push_back(OptionInfo("keyAirPursue", &keyAirPursue, SDLK_3, "STR_AIR_MOVE_PURSUE", "STR_AIR_COMBAT"));
+
+	_info.push_back(OptionInfo("keyAirWeapon1", &keyAirWeapon1, SDLK_1, "STR_AIR_WEAPON_1", "STR_AIR_COMBAT"));
+	_info.push_back(OptionInfo("keyAirWeapon2", &keyAirWeapon2, SDLK_2, "STR_AIR_WEAPON_2", "STR_AIR_COMBAT"));
+	_info.push_back(OptionInfo("keyAirWeapon3", &keyAirWeapon3, SDLK_3, "STR_AIR_WEAPON_3", "STR_AIR_COMBAT"));
+	_info.push_back(OptionInfo("keyAirWeapon4", &keyAirWeapon4, SDLK_4, "STR_AIR_WEAPON_4", "STR_AIR_COMBAT"));
+
+	_info.push_back(OptionInfo("keyAirHold", &keyAirHold, SDLK_1, "STR_AIR_HOLD", "STR_AIR_COMBAT"));
+	_info.push_back(OptionInfo("keyAirEvade", &keyAirEvade, SDLK_2, "STR_AIR_EVADE", "STR_AIR_COMBAT"));
+
 	// OXCE+
 	_info.push_back(OptionInfo("keyGeoUfoTracker", &keyGeoUfoTracker, SDLK_t, "STR_UFO_TRACKER", "STR_OXCE"));
-	//_info.push_back(OptionInfo("keyGeoTechTreeViewer", &keyGeoTechTreeViewer, SDLK_q, "STR_TECH_TREE_VIEWER", "STR_OXCE"));
+	_info.push_back(OptionInfo("keyGeoTechTreeViewer", &keyGeoTechTreeViewer, SDLK_q, "STR_TECH_TREE_VIEWER", "STR_OXCE"));
 	_info.push_back(OptionInfo("keyGraphsZoomIn", &keyGraphsZoomIn, SDLK_KP_PLUS, "STR_GRAPHS_ZOOM_IN", "STR_OXCE"));
 	_info.push_back(OptionInfo("keyGraphsZoomOut", &keyGraphsZoomOut, SDLK_KP_MINUS, "STR_GRAPHS_ZOOM_OUT", "STR_OXCE"));
 
@@ -308,10 +345,27 @@ void create()
 	_info.push_back(OptionInfo("keyBattleActionItem2", &keyBattleActionItem2, SDLK_2, "STR_ACTION_ITEM_2", "STR_OXCE"));
 	_info.push_back(OptionInfo("keyBattleActionItem3", &keyBattleActionItem3, SDLK_3, "STR_ACTION_ITEM_3", "STR_OXCE"));
 	_info.push_back(OptionInfo("keyBattleActionItem4", &keyBattleActionItem4, SDLK_4, "STR_ACTION_ITEM_4", "STR_OXCE"));
-	_info.push_back(OptionInfo("keyBattleActionItem5", &keyBattleActionItem5, SDLK_5, "STR_ACTION_ITEM_5", "STR_OXCE"));
+	_info.push_back(OptionInfo("keyBattleActionItem5", &keyBattleActionItem5, SDLK_5, "STR_ACTION_ITEM_5", "STR_OXCE"));*/
 	_info.push_back(OptionInfo("keyNightVisionToggle", &keyNightVisionToggle, SDLK_SCROLLOCK, "STR_TOGGLE_NIGHT_VISION", "STR_OXCE"));
-	_info.push_back(OptionInfo("keyNightVisionHold", &keyNightVisionHold, SDLK_SPACE, "STR_HOLD_NIGHT_VISION", "STR_OXCE"));*/
+	_info.push_back(OptionInfo("keyNightVisionHold", &keyNightVisionHold, SDLK_SPACE, "STR_HOLD_NIGHT_VISION", "STR_OXCE"));
 	_info.push_back(OptionInfo("keySelectMusicTrack", &keySelectMusicTrack, SDLK_END, "STR_SELECT_MUSIC_TRACK", "STR_OXCE"));
+
+	_info.push_back(OptionInfo("keyActionSnap", &keyActionSnap, SDLK_1, "STR_SNAP_SHOT", "STR_BATTLESCAPE"));
+	_info.push_back(OptionInfo("keyActionAimed", &keyActionAimed, SDLK_2, "STR_AIMED_SHOT", "STR_BATTLESCAPE"));
+	_info.push_back(OptionInfo("keyActionBurst", &keyActionBurst, SDLK_3, "STR_BURST_SHOT", "STR_BATTLESCAPE"));
+	_info.push_back(OptionInfo("keyActionAuto", &keyActionAuto, SDLK_4, "STR_AUTO_SHOT", "STR_BATTLESCAPE"));
+	_info.push_back(OptionInfo("keyActionLaunch", &keyActionLaunch, SDLK_1, "STR_LAUNCH_MISSILE", "STR_BATTLESCAPE"));
+	_info.push_back(OptionInfo("keyActionThrow", &keyActionThrow, SDLK_t, "STR_THROW", "STR_BATTLESCAPE"));
+	_info.push_back(OptionInfo("keyActionPrime", &keyActionPrime, SDLK_1, "STR_PRIME", "STR_BATTLESCAPE"));
+	_info.push_back(OptionInfo("keyActionOverwatch", &keyActionOverwatch, SDLK_o, "STR_OVERWATCH", "STR_BATTLESCAPE"));
+	_info.push_back(OptionInfo("keyActionDualFire", &keyActionDualFire, SDLK_5, "STR_DUAL_FIRE", "STR_BATTLESCAPE"));
+	_info.push_back(OptionInfo("keyActionReload", &keyActionReload, SDLK_r, "STR_RELOAD", "STR_BATTLESCAPE"));
+	_info.push_back(OptionInfo("keyActionMelee", &keyActionMelee, SDLK_1, "STR_MELEE", "STR_BATTLESCAPE"));
+	_info.push_back(OptionInfo("keyActionUse", &keyActionUse, SDLK_1, "STR_USE", "STR_BATTLESCAPE"));
+	_info.push_back(OptionInfo("keyActionPsi1", &keyActionPsi1, SDLK_1, "STR_PSI_ACTION_1", "STR_BATTLESCAPE"));
+	_info.push_back(OptionInfo("keyActionPsi2", &keyActionPsi2, SDLK_2, "STR_PSI_ACTION_2", "STR_BATTLESCAPE"));
+	_info.push_back(OptionInfo("keyActionPsi3", &keyActionPsi3, SDLK_3, "STR_PSI_ACTION_3", "STR_BATTLESCAPE"));
+	_info.push_back(OptionInfo("keyActionPsi4", &keyActionPsi4, SDLK_4, "STR_PSI_ACTION_4", "STR_BATTLESCAPE"));
 
 #ifdef __MORPHOS__
 	_info.push_back(OptionInfo("FPS", &FPS, 15, "STR_FPS_LIMIT", "STR_GENERAL"));
@@ -716,7 +770,7 @@ static void _loadMod(const ModInfo &modInfo, std::set<std::string> circDepCheck)
 		Log(LOG_WARNING) << "circular dependency found in master chain: " << modInfo.getId();
 		return;
 	}
-	
+
 	FileMap::load(modInfo.getId(), modInfo.getPath(), false);
 	for (std::vector<std::string>::const_iterator i = modInfo.getExternalResourceDirs().begin(); i != modInfo.getExternalResourceDirs().end(); ++i)
 	{

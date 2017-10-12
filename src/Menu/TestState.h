@@ -22,46 +22,50 @@
 namespace OpenXcom
 {
 
-class SurfaceSet;
-class Surface;
-class TextButton;
 class Window;
+class TextButton;
 class Text;
-class TextList;
-class NumberText;
-class Slider;
 class ComboBox;
+class TextList;
+class MapBlock;
 
 /**
- * A state purely for testing game functionality.
- * Fun fact, this was the project's original main(),
- * used for testing and implementing basic engine
- * features until it grew a proper structure and was
- * put aside for actual game states. Useful as a
- * sandbox / testing ground.
+ * A state for testing most common modding mistakes.
  */
 class TestState : public State
 {
 private:
-	SurfaceSet *_set;
-	TextButton *_button;
 	Window *_window;
-	Text *_text;
-	NumberText *_number;
-	TextList *_list;
-	Slider *_slider;
-	ComboBox *_comboBox;
-	int _i;
-
-	/// Creates a surface with every color in the palette.
-	SDL_Surface *testSurface();
+	TextButton *_btnLowContrast, *_btnHighContrast, *_btnPreview;
+	TextButton *_btnRun, *_btnCancel;
+	Text *_txtPalette;
+	Text *_txtTitle, *_txtTestCase, *_txtDescription;
+	ComboBox *_cbxPalette;
+	ComboBox *_cbxTestCase;
+	TextList *_lstOutput;
+	std::vector<std::string> _paletteList;
+	std::vector<std::string> _testCases;
+	/// Test cases.
+	void testCase0();
+	int checkRMP(MapBlock *mapblock);
+	int loadMAP(MapBlock *mapblock);
 public:
 	/// Creates the Test state.
 	TestState();
 	/// Cleans up the Test state.
 	~TestState();
-	void think();
-	void blit();
+	/// Handler for changing the Test Case combobox.
+	void cbxTestCaseChange(Action *action);
+	/// Handler for clicking the Run button.
+	void btnRunClick(Action *action);
+	/// Handler for clicking the Cancel button.
+	void btnCancelClick(Action *action);
+	/// Handler for changing the Palette combobox.
+	void cbxPaletteChange(Action *action);
+	/// Handler for clicking the LowContrast button.
+	void btnLowContrastClick(Action *action);
+	/// Handler for clicking the HighContrast button.
+	void btnHighContrastClick(Action *action);
 };
 
 }

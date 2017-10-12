@@ -14,7 +14,7 @@ timePersonnel: 72
 initialFunding: 6000
 alienFuel: [STR_ELERIUM_115, 50]
 fontName: Font.dat
-soldierUtileColors:
+soldierArmorBaseColors:
   - name: STR_COLOR_WHITE
     color: 1
   - name: STR_COLOR_GRAY

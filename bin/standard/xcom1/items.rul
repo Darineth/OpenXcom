@@ -209,6 +209,7 @@ items:
     fireSound: 4
     compatibleAmmo:
       - STR_PISTOL_CLIP
+    baseAccuracy: 18
     accuracySnap: 60
     accuracyAimed: 78
     tuSnap: 18
@@ -242,9 +243,10 @@ items:
     fireSound: 4
     compatibleAmmo:
       - STR_RIFLE_CLIP
-    accuracyAuto: 35
-    accuracySnap: 60
-    accuracyAimed: 110
+    baseAccuracy: 35
+    accuracySnap: 80
+    accuracyAimed: 130
+    accuracyAuto: 70
     tuAuto: 35
     tuSnap: 25
     tuAimed: 80
@@ -279,8 +281,9 @@ items:
       - STR_HC_AP_AMMO
       - STR_HC_HE_AMMO
       - STR_HC_I_AMMO
-    accuracySnap: 60
-    accuracyAimed: 90
+    baseAccuracy: 80
+    accuracySnap: 30
+    accuracyAimed: 80
     tuSnap: 33
     tuAimed: 80
     battleType: 1
@@ -346,9 +349,11 @@ items:
       - STR_AC_AP_AMMO
       - STR_AC_HE_AMMO
       - STR_AC_I_AMMO
-    accuracyAuto: 32
-    accuracySnap: 56
-    accuracyAimed: 82
+    baseAccuracy: 35
+    accuracySnap: 45
+    accuracyAimed: 70
+    accuracyBurst: 35
+    accuracyAuto: 35
     tuAuto: 40
     tuSnap: 33
     tuAimed: 80
@@ -415,8 +420,9 @@ items:
       - STR_SMALL_ROCKET
       - STR_LARGE_ROCKET
       - STR_INCENDIARY_ROCKET
-    accuracySnap: 55
-    accuracyAimed: 115
+    baseAccuracy: 40
+    accuracySnap: 70
+    accuracyAimed: 140
     tuSnap: 45
     tuAimed: 75
     battleType: 1
@@ -481,9 +487,11 @@ items:
     hitAnimation: 36
     power: 46
     damageType: 4
-    accuracyAuto: 28
-    accuracySnap: 40
-    accuracyAimed: 68
+    baseAccuracy: 20
+    accuracySnap: 60
+    accuracyAimed: 100
+    accuracyBurst: 50
+    accuracyAuto: 0
     tuAuto: 25
     tuSnap: 20
     tuAimed: 55
@@ -504,9 +512,11 @@ items:
     hitAnimation: 36
     power: 60
     damageType: 4
-    accuracyAuto: 46
-    accuracySnap: 65
-    accuracyAimed: 100
+    baseAccuracy: 39
+    accuracySnap: 80
+    accuracyAimed: 130
+    accuracyBurst: 70
+    accuracyAuto: 45
     tuAuto: 34
     tuSnap: 25
     tuAimed: 50
@@ -528,8 +538,11 @@ items:
     hitAnimation: 36
     power: 85
     damageType: 4
-    accuracySnap: 50
-    accuracyAimed: 84
+    baseAccuracy: 88
+    accuracySnap: 30
+    accuracyAimed: 80
+    accuracyBurst: 0
+    accuracyAuto: 0
     tuSnap: 33
     tuAimed: 75
     clipSize: -1
@@ -692,6 +705,7 @@ items:
     fireSound: 18
     compatibleAmmo:
       - STR_HEAVY_PLASMA_CLIP
+    baseAccuracy: 35
     accuracyAuto: 50
     accuracySnap: 75
     accuracyAimed: 110
@@ -732,9 +746,11 @@ items:
     fireSound: 18
     compatibleAmmo:
       - STR_PLASMA_RIFLE_CLIP
-    accuracyAuto: 55
-    accuracySnap: 86
-    accuracyAimed: 100
+    baseAccuracy: 35
+    accuracySnap: 72
+    accuracyAimed: 117
+    accuracyBurst: 63
+    accuracyAuto: 41
     tuAuto: 36
     tuSnap: 30
     tuAimed: 60
@@ -772,9 +788,11 @@ items:
     fireSound: 18
     compatibleAmmo:
       - STR_PLASMA_PISTOL_CLIP
-    accuracyAuto: 50
-    accuracySnap: 65
-    accuracyAimed: 85
+    baseAccuracy: 18
+    accuracySnap: 54
+    accuracyAimed: 90
+    accuracyBurst: 45
+    accuracyAuto: 0
     tuAuto: 30
     tuSnap: 30
     tuAimed: 60
@@ -851,6 +869,7 @@ items:
     fireSound: 53
     compatibleAmmo:
       - STR_STUN_BOMB
+    baseAccuracy: 15
     accuracySnap: 65
     accuracyAimed: 110
     tuSnap: 40
@@ -1216,6 +1235,7 @@ items:
     hitSound: 19
     hitAnimation: 46
     power: 130
+    baseAccuracy: 35
     damageType: 5
     accuracySnap: 75
     accuracyAimed: 110
@@ -1273,6 +1293,7 @@ items:
     hitAnimation: 46
     power: 140
     damageType: 8
+    baseAccuracy: 35
     accuracySnap: 75
     accuracyAimed: 110
     tuSnap: 30
@@ -1311,6 +1332,7 @@ items:
     hitAnimation: 46
     power: 100
     damageType: 4
+    baseAccuracy: 35
     accuracyAuto: 50
     accuracySnap: 75
     accuracyAimed: 110

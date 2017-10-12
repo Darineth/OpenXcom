@@ -451,6 +451,8 @@ void SoldiersState::initList(size_t scrl)
 
 	unsigned int row = 0;
 	_lstSoldiers->clearList();
+	float absBonus = _base->getSickBayAbsoluteBonus();
+	float relBonus = _base->getSickBayRelativeBonus();
 	for (std::vector<Soldier*>::iterator i = _base->getSoldiers()->begin(); i != _base->getSoldiers()->end(); ++i)
 	{
 		if (_showStats)
@@ -506,7 +508,7 @@ void SoldiersState::initList(size_t scrl)
 				rank << "-" << tr((*i)->getRole()->getName() + "_SHORT");
 			}
 
-			_lstSoldiers->addRow(4, (*i)->getName(true).c_str(), rank.str().c_str(), (*i)->getCraftString(_game->getLanguage()).c_str(), ss.str().c_str());
+			_lstSoldiers->addRow(4, (*i)->getName(true).c_str(), rank.str().c_str(), (*i)->getCraftString(_game->getLanguage(), absBonus, relBonus).c_str(), ss.str().c_str());
 		}
 
 		if ((*i)->getCraft() == 0)
@@ -670,7 +672,7 @@ void SoldiersState::btnInventoryClick(Action *)
 {
 	if (_base->getAvailableSoldiers(true))
 	{
-		SavedBattleGame *bgame = new SavedBattleGame();
+		SavedBattleGame *bgame = new SavedBattleGame(_game->getMod());
 		_game->getSavedGame()->setBattleGame(bgame);
 		bgame->setMissionType("STR_BASE_DEFENSE");
 

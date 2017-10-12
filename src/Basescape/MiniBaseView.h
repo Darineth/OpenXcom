@@ -39,7 +39,7 @@ private:
 	std::vector<Base*> *_bases;
 	SurfaceSet *_texture;
 	size_t _base, _hoverBase;
-	Uint8 _red, _green;
+	Uint8 _red, _green, _blue;
 public:
 	static const size_t MAX_BASES = 8;
 	/// Creates a new mini base view at the specified position and size.
@@ -60,6 +60,7 @@ public:
 	void mouseOver(Action *action, State *state);
 	void setColor(Uint8 color);
 	void setSecondaryColor(Uint8 color);
+	void setBorderColor(Uint8 color);
 };
 
 }

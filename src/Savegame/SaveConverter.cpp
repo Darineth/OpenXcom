@@ -17,6 +17,7 @@
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "SaveConverter.h"
+#include <algorithm>
 #include <yaml-cpp/yaml.h>
 #include <SDL_endian.h>
 #include <fstream>
@@ -56,8 +57,8 @@
 #include "../Engine/RNG.h"
 #include "../Mod/RuleConverter.h"
 #include "../Ufopaedia/Ufopaedia.h"
-#include "../Engine/Game.h"
 #include "../fmath.h"
+#include "../Engine/Game.h"
 
 namespace OpenXcom
 {
@@ -368,7 +369,7 @@ void SaveConverter::loadDatLease()
 	double lon = -load<Sint16>(data + 0x06) * 0.125 * M_PI / 180;
 	_save->setGlobeLongitude(lon);
 	_save->setGlobeLatitude(lat);
-	
+
 	int zoom = load<Sint16>(data + 0x0C);
 	const int DISTANCE[] = { 90, 120, 180, 360, 450, 720 };
 	for (size_t i = 0; i < 6; ++i)
@@ -509,7 +510,7 @@ void SaveConverter::loadDatActs()
 	std::vector<char> buffer;
 	char *data = binaryBuffer("ACTS.DAT", buffer);
 
-	std::map< std::string, std::map<std::string, int> > chances;
+	std::map < std::string, std::map<std::string, int> > chances;
 	const size_t REGIONS = 12;
 	const size_t MISSIONS = 7;
 	for (size_t i = 0; i < REGIONS * MISSIONS; ++i)
@@ -521,7 +522,7 @@ void SaveConverter::loadDatActs()
 	}
 
 	YAML::Node node;
-	for (std::map< std::string, std::map<std::string, int> >::iterator i = chances.begin(); i != chances.end(); ++i)
+	for (std::map < std::string, std::map<std::string, int> >::iterator i = chances.begin(); i != chances.end(); ++i)
 	{
 		YAML::Node subnode;
 		subnode["region"] = i->first;
@@ -972,7 +973,7 @@ void SaveConverter::loadDatCraft()
 				std::bitset<7> state(load<int>(cdata + _rules->getOffset("CRAFT.DAT_STATE")));
 				node["hyperDetected"] = state.test(6);
 
-				ufo->load(node, *_mod, *_save);
+				ufo->load(node, _mod, _save);
 				ufo->setSpeed(ufo->getSpeed());
 				if (ufo->getStatus() == Ufo::CRASHED)
 				{
@@ -1056,7 +1057,7 @@ void SaveConverter::loadDatSoldier()
 			node["look"] = (int)load<Uint8>(sdata + _rules->getOffset("SOLDIER.DAT_LOOK"));
 			node["id"] = _save->getId("STR_SOLDIER");
 
-			Soldier *soldier = new Soldier(_mod->getSoldier(_mod->getSoldiersList().front(), true), _save, 0);
+			Soldier *soldier = new Soldier(_mod->getSoldier(_mod->getSoldiersList().front(), true), Game::getSavedGame(), 0);
 			soldier->load(node, _mod, _save);
 			if (base != 0xFFFF)
 			{

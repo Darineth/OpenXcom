@@ -34,12 +34,13 @@ class UnitDieBState : public BattleState
 {
 private:
 	BattleUnit *_unit;
-	ItemDamageType _damageType;
-	bool _noSound, _noCorpse;
+	const RuleDamageType *_damageType;
+	bool _noSound;
 	int _extraFrame;
+	bool _overKill;
 public:
 	/// Creates a new UnitDieBState class
-	UnitDieBState(BattlescapeGame *parent, BattleUnit *unit, ItemDamageType damageType, bool noSound, bool noCorpse);
+	UnitDieBState(BattlescapeGame *parent, BattleUnit *unit, const RuleDamageType *damageType, bool noSound, bool immediate);
 	/// Cleans up the UnitDieBState.
 	~UnitDieBState();
 	/// Initializes the state.
@@ -49,7 +50,7 @@ public:
 	/// Runs state functionality every cycle.
 	void think();
 	/// Converts a unit to a corpse.
-	void convertUnitToCorpse();
+	void convertUnitToCorpse(bool calculateFOV);
 	/// Plays the death sound.
 	void playDeathSound();
 	/// Returns the dying unit.

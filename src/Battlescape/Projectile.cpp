@@ -47,23 +47,19 @@ namespace OpenXcom
  * @param targetVoxel Position the projectile is targeting.
  * @param ammo the ammo that produced this projectile, where applicable.
  */
-//Projectile::Projectile(Mod *mod, SavedBattleGame *save, BattleAction action, Position origin, Position targetVoxel, BattleItem *ammo) : _res(res), _save(save), _action(action), _origin(origin), _targetVoxel(targetVoxel), _position(0), _bulletSprite(-1), _reversed(false), _vaporColor(-1), _vaporDensity(-1), _vaporProbability(5)
-Projectile::Projectile(Mod *mod, SavedBattleGame *save, BattleAction action, Position origin, Position targetVoxel, BattleItem *ammo, int bulletSprite, bool shotgun) : _mod(mod), _save(save), _action(action), _origin(origin), _targetVoxel(targetVoxel), _position(0), _bulletSprite(bulletSprite), _reversed(false), _vaporColor(-1), _vaporDensity(-1), _vaporProbability(5), _impact(0), _shotgun(shotgun), _calculatedAccuracy(1.0), _ammo(ammo), _originVoxel(), _trajectoryVector(false), _trajectoryFinalVector(), _trajectorySkipUnit(0)
+Projectile::Projectile(Mod *mod, SavedBattleGame *save, BattleAction action, Position origin, Position targetVoxel, BattleItem *ammo, bool shotgun) : _mod(mod), _save(save), _action(action), _origin(origin), _targetVoxel(targetVoxel), _position(0), _distance(0.0f), _bulletSprite(-1), _bulletParticles(35), _reversed(false), _vaporColor(-1), _vaporDensity(-1), _vaporProbability(5), _impact(0), _shotgun(shotgun), _calculatedAccuracy(1.0), _ammo(ammo), _originVoxel(), _trajectoryVector(false), _trajectoryFinalVector(), _trajectorySkipUnit(0)
 {
 	// this is the number of pixels the sprite will move between frames
 	_speed = Options::battleFireSpeed;
 	if (_action.weapon)
 	{
-		if (_action.type == BA_THROW)
-		{
-			_sprite = _mod->getSurfaceSet("FLOOROB.PCK")->getFrame(getItem()->getRules()->getFloorSprite());
-		}
-		else
+		if (_action.type != BA_THROW)
 		{
 			// try to get all the required info from the ammo, if present
 			if (ammo)
 			{
 				_bulletSprite = ammo->getRules()->getBulletSprite();
+				_bulletParticles = ammo->getRules()->getBulletParticles();
 				_vaporColor = ammo->getRules()->getVaporColor();
 				_vaporDensity = ammo->getRules()->getVaporDensity();
 				_vaporProbability = ammo->getRules()->getVaporProbability();
@@ -74,6 +70,10 @@ Projectile::Projectile(Mod *mod, SavedBattleGame *save, BattleAction action, Pos
 			if (_bulletSprite == -1)
 			{
 				_bulletSprite = _action.weapon->getRules()->getBulletSprite();
+			}
+			if (_bulletParticles == -1)
+			{
+				_bulletParticles = _action.weapon->getRules()->getBulletParticles();
 			}
 			if (_vaporColor == -1)
 			{
@@ -127,17 +127,18 @@ int Projectile::calculateTrajectory(double accuracy, const Position& originVoxel
 	int smoke = 0;
 	int test = _save->getTileEngine()->calculateLine(originVoxel, _targetVoxel, false, &_trajectory, excludeUnit ? 0 : bu, true, false, 0, &smoke);
 
+	_distance = 0.0f;
 	if(smoke > 0)
 	{
 		double smokePower = (double)smoke / 3.0;
 
-		if(smokePower > TileEngine::MAX_VOXEL_VIEW_DISTANCE)
+		if(smokePower > _save->getTileEngine()->getMaxVoxelViewDistance())
 		{
 			accuracy = 0;
 		}
-		else if(smokePower > (TileEngine::MAX_VOXEL_VIEW_DISTANCE / 2.0))
+		else if(smokePower > (_save->getTileEngine()->getMaxVoxelViewDistance() / 2.0))
 		{
-			double smokeAccuracyReduction = (smokePower - (TileEngine::MAX_VOXEL_VIEW_DISTANCE / 2.0)) / (TileEngine::MAX_VOXEL_VIEW_DISTANCE / 2.0);
+			double smokeAccuracyReduction = (smokePower - (_save->getTileEngine()->getMaxVoxelViewDistance() / 2.0)) / (_save->getTileEngine()->getMaxVoxelViewDistance() / 2.0);
 			accuracy *= (1.0 - smokeAccuracyReduction);
 		}
 	}
@@ -282,13 +283,13 @@ int Projectile::calculateTrajectoryFromVector(Position originVoxel, bool force, 
 	{
 		double smokePower = (double)smoke / 3.0;
 
-		if(smokePower > TileEngine::MAX_VOXEL_VIEW_DISTANCE)
+		if(smokePower > _save->getTileEngine()->getMaxVoxelViewDistance())
 		{
 			smokeMod = 0;
 		}
-		else if(smokePower > (TileEngine::MAX_VOXEL_VIEW_DISTANCE / 2.0))
+		else if(smokePower > (_save->getTileEngine()->getMaxVoxelViewDistance() / 2.0))
 		{
-			double smokeAccuracyReduction = (smokePower - (TileEngine::MAX_VOXEL_VIEW_DISTANCE / 2.0)) / (TileEngine::MAX_VOXEL_VIEW_DISTANCE / 2.0);
+			double smokeAccuracyReduction = (smokePower - (_save->getTileEngine()->getMaxVoxelViewDistance() / 2.0)) / (_save->getTileEngine()->getMaxVoxelViewDistance() / 2.0);
 			smokeMod = (1.0 - smokeAccuracyReduction);
 		}
 	}
@@ -356,7 +357,8 @@ int Projectile::calculateTrajectoryFromVector(Position originVoxel, bool force, 
 
 	if(_shotgun) //Shotgun pellets ignore everything but their own accuracy.
 	{
-		double shotgunAcc = item->getRules()->getAccuracyShotgunSpread();
+		// TODO: Shotgun Choke?
+		double shotgunAcc = item->getRules()->getShotgunSpread();
 
 		//Shotgun's aimcone angle.
 		double angle = RNG::boxMuller(0, 0.437 / shotgunAcc * 1.4826);
@@ -379,7 +381,7 @@ int Projectile::calculateTrajectoryFromVector(Position originVoxel, bool force, 
 
 		if(bu->isKneeled())
 		{
-			int kneelMod = item->getRules()->getKneelModifier();
+			int kneelMod = item->getRules()->getKneelBonus(_save->getMod());
 			if(kneelMod)
 			{
 				soldierAcc = double(bu->getBaseStats()->firing * kneelMod) / 100.0;
@@ -398,7 +400,7 @@ int Projectile::calculateTrajectoryFromVector(Position originVoxel, bool force, 
 			&& bu->getItem(bu->getWeaponSlot1())
 			&& bu->getItem(bu->getWeaponSlot2()))
 		{
-			soldierAcc *= item->getRules()->getTwoHandedModifier() / 100.0;
+			soldierAcc *= item->getRules()->getOneHandedPenalty(_save->getMod()) / 100.0;
 		}
 
 		// berserking units are half as accurate
@@ -410,9 +412,9 @@ int Projectile::calculateTrajectoryFromVector(Position originVoxel, bool force, 
 		soldierAcc *= double(bu->getAccuracyModifier(item)) / 100.0;
 
 		// Penalize soldier accuracy for sprinting targets.
-		if (_action.targetSprinting || (targetUnit && targetUnit->getMovementAction() == MV_SPRINT))
+		if (_action.targetSprinting || (targetUnit && targetUnit->getMovementAction() == BAM_RUN))
 		{
-			soldierAcc *= 0.7;
+			soldierAcc *= (Mod::SPRINTING_SHOT_ACCURACY / 100);
 		}
 
 		double energyRatio = std::max((double)bu->getEnergy() / (double)bu->getBaseStats()->stamina, 0.0);
@@ -448,7 +450,7 @@ int Projectile::calculateTrajectoryFromVector(Position originVoxel, bool force, 
 			BattleActionType action2;
 			if(bu->canDualFire(weapon1, action1, weapon2, action2))
 			{
-				soldierAcc *= ((bu->getFiringAccuracy(action1, weapon1, false, true) + bu->getFiringAccuracy(action2, weapon2, false, true)) / 2.0) * bu->getDualFireAccuracy();
+				soldierAcc *= ((bu->getFiringAccuracy(action1, weapon1, _save->getMod(), false, true) + bu->getFiringAccuracy(action2, weapon2, _save->getMod(), false, true)) / 2.0) * bu->getDualFireAccuracy();
 
 				dualFiring = true;
 			}
@@ -532,13 +534,13 @@ void Projectile::calculateChanceToHit(double& chance, double& coverChance)
 	{
 		double smokePower = (double)smoke / 3.0;
 
-		if (smokePower > TileEngine::MAX_VOXEL_VIEW_DISTANCE)
+		if (smokePower > _save->getTileEngine()->getMaxVoxelViewDistance())
 		{
 			smokeMod = 0;
 		}
-		else if (smokePower > (TileEngine::MAX_VOXEL_VIEW_DISTANCE / 2.0))
+		else if (smokePower > (_save->getTileEngine()->getMaxVoxelViewDistance() / 2.0))
 		{
-			double smokeAccuracyReduction = (smokePower - (TileEngine::MAX_VOXEL_VIEW_DISTANCE / 2.0)) / (TileEngine::MAX_VOXEL_VIEW_DISTANCE / 2.0);
+			double smokeAccuracyReduction = (smokePower - (_save->getTileEngine()->getMaxVoxelViewDistance() / 2.0)) / (_save->getTileEngine()->getMaxVoxelViewDistance() / 2.0);
 			smokeMod = (1.0 - smokeAccuracyReduction);
 		}
 	}
@@ -557,7 +559,7 @@ void Projectile::calculateChanceToHit(double& chance, double& coverChance)
 
 	if (_shotgun) //Shotgun pellets ignore everything but their own accuracy.
 	{
-		weaponAcc = item->getRules()->getAccuracyShotgunSpread();
+		weaponAcc = item->getRules()->getShotgunSpread();
 	}
 	else
 	{
@@ -577,7 +579,7 @@ void Projectile::calculateChanceToHit(double& chance, double& coverChance)
 
 		if (bu->isKneeled())
 		{
-			int kneelMod = item->getRules()->getKneelModifier();
+			int kneelMod = item->getRules()->getKneelBonus(_save->getMod());
 			if (kneelMod)
 			{
 				soldierAcc = double(bu->getBaseStats()->firing * kneelMod) / 100.0;
@@ -596,7 +598,7 @@ void Projectile::calculateChanceToHit(double& chance, double& coverChance)
 			&& bu->getItem(bu->getWeaponSlot1())
 			&& bu->getItem(bu->getWeaponSlot2()))
 		{
-			soldierAcc *= item->getRules()->getTwoHandedModifier() / 100.0;
+			soldierAcc *= item->getRules()->getOneHandedPenalty(_save->getMod()) / 100.0;
 		}
 
 		// berserking units are half as accurate
@@ -608,7 +610,7 @@ void Projectile::calculateChanceToHit(double& chance, double& coverChance)
 		soldierAcc *= double(bu->getAccuracyModifier(item)) / 100.0;
 
 		// Penalize soldier accuracy for sprinting targets.
-		if (_action.targetSprinting || (targetUnit && targetUnit->getMovementAction() == MV_SPRINT))
+		if (_action.targetSprinting || (targetUnit && targetUnit->getMovementAction() == BAM_RUN))
 		{
 			soldierAcc *= 0.7;
 		}
@@ -646,7 +648,7 @@ void Projectile::calculateChanceToHit(double& chance, double& coverChance)
 			BattleActionType action2;
 			if (bu->canDualFire(weapon1, action1, weapon2, action2))
 			{
-				soldierAcc *= ((bu->getFiringAccuracy(action1, weapon1, false, true) + bu->getFiringAccuracy(action2, weapon2, false, true)) / 2.0) * bu->getDualFireAccuracy();
+				soldierAcc *= ((bu->getFiringAccuracy(action1, weapon1, _save->getMod(), false, true) + bu->getFiringAccuracy(action2, weapon2, _save->getMod(), false, true)) / 2.0) * bu->getDualFireAccuracy();
 			}
 		}
 
@@ -784,6 +786,7 @@ int Projectile::calculateThrow(double accuracy, bool ignoreAccuracy)
 		}
 	}
 
+	_distance = 0.0f;
 	double curvature = 0.0;
 	int retVal = V_OUTOFBOUNDS;
 	if (_save->getTileEngine()->validateThrow(_action, originVoxel, targetVoxel, &curvature, &retVal))
@@ -842,7 +845,7 @@ void Projectile::applyAccuracy(Position origin, Position *target, double accurac
 	// maxRange is the maximum range a projectile shall ever travel in voxel space
 	double maxRange = keepRange?realDistance:16*1000; // 1000 tiles
 	maxRange = _action.type == BA_HIT?46:maxRange; // up to 2 tiles diagonally (as in the case of reaper v reaper)
-	RuleItem *weapon = _action.weapon->getRules();
+	const RuleItem *weapon = _action.weapon->getRules();
 
 	if (_action.type != BA_THROW && _action.type != BA_HIT)
 	{
@@ -912,7 +915,7 @@ void Projectile::applyAccuracy(Position origin, Position *target, double accurac
 		//Uses a normal distribution to calculate the deviation from the target, multiplied by the distance so that far shots impact farther apart than near shots
 		double distance = sqrt(double(origin.x - target->x) * double(origin.x - target->x) + double(origin.y - target->y) * double(origin.y - target->y) + double(origin.z - target->z) * double(origin.z - target->z));
 
-		double shotgunAccuracy = (double)weapon->getAccuracyShotgunSpread();
+		double shotgunAccuracy = (double)weapon->getShotgunSpread();
 		if(shotgunAccuracy > 100.0)
 			shotgunAccuracy = 100.0;
 		else if(shotgunAccuracy <= 0.0)
@@ -961,6 +964,12 @@ bool Projectile::move()
 			--_position;
 			return false;
 		}
+		else if (_position > 0)
+		{
+			Position p = _trajectory[_position] - _trajectory[_position - 1];
+			p *= p;
+			_distance += sqrt(float(p.x + p.y + p.z));
+		}
 		if (_save->getDepth() > 0 && _vaporColor != -1 && _action.type != BA_THROW && RNG::percent(_vaporProbability))
 		{
 			addVaporCloud();
@@ -975,6 +984,7 @@ bool Projectile::move()
 void Projectile::resetTrajectory()
 {
 	_position = 0;
+	_distance = 0.0f;
 }
 
 /**
@@ -1028,13 +1038,9 @@ BattleItem *Projectile::getItem() const
 		return 0;
 }
 
-/**
- * Gets the bullet sprite.
- * @return Pointer to Surface.
- */
-Surface *Projectile::getSprite() const
+int Projectile::getSprites() const
 {
-	return _sprite;
+	return _bulletParticles;
 }
 
 /**
@@ -1074,6 +1080,15 @@ Position Projectile::getOriginVoxel() const
 Position Projectile::getTarget() const
 {
 	return _action.target;
+}
+
+/**
+ * Gets distances that projectile have traveled until now.
+ * @return Returns traveled distance.
+ */
+float Projectile::getDistance() const
+{
+	return _distance;
 }
 
 /**

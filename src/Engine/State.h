@@ -66,6 +66,8 @@ public:
 	void add(Surface *surface);
 	/// Adds a child element to the state.
 	void add(Surface *surface, const std::string &id, const std::string &category, Surface *parent = 0);
+	/// Removes a child element from the state.
+	bool remove(Surface *surface);
 	/// Gets whether the state is a full-screen.
 	bool isScreen() const;
 	/// Toggles whether the state is a full-screen.

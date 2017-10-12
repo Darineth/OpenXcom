@@ -29,6 +29,7 @@
 #include "../Savegame/SoldierDiary.h"
 #include "../Engine/Options.h"
 #include "../Mod/RuleCommendations.h"
+#include "../Ufopaedia/Ufopaedia.h"
 
 namespace OpenXcom
 {
@@ -39,7 +40,7 @@ namespace OpenXcom
  */
 CommendationLateState::CommendationLateState(std::vector<Soldier*> soldiersMedalled)
 {
-	// Create objects
+	// Create object
 	_window = new Window(this, 320, 200, 0, 0);
 	_btnOk = new TextButton(288, 16, 16, 176);
 	_txtTitle = new Text(300, 16, 10, 8);
@@ -55,7 +56,7 @@ CommendationLateState::CommendationLateState(std::vector<Soldier*> soldiersMedal
 
 	centerAllSurfaces();
 
-	// Set up objects
+	// Set up object
 	_window->setBackground(_game->getMod()->getSurface("BACK02.SCR"));
 
 	_btnOk->setText(tr("STR_OK"));
@@ -67,11 +68,12 @@ CommendationLateState::CommendationLateState(std::vector<Soldier*> soldiersMedal
 	_txtTitle->setAlign(ALIGN_CENTER);
 	_txtTitle->setText(tr("STR_LOST_IN_SERVICE"));
 
-	_lstSoldiers->setColumns(5, 51, 51, 51, 51, 84);
+	_lstSoldiers->setColumns(3, 114, 90, 84);
 	_lstSoldiers->setSelectable(true);
 	_lstSoldiers->setBackground(_window);
 	_lstSoldiers->setMargin(8);
 	_lstSoldiers->setFlooding(true);
+	_lstSoldiers->onMouseClick((ActionHandler)&CommendationLateState::lstSoldiersMouseClick);
 
     /***
     
@@ -91,25 +93,26 @@ CommendationLateState::CommendationLateState(std::vector<Soldier*> soldiersMedal
 	std::string noun;
 
 
-
+	int row = 0;
 	// Loop over dead soldiers
 	for (std::vector<Soldier*>::iterator s = soldiersMedalled.begin() ; s != soldiersMedalled.end(); ++s)
 	{
 		// Establish some base information
-		_lstSoldiers->addRow(5, (*s)->getName().c_str(),
-								L"",
+		_lstSoldiers->addRow(3, (*s)->getName().c_str(),
 								tr((*s)->getRankString()).c_str(),
-								L"",
 								tr("STR_KILLS").arg((*s)->getDiary()->getKillTotal()).c_str());
+		_lstSoldiers->setRowColor(row, _lstSoldiers->getSecondaryColor());
+		_commendationsNames.push_back("");
+		row++;
 
-		// Loop over all commendations
+		// Loop over all commendation
 		for (std::map<std::string, RuleCommendations *>::const_iterator commList = commendationsList.begin(); commList != commendationsList.end();)
 		{
 			std::wostringstream wssCommendation;
 			modularCommendation = false;
 			noun = "noNoun";
 
-			// Loop over soldier's commendations
+			// Loop over soldier's commendation
 			for (std::vector<SoldierCommendations*>::const_iterator soldierComm = (*s)->getDiary()->getSoldierCommendations()->begin(); soldierComm != (*s)->getDiary()->getSoldierCommendations()->end(); ++soldierComm)
 			{
 				if ((*soldierComm)->getType() == (*commList).first && (*soldierComm)->isNew() && noun == "noNoun")
@@ -156,7 +159,9 @@ CommendationLateState::CommendationLateState(std::vector<Soldier*> soldiersMedal
 					{
 						wssCommendation << tr((*commList).first);
 					}
-					_lstSoldiers->addRow(5, wssCommendation.str().c_str(), L"", L"", L"", tr((*soldierComm)->getDecorationLevelName(skipCounter)).c_str());
+					_lstSoldiers->addRow(3, wssCommendation.str().c_str(), L"", tr((*soldierComm)->getDecorationLevelName(skipCounter)).c_str());
+					_commendationsNames.push_back((*commList).first);
+					row++;
 					break;
 				}
 			} // END SOLDIER COMMS LOOP
@@ -166,7 +171,10 @@ CommendationLateState::CommendationLateState(std::vector<Soldier*> soldiersMedal
 				++commList;
 			}
 		} // END COMMS LOOPS
-	} // END SOLDIER LOOP
+		_lstSoldiers->addRow(3, L"", L"", L""); // Separator
+		_commendationsNames.push_back("");
+		row++;
+	} // END SOLDIER LOOP    
 }
 
 /**
@@ -174,6 +182,14 @@ CommendationLateState::CommendationLateState(std::vector<Soldier*> soldiersMedal
  */
 CommendationLateState::~CommendationLateState()
 {
+}
+
+/*
+*
+*/
+void CommendationLateState::lstSoldiersMouseClick(Action *)
+{
+	Ufopaedia::openArticle(_game, _commendationsNames[_lstSoldiers->getSelectedRow()]);
 }
 
 /**

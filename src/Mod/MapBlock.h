@@ -20,13 +20,22 @@
 #include <string>
 #include <vector>
 #include <yaml-cpp/yaml.h>
+#include "../Battlescape/Position.h"
 
 namespace OpenXcom
 {
 
 enum MapBlockType {MT_UNDEFINED = -1, MT_DEFAULT, MT_LANDINGZONE, MT_EWROAD, MT_NSROAD, MT_CROSSING};
 class RuleTerrain;
-class Position;
+
+struct RandomizedItems
+{
+	Position position;
+	int amount;
+	bool mixed;
+	std::vector<std::string> itemList;
+	RandomizedItems() : amount(1) { /*Empty by Design*/ };
+};
 
 /**
  * Represents a Terrain Map Block.
@@ -41,6 +50,8 @@ private:
 	int _size_x, _size_y, _size_z;
 	std::vector<int> _groups, _revealedFloors;
 	std::map<std::string, std::vector<Position> > _items;
+	std::vector<RandomizedItems> _randomizedItems;
+	std::map<std::string, std::pair<int, int> > _itemsFuseTimer;
 public:
 	MapBlock(const std::string &name);
 	~MapBlock();
@@ -61,7 +72,11 @@ public:
 	/// Gets if this floor should be revealed or not.
 	bool isFloorRevealed(int floor);
 	/// Gets the layout for any items that belong in this map block.
-	std::map<std::string, std::vector<Position> > *getItems();
+	const std::map<std::string, std::vector<Position> > *getItems() const;
+	/// Gets the layout for any randomized items that belong in this map block.
+	const std::vector<RandomizedItems> *getRandomizedItems() const;
+	/// Gets the fuse timer for any items that belong in this map block.
+	const std::map<std::string, std::pair<int, int> > *getItemsFuseTimers() const;
 
 };
 

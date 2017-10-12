@@ -19,9 +19,12 @@
  */
 #include <string>
 #include <yaml-cpp/yaml.h>
+#include "../Mod/RuleItem.h"
 
 namespace OpenXcom
 {
+
+class BattleItem;
 
 /**
  * Represents a soldier-equipment layout item which is used
@@ -33,27 +36,25 @@ private:
 	std::string _itemType;
 	std::string _slot;
 	int _slotX, _slotY;
-	std::string _ammoItem;
+	std::string _ammoItem[RuleItem::AmmoSlotMax];
 	int _fuseTimer;
 public:
 	/// Creates a new soldier-equipment layout item and loads its contents from YAML.
 	EquipmentLayoutItem(const YAML::Node& node);
-	/// Copy an existing equipment layout item.
-	EquipmentLayoutItem(const EquipmentLayoutItem &item);
 	/// Creates a new soldier-equipment layout item.
-	EquipmentLayoutItem(const std::string &itemType, const std::string &slot, int slotX, int slotY, const std::string &ammoItem, int fuseTimer);
+	EquipmentLayoutItem(const BattleItem* item);
 	/// Cleans up the soldier-equipment layout item.
 	~EquipmentLayoutItem();
 	/// Gets the item's type which has to be in a slot
-	std::string getItemType() const;
+	const std::string& getItemType() const;
 	/// Gets the slot to be occupied
-	std::string getSlot() const;
+	const std::string& getSlot() const;
 	/// Gets the slotX to be occupied
 	int getSlotX() const;
 	/// Gets the slotY to be occupied
 	int getSlotY() const;
 	/// Gets the ammo item
-	std::string getAmmoItem() const;
+	const std::string& getAmmoItemForSlot(int i) const;
 	/// Gets the turn until explosion
 	int getFuseTimer() const;
 	/// Loads the soldier-equipment layout item from YAML.

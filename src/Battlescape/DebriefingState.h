@@ -68,34 +68,37 @@ private:
 	Base *_base;
 	std::vector<DebriefingStat*> _stats;
 	std::vector<SoldierStatsEntry> _soldierStats;
-	TextButton *_btnOk, *_btnStats;
+	TextButton *_btnOk, *_btnStats, *_btnSell;
 	Window *_window;
 	Text *_txtTitle, *_txtItem, *_txtQuantity, *_txtScore, *_txtRecovery, *_txtRating,
-	     *_txtSoldier, *_txtStatus /*, *_txtTU, *_txtStamina, *_txtHealth, *_txtBravery, *_txtReactions,
-	     *_txtFiring, *_txtThrowing, *_txtMelee, *_txtStrength, *_txtPsiStrength, *_txtPsiSkill*/;
-	TextList *_lstStats, *_lstRecovery, *_lstTotal, *_lstSoldiers;
+	     *_txtSoldier, *_txtStatus;
+	TextList *_lstStats, *_lstRecovery, *_lstTotal, *_lstSoldiers, *_lstRecoveredItems;
 	std::string _currentTooltip;
-	//Text *_txtTooltip;
+	Text *_txtTooltip;
 	std::vector<ReequipStat> _missingItems;
-	std::map<RuleItem*, int> _rounds;
+	std::map<const RuleItem*, int> _rounds, _roundsPainKiller, _roundsStimulant, _roundsHeal, _recoveredItems;
+	Uint8 _ammoColor;
 	std::map<int, RecoveryItem*> _recoveryStats;
-	bool _positiveScore, _noContainment, _manageContainment, _destroyBase;
+	bool _positiveScore, _destroyBase, _showSellButton;
+	std::map<int, int>  _containmentStateInfo;
 	int _limitsEnforced;
 	MissionStatistics *_missionStatistics;
-    std::vector<Soldier*> _soldiersCommended, _deadSoldiersCommended;
+	std::vector<Soldier*> _soldiersCommended, _deadSoldiersCommended;
 	/// Adds to the debriefing stats.
 	void addStat(const std::string &name, int quantity, int score);
 	/// Prepares debriefing.
 	void prepareDebriefing();
 	/// Recovers items from the battlescape.
 	void recoverItems(std::vector<BattleItem*> *from, Base *base);
+	/// Recovers a civilian from the battlescape.
+	void recoverCivilian(BattleUnit *from, Base *base);
 	/// Recovers an alien from the battlescape.
 	void recoverAlien(BattleUnit *from, Base *base);
 	/// Reequips a craft after a mission.
 	void reequipCraft(Base *base, Craft *craft, bool vehicleItemsCanBeDestroyed);
-	/// True when soldier stat improvements are shown rather than scores. Toggled with the corresponding button.
-	bool _showSoldierStats;
-	/// Sets the visibility according to the _showSoldierStats flag
+	/// 0 = score, 1 = stat improvement, 2 = recovered items
+	int _pageNumber;
+	/// Sets the visibility according to the _pageNumber
 	void applyVisibility();
 	/// Creates a string for the soldier stats table from a stat difference value
 	std::wstring makeSoldierString(int stat);
@@ -109,10 +112,16 @@ public:
 	void init();
 	/// Handler for clicking the STATS button.
 	void btnStatsClick(Action *action);
+	/// Handler for clicking the SELL button.
+	void btnSellClick(Action *action);
 	/// Handler for showing tooltip.
 	void txtTooltipIn(Action *action);
 	/// Handler for hiding tooltip.
 	void txtTooltipOut(Action *action);
+	// Gets the number of recovered items of certain type.
+	int getRecoveredItemCount(RuleItem *rule);
+	// Sets the visibility of the SELL button.
+	void setShowSellButton(bool showSellButton);
 };
 
 }

@@ -47,6 +47,7 @@ void Texture::load(const YAML::Node &node)
 	_id = node["id"].as<int>(_id);
 	_deployments = node["deployments"].as< std::map<std::string, int> >(_deployments);
 	_terrain = node["terrain"].as< std::vector<TerrainCriteria> >(_terrain);
+	_baseTerrain = node["baseTerrain"].as< std::vector<TerrainCriteria> >(_baseTerrain);
 }
 
 /**
@@ -70,6 +71,47 @@ std::string Texture::getRandomTerrain(Target *target) const
 	int totalWeight = 0;
 	std::map<int, std::string> possibilities;
 	for (std::vector<TerrainCriteria>::const_iterator i = _terrain.begin(); i != _terrain.end(); ++i)
+	{
+		if (i->weight > 0 &&
+			target->getLongitude() >= i->lonMin && target->getLongitude() < i->lonMax &&
+			target->getLatitude() >= i->latMin && target->getLatitude() < i->latMax)
+		{
+			totalWeight += i->weight;
+			possibilities[totalWeight] = i->name;
+		}
+	}
+	int pick = RNG::generate(1, totalWeight);
+	for (std::map<int, std::string>::const_iterator i = possibilities.begin(); i != possibilities.end(); ++i)
+	{
+		if (pick <= i->first)
+		{
+			return i->second;
+		}
+	}
+	return "";
+}
+
+/**
+ * Returns the list of terrain criteria associated
+ * with this texture for base defense missions.
+ * @return List of terrain.
+ */
+std::vector<TerrainCriteria> *Texture::getBaseTerrain()
+{
+	return &_baseTerrain;
+}
+
+/**
+ * Calculates a random terrain for a base defense mission target based
+ * on the texture's available terrain criteria.
+ * @param target Pointer to the mission target.
+ * @return the name of the picked terrain.
+ */
+std::string Texture::getRandomBaseTerrain(Target *target) const
+{
+	int totalWeight = 0;
+	std::map<int, std::string> possibilities;
+	for (std::vector<TerrainCriteria>::const_iterator i = _baseTerrain.begin(); i != _baseTerrain.end(); ++i)
 	{
 		if (i->weight > 0 &&
 			target->getLongitude() >= i->lonMin && target->getLongitude() < i->lonMax &&

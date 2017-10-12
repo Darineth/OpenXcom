@@ -34,6 +34,7 @@
 #include "../Mod/RuleRegion.h"
 #include "../Menu/ErrorMessageState.h"
 #include "DismantleFacilityState.h"
+#include "ChangeHeadquartersState.h"
 #include "../Geoscape/BuildNewBaseState.h"
 #include "../Engine/Action.h"
 #include "../Savegame/Craft.h"

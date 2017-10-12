@@ -188,6 +188,14 @@ void State::add(Surface *surface, const std::string &id, const std::string &cate
 			{
 				surface->setSecondaryColor(element->color2);
 			}
+			if (element->color3 != INT_MAX)
+			{
+				surface->setTertiaryColor(element->color3);
+			}
+			if (element->color4 != INT_MAX)
+			{
+				surface->setQuaternaryColor(element->color4);
+			}
 			if (element->border != INT_MAX)
 			{
 				surface->setBorderColor(element->border);
@@ -208,6 +216,24 @@ void State::add(Surface *surface, const std::string &id, const std::string &cate
 
 	_surfaces.push_back(surface);
 }
+
+/**
+ * Removes a child element from the state.
+ * @param surface The surface to remove.
+ * @return True if the surface was found and removed.
+ */
+bool State::remove(Surface *surface)
+{
+	auto ii = std::find(_surfaces.begin(), _surfaces.end(), surface);
+	if (ii != _surfaces.end())
+	{
+		_surfaces.erase(ii);
+		return true;
+	}
+
+	return false;
+}
+
 
 /**
  * Returns whether this is a full-screen state.

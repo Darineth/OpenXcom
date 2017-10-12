@@ -49,6 +49,7 @@ GET_SOLDIER_STAT_FN(kills, Kills)
 //GET_SOLDIER_STAT_FN(woundRecovery, WoundRecovery)
 int OpenXcom::woundRecoveryStat(Game *game, Soldier *s)
 {
-	return s->getWoundRecovery();
+	return s->getWoundRecovery(0.0f, 0.0f);
 }
+GET_SOLDIER_STAT_FN(totalStats, TotalStats)
 #undef GET_SOLDIER_STAT_FN

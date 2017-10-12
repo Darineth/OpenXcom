@@ -35,8 +35,11 @@ class BattlescapeMessage;
 class Camera;
 class Timer;
 class Text;
+class Tile;
 
 enum CursorType { CT_NONE, CT_NORMAL, CT_AIM, CT_PSI, CT_WAYPOINT, CT_THROW };
+enum MapDataType : int;
+
 /**
  * Interactive map of the battlescape.
  */
@@ -44,16 +47,26 @@ class Map : public InteractiveSurface
 {
 private:
 	static const int SCROLL_INTERVAL = 15;
+	static const int FADE_INTERVAL = 23;
+	static const int NIGHT_VISION_THRESHOLD = 6;
+	static const int NIGHT_VISION_SHADE = 4;
 	static const int BULLET_SPRITES = 35;
+	static const int MAX_CAMERA_BULLET_SPRITES = 200;
 	Timer *_scrollMouseTimer, *_scrollKeyTimer;
+	Timer *_fadeTimer;
+	int _fadeShade;
+	bool _nightVisionOn;
+	int _nvColor;
 	Game *_game;
 	SavedBattleGame *_save;
 	Surface *_arrow;
+	Surface *_stunIndicator, *_woundIndicator, *_burnIndicator;
 	int _spriteWidth, _spriteHeight;
 	int _selectorX, _selectorY;
 	int _mouseX, _mouseY;
 	CursorType _cursorType;
 	int _cursorSize;
+	int _activeWeaponUfopediaArticleUnlocked; // -1 = unknown, 0 = locked, 1 = unlocked
 	int _animFrame;
 	//Projectile *_projectile;
 	std::vector<Projectile*> _projectiles;
@@ -65,6 +78,7 @@ private:
 	int _visibleMapHeight;
 	std::vector<Position> _waypoints;
 	bool _unitDying, _smoothCamera, _smoothingEngaged, _flashScreen;
+	int _bgColor;
 	PathPreview _previewSetting;
 	Text *_txtAccuracy;
 	SurfaceSet *_projectileSet;
@@ -73,6 +87,7 @@ private:
 
 	void drawTerrain(Surface *surface);
 	int getTerrainLevel(const Position& pos, int size) const;
+	int getWallShade(MapDataType part, Tile* tileFrot, Tile* tileBehind);
 	int _iconHeight, _iconWidth, _messageColor;
 	int _namePlayerColor, _nameNeutralColor, _nameHostileColor;
 	const std::vector<Uint8> *_transparencies;
@@ -111,10 +126,6 @@ public:
 	void setCursorType(CursorType type, int size = 1);
 	/// Gets the 3D cursor type.
 	CursorType getCursorType() const;
-	/// Caches units.
-	void cacheUnits();
-	/// Caches the unit.
-	void cacheUnit(BattleUnit *unit);
 	/// Adds projectile.
 	void addProjectile(Projectile *projectile);
 	/// Removes a projectile.
@@ -133,6 +144,8 @@ public:
 	void scrollMouse();
 	/// Keyboard-scrolls the camera.
 	void scrollKey();
+	/// fades in/out
+	void fadeShade();
 	/// Get waypoints vector.
 	std::vector<Position> *getWaypoints();
 	/// Set mouse-buttons' pressed state.
@@ -159,6 +172,10 @@ public:
 	void setBlastFlash(bool flash);
 	/// Check if the screen is flashing this.
 	bool getBlastFlash() const;
+	/// Modify shade for fading
+	int reShade(Tile *tile);
+	/// toggle the night-vision mode
+	void toggleNightVision();
 };
 
 }

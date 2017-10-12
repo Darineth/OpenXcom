@@ -22,6 +22,7 @@
 #include "../Battlescape/Position.h"
 #include "../Mod/MapData.h"
 #include "BattleUnit.h"
+#include "BattleItem.h"
 
 #include <SDL_types.h> // for Uint8
 
@@ -34,6 +35,8 @@ class BattleUnit;
 class BattleItem;
 class RuleInventory;
 class Particle;
+
+enum LightLayers : Uint8 { LL_AMBIENT, LL_FIRE, LL_ITEMS, LL_UNITS, LL_MAX };
 
 struct TileDrawable
 {
@@ -62,17 +65,16 @@ public:
 		Uint8 boolFields;
 		Uint32 totalBytes; // per structure, including any data not mentioned here and accounting for all array members!
 	} serializationKey;
-	
+
 	static const int NOT_CALCULATED = -1;
 
 protected:
-	static const int LIGHTLAYERS = 3;
 	MapData *_objects[4];
 	int _mapDataID[4];
 	int _mapDataSetID[4];
 	int _currentFrame[4];
 	bool _discovered[3];
-	int _light[LIGHTLAYERS], _lastLight[LIGHTLAYERS];
+	int _light[LL_MAX];
 	int _smoke;
 	int _fire;
 	int _explosive;
@@ -144,7 +146,7 @@ public:
 	/// Gets the floor object footstep sound.
 	int getFootstepSound(Tile *tileBelow) const;
 	/// Open a door, returns the ID, 0(normal), 1(ufo) or -1 if no door opened.
-	int openDoor(SavedBattleGame *game, int part, BattleUnit *Unit = 0, BattleActionType reserve = BA_NONE);
+	int openDoor(int part, BattleUnit *Unit = 0, BattleActionType reserve = BA_NONE);
 
 	/**
 	 * Check if the ufo door is open or opening. Used for visibility/light blocking checks.
@@ -164,9 +166,15 @@ public:
 	/// Gets the black fog of war status of this tile.
 	bool isDiscovered(int part) const;
 	/// Reset light to zero for this tile.
-	void resetLight(int layer);
+	void resetLight(LightLayers layer);
+	/// Reset light to zero for this tile and multiple layers.
+	void resetLightMulti(LightLayers layer);
 	/// Add light to this tile.
-	void addLight(int light, int layer);
+	void addLight(int light, LightLayers layer);
+	/// Get max light to this tile.
+	int getLight(LightLayers layer) const;
+	/// Get max light to this tile and multiple layers.
+	int getLightMulti(LightLayers layer) const;
 	/// Get the shade amount.
 	int getShade(bool displayOnly = false) const;
 	/// Destroy a tile part.
@@ -220,9 +228,9 @@ public:
 	/// Remove item
 	void removeItem(BattleItem *item);
 	/// Get top-most item
-	int getTopItemSprite();
+	BattleItem* getTopItem();
 	/// New turn preparations.
-	void prepareNewTurn(bool smokeDamage);
+	void prepareNewTurn();
 	/// Get inventory on this tile.
 	std::vector<BattleItem *> *getInventory();
 	/// Set the tile marker color.
@@ -230,7 +238,7 @@ public:
 	/// Get the tile marker color.
 	int getMarkerColor() const;
 	/// Set the tile visible flag.
-	void setVisibleCount(int visibility, int nightVision);
+	void changeVisibleCounts(int visibility, int nightVision);
 	/// Get the tile visible flag.
 	int getVisibleCount() const;
 	/// Get the tile night vision flag.
@@ -248,7 +256,7 @@ public:
 	/// increment the overlap value on this tile.
 	void addOverlap();
 	/// set the danger flag on this tile (so the AI will avoid it).
-	void setDangerous(bool danger);
+	void setDangerous();
 	/// check the danger flag on this tile.
 	bool getDangerous() const;
 	/// adds a particle to this tile's array.

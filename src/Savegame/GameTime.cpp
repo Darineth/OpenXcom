@@ -75,6 +75,15 @@ YAML::Node GameTime::save() const
 	return node;
 }
 
+bool GameTime::isLastDayOfMonth()
+{
+	int monthDays[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+	// Leap year
+	if ((_year % 4 == 0) && !(_year % 100 == 0 && _year % 400 != 0))
+		monthDays[1]++;
+	return _day == monthDays[_month - 1];
+}
+
 /**
  * Advances the ingame time by 5 seconds, automatically correcting
  * the other components when necessary and sending out a trigger when
@@ -254,7 +263,7 @@ int GameTime::getYear() const
 /**
  * Returns the current position of the daylight emitted on the globe
  * according to the current ingame time, so the value is 0 when the light
- * starts at 0º longitude (6h) and 1 when the light ends at 0º longitude (18h).
+ * starts at 0 longitude (6h) and 1 when the light ends at 0 longitude (18h).
  * @return Daylight position (0-1).
  */
 double GameTime::getDaylight() const

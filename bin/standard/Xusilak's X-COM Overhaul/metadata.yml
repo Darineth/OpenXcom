@@ -1,7 +1,0 @@
-name: "Xusilak's X-COM Overhaul"
-version: 0.1
-description: "Massive rework of X-COM units, weapons, craft, research, and more!"
-author: "Xusilak, Darineth"
-id: xxco
-#isMaster: true
-master: xcom1

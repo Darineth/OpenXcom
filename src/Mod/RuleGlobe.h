@@ -56,6 +56,8 @@ public:
 	Texture *getTexture(int id) const;
 	/// Gets all the terrains for a specific deployment.
 	std::vector<std::string> getTerrains(const std::string &deployment) const;
+	/// Gets all the terrains for base defense missions.
+	std::vector<std::string> getBaseTerrains(const std::string &deployment) const;
 };
 
 }

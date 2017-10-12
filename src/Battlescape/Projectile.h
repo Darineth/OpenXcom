@@ -108,9 +108,9 @@ private:
 	Position _origin, _targetVoxel;
 	std::vector<Position> _trajectory;
 	size_t _position;
-	Surface *_sprite;
+	float _distance;
 	int _speed;
-	int _bulletSprite;
+	int _bulletSprite, _bulletParticles;
 	bool _reversed;
 	int _vaporColor, _vaporDensity, _vaporProbability;
 	int _impact;
@@ -127,8 +127,7 @@ private:
 	void applyAccuracy(Position origin, Position *target, double accuracy, bool keepRange, bool extendLine);
 public:
 	/// Creates a new Projectile.
-	//Projectile(Mod *mod, SavedBattleGame *save, BattleAction action, Position origin, Position target, BattleItem *ammo);
-	Projectile(Mod *mod, SavedBattleGame *save, BattleAction action, Position origin, Position target, BattleItem *ammo, int bulletSprite, bool shotgun);
+	Projectile(Mod *mod, SavedBattleGame *save, BattleAction action, Position origin, Position target, BattleItem *ammo, bool shotgun);
 	/// Cleans up the Projectile.
 	~Projectile();
 	/// Calculates the trajectory for a straight path.
@@ -154,7 +153,9 @@ public:
 	/// Gets the item.
 	BattleItem *getItem() const;
 	/// Gets the sprite.
-	Surface *getSprite() const;
+	//Surface *getSprite() const;
+	/// Gets the number of sprites to render.
+	int getSprites() const;
 	/// Skips the bullet flight.
 	void skipTrajectory();
 	/// Gets the Position of origin for the projectile.
@@ -163,6 +164,8 @@ public:
 	Position getOriginVoxel() const;
 	/// Gets the targetted tile for the projectile.
 	Position getTarget() const;
+	/// Gets the distance that projectile traveled.
+	float getDistance() const;
 	/// Returns the last calculated impact for the projectile.
 	int getImpact() const;
 	/// Is this projectile being drawn back-to-front or front-to-back?

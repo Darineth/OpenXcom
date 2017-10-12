@@ -38,7 +38,7 @@ public:
 	/// Cleans up the Build Facilities state.
 	~SelectStartFacilityState();
 	/// Populates the build option list.
-	virtual void populateBuildList();
+	virtual void populateBuildList() override;
 	/// Handler for clicking the Reset button.
 	void btnOkClick(Action *action);
 	/// Handler for clicking the Facilities list.

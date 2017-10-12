@@ -72,7 +72,7 @@ CraftEquipmentState::CraftEquipmentState(Base *base, size_t craft) : _sel(0), _c
 	_window = new Window(this, 320, 200, 0, 0);
 	_btnQuickSearch = new TextEdit(this, 48, 9, 264, 12);
 	_btnOk = new TextButton((craftHasACrew || isNewBattle)?30:140, 16, (craftHasACrew || isNewBattle)?274:164, 176);
-	_btnClear = new TextButton(102, 16, 164, 176);
+	_btnClear = new TextButton(50, 16, 216, 176);
 	_btnInventory = new TextButton(102, 16, 164, 176);
 	_txtTitle = new Text(300, 17, 16, 7);
 	_txtItem = new Text(144, 9, 16, 32);
@@ -120,7 +120,11 @@ CraftEquipmentState::CraftEquipmentState(Base *base, size_t craft) : _sel(0), _c
 
 	_btnInventory->setText(tr("STR_INVENTORY"));
 	_btnInventory->onMouseClick((ActionHandler)&CraftEquipmentState::btnInventoryClick);
-	_btnInventory->setVisible(craftHasACrew && !isNewBattle);
+	_btnInventory->setVisible(craftHasACrew);
+	if (isNewBattle)
+	{
+		_btnInventory->setWidth(50);
+	}
 	_btnInventory->onKeyboardPress((ActionHandler)&CraftEquipmentState::btnInventoryClick, Options::keyBattleInventory);
 
 	_txtTitle->setBig();
@@ -613,10 +617,10 @@ void CraftEquipmentState::moveLeftByValue(int change)
 	// Convert vehicle to item
 	if (item->isFixed())
 	{
-		if (!item->getCompatibleAmmo()->empty())
+		if (!item->getPrimaryCompatibleAmmo()->empty())
 		{
 			// Calculate how much ammo needs to be added to the base.
-			RuleItem *ammo = _game->getMod()->getItem(item->getCompatibleAmmo()->front(), true);
+			RuleItem *ammo = _game->getMod()->getItem(item->getPrimaryCompatibleAmmo()->front(), true);
 			int ammoPerVehicle;
 			if (ammo->getClipSize() > 0 && item->getClipSize() > 0)
 			{
@@ -719,10 +723,10 @@ void CraftEquipmentState::moveRightByValue(int change, bool suppressErrors)
 		{
 			change = std::min(room, change);
 			int vehicleClipSize = item->getBattleClipSize() > 0 ? item->getBattleClipSize() : item->getClipSize();
-			if (!item->getCompatibleAmmo()->empty())
+			if (!item->getPrimaryCompatibleAmmo()->empty())
 			{
 				// And now let's see if we can add the total number of vehicles.
-				RuleItem *ammo = _game->getMod()->getItem(item->getCompatibleAmmo()->front(), true);
+				RuleItem *ammo = _game->getMod()->getItem(item->getPrimaryCompatibleAmmo()->front(), true);
 				int ammoClipSize = ammo->getBattleClipSize() > 0 ? ammo->getBattleClipSize() : ammo->getClipSize();
 				int ammoPerVehicle = ammoClipSize;
 				if (ammoPerVehicle > 0 && vehicleClipSize > 0)
@@ -842,7 +846,7 @@ void CraftEquipmentState::btnInventoryClick(Action *)
 	Craft *craft = _base->getCrafts()->at(_craft);
 	if (craft->getNumSoldiers() != 0)
 	{
-		SavedBattleGame *bgame = new SavedBattleGame();
+		SavedBattleGame *bgame = new SavedBattleGame(_game->getMod());
 		_game->getSavedGame()->setBattleGame(bgame);
 
 		BattlescapeGenerator bgen = BattlescapeGenerator(_game);

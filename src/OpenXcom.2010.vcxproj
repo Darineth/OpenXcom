@@ -338,10 +338,13 @@
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Geoscape\AirActionMenuState.cpp" />
+    <ClCompile Include="Geoscape\AirCombatState.cpp" />
     <ClCompile Include="Basescape\BaseInfoState.cpp" />
     <ClCompile Include="Basescape\BasescapeState.cpp" />
     <ClCompile Include="Basescape\BaseView.cpp" />
     <ClCompile Include="Basescape\BuildFacilitiesState.cpp" />
+    <ClCompile Include="Basescape\ChangeHeadquartersState.cpp" />
     <ClCompile Include="Basescape\CraftArmorState.cpp" />
     <ClCompile Include="Basescape\CraftEquipmentLoadState.cpp" />
     <ClCompile Include="Basescape\CraftEquipmentSaveState.cpp" />
@@ -390,6 +393,8 @@
     <ClCompile Include="Battlescape\AbortMissionState.cpp" />
     <ClCompile Include="Battlescape\ActionMenuItem.cpp" />
     <ClCompile Include="Battlescape\ActionMenuState.cpp" />
+    <ClCompile Include="Battlescape\AlienInventory.cpp" />
+    <ClCompile Include="Battlescape\AlienInventoryState.cpp" />
     <ClCompile Include="Battlescape\AliensCrashState.cpp" />
     <ClCompile Include="Battlescape\AIModule.cpp" />
     <ClCompile Include="Battlescape\BattlescapeGame.cpp" />
@@ -397,19 +402,24 @@
     <ClCompile Include="Battlescape\BattlescapeMessage.cpp" />
     <ClCompile Include="Battlescape\BattlescapeState.cpp" />
     <ClCompile Include="Battlescape\BattleState.cpp" />
+    <ClCompile Include="Battlescape\BriefingLightState.cpp" />
     <ClCompile Include="Battlescape\BriefingState.cpp" />
     <ClCompile Include="Battlescape\Camera.cpp" />
     <ClCompile Include="Battlescape\CannotReequipState.cpp" />
     <ClCompile Include="Battlescape\CombatLog.cpp" />
     <ClCompile Include="Battlescape\CommendationLateState.cpp" />
     <ClCompile Include="Battlescape\CommendationState.cpp" />
+    <ClCompile Include="Battlescape\ConfirmEndMissionState.cpp" />
     <ClCompile Include="Battlescape\DebriefingState.cpp" />
     <ClCompile Include="Battlescape\Explosion.cpp" />
     <ClCompile Include="Battlescape\ExplosionBState.cpp" />
     <ClCompile Include="Battlescape\InfoboxOKState.cpp" />
     <ClCompile Include="Battlescape\InfoboxState.cpp" />
     <ClCompile Include="Battlescape\Inventory.cpp" />
+    <ClCompile Include="Battlescape\InventoryLoadState.cpp" />
+    <ClCompile Include="Battlescape\InventorySaveState.cpp" />
     <ClCompile Include="Battlescape\InventoryState.cpp" />
+    <ClCompile Include="Battlescape\ItemSprite.cpp" />
     <ClCompile Include="Battlescape\Map.cpp" />
     <ClCompile Include="Battlescape\MedikitState.cpp" />
     <ClCompile Include="Battlescape\MedikitView.cpp" />
@@ -471,6 +481,7 @@
     <ClCompile Include="Engine\Scalers\scalebit.cpp" />
     <ClCompile Include="Engine\Scalers\xbrz.cpp" />
     <ClCompile Include="Engine\Screen.cpp" />
+    <ClCompile Include="Engine\Script.cpp" />
     <ClCompile Include="Engine\Sound.cpp" />
     <ClCompile Include="Engine\SoundSet.cpp" />
     <ClCompile Include="Engine\State.cpp" />
@@ -480,6 +491,7 @@
     <ClCompile Include="Engine\Zoom.cpp" />
     <ClCompile Include="Geoscape\AlienBaseState.cpp" />
     <ClCompile Include="Geoscape\AllocateTrainingState.cpp" />
+    <ClCompile Include="Geoscape\CraftNotEnoughPilotsState.cpp" />
     <ClCompile Include="Geoscape\DogfightErrorState.cpp" />
     <ClCompile Include="Geoscape\MissionDetectedState.cpp" />
     <ClCompile Include="Geoscape\AllocatePsiTrainingState.cpp" />
@@ -494,6 +506,9 @@
     <ClCompile Include="Geoscape\ConfirmNewBaseState.cpp" />
     <ClCompile Include="Geoscape\CraftPatrolState.cpp" />
     <ClCompile Include="Geoscape\DogfightState.cpp" />
+    <ClCompile Include="Geoscape\NewPossibleCraftState.cpp" />
+    <ClCompile Include="Geoscape\NewPossibleFacilityState.cpp" />
+    <ClCompile Include="Geoscape\NewPossiblePurchaseState.cpp" />
     <ClCompile Include="Geoscape\ResearchRequiredState.cpp" />
     <ClCompile Include="Geoscape\NewPossibleManufactureState.cpp" />
     <ClCompile Include="Geoscape\PsiTrainingState.cpp" />
@@ -511,11 +526,13 @@
     <ClCompile Include="Geoscape\MonthlyReportState.cpp" />
     <ClCompile Include="Geoscape\MultipleTargetsState.cpp" />
     <ClCompile Include="Geoscape\SelectDestinationState.cpp" />
+    <ClCompile Include="Geoscape\SelectMusicTrackState.cpp" />
     <ClCompile Include="Geoscape\TargetInfoState.cpp" />
     <ClCompile Include="Geoscape\TrainingFinishedState.cpp" />
     <ClCompile Include="Geoscape\TrainingState.cpp" />
     <ClCompile Include="Geoscape\UfoDetectedState.cpp" />
     <ClCompile Include="Geoscape\UfoLostState.cpp" />
+    <ClCompile Include="Geoscape\UfoTrackerState.cpp" />
     <ClCompile Include="Interface\ArrowButton.cpp" />
     <ClCompile Include="Interface\Bar.cpp" />
     <ClCompile Include="Interface\BattlescapeButton.cpp" />
@@ -565,8 +582,10 @@
     <ClCompile Include="Menu\SlideshowState.cpp" />
     <ClCompile Include="Menu\StartState.cpp" />
     <ClCompile Include="Menu\StatisticsState.cpp" />
+    <ClCompile Include="Menu\TestPaletteState.cpp" />
     <ClCompile Include="Menu\TestState.cpp" />
     <ClCompile Include="Menu\VideoState.cpp" />
+    <ClCompile Include="Mod\CustomPalettes.cpp" />
     <ClCompile Include="Mod\RuleCommendations.cpp" />
     <ClCompile Include="Mod\RuleConverter.cpp" />
     <ClCompile Include="Mod\RuleDamageType.cpp" />
@@ -685,10 +704,13 @@
     <ClCompile Include="Ufopaedia\UfopaediaStartState.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Geoscape\AirActionMenuState.h" />
+    <ClInclude Include="Geoscape\AirCombatState.h" />
     <ClInclude Include="Basescape\BaseInfoState.h" />
     <ClInclude Include="Basescape\BasescapeState.h" />
     <ClInclude Include="Basescape\BaseView.h" />
     <ClInclude Include="Basescape\BuildFacilitiesState.h" />
+    <ClInclude Include="Basescape\ChangeHeadquartersState.h" />
     <ClInclude Include="Basescape\CraftArmorState.h" />
     <ClInclude Include="Basescape\CraftEquipmentLoadState.h" />
     <ClInclude Include="Basescape\CraftEquipmentSaveState.h" />
@@ -737,6 +759,8 @@
     <ClInclude Include="Battlescape\AbortMissionState.h" />
     <ClInclude Include="Battlescape\ActionMenuItem.h" />
     <ClInclude Include="Battlescape\ActionMenuState.h" />
+    <ClInclude Include="Battlescape\AlienInventory.h" />
+    <ClInclude Include="Battlescape\AlienInventoryState.h" />
     <ClInclude Include="Battlescape\AliensCrashState.h" />
     <ClInclude Include="Battlescape\AIModule.h" />
     <ClInclude Include="Battlescape\BattlescapeGame.h" />
@@ -744,19 +768,24 @@
     <ClInclude Include="Battlescape\BattlescapeMessage.h" />
     <ClInclude Include="Battlescape\BattlescapeState.h" />
     <ClInclude Include="Battlescape\BattleState.h" />
+    <ClInclude Include="Battlescape\BriefingLightState.h" />
     <ClInclude Include="Battlescape\BriefingState.h" />
     <ClInclude Include="Battlescape\Camera.h" />
     <ClInclude Include="Battlescape\CannotReequipState.h" />
     <ClInclude Include="Battlescape\CombatLog.h" />
     <ClInclude Include="Battlescape\CommendationLateState.h" />
     <ClInclude Include="Battlescape\CommendationState.h" />
+    <ClInclude Include="Battlescape\ConfirmEndMissionState.h" />
     <ClInclude Include="Battlescape\DebriefingState.h" />
     <ClInclude Include="Battlescape\Explosion.h" />
     <ClInclude Include="Battlescape\ExplosionBState.h" />
     <ClInclude Include="Battlescape\InfoboxOKState.h" />
     <ClInclude Include="Battlescape\InfoboxState.h" />
     <ClInclude Include="Battlescape\Inventory.h" />
+    <ClInclude Include="Battlescape\InventoryLoadState.h" />
+    <ClInclude Include="Battlescape\InventorySaveState.h" />
     <ClInclude Include="Battlescape\InventoryState.h" />
+    <ClInclude Include="Battlescape\ItemSprite.h" />
     <ClInclude Include="Battlescape\Map.h" />
     <ClInclude Include="Battlescape\MedikitState.h" />
     <ClInclude Include="Battlescape\MedikitView.h" />
@@ -803,6 +832,7 @@
     <ClInclude Include="Engine\Game.h" />
     <ClInclude Include="Engine\GMCat.h" />
     <ClInclude Include="Engine\GraphSubset.h" />
+    <ClInclude Include="Engine\HelperMeta.h" />
     <ClInclude Include="Engine\InteractiveSurface.h" />
     <ClInclude Include="Engine\Language.h" />
     <ClInclude Include="Engine\LanguagePlurality.h" />
@@ -824,6 +854,8 @@
     <ClInclude Include="Engine\Scalers\scalebit.h" />
     <ClInclude Include="Engine\Scalers\xbrz.h" />
     <ClInclude Include="Engine\Screen.h" />
+    <ClInclude Include="Engine\Script.h" />
+    <ClInclude Include="Engine\ScriptBind.h" />
     <ClInclude Include="Engine\ShaderDraw.h" />
     <ClInclude Include="Engine\ShaderDrawHelper.h" />
     <ClInclude Include="Engine\ShaderMove.h" />
@@ -839,6 +871,7 @@
     <ClInclude Include="Geoscape\AlienBaseState.h" />
     <ClInclude Include="Geoscape\AllocateTrainingState.h" />
     <ClInclude Include="Geoscape\Cord.h" />
+    <ClInclude Include="Geoscape\CraftNotEnoughPilotsState.h" />
     <ClInclude Include="Geoscape\DogfightErrorState.h" />
     <ClInclude Include="Geoscape\MissionDetectedState.h" />
     <ClInclude Include="Geoscape\AllocatePsiTrainingState.h" />
@@ -854,6 +887,9 @@
     <ClInclude Include="Geoscape\CraftPatrolState.h" />
     <ClInclude Include="Geoscape\DogfightState.h" />
     <ClInclude Include="Geoscape\FundingState.h" />
+    <ClInclude Include="Geoscape\NewPossibleCraftState.h" />
+    <ClInclude Include="Geoscape\NewPossibleFacilityState.h" />
+    <ClInclude Include="Geoscape\NewPossiblePurchaseState.h" />
     <ClInclude Include="Geoscape\ResearchRequiredState.h" />
     <ClInclude Include="Geoscape\GeoscapeCraftState.h" />
     <ClInclude Include="Geoscape\NewPossibleManufactureState.h" />
@@ -870,11 +906,13 @@
     <ClInclude Include="Geoscape\PsiTrainingState.h" />
     <ClInclude Include="Geoscape\ResearchCompleteState.h" />
     <ClInclude Include="Geoscape\SelectDestinationState.h" />
+    <ClInclude Include="Geoscape\SelectMusicTrackState.h" />
     <ClInclude Include="Geoscape\TargetInfoState.h" />
     <ClInclude Include="Geoscape\TrainingFinishedState.h" />
     <ClInclude Include="Geoscape\TrainingState.h" />
     <ClInclude Include="Geoscape\UfoDetectedState.h" />
     <ClInclude Include="Geoscape\UfoLostState.h" />
+    <ClInclude Include="Geoscape\UfoTrackerState.h" />
     <ClInclude Include="Interface\ArrowButton.h" />
     <ClInclude Include="Interface\Bar.h" />
     <ClInclude Include="Interface\BattlescapeButton.h" />
@@ -923,8 +961,10 @@
     <ClInclude Include="Menu\SlideshowState.h" />
     <ClInclude Include="Menu\StartState.h" />
     <ClInclude Include="Menu\StatisticsState.h" />
+    <ClInclude Include="Menu\TestPaletteState.h" />
     <ClInclude Include="Menu\TestState.h" />
     <ClInclude Include="Menu\VideoState.h" />
+    <ClInclude Include="Mod\CustomPalettes.h" />
     <ClInclude Include="Mod\ModScript.h" />
     <ClInclude Include="Mod\RuleCommendations.h" />
     <ClInclude Include="Mod\RuleConverter.h" />

@@ -30,6 +30,7 @@
 #include "../Mod/RuleAlienMission.h"
 #include "SavedGame.h"
 #include "Waypoint.h"
+#include "../Engine/Game.h"
 
 namespace OpenXcom
 {
@@ -46,13 +47,25 @@ const char *Ufo::ALTITUDE_STRING[] = {
  * Initializes a UFO of the specified type.
  * @param rules Pointer to ruleset.
  */
-Ufo::Ufo(const RuleUfo *rules)
-  : MovingTarget(), _rules(rules), _id(0), _crashId(0), _landId(0), _damage(0), _direction("STR_NORTH")
-  , _altitude("STR_HIGH_UC"), _status(FLYING), _secondsRemaining(0)
-  , _inBattlescape(false), _mission(0), _trajectory(0)
-  , _trajectoryPoint(0), _detected(false), _hyperDetected(false), _processedIntercept(false), _shootingAt(0), _hitFrame(0)
-  , _fireCountdown(0), _escapeCountdown(0)
+Ufo::Ufo(const RuleUfo *rules, bool createEscorts, int escortId) : MovingTarget(),
+	_rules(rules), _id(0), _crashId(0), _landId(0), _damage(0), _direction("STR_NORTH"),
+	_altitude("STR_HIGH_UC"), _status(FLYING), _secondsRemaining(0),
+	_inBattlescape(false), _mission(0), _trajectory(0),
+	_trajectoryPoint(0), _detected(false), _hyperDetected(false), _processedIntercept(false),
+	_shootingAt(0), _hitFrame(0), _fireCountdown(0), _escapeCountdown(0), _stats(), _shield(-1), _shieldRechargeHandle(0),
+	_tractorBeamSlowdown(0), _retreating(false), _escortId(escortId)
 {
+	_stats = rules->getStats();
+
+	if(createEscorts)
+	{
+		int escortId = 1;
+		for (const std::string &escortType : rules->getEscorts())
+		{
+			_escorts.push_back(new Ufo(Game::getMod()->getUfo(escortType, true), false, escortId));
+			++escortId;
+		}
+	}
 }
 
 /**
@@ -87,6 +100,11 @@ Ufo::~Ufo()
 			_dest = 0;
 		}
 	}
+
+	for (Ufo *escort : _escorts)
+	{
+		delete escort;
+	}
 }
 
 /**
@@ -109,13 +127,15 @@ private:
  * @param mod The game mod. Use to access the trajectory rules.
  * @param game The game data. Used to find the UFO's mission.
  */
-void Ufo::load(const YAML::Node &node, const Mod &mod, SavedGame &game)
+void Ufo::load(const YAML::Node &node, const Mod *mod, SavedGame *game)
 {
 	MovingTarget::load(node);
 	_id = node["id"].as<int>(_id);
 	_crashId = node["crashId"].as<int>(_crashId);
 	_landId = node["landId"].as<int>(_landId);
 	_damage = node["damage"].as<int>(_damage);
+	_shield = node["shield"].as<int>(_shield);
+	_shieldRechargeHandle = node["shieldRechargeHandle"].as<int>(_shieldRechargeHandle);
 	_altitude = node["altitude"].as<std::string>(_altitude);
 	_direction = node["direction"].as<std::string>(_direction);
 	_detected = node["detected"].as<bool>(_detected);
@@ -138,11 +158,11 @@ void Ufo::load(const YAML::Node &node, const Mod &mod, SavedGame &game)
 	}
 	else
 	{
-		if (_damage >= _rules->getMaxDamage())
+		if (_damage >= _stats.damageMax)
 		{
 			_status = DESTROYED;
 		}
-		else if (_damage >= _rules->getMaxDamage() / 2)
+		else if (_damage >= _stats.damageMax / 2)
 		{
 			_status = CRASHED;
 		}
@@ -155,19 +175,20 @@ void Ufo::load(const YAML::Node &node, const Mod &mod, SavedGame &game)
 			_status = FLYING;
 		}
 	}
-	if (game.getMonthsPassed() != -1)
+	if (game->getMonthsPassed() != -1 && node["mission"])
 	{
 		int missionID = node["mission"].as<int>();
-		std::vector<AlienMission *>::const_iterator found = std::find_if (game.getAlienMissions().begin(), game.getAlienMissions().end(), matchMissionID(missionID));
-		if (found == game.getAlienMissions().end())
+		std::vector<AlienMission *>::const_iterator found = std::find_if (game->getAlienMissions().begin(), game->getAlienMissions().end(), matchMissionID(missionID));
+		if (found == game->getAlienMissions().end())
 		{
 			// Corrupt save file.
 			throw Exception("Unknown UFO mission, save file is corrupt.");
 		}
 		_mission = *found;
+		_stats += _rules->getRaceBonus(_mission->getRace());
 
 		std::string tid = node["trajectory"].as<std::string>();
-		_trajectory = mod.getUfoTrajectory(tid);
+		_trajectory = mod->getUfoTrajectory(tid);
 		if (_trajectory == 0)
 		{
 			// Corrupt save file.
@@ -177,6 +198,25 @@ void Ufo::load(const YAML::Node &node, const Mod &mod, SavedGame &game)
 	}
 	_fireCountdown = node["fireCountdown"].as<int>(_fireCountdown);
 	_escapeCountdown = node["escapeCountdown"].as<int>(_escapeCountdown);
+	_retreating = node["retreating"].as<bool>(_retreating);
+
+	for (YAML::const_iterator ii = node["escorts"].begin(); ii != node["escorts"].end(); ++ii)
+	{
+		std::string type = (*ii)["type"].as<std::string>();
+		if (mod->getUfo(type))
+		{
+			Ufo *u = new Ufo(mod->getUfo(type), false);
+			u->load(*ii, mod, game);
+			_escorts.push_back(u);
+		}
+		/*else
+		{
+			Log(LOG_ERROR) << "Failed to load UFO " << type;
+		}*/
+	}
+
+	_escortId = node["escortId"].as<int>(_escortId);
+
 	if (_inBattlescape)
 		setSpeed(0);
 }
@@ -199,6 +239,8 @@ YAML::Node Ufo::save(bool newBattle) const
 		node["landId"] = _landId;
 	}
 	node["damage"] = _damage;
+	node["shield"] = _shield;
+	node["shieldRechargeHandle"] = _shieldRechargeHandle;
 	node["altitude"] = _altitude;
 	node["direction"] = _direction;
 	node["status"] = (int)_status;
@@ -210,15 +252,23 @@ YAML::Node Ufo::save(bool newBattle) const
 		node["secondsRemaining"] = _secondsRemaining;
 	if (_inBattlescape)
 		node["inBattlescape"] = _inBattlescape;
-	if (!newBattle)
+	if (!newBattle && !isEscort())
 	{
 		node["mission"] = _mission->getId();
 		node["trajectory"] = _trajectory->getID();
 		node["trajectoryPoint"] = _trajectoryPoint;
 	}
-	
+
 	node["fireCountdown"] = _fireCountdown;
 	node["escapeCountdown"] = _escapeCountdown;
+	node["retreating"] = _retreating;
+
+	for (Ufo *escort : _escorts)
+	{
+		node["escorts"].push_back(escort->save(newBattle));
+	}
+
+
 	return node;
 }
 
@@ -270,6 +320,28 @@ int Ufo::getId() const
 void Ufo::setId(int id)
 {
 	_id = id;
+	for (Ufo *escort : _escorts)
+	{
+		escort->setEscortingId(id);
+	}
+}
+
+/**
+ * Gets the ID of the UFO being escorted.
+ * @return The ID of the escorted UFO.
+ */
+int Ufo::getEscortingId() const
+{
+	return _escortingId;
+}
+
+/**
+ * Sets the ID of the UFO being escorted.
+ * @param id The ID of the escorted UFO.
+ */
+void Ufo::setEscortingId(int id)
+{
+	_escortingId = id;
 }
 
 /**
@@ -283,7 +355,14 @@ std::wstring Ufo::getDefaultName(Language *lang) const
 	{
 	case FLYING:
 	case DESTROYED: // Destroyed also means leaving Earth.
-		return lang->getString("STR_UFO_").arg(_id);
+		if (isEscort())
+		{
+			return lang->getString("STR_ESCORT_UFO_").arg(_escortingId).arg((char)('A' + _escortId - 1));
+		}
+		else
+		{
+			return lang->getString("STR_UFO_").arg(_id);
+		}
 	case LANDED:
 		return lang->getString("STR_LANDING_SITE_").arg(_landId);
 	case CRASHED:
@@ -334,11 +413,11 @@ void Ufo::setDamage(int damage)
 	{
 		_damage = 0;
 	}
-	if (_damage >= _rules->getMaxDamage())
+	if (_damage >= _stats.damageMax)
 	{
 		_status = DESTROYED;
 	}
-	else if (_damage >= _rules->getMaxDamage() / 2)
+	else if (_damage >= _stats.damageMax / 2)
 	{
 		_status = CRASHED;
 	}
@@ -442,7 +521,7 @@ void Ufo::setAltitude(const std::string &altitude)
  */
 bool Ufo::isCrashed() const
 {
-	return (_damage > _rules->getMaxDamage() / 2);
+	return (_damage > _stats.damageMax / 2);
 }
 
 /**
@@ -452,7 +531,7 @@ bool Ufo::isCrashed() const
  */
 bool Ufo::isDestroyed() const
 {
-	return (_damage >= _rules->getMaxDamage());
+	return (_damage >= _stats.damageMax);
 }
 
 /**
@@ -668,6 +747,7 @@ void Ufo::setMissionInfo(AlienMission *mission, const UfoTrajectory *trajectory)
 	_mission->increaseLiveUfos();
 	_trajectoryPoint = 0;
 	_trajectory = trajectory;
+	_stats += _rules->getRaceBonus(_mission->getRace());
 }
 
 /**
@@ -771,6 +851,12 @@ int Ufo::getHitFrame() const
 	return _hitFrame;
 }
 
+/// Gets the UFO's stats.
+const RuleUfoStats& Ufo::getCraftStats() const
+{
+	return _stats;
+}
+
 /**
  * Sets the countdown timer for escaping a dogfight.
  * @param time how many ticks until the ship attempts to escape.
@@ -828,6 +914,60 @@ bool Ufo::getInterceptionProcessed() const
 }
 
 /**
+ * Gets the UFO's shield level
+ * @return the points of shield remaining
+ */
+int Ufo::getShield() const
+{
+	return _shield;
+}
+
+/**
+ * Sets the UFO's shield level
+ * @param the shield point value to set
+ */
+void Ufo::setShield(int shield)
+{
+	_shield = std::max(0, std::min(_stats.shieldCapacity, shield));
+}
+
+/**
+ * Sets which _interceptionNumber handles the UFO's shield recharge in a dogfight
+ * @param the _interceptionNumber to set
+ */
+void Ufo::setShieldRechargeHandle(int shieldRechargeHandle)
+{
+	_shieldRechargeHandle = shieldRechargeHandle;
+}
+
+/**
+ * Gets which _interceptionNumber handles the UFO's shield recharge in a dogfight
+ * @return the _interceptionNumber to handle shield recharge
+ */
+int Ufo::getShieldRechargeHandle() const
+{
+	return _shieldRechargeHandle;
+}
+
+/**
+ * Sets how much this UFO is being slowed down by craft tractor beams
+ * @param the _tractorBeamSlowdown to set
+ */
+void Ufo::setTractorBeamSlowdown(int tractorBeamSlowdown)
+{
+	_tractorBeamSlowdown = std::max(0, std::min(_stats.speedMax, tractorBeamSlowdown));
+}
+
+/**
+ * Gets how much this UFO is being slowed down by craft tractor beams
+ * @return the tractor beam slowdown
+ */
+int Ufo::getTractorBeamSlowdown() const
+{
+	return _tractorBeamSlowdown;
+}
+
+/**
  * Sets a flag indicating that this UFO is retreating, abandoning its mission.
  * @param retreating whether or not we're retreating.
  */
@@ -843,6 +983,16 @@ void Ufo::setRetreating(bool retreating)
 bool Ufo::getRetreating() const
 {
 	return _retreating;
+}
+
+const std::vector<Ufo*> &Ufo::getEscorts() const
+{
+	return _escorts;
+}
+
+bool Ufo::isEscort() const
+{
+	return _escortId > 0;
 }
 
 }

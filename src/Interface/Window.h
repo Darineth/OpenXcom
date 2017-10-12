@@ -48,7 +48,7 @@ private:
 	double _popupStep;
 	Timer *_timer;
 	State *_state;
-	bool _contrast, _screen, _thinBorder;
+	bool _contrast, _screen, _thinBorder, _noBorder;
 public:
 	static Sound *soundPopup[3];
 	/// Creates a new window with the specified size and position.
@@ -75,6 +75,8 @@ public:
 	void setDY(int dy);
 	/// Give this window a thin border.
 	void setThinBorder();
+	/// Give this window no border.
+	void setNoBorder();
 };
 
 }

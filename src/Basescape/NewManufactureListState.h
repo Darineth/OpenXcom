@@ -25,8 +25,10 @@ namespace OpenXcom
 
 class Base;
 class TextButton;
+class ToggleTextButton;
 class Window;
 class Text;
+class TextEdit;
 class TextList;
 class RuleManufacture;
 class ComboBox;
@@ -38,14 +40,19 @@ class NewManufactureListState : public State
 {
 private:
 	Base *_base;
+	bool _showRequirements, _detailClicked;
 	TextButton *_btnOk;
+	ToggleTextButton *_btnShowOnlyNew;
+	TextEdit *_btnQuickSearch;
 	Window *_window;
 	Text *_txtTitle, *_txtItem, *_txtCategory;
 	TextList *_lstManufacture;
 	ComboBox *_cbxCategory;
+	ComboBox *_cbxFilter;
 	std::vector<RuleManufacture *> _possibleProductions;
 	std::vector<std::string> _catStrings;
 	std::vector<std::string> _displayedStrings;
+	Uint8 _hiddenColor, _facilityRequiredColor;
 
 public:
 	/// Creates the state.
@@ -54,14 +61,23 @@ public:
 	void init();
 	/// Handler for clicking the OK button.
 	void btnOkClick(Action * action);
-	/// Handler for clicking on the list.
-	void lstProdClick (Action * action);
-	/// Handler for clicking on the list.
-	void lstProdRClick(Action * action);
+	/// Handlers for Quick Search.
+	void btnQuickSearchToggle(Action *action);
+	void btnQuickSearchApply(Action *action);
+	/// Handlers for clicking on the list.
+	void lstProdClickLeft (Action * action);
+	void lstProdClickRight(Action * action);
+	void lstProdClickMiddle(Action * action);
 	/// Handler for changing the category filter
 	void cbxCategoryChange (Action * action);
+	/// Handler for changing the basic filter
+	void cbxFilterChange(Action * action);
+	/// Handler for clicking the [Show Only New] button.
+	void btnShowOnlyNewClick(Action *action);
+	/// Handler for clicking the [Mark All As Seen] button.
+	void btnMarkAllAsSeenClick(Action *action);
 	/// Fills the list of possible productions.
-	void fillProductionList();
+	void fillProductionList(bool refreshCategories);
 };
 
 }

@@ -16,9 +16,10 @@
  * You should have received a copy of the GNU General Public License
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "CraftWeapon.h"
 #include <cmath>
 #include <algorithm>
+#include <cmath>
+#include "CraftWeapon.h"
 #include "../Mod/RuleCraftWeapon.h"
 #include "../Mod/Mod.h"
 #include "../Mod/RuleItem.h"
@@ -159,6 +160,7 @@ CraftWeaponProjectile* CraftWeapon::fire() const
 	p->setAccuracy(this->getRules()->getAccuracy());
 	p->setDamage(this->getRules()->getDamage());
 	p->setRange(this->getRules()->getRange());
+	p->setShieldDamageModifier(this->getRules()->getShieldDamageModifier());
 	return p;
 }
 

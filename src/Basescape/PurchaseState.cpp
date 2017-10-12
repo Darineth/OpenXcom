@@ -426,6 +426,7 @@ void PurchaseState::updateList()
 			ammo = (rule->getBattleType() == BT_AMMO || (rule->getBattleType() == BT_NONE && rule->getClipSize() > 0));
 			if (ammo)
 			{
+				name = tr("STR_AMMO_COUNT_", rule->getClipSize()).arg(name);
 				name.insert(0, L"  ");
 			}
 		}

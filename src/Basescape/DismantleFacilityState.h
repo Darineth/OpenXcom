@@ -42,7 +42,7 @@ private:
 
 	TextButton *_btnOk, *_btnCancel;
 	Window *_window;
-	Text *_txtTitle, *_txtFacility;
+	Text *_txtTitle, *_txtFacility, *_txtRefundValue;
 public:
 	/// Creates the Dismantle Facility state.
 	DismantleFacilityState(Base *base, BaseView *view, BaseFacility *fac);

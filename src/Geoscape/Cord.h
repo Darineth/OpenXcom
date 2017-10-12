@@ -133,3 +133,4 @@ inline CordPolar::CordPolar(const Cord& c)
 }
 
 }//namespace OpenXcom
+

@@ -120,7 +120,7 @@ private:
 	/// Get a random landing point inside the given region zone.
 	std::pair<double, double> getLandPoint(const Globe &globe, const RuleRegion &region, size_t zone);
 	/// Spawns a MissionSite at a specific location.
-	MissionSite *spawnMissionSite(SavedGame &game, AlienDeployment *deployment, const MissionArea &area);
+	MissionSite *spawnMissionSite(SavedGame &game, const Mod &mod, const MissionArea &area, const Ufo *ufo = 0, AlienDeployment *missionOveride = 0);
 
 };
 

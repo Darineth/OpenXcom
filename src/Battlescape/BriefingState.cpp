@@ -46,8 +46,9 @@ namespace OpenXcom
  * @param game Pointer to the core game.
  * @param craft Pointer to the craft in the mission.
  * @param base Pointer to the base in the mission.
+ * @param infoOnly Only show static info, when briefing is re-opened during the battle.
  */
-BriefingState::BriefingState(Craft *craft, Base *base)
+BriefingState::BriefingState(Craft *craft, Base *base, bool infoOnly) : _infoOnly(infoOnly)
 {
 	_screen = true;
 	// Create objects
@@ -57,6 +58,9 @@ BriefingState::BriefingState(Craft *craft, Base *base)
 	_txtTarget = new Text(300, 17, 16, 40);
 	_txtCraft = new Text(300, 17, 16, 56);
 	_txtBriefing = new Text(274, 94, 16, 72);
+
+	// set random hidden movement/next turn background for this mission
+	_game->getSavedGame()->getSavedBattle()->setRandomHiddenMovementBackground(_game->getMod());
 
 	std::string mission = _game->getSavedGame()->getSavedBattle()->getMissionType();
 	AlienDeployment *deployment = _game->getMod()->getDeployment(mission);
@@ -139,6 +143,8 @@ BriefingState::BriefingState(Craft *craft, Base *base)
 	_txtBriefing->setWordWrap(true);
 	_txtBriefing->setText(tr(desc));
 
+	if (_infoOnly) return;
+
 	if (mission == "STR_BASE_DEFENSE")
 	{
 		// And make sure the base is unmarked.
@@ -157,6 +163,7 @@ BriefingState::~BriefingState()
 void BriefingState::init()
 {
 	State::init();
+	if (_infoOnly) return;
 
 	if (!_cutsceneId.empty())
 	{
@@ -181,6 +188,8 @@ void BriefingState::btnOkClick(Action *)
 	Options::baseXResolution = Options::baseXBattlescape;
 	Options::baseYResolution = Options::baseYBattlescape;
 	_game->getScreen()->resetDisplay(false);
+	if (_infoOnly) return;
+
 	BattlescapeState *bs = new BattlescapeState;
 	int liveAliens = 0, liveSoldiers = 0;
 	bs->getBattleGame()->tallyUnits(liveAliens, liveSoldiers);

@@ -19,15 +19,19 @@
 #include "TargetInfoState.h"
 #include "../Engine/Game.h"
 #include "../Mod/Mod.h"
+#include "../Mod/AlienRace.h"
 #include "../Engine/LocalizedText.h"
 #include "../Interface/TextButton.h"
 #include "../Interface/Window.h"
 #include "../Interface/Text.h"
 #include "../Interface/TextEdit.h"
 #include "../Savegame/Target.h"
+#include "../Savegame/AlienBase.h"
+#include "../Savegame/MissionSite.h"
 #include "../Engine/Options.h"
 #include "InterceptState.h"
 #include "../Engine/Action.h"
+#include "../Battlescape/BriefingLightState.h"
 
 namespace OpenXcom
 {
@@ -38,14 +42,15 @@ namespace OpenXcom
  * @param target Pointer to the target to show info from.
  * @param globe Pointer to the Geoscape globe.
  */
-TargetInfoState::TargetInfoState(Target *target, Globe *globe) : _target(target), _globe(globe)
+TargetInfoState::TargetInfoState(Target *target, Globe *globe) : _target(target), _globe(globe), _deploymentRule(0)
 {
 	_screen = false;
 
 	// Create objects
 	_window = new Window(this, 192, 120, 32, 40, POPUP_BOTH);
 	_btnIntercept = new TextButton(160, 12, 48, 124);
-	_btnOk = new TextButton(160, 12, 48, 140);
+	_btnInfo = new TextButton(77, 12, 48, 140);
+	_btnOk = new TextButton(77, 12, 131, 140);
 	_edtTitle = new TextEdit(this, 182, 32, 37, 46);
 	_txtTargetted = new Text(182, 9, 37, 78);
 	_txtFollowers = new Text(182, 40, 37, 88);
@@ -55,6 +60,7 @@ TargetInfoState::TargetInfoState(Target *target, Globe *globe) : _target(target)
 
 	add(_window, "window", "targetInfo");
 	add(_btnIntercept, "button", "targetInfo");
+	add(_btnInfo, "button", "targetInfo");
 	add(_btnOk, "button", "targetInfo");
 	add(_edtTitle, "text2", "targetInfo");
 	add(_txtTargetted, "text1", "targetInfo");
@@ -67,6 +73,9 @@ TargetInfoState::TargetInfoState(Target *target, Globe *globe) : _target(target)
 
 	_btnIntercept->setText(tr("STR_INTERCEPT"));
 	_btnIntercept->onMouseClick((ActionHandler)&TargetInfoState::btnInterceptClick);
+
+	_btnInfo->setText(tr("STR_INFO"));
+	_btnInfo->onMouseClick((ActionHandler)&TargetInfoState::btnInfoClick);
 
 	_btnOk->setText(tr("STR_OK"));
 	_btnOk->onMouseClick((ActionHandler)&TargetInfoState::btnOkClick);
@@ -88,6 +97,32 @@ TargetInfoState::TargetInfoState(Target *target, Globe *globe) : _target(target)
 		ss << (*i)->getName(_game->getLanguage()) << L'\n';
 	}
 	_txtFollowers->setText(ss.str());
+
+	// info
+	MissionSite* m = dynamic_cast<MissionSite*>(_target);
+	AlienBase* b = dynamic_cast<AlienBase*>(_target);
+
+	if (m != 0)
+	{
+		_deploymentRule = _game->getMod()->getDeployment(m->getDeployment()->getType());
+	}
+	else if (b != 0)
+	{
+		AlienRace *race = _game->getMod()->getAlienRace(b->getAlienRace());
+		_deploymentRule = _game->getMod()->getDeployment(race->getBaseCustomMission());
+		if (!_deploymentRule) _deploymentRule = _game->getMod()->getDeployment(b->getDeployment()->getType());
+	}
+
+	if (_deploymentRule && !_deploymentRule->getAlertDescription().empty())
+	{
+		// all OK
+	}
+	else
+	{
+		_btnInfo->setVisible(false);
+		_btnOk->setWidth(_btnOk->getX() + _btnOk->getWidth() - _btnInfo->getX());
+		_btnOk->setX(_btnInfo->getX());
+	}
 }
 
 /**
@@ -114,6 +149,15 @@ void TargetInfoState::btnInterceptClick(Action *)
 void TargetInfoState::btnOkClick(Action *)
 {
 	_game->popState();
+}
+
+/**
+ * Shows the BriefingLight screen.
+ * @param action Pointer to an action.
+ */
+void TargetInfoState::btnInfoClick(Action *)
+{
+	_game->pushState(new BriefingLightState(_deploymentRule));
 }
 
 /**

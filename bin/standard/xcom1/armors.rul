@@ -25,6 +25,8 @@ armors:
       - 1.6
       - 1.0
     loftempsSet: [ 3 ]
+    spriteBaseGroup: 5
+    spriteBaseDefault: 80
   - type: STR_PERSONAL_ARMOR_UC
     spriteSheet: XCOM_1.PCK
     spriteInv: MAN_1
@@ -51,6 +53,8 @@ armors:
       - 1.1
       - 1.0
     loftempsSet: [ 3 ]
+    spriteBaseGroup: 14
+    spriteBaseDefault: 224
   - type: STR_POWER_SUIT_UC
     spriteSheet: XCOM_2.PCK
     spriteInv: MAN_2
@@ -74,6 +78,8 @@ armors:
       - 0.0
     loftempsSet: [ 3 ]
     forcedTorso: 1
+    spriteBaseGroup: 5
+    spriteBaseDefault: 80
   - type: STR_FLYING_SUIT_UC
     spriteSheet: XCOM_2.PCK
     spriteInv: MAN_3
@@ -98,6 +104,8 @@ armors:
       - 0.0
     loftempsSet: [ 3 ]
     forcedTorso: 2
+    spriteBaseGroup: 5
+    spriteBaseDefault: 80
   - type: SECTOID_ARMOR0
     spriteSheet: SECTOID.PCK
     corpseBattle:

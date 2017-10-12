@@ -18,6 +18,7 @@
  */
 
 #include "RuleInterface.h"
+#include "Mod.h"
 #include <climits>
 
 namespace OpenXcom
@@ -28,7 +29,7 @@ namespace OpenXcom
  * type of interface, containing an index of elements that make it up.
  * @param type String defining the type.
  */
-RuleInterface::RuleInterface(const std::string & type) : _type(type)
+RuleInterface::RuleInterface(const std::string & type) : _type(type), _sound(-1)
 {
 }
 
@@ -40,15 +41,19 @@ RuleInterface::~RuleInterface()
  * Loads the elements from a YAML file.
  * @param node YAML node.
  */
-void RuleInterface::load(const YAML::Node& node)
+void RuleInterface::load(const YAML::Node& node, Mod *mod)
 {
 	if (const YAML::Node &parent = node["refNode"])
 	{
-		load(parent);
+		load(parent, mod);
 	}
 	_palette = node["palette"].as<std::string>(_palette);
 	_parent = node["parent"].as<std::string>(_parent);
 	_music = node["music"].as<std::string>(_music);
+	if (node["sound"])
+	{
+		_sound = mod->getSoundOffset(node["sound"].as<int>(_sound), "GEO.CAT");
+	}
 	for (YAML::const_iterator i = node["elements"].begin(); i != node["elements"].end(); ++i)
 	{
 		Element element;
@@ -107,6 +112,11 @@ const std::string &RuleInterface::getParent() const
 const std::string &RuleInterface::getMusic() const
 {
 	return _music;
+}
+
+int RuleInterface::getSound() const
+{
+	return _sound;
 }
 
 }

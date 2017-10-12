@@ -22,6 +22,8 @@
 namespace OpenXcom
 {
 
+class Mod;
+
 /**
  * Represents a specific type of commendation.
  * Contains constant info about a commendation like
@@ -41,7 +43,7 @@ public:
 	/// Cleans up the commendation ruleset.
 	~RuleCommendations();
 	/// Loads commendation data from YAML.
-	void load(const YAML::Node& node);
+	void load(const YAML::Node& node, Mod *mod);
 	/// Get the commendation's description.
 	std::string getDescription() const;
 	/// Get the commendation's award criteria.

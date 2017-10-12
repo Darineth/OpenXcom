@@ -37,7 +37,7 @@ class RuleCraftWeapon
 {
 private:
 	std::string _type;
-	int _sprite, _sound, _damage, _shieldDamageModifier, _range, _accuracy, _reloadCautious, _reloadStandard, _reloadAggressive, _ammoMax, _rearmRate, _projectileSpeed, _weaponType;
+	int _sprite, _sound, _damage, _shieldDamageModifier, _range, _accuracy, _tuAimed, _shotsAimed, _reloadCautious, _reloadStandard, _reloadAggressive, _ammoMax, _rearmRate, _projectileSpeed, _weaponType, _bulletSprite, _bulletParticles, _bulletSpeed;
 	CraftWeaponProjectileType _projectileType;
 	std::string _launcher, _clip;
 	RuleCraftStats _stats;
@@ -64,6 +64,10 @@ public:
 	int getRange() const;
 	/// Gets the craft weapon's accuracy.
 	int getAccuracy() const;
+	/// Gets the craft weapon's aimed cost.
+	int getCostAimed() const;
+	/// Gets the number of shots fired per action.
+	int getShotsAimed() const;
 	/// Gets the craft weapon's cautious reload time.
 	int getCautiousReload() const;
 	/// Gets the craft weapon's standard reload time.
@@ -90,6 +94,12 @@ public:
 	bool isWaterOnly() const;
 	/// Get the craft weapon's tractor beam power
 	int getTractorBeamPower() const;
+	/// Gets the bullet sprite for the weapon.
+	int getBulletSprite() const;
+	/// Gets the number of particles to render for the projectile.
+	int getBulletParticles() const;
+	/// Gets the speed of the projectile.
+	int getBulletSpeed() const;
 };
 
 }

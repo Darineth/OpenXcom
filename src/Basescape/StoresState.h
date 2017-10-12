@@ -18,15 +18,45 @@
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "../Engine/State.h"
+#include <vector>
 
 namespace OpenXcom
 {
 
 class Base;
 class TextButton;
+class ToggleTextButton;
 class Window;
 class Text;
+class TextEdit;
 class TextList;
+class ArrowButton;
+
+/// Item sorting modes.
+enum ItemSort
+{
+	ITEM_SORT_NONE,
+	ITEM_SORT_NAME_ASC,
+	ITEM_SORT_NAME_DESC,
+	ITEM_SORT_QUANTITY_ASC,
+	ITEM_SORT_QUANTITY_DESC,
+	ITEM_SORT_SIZE_ASC,
+	ITEM_SORT_SIZE_DESC,
+	ITEM_SORT_SPACE_USED_ASC,
+	ITEM_SORT_SPACE_USED_DESC
+};
+
+struct StoredItem
+{
+	StoredItem(const std::wstring &_name, int _quantity, double _size, double _spaceUsed)
+		: name(_name), quantity(_quantity), size(_size), spaceUsed(_spaceUsed)
+	{
+	}
+	std::wstring name;
+	int quantity;
+	double size;
+	double spaceUsed;
+};
 
 /**
  * Stores window that displays all
@@ -38,9 +68,17 @@ private:
 	Base *_base;
 
 	TextButton *_btnOk;
+	TextEdit *_btnQuickSearch;
+	ToggleTextButton *_btnGrandTotal;
 	Window *_window;
-	Text *_txtTitle, *_txtItem, *_txtQuantity, *_txtSpaceUsed;
+	Text *_txtTitle, *_txtItem, *_txtQuantity, *_txtSize, *_txtSpaceUsed;
 	TextList *_lstStores;
+	ArrowButton *_sortName, *_sortQuantity, *_sortSize, *_sortSpaceUsed;
+
+	std::vector<StoredItem> _itemList;
+	void initList(bool grandTotal);
+	ItemSort itemOrder;
+	void updateArrows();
 public:
 	/// Creates the Stores state.
 	StoresState(Base *base);
@@ -48,6 +86,25 @@ public:
 	~StoresState();
 	/// Handler for clicking the OK button.
 	void btnOkClick(Action *action);
+	/// Handlers for Quick Search.
+	void btnQuickSearchToggle(Action *action);
+	void btnQuickSearchApply(Action *action);
+	/// Handler for clicking the Grand Total button.
+	void btnGrandTotalClick(Action *action);
+	/// Sets up the item list.
+	void init();
+	/// Sorts the item list.
+	void sortList(ItemSort sort);
+	/// Updates the item list.
+	virtual void updateList();
+	/// Handler for clicking the Name arrow.
+	void sortNameClick(Action *action);
+	/// Handler for clicking the Quantity arrow.
+	void sortQuantityClick(Action *action);
+	/// Handler for clicking the Size arrow.
+	void sortSizeClick(Action *action);
+	/// Handler for clicking the Space Used arrow.
+	void sortSpaceUsedClick(Action *action);
 };
 
 }

@@ -36,7 +36,14 @@ namespace OpenXcom
 		_txtTitle = new Text(defs->text_width, 48, 5, 22);
 
 		// Set palette
-		setPalette("PAL_UFOPAEDIA");
+		if (defs->customPalette)
+		{
+			setCustomPalette(_game->getMod()->getSurface(defs->image_id)->getPalette(), Mod::UFOPAEDIA_CURSOR);
+		}
+		else
+		{
+			setPalette("PAL_UFOPAEDIA");
+		}
 
 		ArticleState::initLayout();
 
@@ -56,7 +63,14 @@ namespace OpenXcom
 
 		int text_height = _txtTitle->getTextHeight();
 
-		_txtInfo = new Text(defs->text_width, 162, 5, 23 + text_height);
+		if (defs->rect_text.width == 0)
+		{
+			_txtInfo = new Text(defs->text_width, 162, 5, 23 + text_height);
+		}
+		else
+		{
+			_txtInfo = new Text(defs->rect_text.width, defs->rect_text.height, defs->rect_text.x, defs->rect_text.y);
+		}
 		add(_txtInfo);
 
 		_txtInfo->setColor(Palette::blockOffset(15)-1);

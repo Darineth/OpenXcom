@@ -27,11 +27,12 @@ namespace OpenXcom
  * @param type String defining the type.
  */
 RuleCraftWeapon::RuleCraftWeapon(const std::string &type) :
-	_type(type), _sprite(-1), _sound(-1), _damage(0), _shieldDamageModifier(100), _range(0), _accuracy(0),
+	_type(type), _sprite(-1), _sound(-1), _damage(0), _shieldDamageModifier(100), _range(0), _accuracy(0), _tuAimed(25), _shotsAimed(1),
 	_reloadCautious(0), _reloadStandard(0), _reloadAggressive(0), _ammoMax(0),
 	_rearmRate(1), _projectileSpeed(0), _weaponType(0), _projectileType(CWPT_CANNON_ROUND),
 	_stats(), _underwaterOnly(false),
-	_tractorBeamPower(0)
+	_tractorBeamPower(0),
+	_bulletSprite(-1), _bulletParticles(-1), _bulletSpeed(0)
 {
 }
 
@@ -73,6 +74,8 @@ void RuleCraftWeapon::load(const YAML::Node &node, Mod *mod)
 	_shieldDamageModifier = node["shieldDamageModifier"].as<int>(_shieldDamageModifier);
 	_range = node["range"].as<int>(_range);
 	_accuracy = node["accuracy"].as<int>(_accuracy);
+	_tuAimed = node["tuAimed"].as<int>(_tuAimed);
+	_shotsAimed = node["shotsAimed"].as<int>(_shotsAimed);
 	_reloadCautious = node["reloadCautious"].as<int>(_reloadCautious);
 	_reloadStandard = node["reloadStandard"].as<int>(_reloadStandard);
 	_reloadAggressive = node["reloadAggressive"].as<int>(_reloadAggressive);
@@ -85,6 +88,15 @@ void RuleCraftWeapon::load(const YAML::Node &node, Mod *mod)
 	_weaponType = node["weaponType"].as<int>(_weaponType);
 	_underwaterOnly = node["underwaterOnly"].as<bool>(_underwaterOnly);
 	_tractorBeamPower = node["tractorBeamPower"].as<int>(_tractorBeamPower);
+	if (node["bulletSprite"])
+	{
+		// Projectiles: 385 entries ((105*33) / (3*3)) (35 sprites per projectile(0-34), 11 projectiles (0-10))
+		_bulletSprite = node["bulletSprite"].as<int>(_bulletSprite) * 35;
+		if (_bulletSprite >= 385)
+			_bulletSprite += mod->getModOffset();
+	}
+	_bulletParticles = node["bulletParticles"].as<int>(_bulletParticles);
+	_bulletSpeed = node["bulletSpeed"].as<int>(_bulletSpeed);
 }
 
 /**
@@ -153,6 +165,24 @@ int RuleCraftWeapon::getRange() const
 int RuleCraftWeapon::getAccuracy() const
 {
 	return _accuracy;
+}
+
+/**
+ * Gets the firing cost of the craft weapon.
+ * @return The time unit cost.
+ */
+int RuleCraftWeapon::getCostAimed() const
+{
+	return _tuAimed;
+}
+
+/**
+ * Gets the number of shots fired per action.
+ * @return The number of shots.
+ */
+int RuleCraftWeapon::getShotsAimed() const
+{
+	return _shotsAimed;
 }
 
 /**
@@ -276,6 +306,24 @@ bool RuleCraftWeapon::isWaterOnly() const
 int RuleCraftWeapon::getTractorBeamPower() const
 {
 	return _tractorBeamPower;
+}
+
+/// Gets the bullet sprite for the weapon.
+int RuleCraftWeapon::getBulletSprite() const
+{
+	return _bulletSprite;
+}
+
+/// Gets the number of particles to render for the projectile.
+int RuleCraftWeapon::getBulletParticles() const
+{
+	return _bulletParticles;
+}
+
+/// Gets the speed of the projectile.
+int RuleCraftWeapon::getBulletSpeed() const
+{
+	return _bulletSpeed;
 }
 
 }

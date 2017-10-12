@@ -1,0 +1,1448 @@
+#Xusilak's X-COM overhaul ruleset
+
+craftWeapons:
+#Plasma Beam range is reduced.
+  - type: STR_PLASMA_BEAM_UC
+    range: 35
+startingBase:
+  facilities:
+    - type: STR_ACCESS_LIFT
+      x: 2
+      y: 2
+    - type: STR_HANGAR
+      x: 2
+      y: 0
+    - type: STR_HANGAR
+      x: 0
+      y: 4
+    - type: STR_HANGAR
+      x: 4
+      y: 4
+    - type: STR_LIVING_QUARTERS
+      x: 3
+      y: 2
+    - type: STR_GENERAL_STORES
+      x: 2
+      y: 3
+    - type: STR_LABORATORY
+      x: 3
+      y: 3
+    - type: STR_WORKSHOP
+      x: 4
+      y: 3
+    - type: STR_SMALL_RADAR_SYSTEM
+      x: 1
+      y: 3
+  randomSoldiers:
+    STR_SOLDIER: 8
+  crafts:
+    - type: STR_SKYRANGER
+      id: 1
+      fuel: 1500
+      damage: 0
+      items:
+        STR_GRENADE: 8
+        STR_BASIC_PISTOL: 3
+        STR_BASIC_PISTOL_AMMO: 5
+        STR_BASIC_RIFLE: 6
+        STR_BASIC_RIFLE_AMMO: 12
+        STR_BASIC_MACHINEGUN: 1
+        STR_BASIC_MACHINEGUN_AMMO: 2
+      status: STR_READY
+    - type: STR_INTERCEPTOR
+      id: 1
+      fuel: 1000
+      damage: 0
+      weapons:
+        - type: STR_STINGRAY
+          ammo: 6
+        - type: STR_CANNON_UC
+          ammo: 200
+      status: STR_READY
+    - type: STR_INTERCEPTOR
+      id: 2
+      fuel: 1000
+      damage: 0
+      weapons:
+        - type: STR_STINGRAY
+          ammo: 6
+        - type: STR_CANNON_UC
+          ammo: 200
+  items:
+    STR_AVALANCHE_LAUNCHER: 1
+    STR_AVALANCHE_MISSILES: 10
+    STR_CANNON: 2
+    STR_CANNON_ROUNDS_X50: 1
+    STR_GRENADE: 5
+    STR_BASIC_PISTOL: 2
+    STR_BASIC_PISTOL_AMMO: 8
+    STR_BASIC_RIFLE: 2
+    STR_BASIC_RIFLE_AMMO: 8
+    STR_BASIC_MACHINEGUN: 1
+    STR_BASIC_MACHINEGUN_AMMO: 6
+    STR_ROCKET_LAUNCHER: 1
+    STR_SMALL_ROCKET: 4
+    STR_SMOKE_GRENADE: 5
+    STR_STINGRAY_LAUNCHER: 1
+    STR_STINGRAY_MISSILES: 25
+  scientists: 10
+  engineers: 10
+
+ufopaedia:
+  - delete: STR_TANK_CANNON
+  - delete: STR_HWP_CANNON_SHELLS
+  - delete: STR_TANK_ROCKET_LAUNCHER
+  - delete: STR_HWP_ROCKETS
+  - delete: STR_TANK_LASER_CANNON
+  - delete: STR_HOVERTANK_PLASMA
+  - delete: STR_HOVERTANK_LAUNCHER
+  - delete: STR_HWP_FUSION_BOMB
+  - delete: STR_PISTOL
+  - delete: STR_PISTOL_CLIP
+  - delete: STR_RIFLE
+  - delete: STR_RIFLE_CLIP
+  - delete: STR_HEAVY_CANNON
+  - delete: STR_HC_AP_AMMO
+  - delete: STR_HC_HE_AMMO
+  - delete: STR_HC_I_AMMO
+  - delete: STR_AUTO_CANNON
+  - delete: STR_AC_AP_AMMO
+  - delete: STR_AC_HE_AMMO
+  - delete: STR_AC_I_AMMO
+  - delete: STR_HEAVY_LASER
+  - delete: STR_HEAVY_PLASMA
+
+  - id: STR_BASIC_PISTOL
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_BASIC_PISTOL_UFOPEDIA
+    listOrder: 2303
+  - id: STR_BASIC_PISTOL_AMMO
+    type_id: 4
+    section: STR_NOT_AVAILABLE
+
+#Submachine Gun
+  - id: STR_BASIC_SMG
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_BASIC_SMG_UFOPEDIA
+    listOrder: 2303
+  - id: STR_BASIC_SMG_AMMO
+    type_id: 4
+    section: STR_NOT_AVAILABLE
+
+  - id: STR_BASIC_RIFLE
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_BASIC_RIFLE_UFOPEDIA
+    listOrder: 2303
+  - id: STR_BASIC_RIFLE_AMMO
+    type_id: 4
+    section: STR_NOT_AVAILABLE
+
+#Shotgun
+  - id: STR_BASIC_SHOTGUN
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_BASIC_SHOTGUN_UFOPEDIA
+    listOrder: 2301
+  - id: STR_BASIC_SHOTGUN_BUCKSHOT
+    type_id: 4
+    section: STR_NOT_AVAILABLE
+  - id: STR_BASIC_SHOTGUN_SLUG
+    type_id: 4
+    section: STR_NOT_AVAILABLE
+
+#Marksman Rifle
+  - id: STR_BASIC_MARKSMAN
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_BASIC_MARKSMAN_UFOPEDIA
+    listOrder: 2303
+  - id: STR_BASIC_MARKSMAN_AMMO
+    type_id: 4
+    section: STR_NOT_AVAILABLE
+
+#Sniper Rifle
+  - id: STR_BASIC_SNIPER
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_BASIC_SNIPER_UFOPEDIA
+    listOrder: 2303
+  - id: STR_BASIC_SNIPER_AMMO
+    type_id: 4
+    section: STR_NOT_AVAILABLE
+
+#Machine Gun
+  - id: STR_BASIC_MACHINEGUN
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_BASIC_MACHINEGUN_UFOPEDIA
+    listOrder: 2302
+  - id: STR_BASIC_MACHINEGUN_AMMO
+    type_id: 4
+    section: STR_NOT_AVAILABLE
+
+#Minigun
+  - id: STR_BASIC_MINIGUN
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_BASIC_MINIGUN_UFOPEDIA
+    listOrder: 2304
+  - id: STR_BASIC_MINIGUN_AMMO
+    type_id: 4
+    section: STR_NOT_AVAILABLE
+
+#Heavy Rifle
+  - id: STR_BASIC_HEAVY
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_BASIC_HEAVY_UFOPEDIA
+    listOrder: 2305
+  - id: STR_BASIC_HEAVY_AMMO
+    type_id: 4
+    section: STR_NOT_AVAILABLE
+
+#Grenade Launcher
+  - id: STR_GRENADE_LAUNCHER
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_GRENADE_LAUNCHER_UFOPEDIA
+    listOrder: 2306
+  - id: STR_GL_HE_AMMO
+    type_id: 4
+    section: STR_NOT_AVAILABLE
+  - id: STR_GL_HE_FISSION_AMMO
+    type_id: 4
+    section: STR_NOT_AVAILABLE
+  - id: STR_GL_HE_FUSION_AMMO
+    type_id: 4
+    section: STR_NOT_AVAILABLE
+  - id: STR_GL_I_AMMO
+    type_id: 4
+    section: STR_NOT_AVAILABLE
+
+
+#Incendiary Grenade
+  - id: STR_INCENDIARY_GRENADE
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_INCENDIARY_GRENADE_UFOPEDIA
+    listOrder: 3901
+    clipSize: 1
+
+#Rockets
+  - id: STR_FISSION_ROCKET
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_FISSION_ROCKET_UFOPEDIA
+    listOrder: 3202
+    requires:
+      - STR_FISSION_WARHEADS
+  - id: STR_FUSION_ROCKET
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_FUSION_CLUSTER_ROCKET_UFOPEDIA
+    listOrder: 3203
+    requires:
+      - STR_FUSION_WARHEADS
+  - id: STR_PLASMA_ROCKET
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_PLASMA_ROCKET_UFOPEDIA
+    listOrder: 3201
+    requires:
+      - STR_HEAVY_PLASMA_WEAPONS
+
+#Shock Grenade
+  - id: STR_SHOCK_GRENADE
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_SHOCK_GRENADE_UFOPEDIA
+    listOrder: 3205
+    requires:
+      - STR_SHOCK_GRENADE
+
+  - id: STR_LASER_PISTOL
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_LASER_PISTOL_UFOPEDIA
+    listOrder: 3703
+    requires:
+      - STR_LASER_SIDEARMS
+
+#Pulse Laser Pistol
+  - id: STR_LASER_SMG
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_LASER_SMG_UFOPEDIA
+    listOrder: 3703
+    requires:
+      - STR_LASER_SIDEARMS
+
+  - id: STR_LASER_RIFLE
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_LASER_RIFLE_UFOPEDIA
+    listOrder: 3703
+    requires:
+      - STR_LASER_ASSAULT_WEAPONS
+
+#Prismatic Laser
+  - id: STR_LASER_SHOTGUN
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_LASER_SHOTGUN_UFOPEDIA
+    listOrder: 3701
+    requires:
+      - STR_LASER_ASSAULT_WEAPONS
+
+#Strike Beam Rifle
+  - id: STR_LASER_MARKSMAN
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_LASER_MARKSMAN_UFOPEDIA
+    listOrder: 3703
+    requires:
+      - STR_PRECISION_LASER_WEAPONS
+
+#Laser Beam Rifle
+  - id: STR_LASER_SNIPER
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_LASER_SNIPER_UFOPEDIA
+    listOrder: 3703
+    requires:
+      - STR_PRECISION_LASER_WEAPONS
+
+#Pulse Laser
+  - id: STR_LASER_MACHINEGUN
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_LASER_MACHINEGUN_UFOPEDIA
+    listOrder: 3702
+    requires:
+      - STR_HEAVY_LASER_WEAPONS
+
+#Hyper Pulse Laser
+  - id: STR_LASER_MINIGUN
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_LASER_MINIGUN_UFOPEDIA
+    listOrder: 3704
+    requires:
+      - STR_HEAVY_LASER_WEAPONS
+
+  - id: STR_LASER_HEAVY
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_LASER_HEAVY_UFOPEDIA
+    listOrder: 3703
+    requires:
+      - STR_HEAVY_LASER_WEAPONS
+
+  - id: STR_PLASMA_PISTOL
+    type_id: 4
+    section: STR_ALIEN_ARTIFACTS
+    text: STR_PLASMA_PISTOL_UFOPEDIA
+    listOrder: 5306
+    requires:
+      - STR_PLASMA_SIDEARMS
+  - id: STR_PLASMA_PISTOL_AMMO
+    type_id: 4
+    section: STR_ALIEN_ARTIFACTS
+    text: STR_PLASMA_PISTOL_AMMO_UFOPEDIA
+    listOrder: 5306
+    requires:
+      - STR_PLASMA_SIDEARMS
+
+#Plasma Blaster Pistol
+  - id: STR_PLASMA_SMG
+    type_id: 4
+    section: STR_ALIEN_ARTIFACTS
+    text: STR_PLASMA_SMG_UFOPEDIA
+    listOrder: 5306
+    requires:
+      - STR_PLASMA_SIDEARMS
+  - id: STR_PLASMA_SMG_AMMO
+    type_id: 4
+    section: STR_ALIEN_ARTIFACTS
+    text: STR_PLASMA_SMG_AMMO_UFOPEDIA
+    listOrder: 5306
+    requires:
+      - STR_PLASMA_SIDEARMS
+
+  - id: STR_PLASMA_RIFLE
+    type_id: 4
+    section: STR_ALIEN_ARTIFACTS
+    text: STR_PLASMA_RIFLE_UFOPEDIA
+    listOrder: 5306
+    requires:
+      - STR_PLASMA_ASSAULT_WEAPONS
+  - id: STR_PLASMA_RIFLE_AMMO
+    type_id: 4
+    section: STR_ALIEN_ARTIFACTS
+    text: STR_PLASMA_RIFLE_AMMO_UFOPEDIA
+    listOrder: 5306
+    requires:
+      - STR_PLASMA_ASSAULT_WEAPONS
+
+#Plasma Burst
+  - id: STR_PLASMA_SHOTGUN
+    type_id: 4
+    section: STR_ALIEN_ARTIFACTS
+    text: STR_PLASMA_SHOTGUN_UFOPEDIA
+    listOrder: 5301
+    requires:
+      - STR_PLASMA_ASSAULT_WEAPONS
+  - id: STR_PLASMA_SHOTGUN_AMMO
+    type_id: 4
+    section: STR_ALIEN_ARTIFACTS
+    text: STR_PLASMA_SHOTGUN_AMMO_UFOPEDIA
+    listOrder: 5302
+    requires:
+      - STR_PLASMA_ASSAULT_WEAPONS
+
+#Plasma Shock Rifle
+  - id: STR_PLASMA_MARKSMAN
+    type_id: 4
+    section: STR_ALIEN_ARTIFACTS
+    text: STR_PLASMA_MARKSMAN_UFOPEDIA
+    listOrder: 5305
+    requires:
+      - STR_PRECISION_PLASMA_WEAPONS
+  - id: STR_PLASMA_MARKSMAN_AMMO
+    type_id: 4
+    section: STR_ALIEN_ARTIFACTS
+    text: STR_PLASMA_MARKSMAN_AMMO_UFOPEDIA
+    listOrder: 5306
+    requires:
+      - STR_PRECISION_PLASMA_WEAPONS
+
+#Plasma Beam Rifle
+  - id: STR_PLASMA_SNIPER
+    type_id: 4
+    section: STR_ALIEN_ARTIFACTS
+    text: STR_PLASMA_SNIPER_UFOPEDIA
+    listOrder: 5305
+    requires:
+      - STR_PRECISION_PLASMA_WEAPONS
+  - id: STR_PLASMA_SNIPER_AMMO
+    type_id: 4
+    section: STR_ALIEN_ARTIFACTS
+    text: STR_PLASMA_SNIPER_AMMO_UFOPEDIA
+    listOrder: 5306
+    requires:
+      - STR_PRECISION_PLASMA_WEAPONS
+
+#Plasma Pulsar
+  - id: STR_PLASMA_MINIGUN
+    type_id: 4
+    section: STR_ALIEN_ARTIFACTS
+    text: STR_PLASMA_MINIGUN_UFOPEDIA
+    listOrder: 5307
+    requires:
+      - STR_HEAVY_PLASMA_WEAPONS
+  - id: STR_PLASMA_MINIGUN_AMMO
+    type_id: 4
+    section: STR_ALIEN_ARTIFACTS
+    text: STR_PLASMA_MINIGUN_AMMO_UFOPEDIA
+    listOrder: 5308
+    requires:
+      - STR_HEAVY_PLASMA_WEAPONS
+
+#Plasma Blaster
+  - id: STR_PLASMA_MACHINEGUN
+    type_id: 4
+    section: STR_ALIEN_ARTIFACTS
+    text: STR_PLASMA_MACHINEGUN_UFOPEDIA
+    listOrder: 5303
+    requires:
+      - STR_HEAVY_PLASMA_WEAPONS
+  - id: STR_PLASMA_MACHINEGUN_AMMO
+    type_id: 4
+    section: STR_ALIEN_ARTIFACTS
+    text: STR_PLASMA_MACHINEGUN_AMMO_UFOPEDIA
+    listOrder: 5304
+    requires:
+      - STR_HEAVY_PLASMA_WEAPONS
+
+  - id: STR_PLASMA_HEAVY
+    type_id: 4
+    section: STR_ALIEN_ARTIFACTS
+    text: STR_PLASMA_HEAVY_UFOPEDIA
+    listOrder: 5303
+    requires:
+      - STR_HEAVY_PLASMA_WEAPONS
+  - id: STR_PLASMA_HEAVY_AMMO
+    type_id: 4
+    section: STR_ALIEN_ARTIFACTS
+    text: STR_PLASMA_HEAVY_AMMO_UFOPEDIA
+    listOrder: 5304
+    requires:
+      - STR_HEAVY_PLASMA_WEAPONS
+
+  - id: STR_ARC_RIFLE
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_ARC_RIFLE_UFOPEDIA
+    listOrder: 5303
+    requires:
+      - STR_ARC_WEAPONS
+  - id: STR_ARC_RIFLE_AMMO
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_ARC_RIFLE_AMMO_UFOPEDIA
+    listOrder: 5304
+    requires:
+      - STR_ARC_WEAPONS
+
+  - id: STR_ARC_LAUNCHER
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_ARC_LAUNCHER_UFOPEDIA
+    listOrder: 5305
+    requires:
+      - STR_ARC_WEAPONS
+
+#Tornado
+  - id: STR_TORNADO
+    type_id: 1
+    section: STR_XCOM_CRAFT_ARMAMENT
+    image_id: UP002B.SPK
+    rect_stats:
+      x: 160
+      y: 5
+      width: 160
+      height: 60
+    rect_text:
+      x: 5
+      y: 40
+      width: 140
+      height: 100
+    text: STR_TORNADO_UFOPEDIA
+    requires:
+      - STR_IMPROVED_INTERCEPTOR
+    listOrder: 401
+
+#Electrolaser
+  - id: STR_ELECTROLASER
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_ELECTROLASER_UFOPEDIA
+    listOrder: 3703
+    requires:
+      - STR_ELECTROLASERS
+  - id: STR_ELECTROLASER_PACK
+    type_id: 4
+    section: STR_NOT_AVAILABLE
+
+#Fission Explosive
+  - id: STR_FISSION_EXPLOSIVE
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_FISSION_EXPLOSIVE_UFOPEDIA
+    listOrder: 3704
+    requires:
+      - STR_FISSION_EXPLOSIVES
+
+#Field Surgery Unit
+  - id: STR_FIELD_SURGERY_UNIT
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_FIELD_SURGERY_UNIT_UFOPEDIA
+    listOrder: 3705
+    requires:
+      - STR_FIELD_SURGERY_UNIT
+
+#Psi Orb
+  - id: STR_PSI_ORB
+    type_id: 4
+    section: STR_NOT_AVAILABLE
+
+  - id: STR_SCOUT_ARMOR_UC
+    type_id: 5
+    section: STR_WEAPONS_AND_EQUIPMENT
+    listOrder: 1750
+    requires:
+      - STR_SCOUT_ARMOR
+    text: STR_SCOUT_ARMOR_UFOPEDIA
+
+  - id: STR_HEAVY_ARMOR_UC
+    type_id: 5
+    section: STR_WEAPONS_AND_EQUIPMENT
+    listOrder: 1750
+    requires:
+      - STR_HEAVY_ARMOR
+    text: STR_HEAVY_ARMOR_UFOPEDIA
+
+  - id: STR_STEALTH_ARMOR_UC
+    type_id: 5
+    section: STR_WEAPONS_AND_EQUIPMENT
+    listOrder: 1750
+    requires:
+      - STR_STEALTH_ARMOR
+    text: STR_STEALTH_ARMOR_UFOPEDIA
+
+  - id: STR_ASSAULT_ARMOR_UC
+    type_id: 5
+    section: STR_WEAPONS_AND_EQUIPMENT
+    listOrder: 1750
+    requires:
+      - STR_ASSAULT_ARMOR
+    text: STR_ASSAULT_ARMOR_UFOPEDIA
+
+  - id: STR_FLYING_ARMOR_UC
+    type_id: 5
+    section: STR_WEAPONS_AND_EQUIPMENT
+    listOrder: 1750
+    requires:
+      - STR_FLYING_ARMOR
+    text: STR_FLYING_ARMOR_UFOPEDIA
+
+  - id: STR_POWER_ARMOR_UC
+    type_id: 5
+    section: STR_WEAPONS_AND_EQUIPMENT
+    listOrder: 1750
+    requires:
+      - STR_POWER_ARMOR
+    text: STR_POWER_ARMOR_UFOPEDIA
+
+costVehicle: 20000
+roles:
+  - name: STR_ROLE_MACHINEGUNNER
+    iconSprite: RoleIconMachineGunner
+    smallIconSprite: RoleIconMachineGunnerSimple
+    defaultArmorColor: STR_COLOR_DARK_GREEN
+  - name: STR_ROLE_ANTIARMOR
+    iconSprite: RoleIconAntiArmor
+    smallIconSprite: RoleIconAntiArmorSimple
+  - name: STR_ROLE_MARKSMAN
+    iconSprite: RoleIconMarksman
+    smallIconSprite: RoleIconMarksmanSimple
+    defaultArmorColor: STR_COLOR_GRAY
+extraSprites:
+  - type: BIGOBS.PCK
+    files:
+      1000: Resources/Items/SniperRifle/SniperRifleBig.gif
+      1001: Resources/Items/SniperRifle/SniperRifleAmmoBig.gif
+
+      1010: Resources/Items/LaserBeamRifle/LaserBeamRifleBig.gif
+
+      1020: Resources/Items/PlasmaBeamRifle/PlasmaBeamRifleBig.gif
+      1021: Resources/Items/PlasmaBeamRifle/PlasmaBeamRifleAmmoBig.gif
+
+      1030: Resources/Items/PrismaticLaser/PrismaticLaserBig.gif
+
+      1040: Resources/Items/PulseLaser/PulseLaserBig.gif
+
+      1050: Resources/Items/HyperPulseLaser/HyperPulseLaserBig.gif
+
+      1060: Resources/Items/HeavyLaser/HeavyLaserBig.gif
+
+      1070: Resources/Items/LaserPistol/LaserPistolBig.gif
+
+      1080: Resources/Items/MachineGun/MachineGunBig.gif
+      1081: Resources/Items/MachineGun/MachineGunAmmoBig.gif
+
+      1090: Resources/Items/RocketLauncher/PlasmaRocketBig.gif
+      1091: Resources/Items/RocketLauncher/FissionRocketBig.gif
+      1092: Resources/Items/RocketLauncher/ClusterRocketBig.gif
+      1093: Resources/Items/RocketLauncher/FusionRocketBig.gif
+
+      1100: Resources/Items/Pistol/PistolBig.gif
+
+      1110: Resources/Items/Shotgun/ShotgunBig.gif
+      1111: Resources/Items/Shotgun/ShotgunBuckshotBig.gif
+      1112: Resources/Items/Shotgun/ShotgunSlugsBig.gif
+
+      1120: Resources/Items/PlasmaPistol/PlasmaPistolBig.gif
+      1121: Resources/Items/PlasmaPistol/PlasmaPistolAmmoBig.gif
+
+      1130: Resources/Items/PlasmaBlaster/PlasmaBlasterBig.gif
+      1131: Resources/Items/PlasmaBlaster/PlasmaBlasterAmmoBig.gif
+
+      1140: Resources/Items/HeavyPlasma/HeavyPlasmaBig.gif
+      1141: Resources/Items/HeavyPlasma/HeavyPlasmaAmmoBig.gif
+
+      1150: Resources/Items/PlasmaPulsar/PlasmaPulsarBig.gif
+      1151: Resources/Items/PlasmaPulsar/PlasmaPulsarAmmoBig.gif
+
+      1160: Resources/Items/ShockGrenade/ShockGrenadeBig.gif
+
+      1170: Resources/Items/Minigun/MinigunBig.gif
+      1171: Resources/Items/Minigun/MinigunAmmoBig.gif
+
+      1180: Resources/Items/PlasmaRifle/PlasmaRifleBig.gif
+      1181: Resources/Items/PlasmaRifle/PlasmaRifleAmmoBig.gif
+
+      1190: Resources/Items/PlasmaBurst/PlasmaBurstBig.gif
+      1191: Resources/Items/PlasmaBurst/PlasmaBurstAmmoBig.gif
+
+      1200: Resources/Items/FieldSurgeryUnit/FieldSurgeryUnitBig.gif
+
+      1210: Resources/Items/Electrolaser/ElectroLaserBig.gif
+      1211: Resources/Items/Electrolaser/ElectroLaserAmmoBig.gif
+
+      1220: Resources/Items/FissionExplosive/FissionExplosiveBig.gif
+      1225: Resources/Items/FusionExplosive/FusionExplosiveBig.gif
+
+      1230: Resources/Items/PsiAmp/PsiOrbBig.gif
+      
+      1240: Resources/Items/ArmorPlates/ArmorPlateBrown.gif
+      1241: Resources/Items/ArmorPlates/ArmorPlateGrey.gif
+      1242: Resources/Items/ArmorPlates/ArmorPlatePurple.gif
+      1243: Resources/Items/ArmorPlates/HeavyArmorPlateBrown.gif
+      1244: Resources/Items/ArmorPlates/HeavyArmorPlateGrey.gif
+      1245: Resources/Items/ArmorPlates/HeavyArmorPlatePurple.gif
+      
+      1250: Resources/Items/Addons/AimModule.gif
+      1251: Resources/Items/Addons/AdvancedAimModule.gif
+      1252: Resources/Items/Addons/EngineBoost.gif
+      1253: Resources/Items/Addons/AdvancedEngineBoost.gif
+      1254: Resources/Items/Addons/TurretBoost.gif
+      1255: Resources/Items/Addons/AdvancedTurretBoost.gif
+      1256: Resources/Items/Addons/EnhancedFrame1.gif
+      1257: Resources/Items/Addons/EnhancedFrame2.gif
+      1258: Resources/Items/Addons/AdvancedEnhancedFrame1.gif
+      1259: Resources/Items/Addons/AdvancedEnhancedFrame2.gif
+      1260: Resources/Items/Addons/Headlights.gif
+      1261: Resources/Items/Addons/NightVisionModule.gif
+      
+      1270: Resources/Items/HWPArtilleryCannon/HWPArtilleryCannonBig.gif
+      1271: Resources/Items/HWPArtilleryCannon/HWPArtilleryShellHEBig.gif
+      1272: Resources/Items/HWPArtilleryCannon/HWPArtilleryShellIncBig.gif
+      1273: Resources/Items/HWPArtilleryCannon/HWPArtilleryShellSmokeBig.gif
+      1274: Resources/Items/HWPArtilleryCannon/HWPArtilleryShellClusterBig.gif
+      1275: Resources/Items/HWPArtilleryCannon/HWPArtilleryShellFissionHEBig.gif
+      1276: Resources/Items/HWPArtilleryCannon/HWPArtilleryShellFissionClusterBig.gif
+      1277: Resources/Items/HWPArtilleryCannon/HWPArtilleryShellFusionHEBig.gif
+      1278: Resources/Items/HWPArtilleryCannon/HWPArtilleryShellFusionClusterBig.gif
+      
+      1280: Resources/Items/HWPHeavyCannon/HWPHeavyCannonBig.gif
+      1281: Resources/Items/HWPHeavyCannon/HWPHeavyCannonAmmoBig.gif
+      
+      1290: Resources/Items/HWPLightCannon/HWPLightCannonBig.gif
+      1291: Resources/Items/HWPLightCannon/HWPLightCannonAmmoBig.gif
+      
+      1300: Resources/Items/HWPMachineGun/HWPMachineGunBig.gif
+      
+      1310: Resources/Items/HWPMinigun/HWPMinigunBig.gif
+      
+      1320: Resources/Items/HWPMissileLauncher/HWPMissileLauncherBig.gif
+      1321: Resources/Items/HWPMissileLauncher/HWPHEATMissileBig.gif
+      1322: Resources/Items/HWPMissileLauncher/HWPThermobaricMissileBig.gif
+      1323: Resources/Items/HWPMissileLauncher/HWPIncendiaryMissileBig.gif
+      1324: Resources/Items/HWPMissileLauncher/HWPPlasmaMissileBig.gif
+      1325: Resources/Items/HWPMissileLauncher/HWPFissionMissileBig.gif
+      1326: Resources/Items/HWPMissileLauncher/HWPClusterMissileBig.gif
+      1327: Resources/Items/HWPMissileLauncher/HWPFusionMissileBig.gif
+      
+      1330: Resources/Items/HWPPulseLaser/HWPPulseLaserBig.gif
+      
+      1340: Resources/Items/HWPHyperPulseLaser/HWPHyperPulseLaserBig.gif
+      
+      1350: Resources/Items/HWPLaserLightCannon/HWPLaserLightCannonBig.gif
+      
+      1360: Resources/Items/HWPLaserHeavyCannon/HWPLaserHeavyCannonBig.gif
+      
+      1370: Resources/Items/HWPLightPlasmaCannon/HWPLightPlasmaCannonBig.gif
+      1371: Resources/Items/HWPLightPlasmaCannon/HWPLightPlasmaCannonAmmoBig.gif
+      
+      1380: Resources/Items/HWPHeavyPlasmaCannon/HWPHeavyPlasmaCannonBig.gif
+      1381: Resources/Items/HWPHeavyPlasmaCannon/HWPHeavyPlasmaCannonAmmoBig.gif
+      
+      1390: Resources/Items/HWPPlasmaPulsar/HWPPlasmaPulsarBig.gif
+      1391: Resources/Items/HWPPlasmaPulsar/HWPPlasmaPulsarAmmoBig.gif
+      
+      1400: Resources/Items/HWPPlasmaBlaster/HWPPlasmaBlasterBig.gif
+      1401: Resources/Items/HWPPlasmaBlaster/HWPPlasmaBlasterAmmoBig.gif
+      
+      1410: Resources/Items/HWPSmartLauncher/HWPSmartLauncherBig.gif
+      1411: Resources/Items/HWPSmartLauncher/HWPSmartFusionBombBig.gif
+      
+      1420: Resources/Items/HWPEngine/HWPEngine2.gif
+      1421: Resources/Items/HWPEngine/HWPEngine2X.gif
+      1422: Resources/Items/HWPEngine/HWPEngine2S.gif
+      1423: Resources/Items/HWPEngine/HWPEngine2XS.gif
+      1424: Resources/Items/HWPEngine/HWPEngine3.gif
+      1425: Resources/Items/HWPEngine/HWPEngine3X.gif
+      1426: Resources/Items/HWPEngine/HWPEngine3S.gif
+      1427: Resources/Items/HWPEngine/HWPEngine3XS.gif
+      1428: Resources/Items/HWPEngine/HWPEngine4.gif
+      1429: Resources/Items/HWPEngine/HWPEngine4X.gif
+      1430: Resources/Items/HWPEngine/HWPEngine4S.gif
+      1431: Resources/Items/HWPEngine/HWPEngine4XS.gif
+      
+      1440: Resources/Items/SubmachineGun/SubmachineGunBig.gif
+      1441: Resources/Items/SubmachineGun/SubmachineGunAmmoBig.gif
+
+      1450: Resources/Items/MarksmanRifle/MarksmanRifleBig.gif
+      1451: Resources/Items/MarksmanRifle/MarksmanRifleAmmoBig.gif
+
+      1460: Resources/Items/LaserSubmachineGun/LaserSubmachineGunBig.gif
+
+      1470: Resources/Items/PlasmaSubmachineGun/PlasmaSubmachineGunBig.gif
+      1471: Resources/Items/PlasmaSubmachineGun/PlasmaSubmachineGunAmmoBig.gif
+
+      1480: Resources/Items/LaserMarksman/LaserMarksmanBig.gif
+
+      1490: Resources/Items/LaserRifle/LaserRifleBig.gif
+
+      1500: Resources/Items/PlasmaMarksmanRifle/PlasmaMarksmanRifleBig.gif
+      1501: Resources/Items/PlasmaMarksmanRifle/PlasmaMarksmanRifleAmmoBig.gif
+      
+      1510: Resources/Items/HeadLamp/HeadLampBig.gif
+      
+      1520: Resources/Items/NightVisionGoggles/NightVisionGogglesBig.gif
+      
+      1530: Resources/Items/XCOMPlasmaPistol/XCOMPlasmaPistolBig.gif
+      
+      1540: Resources/Items/XCOMPlasmaSubmachineGun/XCOMPlasmaSubmachineGunBig.gif
+      
+      1550: Resources/Items/XCOMPlasmaRifle/XCOMPlasmaRifleBig.gif
+      
+      1560: Resources/Items/XCOMPlasmaShotgun/XCOMPlasmaShotgunBig.gif
+      
+      1570: Resources/Items/XCOMPlasmaMarksman/XCOMPlasmaMarksmanBig.gif
+      
+      1580: Resources/Items/XCOMPlasmaSniper/XCOMPlasmaSniperBig.gif
+      
+      1590: Resources/Items/XCOMPlasmaMachineGun/XCOMPlasmaMachineGunBig.gif
+      
+      1600: Resources/Items/XCOMPlasmaMinigun/XCOMPlasmaMinigunBig.gif
+      
+      1610: Resources/Items/XCOMPlasmaHeavy/XCOMPlasmaHeavyBig.gif
+
+      1620: Resources/Items/HeavyRifle/HeavyRifleBig.gif
+      1621: Resources/Items/HeavyRifle/HeavyRifleAmmoBig.gif
+
+      1630: Resources/Items/GrenadeLauncher/GrenadeLauncherBig.gif
+      1631: Resources/Items/GrenadeLauncher/GrenadeLauncherGLHEBig.gif
+      1632: Resources/Items/GrenadeLauncher/GrenadeLauncherGLHEFissionBig.gif
+      1633: Resources/Items/GrenadeLauncher/GrenadeLauncherGLHEFusionBig.gif
+      1634: Resources/Items/GrenadeLauncher/GrenadeLauncherGLIBig.gif
+      
+  - type: FLOOROB.PCK
+    files:
+      1002: Resources/Items/SniperRifle/SniperRifleFloor.gif
+      1003: Resources/Items/SniperRifle/SniperRifleAmmoFloor.gif
+
+      1011: Resources/Items/LaserBeamRifle/LaserBeamRifleFloor.gif
+
+      1022: Resources/Items/PlasmaBeamRifle/PlasmaBeamRifleFloor.gif
+      1023: Resources/Items/PlasmaBeamRifle/PlasmaBeamRifleAmmoFloor.gif
+
+      1031: Resources/Items/PrismaticLaser/PrismaticLaserFloor.gif
+
+      1041: Resources/Items/PulseLaser/PulseLaserFloor.gif
+
+      1051: Resources/Items/HyperPulseLaser/HyperPulseLaserFloor.gif
+
+      1061: Resources/Items/HeavyLaser/HeavyLaserFloor.gif
+
+      1071: Resources/Items/LaserPistol/LaserPistolFloor.gif
+
+      1082: Resources/Items/MachineGun/MachineGunFloor.gif
+      1083: Resources/Items/MachineGun/MachineGunAmmoFloor.gif
+
+      1093: Resources/Items/RocketLauncher/PlasmaRocketFloor.gif
+      1094: Resources/Items/RocketLauncher/FissionRocketFloor.gif
+      1095: Resources/Items/RocketLauncher/ClusterRocketFloor.gif
+      1096: Resources/Items/RocketLauncher/FusionRocketFloor.gif
+
+      1113: Resources/Items/Shotgun/ShotgunFloor.gif
+      1114: Resources/Items/Shotgun/ShotgunBuckshotFloor.gif
+      1115: Resources/Items/Shotgun/ShotgunSlugsFloor.gif
+
+      1122: Resources/Items/PlasmaPistol/PlasmaPistolFloor.gif
+      1123: Resources/Items/PlasmaPistol/PlasmaPistolAmmoFloor.gif
+
+      1132: Resources/Items/PlasmaBlaster/PlasmaBlasterFloor.gif
+      1133: Resources/Items/PlasmaBlaster/PlasmaBlasterAmmoFloor.gif
+
+      1142: Resources/Items/HeavyPlasma/HeavyPlasmaFloor.gif
+      1143: Resources/Items/HeavyPlasma/HeavyPlasmaAmmoFloor.gif
+
+      1152: Resources/Items/PlasmaPulsar/PlasmaPulsarFloor.gif
+      1153: Resources/Items/PlasmaPulsar/PlasmaPulsarAmmoFloor.gif
+
+      1161: Resources/Items/ShockGrenade/ShockGrenadeFloor.gif
+
+      1172: Resources/Items/Minigun/MinigunFloor.gif
+      1173: Resources/Items/Minigun/MinigunAmmoFloor.gif
+
+      1182: Resources/Items/PlasmaRifle/PlasmaRifleFloor.gif
+      1183: Resources/Items/PlasmaRifle/PlasmaRifleAmmoFloor.gif
+
+      1192: Resources/Items/PlasmaBurst/PlasmaBurstFloor.gif
+      1193: Resources/Items/PlasmaBurst/PlasmaBurstAmmoFloor.gif
+
+      1201: Resources/Items/FieldSurgeryUnit/FieldSurgeryUnitFloor.gif
+
+      1212: Resources/Items/Electrolaser/ElectroLaserFloor.gif
+      1213: Resources/Items/Electrolaser/ElectroLaserAmmoFloor.gif
+
+      1221: Resources/Items/FissionExplosive/FissionExplosiveFloor.gif
+      1226: Resources/Items/FusionExplosive/FusionExplosiveFloor.gif
+
+      1231: Resources/Items/PsiAmp/PsiOrbFloor.gif
+      
+      1442: Resources/Items/SubmachineGun/SubmachineGunFloor.gif
+      1443: Resources/Items/SubmachineGun/SubmachineGunAmmoFloor.gif
+
+      1452: Resources/Items/MarksmanRifle/MarksmanRifleFloor.gif
+      1453: Resources/Items/MarksmanRifle/MarksmanRifleAmmoFloor.gif
+
+      1461: Resources/Items/LaserSubmachineGun/LaserSubmachineGunFloor.gif
+
+      1472: Resources/Items/PlasmaSubmachineGun/PlasmaSubmachineGunFloor.gif
+      1473: Resources/Items/PlasmaSubmachineGun/PlasmaSubmachineGunAmmoFloor.gif
+
+      1481: Resources/Items/LaserMarksman/LaserMarksmanFloor.gif
+
+      1491: Resources/Items/LaserRifle/LaserRifleFloor.gif
+
+      1502: Resources/Items/PlasmaMarksmanRifle/PlasmaMarksmanRifleFloor.gif
+      1503: Resources/Items/PlasmaMarksmanRifle/PlasmaMarksmanRifleAmmoFloor.gif
+      
+      1511: Resources/Items/HeadLamp/HeadLampFloor.gif
+      1521: Resources/Items/NightVisionGoggles/NightVisionGogglesFloor.gif
+      
+      1531: Resources/Items/XCOMPlasmaPistol/XCOMPlasmaPistolFloor.gif
+      
+      1541: Resources/Items/XCOMPlasmaSubmachineGun/XCOMPlasmaSubmachineGunFloor.gif
+      
+      1551: Resources/Items/XCOMPlasmaRifle/XCOMPlasmaRifleFloor.gif
+      
+      1561: Resources/Items/XCOMPlasmaShotgun/XCOMPlasmaShotgunFloor.gif
+      
+      1571: Resources/Items/XCOMPlasmaMarksman/XCOMPlasmaMarksmanFloor.gif
+      
+      1581: Resources/Items/XCOMPlasmaSniper/XCOMPlasmaSniperFloor.gif
+      
+      1591: Resources/Items/XCOMPlasmaMachineGun/XCOMPlasmaMachineGunFloor.gif
+      
+      1601: Resources/Items/XCOMPlasmaMinigun/XCOMPlasmaMinigunFloor.gif
+      
+      1611: Resources/Items/XCOMPlasmaHeavy/XCOMPlasmaHeavyFloor.gif
+
+      1622: Resources/Items/HeavyRifle/HeavyRifleFloor.gif
+      1623: Resources/Items/HeavyRifle/HeavyRifleAmmoFloor.gif
+
+      1640: Resources/Items/GrenadeLauncher/GrenadeLauncherFloor.gif
+      1641: Resources/Items/GrenadeLauncher/GrenadeLauncherGLHEFloor.gif
+      1642: Resources/Items/GrenadeLauncher/GrenadeLauncherGLHEFissionFloor.gif
+      1643: Resources/Items/GrenadeLauncher/GrenadeLauncherGLHEFusionFloor.gif
+      1644: Resources/Items/GrenadeLauncher/GrenadeLauncherGLIFloor.gif
+
+
+  - type: HANDOB.PCK
+    files:
+      1004: Resources/Items/SniperRifle/HandObjects/
+      1012: Resources/Items/LaserBeamRifle/HandObjects/
+      1024: Resources/Items/PlasmaBeamRifle/HandObjects/
+      1032: Resources/Items/PrismaticLaser/HandObjects/
+      1042: Resources/Items/PulseLaser/HandObjects/
+      1052: Resources/Items/HyperPulseLaser/HandObjects/
+      1062: Resources/Items/HeavyLaser/HandObjects/
+      1072: Resources/Items/LaserPistol/HandObjects/
+      1084: Resources/Items/MachineGun/HandObjects/
+      1116: Resources/Items/Shotgun/HandObjects/
+      1124: Resources/Items/PlasmaPistol/HandObjects/
+      1134: Resources/Items/PlasmaBlaster/HandObjects/
+      1144: Resources/Items/HeavyPlasma/HandObjects/
+      1154: Resources/Items/PlasmaPulsar/HandObjects/
+      1174: Resources/Items/Minigun/HandObjects/
+      1184: Resources/Items/PlasmaRifle/HandObjects/
+      1194: Resources/Items/PlasmaBurst/HandObjects/
+      1214: Resources/Items/Electrolaser/HandObjects/
+      1444: Resources/Items/SubmachineGun/HandObjects/
+      1454: Resources/Items/MarksmanRifle/HandObjects/
+      1462: Resources/Items/LaserSubmachineGun/HandObjects/
+      1474: Resources/Items/PlasmaSubmachineGun/HandObjects/
+      1482: Resources/items/LaserMarksman/HandObjects/
+      1492: Resources/items/LaserRifle/HandObjects/
+      1504: Resources/items/PlasmaMarksmanRifle/HandObjects/
+      1514: Resources/items/XCOMPlasmaMinigun/HandObjects/
+      1624: Resources/Items/HeavyRifle/HandObjects/
+      1649: Resources/Items/GrenadeLauncher/HandObjects/
+      
+  - type: STEALTHARMOR.PCK
+    height: 1400
+    width: 256
+    subX: 32
+    subY: 40
+    files:
+      0: Resources/Armor/StealthArmor/StealthArmorSprite.gif
+      
+  - type: STEALTHARMORINVM0.SPK
+    singleImage: true
+    width: 320
+    height: 200
+    files:
+      0: Resources/Armor/StealthArmor/StealthArmorInvM0.png
+      
+  - type: STEALTHARMORINVM1.SPK
+    singleImage: true
+    width: 320
+    height: 200
+    files:
+      0: Resources/Armor/StealthArmor/StealthArmorInvM1.png
+      
+  - type: STEALTHARMORINVM2.SPK
+    singleImage: true
+    width: 320
+    height: 200
+    files:
+      0: Resources/Armor/StealthArmor/StealthArmorInvM2.png
+      
+  - type: STEALTHARMORINVM3.SPK
+    singleImage: true
+    width: 320
+    height: 200
+    files:
+      0: Resources/Armor/StealthArmor/StealthArmorInvM3.png
+      
+  - type: STEALTHARMORINVF0.SPK
+    singleImage: true
+    width: 320
+    height: 200
+    files:
+      0: Resources/Armor/StealthArmor/StealthArmorInvF0.png
+      
+  - type: STEALTHARMORINVF1.SPK
+    singleImage: true
+    width: 320
+    height: 200
+    files:
+      0: Resources/Armor/StealthArmor/StealthArmorInvF1.png
+      
+  - type: STEALTHARMORINVF2.SPK
+    singleImage: true
+    width: 320
+    height: 200
+    files:
+      0: Resources/Armor/StealthArmor/StealthArmorInvF2.png
+      
+  - type: STEALTHARMORINVF3.SPK
+    singleImage: true
+    width: 320
+    height: 200
+    files:
+      0: Resources/Armor/StealthArmor/StealthArmorInvF3.png
+
+  - type: Projectiles
+    height: 3
+    width: 57
+    subX: 3
+    subY: 3
+    files:
+      385: Resources/Items/SniperRifle/SniperRifleBullet.gif
+  - type: Projectiles
+    height: 3
+    width: 57
+    subX: 3
+    subY: 2
+    files:
+      455: Resources/Items/LaserBeamRifle/LaserBeamRifleBeam.gif
+  - type: Projectiles
+    height: 3
+    width: 57
+    subX: 3
+    subY: 2
+    files:
+      420: Resources/Items/PlasmaBeamRifle/PlasmaBeamRifleBeam.gif
+  - type: Projectiles
+    height: 3
+    width: 57
+    subX: 3
+    subY: 3
+    files:
+      490: Resources/Items/HeavyLaser/HeavyLaserBeam.gif
+  - type: Projectiles
+    height: 3
+    width: 57
+    subX: 3
+    subY: 3
+    files:
+      525: Resources/Items/HeavyPlasma/HeavyPlasmaBeam.gif
+  - type: UP002B.SPK
+    singleImage: true
+    width: 320
+    height: 200
+    files:
+      0: Resources/Craft/Tornado/Tornado.gif
+  - type: BASEBITS.PCK
+    files:
+      56: Resources/Craft/Tornado/TornadoBase.gif
+      57: Resources/Craft/Interceptor/InterceptorBase.gif
+  - type: INTICON.PCK
+    files:
+      23: Resources/Craft/Tornado/TornadoMinimized.gif
+      34: Resources/Craft/Tornado/TornadoDogfight.gif
+  - type: RoleIconMachineGunner
+    width: 23
+    height: 23
+    singleImage: true
+    files:
+      0: Resources/Roles/RoleIconMachineGunner.png
+  - type: RoleIconMachineGunnerSimple
+    width: 16
+    height: 16
+    singleImage: true
+    files:
+      0: Resources/Roles/RoleIconMachineGunnerSimple.png
+  - type: RoleIconAntiArmor
+    width: 23
+    height: 23
+    singleImage: true
+    files:
+      0: Resources/Roles/RoleIconAntiArmor.png
+  - type: RoleIconAntiArmorSimple
+    width: 16
+    height: 16
+    singleImage: true
+    files:
+      0: Resources/Roles/RoleIconAntiArmorSimple.png
+  - type: RoleIconMarksman
+    width: 23
+    height: 23
+    singleImage: true
+    files:
+      0: Resources/Roles/RoleIconMarksman.png
+  - type: RoleIconMarksmanSimple
+    width: 16
+    height: 16
+    singleImage: true
+    files:
+      0: Resources/Roles/RoleIconMarksmanSimple.png
+  - type: tankInventoryImage
+    width: 320
+    height: 200
+    singleImage: true
+    files:
+      0: Resources/Vehicles/Inventory/Tank.png
+extraSounds:
+  - type: BATTLE.CAT
+    files:
+      55: Resources/Items/SniperRifle/SniperRifleFire.wav
+extraStrings:
+  - type: en-US
+    strings:
+#Items
+      STR_LASER_SIDEARMS: "Laser Sidearms"
+      STR_LASER_SIDEARMS_UFOPEDIA: "-PLACEHOLDER-"
+      STR_LASER_ASSAULT_WEAPONS: "Laser Assault Weapons"
+      STR_LASER_ASSAULT_WEAPONS_UFOPEDIA: "-PLACEHOLDER-"
+      STR_PRECISION_LASER_WEAPONS: "Precision Laser Weapons"
+      STR_PRECISION_LASER_WEAPONS_UFOPEDIA: "-PLACEHOLDER-"
+      STR_HEAVY_LASER_WEAPONS: "Heavy Laser Weapons"
+      STR_HEAVY_LASER_WEAPONS_UFOPEDIA: "-PLACEHOLDER-"
+      STR_LASER_CANNONS: "Laser Cannons"
+      STR_LASER_CANNONS_UFOPEDIA: "-PLACEHOLDER-"
+      STR_ELECTROLASERS: "Electrolasers"
+      STR_ELECTROLASERS_UFOPEDIA: "-PLACEHOLDER-"
+
+      STR_PLASMA_SIDEARMS: "Plasma Sidearms"
+      STR_PLASMA_SIDEARMS_UFOPEDIA: "-PLACEHOLDER-"
+      STR_PLASMA_ASSAULT_WEAPONS: "Plasma Assault Weapons"
+      STR_PLASMA_ASSAULT_WEAPONS_UFOPEDIA: "-PLACEHOLDER-"
+      STR_PRECISION_PLASMA_WEAPONS: "Precision Plasma Weapons"
+      STR_PRECISION_PLASMA_WEAPONS_UFOPEDIA: "-PLACEHOLDER-"
+      STR_HEAVY_PLASMA_WEAPONS: "Heavy Plasma Weapons"
+      STR_HEAVY_PLASMA_WEAPONS_UFOPEDIA: "-PLACEHOLDER-"
+      STR_PLASMA_CANNONS: "Plasma Cannons"
+      STR_PLASMA_CANNONS_UFOPEDIA: "-PLACEHOLDER-"
+
+      STR_ARC_WEAPONS: "Arc Weapons"
+      
+      STR_BASIC_PISTOL: "Pistol"
+      STR_BASIC_PISTOL_AMMO: "Pistol Ammo"
+      STR_BASIC_PISTOL_UFOPEDIA: "-PLACEHOLDER-"
+
+      STR_BASIC_SMG: "Submachine Gun"
+      STR_BASIC_SMG_AMMO: "Submachine Gun Ammo"
+      STR_BASIC_SMG_UFOPEDIA: "A heavier sidearm alternative to the pistol. It can be effectively wielded with one hand. It is capable of automatic fire, but lacks the accuracy and punch of assault rifles."
+
+      STR_BASIC_RIFLE: "Assault Rifle"
+      STR_BASIC_RIFLE_AMMO: "Assault Rifle Ammo"
+      STR_BASIC_RIFLE_UFOPEDIA: "-PLACEHOLDER-"
+
+      STR_BASIC_SHOTGUN: "Combat Shotgun"
+      STR_BASIC_SHOTGUN_BUCKSHOT: "Shotgun Buckshot Shell"
+      STR_BASIC_SHOTGUN_SLUG: "Shotgun Slug"
+      STR_BASIC_SHOTGUN_UFOPEDIA: "The standard-issue X-COM Combat Shotgun is an excellent weapon for fighting in interior spaces. It loses effectiveness at longer ranges, however. Switching to slugs allows for better armor penetration."
+
+      STR_BASIC_MARKSMAN: "Marksman Rifle"
+      STR_BASIC_MARKSMAN_AMMO: "Marksman Rifle Ammo"
+      STR_BASIC_MARKSMAN_UFOPEDIA: "An accurized variant of assault rifles. It's comparable to the standard-issue X-COM Assault Rifle, but designed for engagements at longer ranges featuring more discretion. Its two-shot burst mode can quickly strike down targets from long ranges. This weapon performs better while kneeling."
+
+      STR_BASIC_MACHINEGUN: "Machine Gun"
+      STR_BASIC_MACHINEGUN_AMMO: "Machine Gun Ammo"
+      STR_BASIC_MACHINEGUN_UFOPEDIA: "A precision-engineered, gas-operated, air-cooled light machine gun. This weapon can sustain accurate, heavy fire for very long periods of time. Due to its bulk, it is inaccurate if fired while standing."
+
+      STR_BASIC_SNIPER: "Sniper Rifle"
+      STR_BASIC_SNIPER_AMMO: "Sniper Rifle Ammo"
+      STR_BASIC_SNIPER_UFOPEDIA: "A bolt-action high-caliber rifle. This sniper rifle was custom-designed for X-COM's forces, and can hit targets at any combat range. It is slow to fire, but powerful. This weapon is best used while kneeling."
+
+      STR_BASIC_MINIGUN: "Minigun"
+      STR_BASIC_MINIGUN_AMMO: "Minigun Ammo"
+      STR_BASIC_MINIGUN_UFOPEDIA: "A massive multi-barreled weapon. Rotary weapons like this are traditionally mounted on vehicles, but this one has been miniaturized sufficiently that strong soldiers can carry it. It fires low-caliber rounds, so it is ineffective against armor."
+
+      STR_BASIC_HEAVY: "Heavy Rifle"
+      STR_BASIC_HEAVY_AMMO: "Heavy Rifle Ammo"
+      STR_BASIC_HEAVY_UFOPEDIA: "The heavy rifle is a modified anti-tank rifle. It is chambered for extremely large rounds, and as such, is only barely portable. It is an effective anti-armor weapon, but is inaccurate if fired while standing."
+
+      STR_LASER_PISTOL: "Laser Pistol"
+      STR_LASER_PISTOL_UFOPEDIA: "-PLACEHOLDER-"
+
+      STR_LASER_SMG: "Pulse Laser Pistol"
+      STR_LASER_SMG_UFOPEDIA: "We've managed to integrate a pulsed firing mechanism into this heavy laser pistol. It is still lighter than an X-COM Laser Rifle, so it can be wielded with one hand effectively, while providing greater firepower than a simple X-COM Laser Pistol."
+
+      STR_LASER_RIFLE: "Laser Rifle"
+      STR_LASER_RIFLE_UFOPEDIA: "-PLACEHOLDER-"
+
+      STR_LASER_SHOTGUN: "Prismatic Laser"
+      STR_LASER_SHOTGUN_UFOPEDIA: "-PLACEHOLDER-"
+
+      STR_LASER_MARKSMAN: "Strike Beam Rifle"
+      STR_LASER_MARKSMAN_UFOPEDIA: "Considerable effort went into developing this carefully refined Laser Rifle. While it is slower to fire, it is accurate enough to defeat hostile targets at anything but the longest ranges."
+
+      STR_LASER_SNIPER: "Precision Beam Rifle"
+      STR_LASER_SNIPER_UFOPEDIA: "An overcharged laser rifle with an intense focusing system. This magnifies the power and accuracy of the beam, but it is prone to overheating and must be allowed to cool between shots. It makes an excellent sniping weapon."
+
+      STR_LASER_MACHINEGUN: "Pulse Laser"
+      STR_LASER_MACHINEGUN_UFOPEDIA: "This laser weapon is designed for sustained, long-duration fire. It features a heavy modular heatsink, which can be hotswapped during use to keep the rate of fire up. It is inaccurate while standing."
+
+      STR_LASER_MINIGUN: "Hyper Pulse Laser"
+      STR_LASER_MINIGUN_UFOPEDIA: "Designed to replace the Minigun, this oversized pulse laser is capable of firing thousands of laser pulses per minute. It is not effective against armor."
+
+      STR_LASER_HEAVY: "Heavy Laser Rifle"
+      STR_LASER_HEAVY_UFOPEDIA: "Filling the need for a laser-based anti-armor weapon, we've designed the Heavy Laser to perform similarly to the Heavy Rifle. It is slow and too heavy to use while standing, but the laser beam it generates can punch through all but the thickest alien armor."
+
+      STR_PLASMA_PISTOL: "Alien Plasma Pistol"
+      STR_XCOM_PLASMA_PISTOL: "Plasma Pistol"
+      STR_PLASMA_PISTOL_AMMO: "Plasma Pistol Ammo"
+      STR_PLASMA_PISTOL_UFOPEDIA: "-PLACEHOLDER-"
+      STR_PLASMA_PISTOL_AMMO_UFOPEDIA: "-PLACEHOLDER-"
+
+      STR_PLASMA_SMG: "Alien Plasma Blaster Pistol"
+      STR_XCOM_PLASMA_SMG: "Plasma Blaster Pistol"
+      STR_PLASMA_SMG_AMMO: "Plasma Blaster Pistol Ammo"
+      STR_PLASMA_SMG_UFOPEDIA: "Apparently filling the need for a heavier sidearm in the alien arsenal, this weapon can be comfortably used in a single hand, but has a much higher fire rate than a Plasma Pistol."
+      STR_PLASMA_SMG_AMMO_UFOPEDIA: "A compact power cell for the Plasma Blaster Pistol."
+
+      STR_PLASMA_RIFLE: "Alien Plasma Rifle"
+      STR_XCOM_PLASMA_RIFLE: "Plasma Rifle"
+      STR_PLASMA_RIFLE_AMMO: "Plasma Rifle Ammo"
+      STR_PLASMA_RIFLE_UFOPEDIA: "-PLACEHOLDER-"
+      STR_PLASMA_RIFLE_AMMO_UFOPEDIA: "-PLACEHOLDER-"
+
+      STR_PLASMA_SHOTGUN: "Alien Plasma Burst Rifle"
+      STR_XCOM_PLASMA_SHOTGUN: "Plasma Burst Rifle"
+      STR_PLASMA_SHOTGUN_AMMO: "Plasma Burst Rifle Ammo"
+      STR_PLASMA_SHOTGUN_UFOPEDIA: "An alien weapon capable of firing an overcharged blast of plasma that quickly scatters in random directions. It is similar to a shotgun in function."
+      STR_PLASMA_SHOTGUN_AMMO_UFOPEDIA: "This elerium magazine appears to be designed to operate in bursts, providing a large amount of energy on demand before returning to idle."
+
+      STR_PLASMA_MARKSMAN: "Alien Plasma Shock Rifle"
+      STR_XCOM_PLASMA_MARKSMAN: "Plasma Shock Rifle"
+      STR_PLASMA_MARKSMAN_AMMO: "Plasma Shock Rifle Ammo"
+      STR_PLASMA_MARKSMAN_UFOPEDIA: "This weapon is considerably more accurate than a normal plasma rifle. It is quite capable of eliminating hostiles at long ranges, but retains enough flexibility to be used at closer ranges as well."
+      STR_PLASMA_MARKSMAN_AMMO_UFOPEDIA: "This power source for the Plasma Shock Rifle is tailored to provide the quick bursts of energy that it demands."
+
+      STR_PLASMA_SNIPER: "Alien Plasma Beam Rifle"
+      STR_XCOM_PLASMA_SNIPER: "Plasma Beam Rifle"
+      STR_PLASMA_SNIPER_AMMO: "Plasma Beam Rifle Ammo"
+      STR_PLASMA_SNIPER_UFOPEDIA: "This appears to be a variant of a plasma rifle. It fires a fast, focused discharge of ionized particles. The plasma beam produced by this weapon is devastatingly effective if carefully aimed, but the weapon charges too slowly to be used effectively at close ranges."
+      STR_PLASMA_SNIPER_AMMO_UFOPEDIA: "A power source for the Plasma Beam Rifle, designed to provide a stable supply of power for consistent beam generation."
+
+      STR_PLASMA_MACHINEGUN: "Alien Plasma Blaster"
+      STR_XCOM_PLASMA_MACHINEGUN: "Plasma Blaster"
+      STR_PLASMA_MACHINEGUN_AMMO: "Plasma Blaster Ammo"
+      STR_PLASMA_MACHINEGUN_UFOPEDIA: "A plasma weapon clearly engineered for a high rate of fire. It is too cumbersome to fire effectively while standing."
+      STR_PLASMA_MACHINEGUN_AMMO_UFOPEDIA: "This large elerium-fueled power supply is capable of quickly providing a great deal of energy. It is designed for the Plasma Blaster."
+
+      STR_PLASMA_MINIGUN: "Alien Plasma Pulsar"
+      STR_XCOM_PLASMA_MINIGUN: "Plasma Pulsar"
+      STR_PLASMA_MINIGUN_AMMO: "Plasma Pulsar Ammo"
+      STR_PLASMA_MINIGUN_UFOPEDIA: "This massive alien weapon is capable of an incredible rate of fire, but is very inaccurate. It can easily shred unarmored targets."
+      STR_PLASMA_MINIGUN_AMMO_UFOPEDIA: "The Plasma Pulsar uses a massive amount of power to fire, requiring a heavy elerium power source to operate."
+
+      STR_PLASMA_HEAVY: "Alien Heavy Plasma Rifle"
+      STR_XCOM_PLASMA_HEAVY: "Heavy Plasma Rifle"
+      STR_PLASMA_HEAVY_AMMO: "Heavy Plasma Rifle Ammo"
+      STR_PLASMA_HEAVY_UFOPEDIA: "This terrifying weapon system appears to be a repurposed plasma cannon from a scout UFO. It is capable of punching through alien armor with little effort."
+      STR_PLASMA_HEAVY_AMMO_UFOPEDIA: "-PLACEHOLDER-"
+
+      STR_ARC_RIFLE: "Arc Rifle"
+      STR_ARC_RIFLE_AMMO: "Arc Rifle Ammo"
+      STR_ARC_RIFLE_UFOPEDIA: "-PLACEHOLDER-"
+      STR_ARC_RIFLE_AMMO_UFOPEDIA: "-PLACEHOLDER-"
+
+      STR_ARC_LAUNCHER: "Arc Launcher"
+      STR_ARC_LAUNCHER_UFOPEDIA: "-PLACEHOLDER-"
+
+      STR_GRENADE_LAUNCHER: "Grenade Launcher"
+      STR_GRENADE_LAUNCHER_UFOPEDIA: "-PLACEHOLDER-"
+      STR_GL_HE_AMMO: "GL-HE Explosive Grenades"
+      STR_GL_HE_AMMO_UFOPEDIA: "-PLACEHOLDER-"
+      STR_GL_HE_FISSION_AMMO: "GL-HE-X1 Fission Grenades"
+      STR_GL_HE_FISSION_AMMO_UFOPEDIA: "-PLACEHOLDER-"
+      STR_GL_HE_FUSION_AMMO: "GL-HE-X2 Fusion Grenades"
+      STR_GL_HE_FUSION_AMMO_UFOPEDIA: "-PLACEHOLDER-"
+      STR_GL_I_AMMO: "GL-I Incendiary Grenades"
+      STR_GL_I_AMMO_UFOPEDIA: "-PLACEHOLDER-"
+
+      STR_SMALL_ROCKET: "HEAT Rocket"
+      STR_LARGE_ROCKET: "Thermobaric Rocket"
+      STR_FISSION_ROCKET: "Fission Rocket"
+      STR_FISSION_ROCKET_UFOPEDIA: "An advanced rocket using a miniature elerium implosion core. This provides a substantial upgrade in destructive power. It can be loaded into standard X-COM rocket launchers."
+      STR_FUSION_ROCKET: "Fusion Rocket"
+      STR_FUSION_ROCKET_UFOPEDIA: "-PLACEHOLDER-"
+      STR_FUSION_CLUSTER_ROCKET: "Fusion Cluster Rocket"
+      STR_FUSION_CLUSTER_ROCKET_UFOPEDIA: "The Fusion Cluster Rocket fires one oversized rocket, which immediately splits into six individual rockets upon hitting the air. Care must be used with this weapon, as it causes immense damage to the surrounding area."
+      STR_PLASMA_ROCKET: "Plasma Rocket"
+      STR_PLASMA_ROCKET_UFOPEDIA: "This rocket's warhead is actually a repurposed Plasma Rifle particle chamber. At impact, it overloads itself, destroying the chamber and creating a very short-range and intense plasma burst. This is an extremely effective anti-armor weapon."
+
+      STR_FISSION_WARHEADS: "Fission Warheads"
+      STR_FUSION_WARHEADS: "Fusion Warheads"
+
+      STR_INCENDIARY_GRENADE: "Incendiary Grenade"
+      STR_INCENDIARY_GRENADE_UFOPEDIA: "Incendiary grenades can be thrown to quickly ignite an area. Useful for creating light, incinerating hostile aliens, or zoning off areas."
+
+      STR_PLASMA_BEAM_UC: "PLASMA CANNON"
+      STR_PLASMA_BEAM: "Plasma Cannon"
+
+      STR_CANNON_ROUNDS_X50: "Cannon Rounds"
+
+      STR_ELECTROLASER: "Electrolaser"
+      STR_ELECTROLASER_UFOPEDIA: "-PLACEHOLDER-"
+      STR_ELECTROLASER_PACK: "Electrolaser Cell"
+
+      STR_FIELD_SURGERY_UNIT: "Field Surgery Unit"
+      STR_FIELD_SURGERY_UNIT_UFOPEDIA: "-PLACEHOLDER-"
+
+      STR_FISSION_EXPLOSIVES: "Fission Explosives"
+      STR_FISSION_EXPLOSIVE: "Fission Explosive"
+      STR_FISSION_EXPLOSIVE_UFOPEDIA: "We have designed a new demolition charge using an elerium implosion core. The destructive potential of this device is extreme, so stand clear of the explosion after placing it."
+
+      STR_FUSION_EXPLOSIVES: "Fusion Explosives"
+      STR_FUSION_EXPLOSIVE: "Fusion Explosive"
+      STR_FUSION_EXPLOSIVE_UFOPEDIA: "Incorporating a lithium deuteride liner in the elerium implosion core has boosted the explosive yield of our demolition charges significantly. This is the most powerful man-portable explosive ever created. Use with care."
+
+      STR_SHOCK_GRENADE: "Shock Grenade"
+      STR_SHOCK_GRENADE_UFOPEDIA: "Using design techniques from alien grenades and Stun Bombs, we've created a small, throwable version of a Stun Bomb. This allows soldiers more flexibility when capturing aliens."
+
+      STR_PLASMA_WEAPONS: "Plasma Weapons"
+      
+      STR_GRAPPLING_HOOK: "Grappling Hook"
+      STR_BATTLE_LIGHTS: "Combat Lights"
+      STR_HEADLAMP: "Headlamp"
+      STR_HWP_HEADLIGHTS: "HWP Headlights"
+      STR_NIGHT_VISION: "Night Vision"
+      STR_NIGHT_VISION_GOGGLES: "Night Vision Goggles"
+      STR_HWP_NIGHT_VISION_MODULE: "HWP Night Vision Module"
+
+      STR_PSIONICS: "Psionics"
+
+      STR_PSI_ORB: "Psi Orb"
+
+      STR_HYPER_WAVE_TRANSMISSIONS: "Hyper-wave Transmissions"
+
+      STR_HEAVY_TANK: "Heavy Tank"
+      STR_HEAVY_TANK_UFOPEDIA: "-PLACEHOLDER-"
+
+      STR_HOVERTANK: "Hovertank"
+      STR_HOVERTANK_UFOPEDIA: "-PLACEHOLDER-"
+
+      STR_FUSION_WEAPONS: "Fusion Weapons"
+
+      STR_FUSION_POWER: "Fusion Power"
+
+      STR_FISSION_WEAPONS: "Fission Weapons"
+
+      STR_POWER_SUIT: "Powered Armor"
+      STR_POWER_SUIT_UC: "POWERED ARMOR"
+
+      STR_ADVANCED_ARMOR: "Advanced Armor"
+
+      STR_SCOUT_ARMOR: "Scout Armor"
+      STR_SCOUT_ARMOR_UC: "LOOKOUT SCOUT ARMOR"
+      STR_SCOUT_ARMOR_UFOPEDIA: "The \"Lookout\" Scout Armor Suit is our best attempt at using alien alloys in the design of a lightweight suit of armor to protect our soldiers. Thanks to the low density of alien alloys, we were able to provide significant protection without encumbering the wearer."
+      STR_HEAVY_ARMOR: "Heavy Armor"
+      STR_HEAVY_ARMOR_UC: "GUARDIAN HEAVY ARMOR"
+      STR_HEAVY_ARMOR_UFOPEDIA: "Filling the need for a heavy armor suit that can protect soldiers pushing into fortified territory, the \"Guardian\" Heavy Armor Suit is the heaviest alien alloy-based armor the human frame is capable of carrying, and as such, slows the wearer considerably. The front plates are thick and will deflect light plasma weapons, but the other parts of the armor are much thinner."
+      STR_STEALTH_ARMOR: "Stealth Armor"
+      STR_STEALTH_ARMOR_UC: "SHADOW STEALTH ARMOR"
+      STR_STEALTH_ARMOR_UFOPEDIA: "After studying the Chryssalid's active camouflage defense, we were able to implement a similar technique into our new \"Shadow\" Stealth Armor Suit. The suit will make the wearer harder to spot if they refrain from fast, aggressive actions. It also uses a small elerium power core to augment the wearer's speed."
+      STR_ASSAULT_ARMOR: "Assault Armor"
+      STR_ASSAULT_ARMOR_UC: "AEGIS ASSAULT ARMOR"
+      STR_ASSAULT_ARMOR_UFOPEDIA: "The \"Aegis\" Assault Armor Suit is an evolution of our former heavy armor designs, utilizing a new alloy layering scheme based on the Mutons' armored skin. It also integrates a primitive elerium power core into the suit that powers small servos in the suit's limbs, helping the wearer to lift heavier loads and reducing strain."
+      STR_FLYING_ARMOR: "Flying Armor"
+      STR_FLYING_ARMOR_UC: "WRAITH FLYING ARMOR"
+      STR_FLYING_ARMOR_UFOPEDIA: "The \"Wraith\" Flying Armor Suit is a marvel of hybrid technology. It integrates an elerium-based anti-gravity repulsor that allows the wearer to freely move throughout the air. The repulsor also acts to enhance the wearer's speed significantly, despite the addition of heavier armor plating than previous light armor suits had. We have also retained the active camouflage system from the \"Shadow\" armor."
+      STR_POWER_ARMOR: "Power Armor"
+      STR_POWER_ARMOR_UC: "PALADIN POWER ARMOR"
+      STR_POWER_ARMOR_UFOPEDIA: "The \"Paladin\" Powered Armor Suit is the pinnacle of human-alien armor technology. Rivalling the protection rating of small tanks, this suit is capable of sustaining direct hits to the front plates from the heaviest alien infantry weapons while keeping the wearer in one piece. It integrates an advanced power core to drive the suit, allowing the soldier to carry much more."
+
+      STR_HWP_BASIC_LIGHT_CANNON: "HWP Light Cannon"
+      STR_HWP_BASIC_LIGHT_CANNON_AMMO: "HWP Light Cannon Ammo"
+      STR_HWP_BASIC_MINIGUN: "HWP Minigun"
+      STR_HWP_BASIC_MINIGUN_AMMO: "HWP Minigun Ammo"
+      STR_HWP_BASIC_MACHINEGUN: "HWP Machine Gun"
+      STR_HWP_BASIC_MACHINEGUN_AMMO: "HWP Machine Gun Ammo"
+      STR_HWP_LASER_MACHINEGUN: "HWP Pulse Laser"
+      STR_HWP_LASER_MINIGUN: "HWP Hyper Pulse Laser"
+      STR_HWP_LASER_LIGHT_CANNON: "HWP Light Laser Cannon"
+      STR_HWP_LASER_HEAVY_CANNON: "HWP Heavy Laser Cannon"
+      STR_HWP_PLASMA_MACHINEGUN: "HWP Plasma Blaster"
+      STR_HWP_PLASMA_MACHINEGUN_AMMO: "HWP Plasma Blaster Ammo"
+      STR_HWP_PLASMA_MINIGUN: "HWP Plasma Pulsar"
+      STR_HWP_PLASMA_MINIGUN_AMMO: "HWP Plasma Pulsar Ammo"
+      STR_HWP_PLASMA_LIGHT_CANNON: "HWP Light Plasma Cannon"
+      STR_HWP_PLASMA_LIGHT_CANNON_AMMO: "HWP Light Plasma Cannon Ammo"
+      STR_HWP_PLASMA_HEAVY_CANNON: "HWP Heavy Plasma Cannon"
+      STR_HWP_PLASMA_HEAVY_CANNON_AMMO: "HWP Heavy Plasma Cannon Ammo"
+      STR_HWP_MISSILE_LAUNCHER: "HWP Missile Launcher"
+      STR_HWP_HEAT_MISSILE: "HWP HEAT Missile"
+      STR_HWP_THERMOBARIC_MISSILE: "HWP Thermobaric Missile"
+      STR_HWP_INCENDIARY_MISSILE: "HWP Incendiary Missile"
+      STR_HWP_PLASMA_MISSILE: "HWP Plasma Missile"
+      STR_HWP_FISSION_MISSILE: "HWP Fission Missile"
+      STR_HWP_FUSION_MISSILE: "HWP Fusion Missile"
+      STR_HWP_BASIC_HEAVY_CANNON: "HWP Heavy Cannon"
+      STR_HWP_BASIC_HEAVY_CANNON_AMMO: "HWP Heavy Cannon Ammo"
+      STR_HWP_ARTILLERY_CANNON: "HWP Artillery Cannon"
+      STR_HWP_ARTILLERY_CANNON_HE: "HWP Artillery Shell"
+      STR_HWP_ARTILLERY_CANNON_CLUSTER: "HWP Artillery Cluster Shell"
+      STR_HWP_ARTILLERY_CANNON_I: "HWP Artillery Incendiary Shell"
+      STR_HWP_ARTILLERY_CANNON_SMOKE: "HWP Artillery Smoke Shell"
+      STR_HWP_FISSION_EXPLOSIVE_SHELL: "HWP Fission Shell"
+      STR_HWP_FISSION_CLUSTER_SHELL: "HWP Fission Cluster Shell"
+      STR_HWP_FUSION_EXPLOSIVE_SHELL: "HWP Fusion Shell"
+      STR_HWP_FUSION_CLUSTER_SHELL: "HWP Fusion Cluster Shell"
+      STR_HWP_SMART_LAUNCHER: "HWP Smart Launcher"
+      STR_HWP_SMART_FUSION_BOMB: "HWP Smart Fusion Bomb"
+
+      STR_LAUNCH_MISSILE: "Launch"
+
+#Craft
+      STR_TORNADO: "TORNADO"
+      STR_TORNADO_UFOPEDIA: "IMPROVED INTERCEPTOR DESIGN. AN AIRFRAME MADE OF ALIEN ALLOYS ENHANCES BOTH ITS SPEED AND DURABILITY."
+      STR_IMPROVED_INTERCEPTOR: "Improved Interceptor"
+
+#Roles
+      STR_ROLE_MACHINEGUNNER: "Machine Gunner"
+      STR_ROLE_MACHINEGUNNER_SHORT: "MGN"
+      STR_ROLE_ANTIARMOR: "Anti-armor"
+      STR_ROLE_ANTIARMOR_SHORT: "AAR"
+      STR_ROLE_MARKSMAN: "Designated Marksman"
+      STR_ROLE_MARKSMAN_SHORT: "MRK"
+      
+#Manufacture Categories
+      STR_HWP_ARMOR: "HWP Armor"
+      STR_HWP_ADDON: "HWP Upgrades"
+      STR_HWP_WEAPON: "HWP Weapons"
+      STR_HWP_ENGINE: "HWP Engines"
+      STR_HWP_AMMO: "HWP Ammunition"

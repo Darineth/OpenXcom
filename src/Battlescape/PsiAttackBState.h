@@ -18,6 +18,7 @@
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "BattleState.h"
+#include "BattlescapeGame.h"
 
 namespace OpenXcom
 {
@@ -26,6 +27,8 @@ class BattlescapeGame;
 class BattleUnit;
 class BattleItem;
 class Tile;
+class BattleActionAttack;
+class RuleDamageType;
 
 /**
  * A Psi Attack state.
@@ -36,6 +39,8 @@ private:
 	BattleUnit *_unit, *_target;
 	BattleItem *_item;
 	bool _initialized;
+	BattleActionAttack _attack;
+	const RuleDamageType *_psychicDamage;
 public:
 	/// Creates a new PsiAttack state.
 	PsiAttackBState(BattlescapeGame *parent, BattleAction action);

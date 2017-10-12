@@ -28,6 +28,7 @@ class Text;
 class TextEdit;
 class Target;
 class Globe;
+class AlienDeployment;
 
 /**
  * Generic window used to display all the
@@ -39,10 +40,11 @@ private:
 	Target *_target;
 	Globe *_globe;
 
-	TextButton *_btnIntercept, *_btnOk;
+	TextButton *_btnIntercept, *_btnOk, *_btnInfo;
 	Window *_window;
 	TextEdit *_edtTitle;
 	Text *_txtTargetted, *_txtFollowers;
+	AlienDeployment *_deploymentRule;
 public:
 	/// Creates the Target Info state.
 	TargetInfoState(Target *target, Globe *globe);
@@ -52,6 +54,8 @@ public:
 	void btnInterceptClick(Action *action);
 	/// Handler for clicking the OK button.
 	void btnOkClick(Action *action);
+	/// Handler for clicking the Info button.
+	void btnInfoClick(Action *action);
 	/// Handler for changing the text on the Name edit.
 	void edtTitleChange(Action *action);
 };

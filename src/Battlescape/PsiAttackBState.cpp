@@ -40,7 +40,7 @@ namespace OpenXcom
 /**
  * Sets up a PsiAttackBState.
  */
-PsiAttackBState::PsiAttackBState(BattlescapeGame *parent, BattleAction action) : BattleState(parent, action), _unit(0), _item(0), _initialized(false)
+PsiAttackBState::PsiAttackBState(BattlescapeGame *parent, BattleAction action) : BattleState(parent, action), _unit(0), _item(0), _initialized(false), _attack(action.type, action.actor, action.weapon, action.ammo), _psychicDamage(parent->getMod()->getDamageType(DT_PSYCHIC))
 {
 }
 
@@ -55,7 +55,7 @@ PsiAttackBState::~PsiAttackBState()
  * Initializes the sequence:
  * - checks if the action is valid,
  * - adds a psi attack animation to the world.
- * - from that point on, the explode state takes precedence.
+ * - from that point on, the explode state takes precedence (and perform psi attack).
  * - when that state pops, we'll do our first think()
  */
 void PsiAttackBState::init()
@@ -64,7 +64,12 @@ void PsiAttackBState::init()
 	_initialized = true;
 
 	_item = _action.weapon;
-	_unit = _action.actor;
+
+	if (!_item) // can't make a psi attack without a weapon
+	{
+		_parent->popState();
+		return;
+	}
 
 	if (!_parent->getSave()->getTile(_action.target)) // invalid target position
 	{
@@ -72,9 +77,21 @@ void PsiAttackBState::init()
 		return;
 	}
 
-	if (_unit->getAvailableTimeUnits() < _action.TU) // not enough time units
+	_unit = _action.actor;
+
+	if (_parent->getTileEngine()->distance(_action.actor->getPosition(), _action.target) > _action.weapon->getRules()->getMaxRange())
 	{
-		_action.result = "STR_NOT_ENOUGH_TIME_UNITS";
+		// out of range
+		_action.result = "STR_OUT_OF_RANGE";
+		_parent->popState();
+		return;
+	}
+
+	_action.updateTU();
+	std::string tuMessage;
+	if (!_action.haveTU(&tuMessage)) // not enough time units
+	{
+		_action.result = tuMessage.empty() ? "STR_NOT_ENOUGH_TIME_UNITS" : tuMessage;
 		_parent->popState();
 		return;
 	}
@@ -88,20 +105,20 @@ void PsiAttackBState::init()
 		switch (_action.type)
 		{
 		case BA_PANIC:
-			psiCost = _action.weapon->getRules()->getPsiCostPanic();
+			psiCost = _action.weapon->getRules()->getCostPanic().Ammo;
 			break;
 
 		case BA_MINDCONTROL:
-			psiCost = _action.weapon->getRules()->getPsiCostMindControl();
+			psiCost = _action.weapon->getRules()->getCostMind().Ammo;
 			break;
 
 		case BA_CLAIRVOYANCE:
-			psiCost = _action.weapon->getRules()->getPsiCostClairvoyance();
+			psiCost = _action.weapon->getRules()->getCostClairvoyance().Ammo;
 			requireTarget = false;
 			break;
 
 		case BA_MINDBLAST:
-			psiCost = _action.weapon->getRules()->getPsiCostMindBlast();
+			psiCost = _action.weapon->getRules()->getCostMindBlast().Ammo;
 
 			Position targetVoxel;
 			_parent->getSave()->getTileEngine()->getTargetVoxel(&_action, _action.target, targetVoxel);
@@ -120,7 +137,8 @@ void PsiAttackBState::init()
 
 	if(psiCost)
 	{
-		BattleItem *ammo = _action.weapon->getAmmoItem();
+		int slot = _action.weapon->getActionConf(_action.type)->ammoSlot;
+		BattleItem *ammo = _action.weapon->getAmmoForAction(_action.type, &_action.result);
 		if(!ammo)
 		{
 			_action.result = "STR_NO_AMMUNITION_LOADED";
@@ -136,7 +154,7 @@ void PsiAttackBState::init()
 		else if(!ammo->spendBullet(psiCost))
 		{
 			_parent->getSave()->removeItem(ammo);
-			_action.weapon->setAmmoItem(0);
+			_action.weapon->setAmmoForSlot(slot, nullptr);
 		}
 	}
 
@@ -165,12 +183,12 @@ void PsiAttackBState::init()
 	{
 		int height = _target->getFloatHeight() + (_target->getHeight() / 2) - _parent->getSave()->getTile(_action.target)->getTerrainLevel();
 		Position voxel = _action.target * Position(16, 16, 24) + Position(8, 8, height);
-		_parent->statePushFront(new ExplosionBState(_parent, voxel, _item, _unit, 0, false, true));
+		_parent->statePushFront(new ExplosionBState(_parent, voxel, _attack));
 	}
 	else
 	{
 		Position voxel = _action.target * Position(16, 16, 24) + Position(8, 8, 12);
-		_parent->statePushFront(new ExplosionBState(_parent, voxel, _item, _unit, 0, false, true));
+		_parent->statePushFront(new ExplosionBState(_parent, voxel, _attack));
 	}
 }
 
@@ -228,7 +246,7 @@ void PsiAttackBState::psiAttack()
 					tile->setDiscovered(true, 0);
 					tile->setDiscovered(true, 1);
 					tile->setDiscovered(true, 2);
-					tile->setVisibleCount(1, 0);
+					tile->changeVisibleCounts(1, 0);
 
 					if (tile->getUnit())
 					{
@@ -322,15 +340,15 @@ void PsiAttackBState::psiAttack()
 			{
 				// Decisive victory
 				int power = difference / 6.0 * dist * RNG::generate(1.0, 3.0);
-				victim->damage(tiles, _action.actor, Position(), power, DT_PSYCHIC);
+				victim->damage(tiles, _action.actor, Position(), power, _psychicDamage, _parent->getSave(), _attack);
 			}
 			else
 			{
 				// Victory/backlash
-				victim->damage(tiles, _action.actor, Position(), RNG::generate(3, 6) * dist * RNG::generate(1.0, 3.0), DT_PSYCHIC);
-				_action.actor->damage(tiles, victim, Position(), RNG::generate(2, 4) * dist * RNG::generate(1.0, 3.0), DT_PSYCHIC);
+				victim->damage(tiles, _action.actor, Position(), RNG::generate(3, 6) * dist * RNG::generate(1.0, 3.0), _psychicDamage, _parent->getSave(), _attack);
+				_action.actor->damage(tiles, victim, Position(), RNG::generate(2, 4) * dist * RNG::generate(1.0, 3.0), _psychicDamage, _parent->getSave(), _attack);
 			}
-			_parent->checkForCasualties(_action.weapon, _unit, false, false, false);
+			_parent->checkForCasualties(_psychicDamage, _attack);
 			break;
 		}
 		case BA_MINDCONTROL:
@@ -348,7 +366,7 @@ void PsiAttackBState::psiAttack()
 				_action.actor->spendTimeUnits(_action.actor->getTimeUnits() - 5);
 			}
 			tiles->calculateFOV(victim->getPosition());
-			tiles->calculateUnitLighting();
+			tiles->calculateLighting(LL_UNITS, victim->getPosition());
 			victim->recoverTimeUnits();
 			victim->allowReselect();
 			victim->abortTurn(); // resets unit status to STANDING
@@ -372,8 +390,8 @@ void PsiAttackBState::psiAttack()
 		if (_action.type == BA_MINDBLAST)
 		{
 			int power = (-difference + RNG::generate(1, 2)) / 3.0 * dist * RNG::generate(2.0, 4.0);
-			_action.actor->damage(tiles, victim, Position(), power, DT_PSYCHIC);
-			_parent->checkForCasualties(_action.weapon, _unit, false, false, false);
+			_action.actor->damage(tiles, victim, Position(), power, _psychicDamage, _parent->getSave(), _attack);
+			_parent->checkForCasualties(_psychicDamage, _attack, false, false, false);
 		}
 
 		if (Options::allowPsiStrengthImprovement)
@@ -383,7 +401,10 @@ void PsiAttackBState::psiAttack()
 		//return false;
 	}
 
-	if (_action.type != BA_MINDBLAST) { tiles->displayDamage(_action.actor, victim, _action.type, DT_NONE, success ? 1 : 0, 0, 0); }
+	if (_action.type != BA_MINDBLAST)
+	{
+		tiles->displayDamage(_action.actor, victim, _action.type, nullptr, success ? 1 : 0, 0, 0);
+	}
 }
 
 }

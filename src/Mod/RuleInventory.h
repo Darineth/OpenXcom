@@ -50,6 +50,7 @@ private:
 	std::vector<RuleSlot> _slots;
 	std::map<std::string, int> _costs;
 	int _listOrder;
+	int _hand;
 	bool _countStats;
 	int _armorSide;
 	bool _allowGenericItems;
@@ -88,7 +89,7 @@ public:
 	/// Checks for a slot in a certain position.
 	bool checkSlotInPosition(int *x, int *y) const;
 	/// Checks if an item fits in a slot.
-	bool fitItemInSlot(RuleItem *item, int x, int y) const;
+	bool fitItemInSlot(const RuleItem *item, int x, int y) const;
 	/// Gets a certain cost in the inventory.
 	int getCost(RuleInventory *slot) const;
 	int getListOrder() const;

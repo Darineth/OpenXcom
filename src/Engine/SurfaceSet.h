@@ -17,7 +17,8 @@
  * You should have received a copy of the GNU General Public License
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <map>
+
+#include <vector>
 #include <string>
 #include <SDL.h>
 
@@ -35,8 +36,8 @@ class Surface;
 class SurfaceSet
 {
 private:
-	int _width, _height;
-	std::map<int, Surface*> _frames;
+	int _width, _height, _offset;
+	std::vector<Surface*> _frames;
 public:
 	/// Crates a surface set with frames of the specified size.
 	SurfaceSet(int width, int height);
@@ -60,7 +61,6 @@ public:
 	size_t getTotalFrames() const;
 	/// Sets the surface set's palette.
 	void setPalette(SDL_Color *colors, int firstcolor = 0, int ncolors = 256);
-	std::map<int, Surface*> *getFrames();
 };
 
 }

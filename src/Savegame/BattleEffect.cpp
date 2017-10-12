@@ -171,7 +171,7 @@ namespace OpenXcom
 
 		if (tiles)
 		{
-			tiles->displayDamage(_source, _unit, _rules->getIsNegative() ? BA_EFFECT_NEGATIVE : BA_EFFECT_POSITIVE, DT_NONE, 0, 0, 0, _type);
+			tiles->displayDamage(_source, _unit, _rules->getIsNegative() ? BA_EFFECT_NEGATIVE : BA_EFFECT_POSITIVE, Game::getMod()->getDamageType(DT_NONE), 0, 0, _type);
 		}
 
 		applyComponents(_rules->getInitialComponents(), tiles);
@@ -179,10 +179,6 @@ namespace OpenXcom
 		{
 			_unit->getActiveEffects().push_back(this);
 			_unit->updateStats();
-			if (getComponent(EC_STEALTH))
-			{
-				_unit->invalidateCache();
-			}
 		}
 		else
 		{
@@ -228,9 +224,8 @@ namespace OpenXcom
 	{
 		if (getComponent(EC_CIRCULAR_LIGHT) || getComponent(EC_DIRECTIONAL_LIGHT) || getComponent(EC_STEALTH))
 		{
-			_unit->invalidateCache();
 			TileEngine *tiles = Game::getGame()->getSavedGame()->getSavedBattle()->getTileEngine();
-			if (tiles) { tiles->calculateUnitLighting(); }
+			if (tiles) { tiles->calculateLighting(LL_UNITS); }
 		}
 
 		if (removeFromUnit)
@@ -277,7 +272,7 @@ namespace OpenXcom
 		case EC_HEALTH:
 			if (component->magnitude > 0)
 			{
-				_unit->damage(tiles, _source, Position(), (int)component->magnitude, component->damageType, component->ignoreArmor, 0, _type);
+				_unit->damage(tiles, _source, Position(), (int)component->magnitude, Game::getMod()->getDamageType(component->damageType), Game::getSavedGame()->getSavedBattle(), BattleActionAttack(BA_NONE, _source), SIDE_MAX, BODYPART_MAX, component->ignoreArmor, 0, _type);
 			}
 			else
 			{
@@ -291,7 +286,7 @@ namespace OpenXcom
 		case EC_DIRECTIONAL_LIGHT:
 			{
 				TileEngine *tiles = Game::getGame()->getSavedGame()->getSavedBattle()->getTileEngine();
-				if (tiles) { tiles->calculateUnitLighting(); }
+				if (tiles) { tiles->calculateLighting(LL_UNITS); }
 			}
 			break;
 		}

@@ -34,6 +34,8 @@ class TextList;
 class StatisticsState : public State
 {
 private:
+	int _prisonType;
+
 	TextButton *_btnOk;
 	Window *_window;
 	Text *_txtTitle;

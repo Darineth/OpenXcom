@@ -18,6 +18,7 @@
  */
 #include "MissionDetectedState.h"
 #include "../Engine/Game.h"
+#include "../Engine/Sound.h"
 #include "../Mod/Mod.h"
 #include "../Engine/LocalizedText.h"
 #include "../Interface/TextButton.h"
@@ -84,6 +85,12 @@ MissionDetectedState::MissionDetectedState(MissionSite *mission, GeoscapeState *
 	_txtCity->setBig();
 	_txtCity->setAlign(ALIGN_CENTER);
 	_txtCity->setText(tr(mission->getCity()));
+
+	if (mission->getDeployment()->getAlertSound() > -1)
+	{
+		_game->getMod()->getSound("GEO.CAT", mission->getDeployment()->getAlertSound())->play();
+		_soundPlayed = true;
+	}
 }
 
 /**

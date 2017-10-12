@@ -41,7 +41,14 @@ namespace OpenXcom
 		_txtTitle = new Text(200, 32, 5, 24);
 
 		// Set palette
-		setPalette("PAL_BATTLEPEDIA");
+		if (defs->customPalette)
+		{
+			setCustomPalette(_game->getMod()->getSurface(defs->image_id)->getPalette(), Mod::BATTLESCAPE_CURSOR);
+		}
+		else
+		{
+			setPalette("PAL_BATTLEPEDIA");
+		}
 
 		ArticleState::initLayout();
 

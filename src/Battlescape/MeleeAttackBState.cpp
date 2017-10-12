@@ -29,6 +29,7 @@
 #include "../Savegame/SavedBattleGame.h"
 #include "../Savegame/BattleUnit.h"
 #include "../Savegame/BattleItem.h"
+#include "../Engine/Exception.h"
 #include "../Engine/Sound.h"
 #include "../Mod/Mod.h"
 #include "../Mod/RuleItem.h"
@@ -39,7 +40,7 @@ namespace OpenXcom
 /**
  * Sets up a MeleeAttackBState.
  */
-MeleeAttackBState::MeleeAttackBState(BattlescapeGame *parent, BattleAction action) : BattleState(parent, action), _unit(0), _target(0), _weapon(0), _ammo(0), _initialized(false)
+MeleeAttackBState::MeleeAttackBState(BattlescapeGame *parent, BattleAction action) : BattleState(parent, action), _unit(0), _target(0), _weapon(0), _ammo(0), _hitNumber(0), _initialized(false), _reaction(false)
 {
 }
 
@@ -60,15 +61,17 @@ void MeleeAttackBState::init()
 	_initialized = true;
 
 	_weapon = _action.weapon;
-	if (!_weapon) // can't shoot without weapon
+	if (!_weapon) // can't hit without weapon
 	{
 		_parent->popState();
 		return;
 	}
-	_ammo = _weapon->getAmmoItem();
+
+	_ammo = _action.weapon->getAmmoForAction(BA_HIT, &_action.result);
 	if (!_ammo)
 	{
-		_ammo = _weapon;
+		_parent->popState();
+		return;
 	}
 
 	if (!_parent->getSave()->getTile(_action.target)) // invalid target position
@@ -78,8 +81,8 @@ void MeleeAttackBState::init()
 	}
 
 	_unit = _action.actor;
-	
-	if (_unit->isOut() || _unit->getHealth() == 0 || _unit->getHealth() < _unit->getStunlevel())
+
+	if (_unit->isOut() || _unit->getHealth() <= 0 || _unit->getHealth() < _unit->getStunlevel())
 	{
 		// something went wrong - we can't shoot when dead or unconscious, or if we're about to fall over.
 		_parent->popState();
@@ -95,18 +98,24 @@ void MeleeAttackBState::init()
 			|| _parent->getSave()->getTile(_action.target)->getUnit()->isOut()
 			|| _parent->getSave()->getTile(_action.target)->getUnit() != _parent->getSave()->getSelectedUnit())
 		{
-			_unit->setTimeUnits(_unit->getTimeUnits() + _unit->getActionTUs(_action.type, _action.weapon));
 			_parent->popState();
 			return;
 		}
 		_unit->lookAt(_action.target, _unit->getTurretType() != -1);
 		while (_unit->getStatus() == STATUS_TURNING)
 		{
-			_unit->turn();
+			_unit->turn(_unit->getTurretType() != -1);
 		}
 	}
 
-	
+	//spend TU
+	if (!_action.spendTU(&_action.result))
+	{
+		_parent->popState();
+		return;
+	}
+
+
 	AIModule *ai = _unit->getAIModule();
 
 	if (_unit->getFaction() == _parent->getSave()->getSide() &&
@@ -121,9 +130,18 @@ void MeleeAttackBState::init()
 		_target = _parent->getSave()->getTile(_action.target)->getUnit();
 	}
 
-	int height = _target->getFloatHeight() + (_target->getHeight() / 2) - _parent->getSave()->getTile(_action.target)->getTerrainLevel();
-	_voxel = _action.target * Position(16, 16, 24) + Position(8, 8, height);
+	if (!_target)
+	{
+		throw Exception("This is a known (but tricky) bug... still fixing it, sorry. In the meantime, try save scumming option or kill all aliens in debug mode to finish the mission.");
+	}
 
+	int height = _target->getFloatHeight() + (_target->getHeight() / 2) - _parent->getSave()->getTile(_action.target)->getTerrainLevel();
+	_voxel = _action.target.toVexel() + Position(8, 8, height);
+
+	if (_unit->getFaction() == FACTION_HOSTILE)
+	{
+		_hitNumber = _weapon->getRules()->getAIMeleeHitCount() - 1;
+	}
 	performMeleeAttack();
 
 	_unit->addBattleExperience("STR_MELEE");
@@ -139,31 +157,32 @@ void MeleeAttackBState::init()
 void MeleeAttackBState::think()
 {
 	_parent->getSave()->getBattleState()->clearMouseScrollingState();
+	if (_reaction && !_parent->getSave()->getUnitsFalling())
+	{
+		_reaction = false;
+		if (_parent->getTileEngine()->checkReactionFire(_unit, _action))
+		{
+			return;
+		}
+	}
 
 	// if the unit burns floortiles, burn floortiles
 	if (_unit->getSpecialAbility() == SPECAB_BURNFLOOR || _unit->getSpecialAbility() == SPECAB_BURN_AND_EXPLODE)
 	{
 		_parent->getSave()->getTile(_action.target)->ignite(15);
 	}
-	// Determine if the attack was successful
-	// we do this here instead of letting the explosionBState take care of damage and casualty checking
-	// this is because unlike regular bullet hits or explosions, melee attacks can MISS.
-	// we also do it at this point instead of in performMeleeAttack because we want the scream to come AFTER the hit sound
-	resolveHit();
-		// aliens
-	if (_unit->getFaction() != FACTION_PLAYER &&
+	if (_hitNumber > 0 &&
 		// not performing a reaction attack
 		_unit->getFaction() == _parent->getSave()->getSide() &&
-		// with enough TU for a second attack (*2 because they'll get charged for the initial attack when this state pops.)
-		_unit->getTimeUnits() >= _unit->getActionTUs(BA_HIT, _action.weapon) * 2 &&
 		// whose target is still alive or at least conscious
 		_target && _target->getHealth() > 0 &&
 		_target->getHealth() > _target->getStunlevel() &&
 		// and we still have ammo to make the attack
-		_weapon->getAmmoItem())
-	{
+		_weapon->getAmmoForAction(BA_HIT) &&
 		// spend the TUs immediately
-		_unit->spendTimeUnits(_unit->getActionTUs(BA_HIT, _weapon));
+		_action.spendTU())
+	{
+		--_hitNumber;
 		performMeleeAttack();
 	}
 	else
@@ -195,90 +214,25 @@ void MeleeAttackBState::performMeleeAttack()
 {
 	// set the soldier in an aiming position
 	_unit->aim(true);
-	_unit->setCache(0);
-	_parent->getMap()->cacheUnit(_unit);
-	// make some noise
-	if (_ammo && _ammo->getRules()->getMeleeAttackSound() != -1)
-	{
-		_parent->getMod()->getSoundByDepth(_parent->getDepth(), _ammo->getRules()->getMeleeAttackSound())->play(-1, _parent->getMap()->getSoundAngle(_action.target));
-	}
-	else if (_weapon->getRules()->getMeleeAttackSound() != -1)
-	{
-		_parent->getMod()->getSoundByDepth(_parent->getDepth(), _weapon->getRules()->getMeleeAttackSound())->play(-1, _parent->getMap()->getSoundAngle(_action.target));
-	}
+
 	// use up ammo if applicable
-	if (!_parent->getSave()->getDebugMode() && _weapon->getRules()->getBattleType() == BT_MELEE && _ammo && _ammo->spendBullet() == false)
-	{
-		_parent->getSave()->removeItem(_ammo);
-		_action.weapon->setAmmoItem(0);
-	}
+	_action.weapon->spendAmmoForAction(BA_HIT, _parent->getSave());
 	_parent->getMap()->setCursorType(CT_NONE);
-	
-	// make an explosion animation
-	_parent->statePushFront(new ExplosionBState(_parent, _voxel, _action.weapon, _action.actor, 0, true, true));
-}
 
-/**
- * Determines if the melee attack hit, and performs all the applicable duties.
- */
-void MeleeAttackBState::resolveHit()
-{
-	if (RNG::percent(_unit->getFiringAccuracy(BA_HIT, _weapon)))
-	{
-		// Give soldiers XP
-		if (_unit->getGeoscapeSoldier() &&
-			_target && _target->getOriginalFaction() == FACTION_HOSTILE)
-		{
-			_unit->addMeleeExp();
-		}
+	// offset the damage voxel ever so slightly so that the target knows which side the attack came from
+	Position difference = _unit->getPosition() - _action.target;
+	// large units may cause it to offset too much, so we'll clamp the values.
+	difference.x = std::max(-1, std::min(1, difference.x));
+	difference.y = std::max(-1, std::min(1, difference.y));
 
-		// check if this unit turns others into zombies
-		if (_weapon->getRules()->getBattleType() == BT_MELEE 
-			&& _ammo
-			&& !_ammo->getRules()->getZombieUnit().empty()
-			&& _target
-			&& !_target->isVehicle()
-			&& (_target->getGeoscapeSoldier() || _target->getUnitRules()->getRace() == "STR_CIVILIAN")
-			&& _target->getSpawnUnit().empty())
-		{
-			// converts the victim to a zombie on death
-			_target->setRespawn(true);
-			_target->setSpawnUnit(_ammo->getRules()->getZombieUnit());
-		}
+	Position damagePosition = _voxel + difference;
 
-		// assume rifle butt to begin with.
-		ItemDamageType type = DT_STUN;
-		int power = _weapon->getRules()->getMeleePower();
-		// override it as needed.
-		if (_weapon->getRules()->getBattleType() == BT_MELEE && _ammo)
-		{
-			type = _ammo->getRules()->getDamageType();;
-			power = _ammo->getRules()->getPower();
-		}
 
-		// since melee aliens don't use a conventional weapon type, we use their strength instead.
-		if (_weapon->getRules()->isStrengthApplied())
-		{
-			power += _unit->getBaseStats()->strength;
-		}
-		// make some noise to signal the hit.
-		if (_weapon->getRules()->getMeleeHitSound() != -1)
-		{
-			_parent->getMod()->getSoundByDepth(_parent->getDepth(), _action.weapon->getRules()->getMeleeHitSound())->play(-1, _parent->getMap()->getSoundAngle(_action.target));
-		}
-		
-		// offset the damage voxel ever so slightly so that the target knows which side the attack came from
-		Position difference = _unit->getPosition() - _action.target;
-		// large units may cause it to offset too much, so we'll clamp the values.
-		difference.x = std::max(-1, std::min(1, difference.x));
-		difference.y = std::max(-1, std::min(1, difference.y));
+	// make an explosion action
+	_parent->statePushFront(new ExplosionBState(_parent, damagePosition, BattleActionAttack{ _action, _ammo, }, 0, true));
 
-		Position damagePosition = _voxel + difference;
-		// damage the unit.
-		_parent->getSave()->getTileEngine()->hit(damagePosition, power, BA_HIT, type, _unit);
-		// now check for new casualties
-		_parent->checkForCasualties(_ammo, _unit);
-	}
+
+	_reaction = true;
 }
 
 }

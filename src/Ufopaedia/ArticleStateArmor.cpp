@@ -69,7 +69,11 @@ namespace OpenXcom
 		{
 			look = armor->getSpriteInventory() + ".SPK";
 		}
-		_game->getMod()->getSurface(look)->blit(_image);
+		if (!_game->getMod()->getSurface(look, false))
+		{
+			look = armor->getSpriteInventory();
+		}
+		_game->getMod()->getSurface(look, true)->blit(_image);
 
 
 		_lstInfo = new TextList(150, 96, 150, 46);
@@ -88,8 +92,8 @@ namespace OpenXcom
 
 		// Add armor values
 		addStat("STR_FRONT_ARMOR", armor->getFrontArmor());
-		addStat("STR_LEFT_ARMOR", armor->getSideArmor());
-		addStat("STR_RIGHT_ARMOR", armor->getSideArmor());
+		addStat("STR_LEFT_ARMOR", armor->getLeftSideArmor());
+		addStat("STR_RIGHT_ARMOR", armor->getRightSideArmor());
 		addStat("STR_REAR_ARMOR", armor->getRearArmor());
 		addStat("STR_UNDER_ARMOR", armor->getUnderArmor());
 
@@ -97,7 +101,7 @@ namespace OpenXcom
 		++_row;
 
 		// Add damage modifiers
-		for (int i = 0; i < Armor::DAMAGE_TYPES; ++i)
+		for (int i = 0; i < DAMAGE_TYPES; ++i)
 		{
 			ItemDamageType dt = (ItemDamageType)i;
 			int percentage = (int)Round(armor->getDamageModifier(dt) * 100.0f);

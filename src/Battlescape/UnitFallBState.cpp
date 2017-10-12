@@ -101,7 +101,6 @@ void UnitFallBState::think()
 		if (unit->getStatus() == STATUS_WALKING || unit->getStatus() == STATUS_FLYING)
 		{
 			unit->keepWalking(tileBelow, true); 	// advances the phase
-			_parent->getMap()->cacheUnit(unit);	// make sure the unit sprites are up to date
 			++unit;
 			continue;
 		}
@@ -248,7 +247,7 @@ void UnitFallBState::think()
 						ub = unitsToMove.erase(ub);
 					}
 				}
-				_parent->checkForCasualties(0,unit);
+				_parent->checkForCasualties(nullptr, BattleActionAttack(BA_NONE, unit));
 			}
 		}
 		// we are just standing around, we are done falling.
@@ -259,8 +258,6 @@ void UnitFallBState::think()
 				Position destination = unit->getPosition() + Position(0,0,-1);
 				Tile *tileBelow = _parent->getSave()->getTile(destination);
 				unit->startWalking(Pathfinding::DIR_DOWN, destination, tileBelow, onScreen);
-				unit->setCache(0);
-				_parent->getMap()->cacheUnit(unit);
 				++ii;
 			}
 			else
@@ -270,24 +267,23 @@ void UnitFallBState::think()
 				{
 					unit->getTile()->ignite(1);
 					Position here = (unit->getPosition() * Position(16,16,24)) + Position(8,8,-(unit->getTile()->getTerrainLevel()));
-					_parent->getTileEngine()->hit(here, unit->getBaseStats()->strength, BA_NONE, DT_IN, (unit));
+					_parent->getTileEngine()->hit(BattleActionAttack(BA_NONE, unit, nullptr, nullptr), here, unit->getBaseStats()->strength, BA_NONE, _parent->getMod()->getDamageType(DT_IN));
 					if (unit->getStatus() != STATUS_STANDING) // ie: we burned a hole in the floor and fell through it
 					{
 						_parent->getPathfinding()->abortPath();
 					}
 				}
 				// move our personal lighting with us
-				_terrain->calculateUnitLighting();
-				_parent->getMap()->cacheUnit(unit);
-				unit->setCache(0);
-				_terrain->calculateFOV(unit);
+				_terrain->calculateLighting(LL_UNITS, unit->getPosition(), 2);
+				_terrain->calculateFOV(unit->getPosition(), 2, false); //update everyone else to see this unit, as well as all this unit's visible units.
+				_terrain->calculateFOV(unit, true, false); //update tiles
 				_parent->checkForProximityGrenades(unit);
-				if (_parent->getTileEngine()->checkReactionFire(unit))
-					_parent->getPathfinding()->abortPath();
-				ii = _parent->getSave()->getFallingUnits()->erase(ii);
 				if (unit->getStatus() == STATUS_STANDING)
 				{
-					if (_parent->getTileEngine()->checkReactionFire(unit))
+					BattleAction fall;
+					fall.type = BA_WALK;
+					fall.actor = unit;
+					if (_parent->getTileEngine()->checkReactionFire(unit, fall))
 						_parent->getPathfinding()->abortPath();
 					ii = _parent->getSave()->getFallingUnits()->erase(ii);
 					unit = *ii;

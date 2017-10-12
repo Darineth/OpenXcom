@@ -41,6 +41,7 @@ namespace OpenXcom
 	protected:
 		Surface *_image;
 		Text *_txtTitle;
+		Text *_txtWeight;
 		Text *_txtInfo;
 		TextList *_lstInfo;
 		Text *_txtShotType;

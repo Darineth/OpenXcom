@@ -43,6 +43,7 @@ private:
 	TextEditConstraint _textEditConstraint;
 	ActionHandler _change;
 	ActionHandler _enter;
+	ActionHandler _escape;
 	State *_state;
 	/// Checks if a character will exceed the maximum width.
 	bool exceedsMaxWidth(wchar_t c);
@@ -103,6 +104,8 @@ public:
 	void onChange(ActionHandler handler);
 	/// Sets a function to be called every time ENTER is pressed.
 	void onEnter(ActionHandler handler);
+	/// Sets a function to be called every time ESCAPE is pressed.
+	void onEscape(ActionHandler handler);
 };
 
 }

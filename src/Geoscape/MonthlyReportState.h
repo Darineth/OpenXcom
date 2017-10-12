@@ -41,9 +41,9 @@ private:
 	TextButton *_btnOk, *_btnBigOk;
 	Window *_window;
 	Text *_txtTitle, *_txtMonth, *_txtRating;
-	Text *_txtIncome, *_txtMaintenance, *_txtBalance;
+	Text *_txtIncome, *_txtMaintenance, *_txtBalance, *_txtBonus;
 	Text *_txtDesc, *_txtFailure;
-	bool _psi, _gameOver;
+	bool _gameOver;
 	int _ratingTotal, _fundingDiff, _lastMonthsRating;
 	std::vector<std::string> _happyList, _sadList, _pactList;
 	Globe *_globe;
@@ -52,7 +52,7 @@ private:
 	std::wstring countryList(const std::vector<std::string> &countries, const std::string &singular, const std::string &plural);
 public:
 	/// Creates the Monthly Report state.
-	MonthlyReportState(bool psi, Globe *globe);
+	MonthlyReportState(Globe *globe);
 	/// Cleans up the Monthly Report state.
 	~MonthlyReportState();
 	/// Updates the ending.

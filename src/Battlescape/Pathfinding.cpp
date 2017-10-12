@@ -30,6 +30,10 @@
 namespace OpenXcom
 {
 
+constexpr int Pathfinding::dir_x[Pathfinding::dir_max];
+constexpr int Pathfinding::dir_y[Pathfinding::dir_max];
+constexpr int Pathfinding::dir_z[Pathfinding::dir_max];
+
 int Pathfinding::red = 3;
 int Pathfinding::yellow = 10;
 int Pathfinding::green = 4;
@@ -40,7 +44,7 @@ int Pathfinding::purple = 13;
  * Sets up a Pathfinding.
  * @param save pointer to SavedBattleGame object.
  */
-Pathfinding::Pathfinding(SavedBattleGame *save) : _save(save), _unit(0), _pathPreviewed(false), _totalTUCost(0), _modifierUsed(KMOD_NONE), _movementType(MT_WALK), _movementAction(MV_WALK)
+Pathfinding::Pathfinding(SavedBattleGame *save) : _save(save), _unit(0), _pathPreviewed(false), _totalTUCost(0), _modifierUsed(KMOD_NONE), _movementType(MT_WALK), _movementAction(BAM_NORMAL)
 {
 	_size = _save->getMapSizeXYZ();
 	// Initialize one node per tile
@@ -86,7 +90,7 @@ void Pathfinding::calculate(BattleUnit *unit, Position endPosition, BattleUnit *
 
 	_modifierUsed = SDL_GetModState();
 
-	_movementAction = MV_WALK;
+	_movementAction = BAM_NORMAL;
 
 	// i'm DONE with these out of bounds errors.
 	if (endPosition.x > _save->getMapSizeX() - unit->getArmor()->getSize() || endPosition.y > _save->getMapSizeY() - unit->getArmor()->getSize() || endPosition.x < 0 || endPosition.y < 0) return;
@@ -169,30 +173,44 @@ void Pathfinding::calculate(BattleUnit *unit, Position endPosition, BattleUnit *
 	if (startPosition.z == endPosition.z && bresenhamPath(startPosition,endPosition, target, sneak))
 	{
 		std::reverse(_path.begin(), _path.end()); //paths are stored in reverse order
+
+		if ((_modifierUsed & KMOD_CTRL) && (_modifierUsed & KMOD_CTRL) == _modifierUsed && _unit->getArmor()->getSize() == 1 && _unit->getTurretType() == -1 && _path.size() > 4 && _unit->getTimeUnits() > 20 && _unit->getArmor()->allowsRunning())
+		{
+			_movementAction = BAM_RUN;
+		}
+		else if ((_modifierUsed & KMOD_ALT) && (_modifierUsed & KMOD_CTRL) && _unit->getArmor()->getSize() == 1 && _unit->getTurretType() == -1 && !unit->getEffectComponent(EC_DIRECTIONAL_LIGHT) && !unit->getEffectComponent(EC_CIRCULAR_LIGHT))
+		{
+			_movementAction = BAM_SNEAK;
+		}
+		else if ((_modifierUsed & KMOD_CTRL) && (_modifierUsed & KMOD_CTRL) == _modifierUsed && (startPosition.z == endPosition.z) && (abs(startPosition.x - endPosition.x) <= 1) && (abs(startPosition.y - endPosition.y) <= 1) && _unit->getArmor()->allowsStrafing())
+		{
+			_movementAction = BAM_STRAFE;
+		}
+
+		return;
 	}
 	else
 	{
 		abortPath(); // if bresenham failed, we shouldn't keep the path it was attempting, in case A* fails too.
-
-		// Now try through A*.
-		if (!aStarPath(startPosition, endPosition, target, sneak, maxTUCost))
-		{
-			abortPath();
-			return;
-		}
 	}
 
-	if ((_modifierUsed & KMOD_CTRL) && (_modifierUsed & KMOD_CTRL) == _modifierUsed && _unit->getArmor()->getSize() == 1 && _unit->getTurretType() == -1 && _path.size() > 4 && _unit->getTimeUnits() > 20)
+	// Now try through A*.
+	if (!aStarPath(startPosition, endPosition, target, sneak, maxTUCost))
 	{
-		_movementAction = MV_SPRINT;
+		abortPath();
+	}
+
+	if ((_modifierUsed & KMOD_CTRL) && (_modifierUsed & KMOD_CTRL) == _modifierUsed && _unit->getArmor()->getSize() == 1 && _unit->getTurretType() == -1 && _path.size() > 4 && _unit->getTimeUnits() > 20 && _unit->getArmor()->allowsRunning())
+	{
+		_movementAction = BAM_RUN;
 	}
 	else if ((_modifierUsed & KMOD_ALT) && (_modifierUsed & KMOD_CTRL) && _unit->getArmor()->getSize() == 1 && _unit->getTurretType() == -1 && !unit->getEffectComponent(EC_DIRECTIONAL_LIGHT) && !unit->getEffectComponent(EC_CIRCULAR_LIGHT))
 	{
-		_movementAction = MV_SNEAK;
+		_movementAction = BAM_SNEAK;
 	}
-	else if ((_modifierUsed & KMOD_CTRL) && (_modifierUsed & KMOD_CTRL) == _modifierUsed && (startPosition.z == endPosition.z) && (abs(startPosition.x - endPosition.x) <= 1) && (abs(startPosition.y - endPosition.y) <= 1))
+	else if ((_modifierUsed & KMOD_CTRL) && (_modifierUsed & KMOD_CTRL) == _modifierUsed && (startPosition.z == endPosition.z) && (abs(startPosition.x - endPosition.x) <= 1) && (abs(startPosition.y - endPosition.y) <= 1) && _unit->getArmor()->allowsStrafing())
 	{
-		_movementAction = MV_STRAFE;
+		_movementAction = BAM_STRAFE;
 	}
 }
 
@@ -281,6 +299,7 @@ int Pathfinding::getTUCost(Position startPosition, int direction, Position *endP
 	bool fellDown = false;
 	bool triedStairs = false;
 	int size = _unit->getArmor()->getSize() - 1;
+	bool armorAllowsStrafing = _unit->getArmor()->allowsStrafing();
 	int cost = 0;
 	int numberOfPartsGoingUp = 0;
 	int numberOfPartsGoingDown = 0;
@@ -471,17 +490,17 @@ int Pathfinding::getTUCost(Position startPosition, int direction, Position *endP
 
 			// Strafing costs +1 for forwards-ish or sidewards, propose +2 for backwards-ish directions
 			// Maybe if flying then it makes no difference?
-			if (_movementAction == MV_STRAFE) {
+			if (_movementAction == BAM_RUN) {
 				if (size) {
 					// 4-tile units not supported.
 					// Turn off strafe move and continue
-					_movementAction = MV_WALK;
+					_movementAction = BAM_NORMAL;
 				}
 				else
 				{
 					if (std::min(abs(8 + direction - _unit->getDirection()), std::min( abs(_unit->getDirection() - direction), abs(8 + _unit->getDirection() - direction))) > 2) {
 						// Strafing backwards-ish currently unsupported, turn it off and continue.
-						_movementAction = MV_WALK;
+						_movementAction = BAM_NORMAL;
 					}
 					else
 					{
@@ -523,41 +542,6 @@ int Pathfinding::getTUCost(Position startPosition, int direction, Position *endP
 		return 0;
 	else
 		return totalCost;
-}
-
-/**
- * Converts direction to a vector. Direction starts north = 0 and goes clockwise.
- * @param direction Source direction.
- * @param vector Pointer to a position (which acts as a vector).
- */
-void Pathfinding::directionToVector(int direction, Position *vector)
-{
-	int x[10] = {0, 1, 1, 1, 0, -1, -1, -1,0,0};
-	int y[10] = {-1, -1, 0, 1, 1, 1, 0, -1,0,0};
-	int z[10] = {0, 0, 0, 0, 0, 0, 0, 0, 1, -1};
-	vector->x = x[direction];
-	vector->y = y[direction];
-	vector->z = z[direction];
-}
-
-/**
- * Converts direction to a vector. Direction starts north = 0 and goes clockwise.
- * @param vector Pointer to a position (which acts as a vector).
- * @param dir Resulting direction.
- */
-void Pathfinding::vectorToDirection(Position vector, int &dir)
-{
-	dir = -1;
-	int x[8] = {0, 1, 1, 1, 0, -1, -1, -1};
-	int y[8] = {-1, -1, 0, 1, 1, 1, 0, -1};
-	for (int i = 0; i < 8; ++i)
-	{
-		if (x[i] == vector.x && y[i] == vector.y)
-		{
-			dir = i;
-			return;
-		}
-	}
 }
 
 /**
@@ -957,8 +941,8 @@ bool Pathfinding::previewPath(bool bRemove)
 		_save->getBattleGame()->setTUReserved(BA_AUTOSHOT);
 	}
 	//_modifierUsed = SDL_GetModState();
-	bool running = _movementAction == MV_SPRINT;
-	bool sneaking = _movementAction == MV_SNEAK;
+	bool running = _movementAction == BAM_RUN;
+	bool sneaking = _movementAction == BAM_SNEAK;
 	for (std::vector<int>::reverse_iterator i = _path.rbegin(); i != _path.rend(); ++i)
 	{
 		int dir = *i;
@@ -983,7 +967,7 @@ bool Pathfinding::previewPath(bool bRemove)
 		energy -= energyUse / 2;
 		tus -= tu;
 		total += tu;
-		bool reserve = _save->getBattleGame()->checkReservedTU(_unit, total, true);
+		bool reserve = _save->getBattleGame()->checkReservedTU(_unit, total, _unit->getEnergy() - energy, true);
 		pos = destination;
 		for (int x = size; x >= 0; x--)
 		{
@@ -1179,10 +1163,11 @@ bool Pathfinding::bresenhamPath(Position origin, Position target, BattleUnit *ta
  * @param tuMax The maximum cost of the path to each tile.
  * @return An array of reachable tiles, sorted in ascending order of cost. The first tile is the start location.
  */
-std::vector<int> Pathfinding::findReachable(BattleUnit *unit, int tuMax)
+std::vector<int> Pathfinding::findReachable(BattleUnit *unit, const BattleActionCost &cost)
 {
-	Position start = unit->getPosition();
-	int energyMax = unit->getEnergy();
+	const Position start = unit->getPosition();
+	int tuMax = unit->getTimeUnits() - cost.Time;
+	int energyMax = unit->getEnergy() - cost.Energy;
 	for (std::vector<PathfindingNode>::iterator it = _nodes.begin(); it != _nodes.end(); ++it)
 	{
 		it->reset();
@@ -1287,7 +1272,7 @@ std::vector<int> Pathfinding::copyPath() const
 /**
  * Returns the calculated path's movement action type.
  */
-MovementAction Pathfinding::getMovementAction() const
+BattleActionMove Pathfinding::getMovementAction() const
 {
 	return _movementAction;
 }

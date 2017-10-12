@@ -28,6 +28,7 @@
 #include "../Engine/Palette.h"
 #include "../Engine/LocalizedText.h"
 #include "../Interface/TextList.h"
+#include <algorithm>
 
 namespace OpenXcom
 {
@@ -36,7 +37,7 @@ namespace OpenXcom
 	{
 		RuleItem *item = _game->getMod()->getItem(defs->id, true);
 
-		std::vector<std::string> *ammo_data = item->getCompatibleAmmo();
+		const std::vector<std::string> *ammo_data = item->getPrimaryCompatibleAmmo();
 
 		// SHOT STATS TABLE (for firearms only)
 		if (item->getBattleType() == BT_FIREARM)
@@ -66,10 +67,10 @@ namespace OpenXcom
 			_lstInfo->setColumns(3, 70, 40, 30);
 
 			int current_row = 0;
-			if (item->getTUAuto()>0)
+			if (item->getCostAuto().Time>0)
 			{
-				std::wstring tu = Text::formatPercentage(item->getTUAuto());
-				if (item->getFlatRate())
+				std::wstring tu = Text::formatPercentage(item->getCostAuto().Time);
+				if (item->getFlatUse().Time)
 				{
 					tu.erase(tu.end() - 1);
 				}
@@ -81,10 +82,10 @@ namespace OpenXcom
 				current_row++;
 			}
 
-			if (item->getTUSnap()>0)
+			if (item->getCostSnap().Time>0)
 			{
-				std::wstring tu = Text::formatPercentage(item->getTUSnap());
-				if (item->getFlatRate())
+				std::wstring tu = Text::formatPercentage(item->getCostSnap().Time);
+				if (item->getFlatUse().Time)
 				{
 					tu.erase(tu.end() - 1);
 				}
@@ -96,10 +97,10 @@ namespace OpenXcom
 				current_row++;
 			}
 
-			if (item->getTUAimed()>0)
+			if (item->getCostAimed().Time>0)
 			{
-				std::wstring tu = Text::formatPercentage(item->getTUAimed());
-				if (item->getFlatRate())
+				std::wstring tu = Text::formatPercentage(item->getCostAimed().Time);
+				if (item->getFlatUse().Time)
 				{
 					tu.erase(tu.end() - 1);
 				}
@@ -121,7 +122,7 @@ namespace OpenXcom
 			add(_txtAmmoType[i]);
 			_txtAmmoType[i]->setColor(Palette::blockOffset(0)+2);
 			_txtAmmoType[i]->setWordWrap(true);
-			
+
 			_txtAmmoDamage[i] = new Text(20, 9, 300, 144 + i*10);
 			add(_txtAmmoDamage[i]);
 			_txtAmmoDamage[i]->setColor(Palette::blockOffset(3)+6);
@@ -132,7 +133,7 @@ namespace OpenXcom
 			case BT_FIREARM:
 				if (ammo_data->empty())
 				{
-					_txtAmmoType[0]->setText(tr(getDamageTypeText(item->getDamageType())));
+					_txtAmmoType[0]->setText(tr(getDamageTypeText(item->getDamageType()->ResistType)));
 
 					ss.str(L"");ss.clear();
 					ss << item->getPower();
@@ -150,7 +151,7 @@ namespace OpenXcom
 						if (Ufopaedia::isArticleAvailable(_game->getSavedGame(), ammo_article))
 						{
 							RuleItem *ammo_rule = _game->getMod()->getItem((*ammo_data)[i], true);
-							_txtAmmoType[i]->setText(tr(getDamageTypeText(ammo_rule->getDamageType())));
+							_txtAmmoType[i]->setText(tr(getDamageTypeText(ammo_rule->getDamageType()->ResistType)));
 
 							ss.str(L"");ss.clear();
 							ss << ammo_rule->getPower();
@@ -167,7 +168,7 @@ namespace OpenXcom
 			case BT_GRENADE:
 			case BT_PROXIMITYGRENADE:
 			case BT_MELEE:
-				_txtAmmoType[0]->setText(tr(getDamageTypeText(item->getDamageType())));
+				_txtAmmoType[0]->setText(tr(getDamageTypeText(item->getDamageType()->ResistType)));
 
 				ss.str(L"");ss.clear();
 				ss << item->getPower();

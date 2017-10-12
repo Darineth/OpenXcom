@@ -142,7 +142,7 @@ void RoleMenuState::btnSaveLayoutClick(Action *action)
  */
 void RoleMenuState::btnLoadLayoutClick(Action *action)
 {
-	_parentState->applyEquipmentLayout(_parentState->getSelectedSoldier()->getRole()->getDefaultLayout(), _parentState->getSelectedSoldier()->getRole()->getDefaultArmorColor());
+	_parentState->loadRoleEquipmentLayout();
 	_game->popState();
 }
 

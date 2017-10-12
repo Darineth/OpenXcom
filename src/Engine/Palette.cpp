@@ -135,6 +135,33 @@ void Palette::savePal(const std::string &file) const
 	out.close();
 }
 
+void Palette::savePalMod(const std::string &file, const std::string &type, const std::string &target) const
+{
+	std::ofstream out(file.c_str());
+	short count = _count;
+
+	// header
+	out << "customPalettes:\n";
+	out << "  - type: " << type << "\n";
+	out << "    target: " << target << "\n";
+	out << "    palette:\n";
+
+	// Colors
+	for (int i = 0; i < count; ++i)
+	{
+		out << "      ";
+		out << std::to_string(i);
+		out << ": [";
+		out << std::to_string(_colors[i].r);
+		out << ",";
+		out << std::to_string(_colors[i].g);
+		out << ",";
+		out << std::to_string(_colors[i].b);
+		out << "]\n";
+	}
+	out.close();
+}
+
 void Palette::setColors(SDL_Color* pal, int ncolors)
 {
 	if (_colors != 0)
@@ -164,6 +191,44 @@ void Palette::setColors(SDL_Color* pal, int ncolors)
 		}
 	}
 	_colors[0].unused = 0;	
+}
+
+void Palette::initColors(int ncolors)
+{
+	if (_colors != 0)
+		throw Exception("initColors can be run only once");
+	_count = ncolors;
+	_colors = new SDL_Color[_count];
+	memset(_colors, 0, sizeof(SDL_Color) * _count);
+
+	for (int ii = 1; ii < _count; ++ii)
+	{
+		_colors[ii].r = 1;
+		_colors[ii].g = 1;
+		_colors[ii].b = 1;
+		_colors[ii].unused = 1;
+	}
+
+	_colors[0].unused = 0;
+}
+
+void Palette::setColor(int index, int r, int g, int b)
+{
+	_colors[index].r = r;
+	_colors[index].g = g;
+	_colors[index].b = b;
+	if (index > 15 && _colors[index].r == _colors[0].r &&
+		_colors[index].g == _colors[0].g &&
+		_colors[index].b == _colors[0].b)
+	{
+		// SDL "optimizes" surfaces by using RGB colour matching to reassign pixels to an "earlier" matching colour in the palette,
+		// meaning any pixels in a surface that are meant to be black will be reassigned as colour 0, rendering them transparent.
+		// avoid this eventuality by altering the "later" colours just enough to disambiguate them without causing them to look significantly different.
+		// SDL 2.0 has some functionality that should render this hack unnecessary.
+		_colors[index].r++;
+		_colors[index].g++;
+		_colors[index].b++;
+	}
 }
 
 }

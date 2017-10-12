@@ -113,8 +113,8 @@ namespace OpenXcom
  * type of deployment data.
  * @param type String defining the type.
  */
-AlienDeployment::AlienDeployment(const std::string &type) : _type(type), _width(0), _length(0), _height(0), _civilians(0), _shade(-1), _finalDestination(false), _isAlienBase(false), _alert("STR_ALIENS_TERRORISE"),
-	_alertBackground("BACK03.SCR"), _markerName("STR_TERROR_SITE"), _markerIcon(-1), _durationMin(0), _durationMax(0), _minDepth(0), _maxDepth(0), _minSiteDepth(0), _maxSiteDepth(0), _genMissionFrequency(0),
+AlienDeployment::AlienDeployment(const std::string &type) : _type(type), _bughuntMinTurn(0), _width(0), _length(0), _height(0), _civilians(0), _shade(-1), _minShade(-1), _maxShade(-1), _finalDestination(false), _isAlienBase(false), _alert("STR_ALIENS_TERRORISE"),
+	_alertBackground("BACK03.SCR"), _alertDescription(""), _alertSound(-1), _markerName("STR_TERROR_SITE"), _markerIcon(-1), _durationMin(0), _durationMax(0), _minDepth(0), _maxDepth(0), _minSiteDepth(0), _maxSiteDepth(0), _genMissionFrequency(0),
 	_objectiveType(-1), _objectivesRequired(0), _objectiveCompleteScore(0), _objectiveFailedScore(0), _despawnPenalty(0), _points(0), _turnLimit(0), _cheatTurn(20), _chronoTrigger(FORCE_LOSE)
 {
 }
@@ -137,13 +137,20 @@ void AlienDeployment::load(const YAML::Node &node, Mod *mod)
 		load(parent, mod);
 	}
 	_type = node["type"].as<std::string>(_type);
+	_startingCondition = node["startingCondition"].as<std::string>(_startingCondition);
+	_unlockedResearch = node["unlockedResearch"].as<std::string>(_unlockedResearch);
+	_missionBountyItem = node["missionBountyItem"].as<std::string>(_missionBountyItem);
+	_bughuntMinTurn = node["bughuntMinTurn"].as<int>(_bughuntMinTurn);
 	_data = node["data"].as< std::vector<DeploymentData> >(_data);
 	_width = node["width"].as<int>(_width);
 	_length = node["length"].as<int>(_length);
 	_height = node["height"].as<int>(_height);
 	_civilians = node["civilians"].as<int>(_civilians);
+	_civiliansByType = node["civiliansByType"].as<std::map<std::string, int> >(_civiliansByType);
 	_terrains = node["terrains"].as<std::vector<std::string> >(_terrains);
 	_shade = node["shade"].as<int>(_shade);
+	_minShade = node["minShade"].as<int>(_minShade);
+	_maxShade = node["maxShade"].as<int>(_maxShade);
 	_nextStage = node["nextStage"].as<std::string>(_nextStage);
 	_race = node["race"].as<std::string>(_race);
 	_finalDestination = node["finalDestination"].as<bool>(_finalDestination);
@@ -153,6 +160,11 @@ void AlienDeployment::load(const YAML::Node &node, Mod *mod)
 	_script = node["script"].as<std::string>(_script);
 	_alert = node["alert"].as<std::string>(_alert);
 	_alertBackground = node["alertBackground"].as<std::string>(_alertBackground);
+	_alertDescription = node["alertDescription"].as<std::string>(_alertDescription);
+	if (node["alertSound"])
+	{
+		_alertSound = mod->getSoundOffset(node["alertSound"].as<int>(_alertSound), "GEO.CAT");
+	}
 	_briefingData = node["briefing"].as<BriefingData>(_briefingData);
 	_markerName = node["markerName"].as<std::string>(_markerName);
 	if (node["markerIcon"])
@@ -215,10 +227,46 @@ std::string AlienDeployment::getType() const
 }
 
 /**
+* Returns the starting condition name for this mission.
+* @return String ID for starting condition.
+*/
+std::string AlienDeployment::getStartingCondition() const
+{
+	return _startingCondition;
+}
+
+/**
+* Returns the research topic to be unlocked after a successful mission.
+* @return String ID for research topic.
+*/
+std::string AlienDeployment::getUnlockedResearch() const
+{
+	return _unlockedResearch;
+}
+
+/**
+* Returns the item to be recovered/given after a successful mission.
+* @return String ID for the item.
+*/
+std::string AlienDeployment::getMissionBountyItem() const
+{
+	return _missionBountyItem;
+}
+
+/**
+* Gets the bug hunt mode minimum turn requirement (default = 0 = not used).
+* @return Bug hunt min turn number.
+*/
+int AlienDeployment::getBughuntMinTurn() const
+{
+	return _bughuntMinTurn;
+}
+
+/**
  * Gets a pointer to the data.
  * @return Pointer to the data.
  */
-std::vector<DeploymentData>* AlienDeployment::getDeploymentData()
+const std::vector<DeploymentData>* AlienDeployment::getDeploymentData() const
 {
 	return &_data;
 }
@@ -246,6 +294,15 @@ int AlienDeployment::getCivilians() const
 }
 
 /**
+ * Gets the number of civilians per type.
+ * @return The number of civilians per type.
+ */
+const std::map<std::string, int> &AlienDeployment::getCiviliansByType() const
+{
+	return _civiliansByType;
+}
+
+/**
  * Gets the terrain for battlescape generation.
  * @return The terrain.
  */
@@ -261,6 +318,24 @@ std::vector<std::string> AlienDeployment::getTerrains() const
 int AlienDeployment::getShade() const
 {
 	return _shade;
+}
+
+/**
+* Gets the min shade level for battlescape generation.
+* @return The min shade level.
+*/
+int AlienDeployment::getMinShade() const
+{
+	return _minShade;
+}
+
+/**
+* Gets the max shade level for battlescape generation.
+* @return The max shade level.
+*/
+int AlienDeployment::getMaxShade() const
+{
+	return _maxShade;
 }
 
 /**
@@ -345,6 +420,24 @@ std::string AlienDeployment::getAlertBackground() const
 }
 
 /**
+* Gets the alert description (displayed when clicking on [Info] button in TargetInfo).
+* @return String ID for the description.
+*/
+std::string AlienDeployment::getAlertDescription() const
+{
+	return _alertDescription;
+}
+
+/**
+* Gets the alert sound (played when mission detected screen pops up).
+* @return ID for the sound.
+*/
+int AlienDeployment::getAlertSound() const
+{
+	return _alertSound;
+}
+
+/**
  * Gets the briefing data for this mission type.
  * @return data for the briefing window to use.
  */
@@ -393,7 +486,7 @@ int AlienDeployment::getDurationMax() const
  * Gets The list of musics this deployment has to choose from.
  * @return The list of track names.
  */
-std::vector<std::string> &AlienDeployment::getMusic()
+const std::vector<std::string> &AlienDeployment::getMusic() const
 {
 	return _music;
 }
@@ -456,7 +549,7 @@ int AlienDeployment::getObjectivesRequired() const
  * Gets the string name for the popup to splash when the objective conditions are met.
  * @return the string to pop up.
  */
-std::string AlienDeployment::getObjectivePopup() const
+const std::string &AlienDeployment::getObjectivePopup() const
 {
 	return _objectivePopup;
 }

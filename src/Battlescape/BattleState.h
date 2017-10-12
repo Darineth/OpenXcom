@@ -45,7 +45,7 @@ public:
 	/// Runs state functionality every cycle.
 	virtual void think();
 	/// Gets a copy of the action.
-	BattleAction getAction() const;
+	const BattleAction& getAction() const;
 };
 
 }

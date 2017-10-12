@@ -113,8 +113,11 @@ static inline void gmext_write_delta (std::vector<unsigned char> &midi,
 		delta >>= 7;
 	} while (delta > 0);
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
 	while (--i)
 		midi.push_back(data[i] | 0x80);
+#pragma GCC diagnostic pop
 
 	midi.push_back(data[0]);
 }

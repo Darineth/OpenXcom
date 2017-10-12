@@ -57,6 +57,8 @@ class Surface;
 class Mod;
 class RuleInventory;
 
+enum BattleActionType : Uint8;
+
 struct RuleItemUseCost
 {
 	int Time;
@@ -64,14 +66,15 @@ struct RuleItemUseCost
 	int Morale;
 	int Health;
 	int Stun;
+	int Ammo;
 
 	/// Default constructor.
-	RuleItemUseCost() : Time(0), Energy(0), Morale(0), Health(0), Stun(0)
+	RuleItemUseCost() : Time(0), Energy(0), Morale(0), Health(0), Stun(0), Ammo(0)
 	{
 
 	}
 	/// Create new cost with one value for time units and another for rest.
-	RuleItemUseCost(int tu, int rest = 0) : Time(tu), Energy(rest), Morale(rest), Health(rest), Stun(rest)
+	RuleItemUseCost(int tu, int rest = 0) : Time(tu), Energy(rest), Morale(rest), Health(rest), Stun(rest), Ammo(rest)
 	{
 
 	}
@@ -84,7 +87,18 @@ struct RuleItemUseCost
 		Morale += cost.Morale;
 		Health += cost.Health;
 		Stun += cost.Stun;
+		Ammo += cost.Ammo;
 		return *this;
+	}
+
+	void resetCost()
+	{
+		Time = 0;
+		Energy = 0;
+		Morale = 0;
+		Health = 0;
+		Stun = 0;
+		Ammo = 0;
 	}
 };
 
@@ -123,7 +137,7 @@ private:
 	int _costBuy, _costSell, _transferTime, _weight;
 	int _bigSprite;
 	int _floorSprite;
-	int _handSprite, _bulletSprite;
+	int _handSprite, _bulletSprite, _bulletParticles;
 	std::vector<int> _fireSound, _hitSound; 
 	int _hitAnimation;
 	std::vector<int> _hitMissSound;
@@ -144,7 +158,7 @@ private:
 	int _baseAccuracy;
 	RuleItemAction _confAimed, _confAuto, _confBurst, _confSnap, _confMelee;
 	int _accuracyUse, _accuracyMind, _accuracyPanic, _accuracyThrow, _accuracyCloseQuarters;
-	RuleItemUseCost _costUse, _costMind, _costPanic, _costThrow, _costPrime, _costUnprime;
+	RuleItemUseCost _costUse, _costMind, _costPanic, _costClairvoyance, _costMindBlast, _costThrow, _costPrime, _costUnprime;
 	int _clipSize, _battleClipSize, _specialChance, _tuLoad[AmmoSlotMax], _tuUnload[AmmoSlotMax];
 	int _accuracyShotgunSpread, _autoDelay;
 	int _aiRangeClose, _aiRangeMid, _aiRangeLong, _aiRangeMax;
@@ -205,9 +219,9 @@ private:
 	bool _vehicleItem;
 	UnitStats _stats, _statModifiers;
 	bool _hasStats;
-	int _frontArmor, _sideArmor, _rearArmor, _underArmor, _armorSide;
-	std::vector<std::string> _validSlots;
-	bool _checkValidSlots;
+	int _frontArmor, _leftArmor, _rightArmor, _rearArmor, _underArmor, _armorSide;
+	//std::vector<std::string> _validSlots;
+	//bool _checkValidSlots;
 	std::string _hitEffect;
 	std::string _equippedEffect;
 	int _ammoRegen;
@@ -257,8 +271,6 @@ public:
 	int getHandSprite() const;
 	/// Gets if the item is two-handed.
 	bool isTwoHanded() const;
-	/// Gets the item's two-handed modifier.
-	int getTwoHandedModifier() const;
 	/// Gets if the item can only be used by both hands.
 	bool isBlockingBothHands() const;
 	/// Gets if the item is fixed.
@@ -270,11 +282,13 @@ public:
 	/// Gets the item's supported inventory sections.
 	const std::vector<std::string> &getSupportedInventorySections() const;
 	/// Checks if the item can be placed into a given inventory section.
-	bool canBePlacedIntoInventorySection(const std::string &inventorySection) const;
+	bool canBePlacedIntoInventorySection(const RuleInventory *inventorySlot) const;
 	/// Gets if the item is a launcher.
 	int getWaypoints() const;
 	/// Gets the item's bullet sprite reference.
 	int getBulletSprite() const;
+	/// Gets the item's number of sprites to render when firing.
+	int getBulletParticles() const;
 	/// Gets the item's fire sound.
 	int getFireSound() const;
 
@@ -336,6 +350,8 @@ public:
 	const RuleItemAction *getConfigAimed() const;
 	/// Get configuration of autoshot action.
 	const RuleItemAction *getConfigAuto() const;
+	/// Get configuration of burstshot action.
+	const RuleItemAction *getConfigBurst() const;
 	/// Get configuration of snapshot action.
 	const RuleItemAction *getConfigSnap() const;
 	/// Get configuration of melee action.
@@ -360,14 +376,16 @@ public:
 	/// Gets the item's throw accuracy.
 	int getAccuracyThrow() const;
 	/// Gets the item's close quarters combat accuracy.
-	int getAccuracyCloseQuarters(Mod *mod) const;
+	int getAccuracyCloseQuarters(const Mod *mod) const;
 	/// Gets the item's shotgun spread accuracy.
-	int getAccuracyShotgunSpread() const;
+	//int getAccuracyShotgunSpread() const;
 
 	/// Gets the item's aimed shot cost.
 	RuleItemUseCost getCostAimed() const;
 	/// Gets the item's autoshot cost.
 	RuleItemUseCost getCostAuto() const;
+	/// Gets the item's burstshot cost.
+	RuleItemUseCost getCostBurst() const;
 	/// Gets the item's snapshot cost.
 	RuleItemUseCost getCostSnap() const;
 	/// Gets the item's melee cost.
@@ -378,6 +396,10 @@ public:
 	RuleItemUseCost getCostMind() const;
 	/// Gets the item's panic cost.
 	RuleItemUseCost getCostPanic() const;
+	/// Gets the item's clairvoyance cost.
+	RuleItemUseCost getCostClairvoyance() const;
+	/// Gets the item's mind blast cost.
+	RuleItemUseCost getCostMindBlast() const;
 	/// Gets the item's throw cost.
 	RuleItemUseCost getCostThrow() const;
 	/// Gets the item's prime cost.
@@ -389,6 +411,8 @@ public:
 	RuleItemUseCost getFlatAimed() const;
 	/// Should we charge a flat rate of costAuto?
 	RuleItemUseCost getFlatAuto() const;
+	/// Should we charge a flat rate of costAuto?
+	RuleItemUseCost getFlatBurst() const;
 	/// Should we charge a flat rate of costSnap?
 	RuleItemUseCost getFlatSnap() const;
 	/// Should we charge a flat rate of costMelee?
@@ -436,11 +460,11 @@ public:
 	/// Gets the chance of special effect like zombify or corpse explosion or mine triggering.
 	int getSpecialChance() const;
 	/// Draws the item's hand sprite onto a surface.
-	void drawHandSprite(SurfaceSet *texture, Surface *surface, int maxW = 0, int maxH = 0, bool utilitySlot = false) const;
+	void drawHandSprite(SurfaceSet *texture, Surface *surface, BattleItem *item = 0, int maxW = 0, int maxH = 0, int animFrame = 0) const;
 	/// item's hand spite x offset
-	int getHandSpriteOffX() const;
+	int getHandSpriteOffX(int maxW = 0) const;
 	/// item's hand spite y offset
-	int getHandSpriteOffY() const;
+	int getHandSpriteOffY(int maxH = 0) const;
 	/// Gets the medikit heal quantity.
 	int getHealQuantity() const;
 	/// Gets the medikit pain killer quantity.
@@ -559,15 +583,13 @@ public:
 	/// Gets the index of the sprite in the CustomItemPreview sprite set
 	int getCustomItemPreviewIndex() const;
 	/// Gets the kneel bonus.
-	int getKneelBonus(Mod *mod) const;
+	int getKneelBonus(const Mod *mod) const;
 	/// Gets the one-handed penalty.
-	int getOneHandedPenalty(Mod *mod) const;
+	int getOneHandedPenalty(const Mod *mod) const;
 	/// Get the reactions modifier for this weapon.
 	int getReactionsModifier() const;
 	/// Get the delay between auto fire shots.
 	int getAutoDelay() const;
-	/// Get the drop-off rate per tile for explosions from this ammo item.
-	int getExplosionDropoff() const;
 	/// Gets the monthly salary.
 	int getMonthlySalary() const;
 	/// Gets the monthly maintenance.
@@ -587,23 +609,21 @@ public:
 	int getOverwatchRadius() const;
 	int getOverwatchRange() const;
 	const std::string &getOverwatchShot() const;
+	BattleActionType getOverwatchShotAction() const;
 	bool isAmmo() const;
-
-	int getPsiCostPanic() const;
-	int getPsiCostMindControl() const;
-	int getPsiCostClairvoyance() const;
-	int getPsiCostMindBlast() const;
 
 	bool isVehicleItem() const;
 
 	bool hasStats() const;
-	UnitStats *getStats();
-	UnitStats *getStatModifiers();
+	const UnitStats *getStats() const;
+	const UnitStats *getStatModifiers() const;
 
 	/// Gets the front armor level.
 	int getFrontArmor() const;
-	/// Gets the side armor level.
-	int getSideArmor() const;
+	/// Gets the left armor level.
+	int getLeftArmor() const;
+	/// Gets the right armor level.
+	int getRightArmor() const;
 	/// Gets the rear armor level.
 	int getRearArmor() const;
 	/// Gets the under armor level.
@@ -611,7 +631,7 @@ public:
 	/// Gets the ammo regen per turn.
 	int getAmmoRegen() const;
 
-	bool isValidSlot(const RuleInventory* slot) const;
+	//bool isValidSlot(const RuleInventory* slot) const;
 
 	const std::string &getHitEffect() const;
 	const std::string &getEquippedEffect() const;

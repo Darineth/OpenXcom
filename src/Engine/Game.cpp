@@ -53,7 +53,7 @@ const double Game::VOLUME_GRADIENT = 10.0;
  * creates the display screen and sets up the cursor.
  * @param title Title of the game window.
  */
-Game::Game(const std::string &title) : _screen(0), _cursor(0), _quit(false), _init(false), _mouseActive(true), _timeUntilNextFrame(0)
+Game::Game(const std::string &title) : _screen(0), _cursor(0), _quit(false), _init(false), _mouseActive(true), _timeUntilNextFrame(0), _inBattlescape(false)
 {
 	_game = this;
 
@@ -446,9 +446,12 @@ void Game::pushState(State *state)
  * which is cleared at the start of every cycle, so the transition
  * is seamless.
  */
-void Game::popState()
+void Game::popState(bool deleteState)
 {
-	_deleted.push_back(_states.back());
+	if (deleteState)
+	{
+		_deleted.push_back(_states.back());
+	}
 	_states.pop_back();
 	_init = false;
 }
@@ -673,6 +676,24 @@ void Game::initAudio()
 		Log(LOG_INFO) << "SDL_mixer initialized successfully.";
 		setVolume(Options::soundVolume, Options::musicVolume, Options::uiVolume);
 	}
+}
+
+/**
+ * Sets if we're in the battlescape.
+ * @param inBattlescape The new battlescape flag.
+ */
+void Game::setInBattlescape(bool inBattlescape)
+{
+	_inBattlescape = inBattlescape;
+}
+
+/**
+ * Gets if we're in the battlescape.
+ * @return True if we're in the battlescape.
+ */
+bool Game::getInBattlescape() const
+{
+	return _inBattlescape;
 }
 
 }

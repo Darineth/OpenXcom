@@ -29,6 +29,7 @@
 #include "../Mod/RuleResearch.h"
 #include "../Savegame/ItemContainer.h"
 #include "../Savegame/ResearchProject.h"
+#include "../Savegame/SavedGame.h"
 #include "../Interface/ArrowButton.h"
 #include "../Engine/Timer.h"
 #include "../Engine/RNG.h"
@@ -152,6 +153,15 @@ void ResearchInfoState::buildUi()
 		_btnOk->onKeyboardPress((ActionHandler)&ResearchInfoState::btnOkClick, Options::keyCancel);
 	}
 	_btnCancel->onMouseClick((ActionHandler)&ResearchInfoState::btnCancelClick);
+
+	if (_rule)
+	{
+		// mark new as normal
+		if (_game->getSavedGame()->isResearchRuleStatusNew(_rule->getName()))
+		{
+			_game->getSavedGame()->setResearchRuleStatus(_rule->getName(), RuleResearch::RESEARCH_STATUS_NORMAL);
+		}
+	}
 }
 
 /**

@@ -74,11 +74,29 @@ void Action::setMouseAction(int mouseX, int mouseY, int surfaceX, int surfaceY)
 	_surfaceY = surfaceY;
 }
 
+/**
+ * Gets if the action is a mouse action.
+ */
 bool Action::isMouseAction() const
 {
 	return (_mouseX != -1);
 }
 
+/**
+ * Gets if action is mouse left click.
+ */
+bool  Action::isMouseLeftClick() const
+{
+	return isMouseAction() && _ev->button.button == SDL_BUTTON_LEFT;
+}
+
+/**
+ * Gets if action is mouse right click.
+ */
+bool  Action::isMouseRightClick() const
+{
+	return isMouseAction() && _ev->button.button == SDL_BUTTON_RIGHT;
+}
 /**
  * Returns the height in pixel of the
  * top black band if any.

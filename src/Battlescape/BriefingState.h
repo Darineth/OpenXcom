@@ -39,9 +39,10 @@ private:
 	Window *_window;
 	Text *_txtTitle, *_txtTarget, *_txtCraft, *_txtBriefing;
 	std::string _cutsceneId, _musicId;
+	bool _infoOnly;
 public:
 	/// Creates the Briefing state.
-	BriefingState(Craft *craft = 0, Base *base = 0);
+	BriefingState(Craft *craft = 0, Base *base = 0, bool infoOnly = false);
 	/// Cleans up the Briefing state.
 	~BriefingState();
 	/// Initialization

@@ -172,6 +172,7 @@ void ManufactureInfoState::buildUi()
 
 	_txtUnitDown->setText(tr("STR_DECREASE_UC"));
 
+	_btnSell->setText(tr("STR_SELL_PRODUCTION"));
 	_btnSell->onMouseClick((ActionHandler)&ManufactureInfoState::btnSellClick, 0);
 
 	int sellPrice = 0;
@@ -197,7 +198,21 @@ void ManufactureInfoState::buildUi()
 	_btnOk->onKeyboardPress((ActionHandler)&ManufactureInfoState::btnOkClick, Options::keyOk);
 	_btnOk->onKeyboardPress((ActionHandler)&ManufactureInfoState::btnOkClick, Options::keyCancel);
 
-	_btnStop->setText(tr("STR_STOP_PRODUCTION"));
+	if (!_item && _production)
+	{
+		if (_production->getRules()->getRefund())
+		{
+			_btnStop->setText(tr("STR_REFUND_PRODUCTION"));
+		}
+		else
+		{
+			_btnStop->setText(tr("STR_STOP_PRODUCTION"));
+		}
+	}
+	else
+	{
+		_btnStop->setText(tr("STR_CANCEL_UC"));
+	}
 	_btnStop->onMouseClick((ActionHandler)&ManufactureInfoState::btnStopClick);
 	if (!_production)
 	{
@@ -205,6 +220,7 @@ void ManufactureInfoState::buildUi()
 		_base->addProduction(_production);
 	}
 	_btnSell->setPressed(_production->getSellItems());
+	_btnSell->setVisible(_production->getRules()->getSpawnedPersonType() == "");
 	initProfitInfo();
 	setAssignedEngineer();
 
@@ -229,7 +245,14 @@ void ManufactureInfoState::initProfitInfo ()
 		int sellValue = 0;
 		if (item->getCategory() == "STR_CRAFT")
 		{
-			sellValue = mod->getCraft(i->first, true)->getSellCost();
+			if (_game->getMod()->getCraft(i->first, true) != 0)
+			{
+				sellValue = mod->getCraft(i->first, true)->getSellCost();
+			}
+			else
+			{
+				sellValue = mod->getItem(i->first, true)->getSellCost();
+			}
 		}
 		else if (item->getCategory() == "STR_VEHICLE")
 		{
@@ -295,6 +318,10 @@ void ManufactureInfoState::btnSellClick(Action *)
  */
 void ManufactureInfoState::btnStopClick(Action *)
 {
+	if (!_item && _production && _production->getRules()->getRefund())
+	{
+		_production->refundItem(_base, _game->getSavedGame(), _game->getMod());
+	}
 	_base->removeProduction(_production);
 	exitState();
 }

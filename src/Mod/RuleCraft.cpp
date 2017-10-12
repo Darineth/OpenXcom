@@ -30,7 +30,7 @@ namespace OpenXcom
  * @param type String defining the type.
  */
 RuleCraft::RuleCraft(const std::string &type) :
-	_type(type), _sprite(-1), _marker(-1), _weapons(0), _soldiers(0), _pilots(0), _vehicles(0),
+	_type(type), _sprite(-1), _combatSprite(-1), _marker(-1), _weapons(0), _soldiers(0), _pilots(0), _vehicles(0),
 	_costBuy(0), _costRent(0), _costSell(0), _repairRate(1), _refuelRate(1),
 	_transferTime(0), _score(0), _battlescapeTerrainData(0),
 	_allowLanding(true), _spacecraft(false), _notifyWhenRefueled(false), _autoPatrol(false), _listOrder(0), _maxItems(0), _maxAltitude(-1), _stats(),
@@ -78,6 +78,10 @@ void RuleCraft::load(const YAML::Node &node, Mod *mod, int listOrder)
 		if (_sprite > 4)
 			_sprite += mod->getModOffset();
 	}
+	if (node["combatSprite"])
+	{
+		_combatSprite = node["combatSprite"].as<int>() + mod->getModOffset();
+	}
 	_stats.load(node);
 	_marker = node["marker"].as<int>(_marker);
 	_weapons = node["weapons"].as<int>(_weapons);
@@ -90,6 +94,7 @@ void RuleCraft::load(const YAML::Node &node, Mod *mod, int listOrder)
 	_refuelItem = node["refuelItem"].as<std::string>(_refuelItem);
 	_repairRate = node["repairRate"].as<int>(_repairRate);
 	_refuelRate = node["refuelRate"].as<int>(_refuelRate);
+	_combatRefuelRate = node["combatRefuelRate"].as<int>(_combatRefuelRate);
 	_transferTime = node["transferTime"].as<int>(_transferTime);
 	_score = node["score"].as<int>(_score);
 	if (const YAML::Node &terrain = node["battlescapeTerrainData"])
@@ -177,6 +182,16 @@ int RuleCraft::getSprite() const
 }
 
 /**
+ * Gets the ID of the sprite used to draw the craft in
+ * in the air combat state.
+ * @return The Sprite ID.
+ */
+int RuleCraft::getCombatSprite() const
+{
+	return _combatSprite;
+}
+
+/**
  * Returns the globe marker for the craft type.
  * @return Marker sprite, -1 if none.
  */
@@ -192,6 +207,15 @@ int RuleCraft::getMarker() const
 int RuleCraft::getMaxFuel() const
 {
 	return _stats.fuelMax;
+}
+
+/**
+ * Gets the craft's maximum combat fuel.
+ * @return The combat fuel amount.
+ */
+int RuleCraft::getMaxCombatFuel() const
+{
+	return _stats.combatFuelMax;
 }
 
 /**
@@ -320,6 +344,16 @@ int RuleCraft::getRepairRate() const
 int RuleCraft::getRefuelRate() const
 {
 	return _refuelRate;
+}
+
+/**
+* Gets how much combat fuel is added to the
+* craft while refuelling.
+* @return The amount of fuel.
+*/
+int RuleCraft::getCombatRefuelRate() const
+{
+	return _combatRefuelRate;
 }
 
 /**

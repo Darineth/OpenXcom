@@ -48,6 +48,8 @@ public:
 	void load(const YAML::Node& node);
 	/// Saves the time to YAML.
 	YAML::Node save() const;
+	/// Checks if it is the last day of the month.
+	bool isLastDayOfMonth();
 	/// Advances the time by 5 seconds.
 	TimeTrigger advance();
 	/// Gets the ingame second.

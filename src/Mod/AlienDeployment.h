@@ -17,6 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <map>
 #include <vector>
 #include <string>
 #include <yaml-cpp/yaml.h>
@@ -63,14 +64,19 @@ class AlienDeployment
 {
 private:
 	std::string _type;
+	std::string _startingCondition;
+	std::string _unlockedResearch, _missionBountyItem;
+	int _bughuntMinTurn;
 	std::vector<DeploymentData> _data;
 	int _width, _length, _height, _civilians;
+	std::map<std::string, int> _civiliansByType;
 	std::vector<std::string> _terrains, _music;
-	int _shade;
+	int _shade, _minShade, _maxShade;
 	std::string _nextStage, _race, _script;
 	bool _finalDestination, _isAlienBase;
 	std::string _winCutscene, _loseCutscene, _abortCutscene;
-	std::string _alert, _alertBackground;
+	std::string _alert, _alertBackground, _alertDescription;
+	int _alertSound;
 	BriefingData _briefingData;
 	std::string _markerName, _objectivePopup, _objectiveCompleteText, _objectiveFailedText;
 	WeightedOptions _genMission;
@@ -86,16 +92,30 @@ public:
 	void load(const YAML::Node& node, Mod *mod);
 	/// Gets the Alien Deployment's type.
 	std::string getType() const;
+	/// Gets the Alien Deployment's starting condition.
+	std::string getStartingCondition() const;
+	/// Gets the research topic to be unlocked after a successful mission.
+	std::string getUnlockedResearch() const;
+	/// Gets the item to be recovered/given after a successful mission.
+	std::string getMissionBountyItem() const;
+	/// Gets the bug hunt mode minimum turn requirement (default = 0 = not used).
+	int getBughuntMinTurn() const;
 	/// Gets a pointer to the data.
-	std::vector<DeploymentData>* getDeploymentData();
+	const std::vector<DeploymentData>* getDeploymentData() const;
 	/// Gets dimensions.
 	void getDimensions(int *width, int *length, int *height) const;
 	/// Gets civilians.
 	int getCivilians() const;
+	/// Gets civilians by type.
+	const std::map<std::string, int> &getCiviliansByType() const;
 	/// Gets the terrain for battlescape generation.
 	std::vector<std::string> getTerrains() const;
 	/// Gets the shade level for battlescape generation.
 	int getShade() const;
+	/// Gets the min shade level for battlescape generation.
+	int getMinShade() const;
+	/// Gets the max shade level for battlescape generation.
+	int getMaxShade() const;
 	/// Gets the next stage of the mission.
 	std::string getNextStage() const;
 	/// Gets the race to use in the next stage.
@@ -114,6 +134,10 @@ public:
 	std::string getAlertMessage() const;
 	/// Gets the alert background for this mission type.
 	std::string getAlertBackground() const;
+	/// Gets the alert description for this mission type.
+	std::string getAlertDescription() const;
+	/// Gets the alert sound for this mission type.
+	int getAlertSound() const;
 	/// Gets the briefing data for this mission type.
 	BriefingData getBriefingData() const;
 	/// Gets the marker name for this mission.
@@ -125,7 +149,7 @@ public:
 	/// Gets the maximum duration for this mission.
 	int getDurationMax() const;
 	/// Gets the list of music to pick from.
-	std::vector<std::string> &getMusic();
+	const std::vector<std::string> &getMusic() const;
 	/// Gets the minimum depth.
 	int getMinDepth() const;
 	/// Gets the maximum depth.
@@ -139,7 +163,7 @@ public:
 	/// Gets a fixed number of objectives requires (if any).
 	int getObjectivesRequired() const;
 	/// Gets the string to pop up when the mission objectives are complete.
-	std::string getObjectivePopup() const;
+	const std::string &getObjectivePopup() const;
 	/// Fills out the objective complete info.
 	bool getObjectiveCompleteInfo(std::string &text, int &score) const;
 	/// Fills out the objective failed info.

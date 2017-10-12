@@ -34,7 +34,7 @@ namespace OpenXcom
  * @param x X position in pixels.
  * @param y Y position in pixels.
  */
-TextEdit::TextEdit(State *state, int width, int height, int x, int y) : InteractiveSurface(width, height, x, y), _blink(true), _modal(true), _ascii(L'A'), _caretPos(0), _textEditConstraint(TEC_NONE), _change(0), _state(state)
+TextEdit::TextEdit(State *state, int width, int height, int x, int y) : InteractiveSurface(width, height, x, y), _blink(true), _modal(true), _ascii(L'A'), _caretPos(0), _textEditConstraint(TEC_NONE), _change(0), _enter(0), _escape(0), _state(state)
 {
 	_isFocused = false;
 	_text = new Text(width, height, 0, 0);
@@ -310,6 +310,17 @@ void TextEdit::draw()
 		}
 	}
 	clear();
+
+	/*if (_enter)
+	{
+		SDL_Rect square;
+		square.x = 0;
+		square.y = 0;
+		square.w = getWidth();
+		square.h = getHeight();
+		drawRect(&square, getColor());
+	}*/
+
 	_text->blit(this);
 	if (Options::keyboardMode == KEYBOARD_ON)
 	{
@@ -456,6 +467,8 @@ void TextEdit::mousePress(Action *action, State *state)
  */
 void TextEdit::keyboardPress(Action *action, State *state)
 {
+	bool enterPressed = false;
+	bool escapePressed = false;
 	if (Options::keyboardMode == KEYBOARD_OFF)
 	{
 		switch (action->getDetails()->key.keysym.sym)
@@ -524,10 +537,25 @@ void TextEdit::keyboardPress(Action *action, State *state)
 				_value.erase(_caretPos, 1);
 			}
 			break;
+		case SDLK_ESCAPE:
+			{
+				if (_escape)
+				{
+					escapePressed = true;
+					break;
+				}
+				else
+				{
+					_value = L"";
+					_caretPos = 0;
+				}
+			}
+			// no break; do the ENTER action too
 		case SDLK_RETURN:
 		case SDLK_KP_ENTER:
-			if (!_value.empty())
+			if (!_value.empty() || _enter != 0)
 			{
+				enterPressed = true;
 				setFocus(false);
 			}
 			break;
@@ -544,6 +572,14 @@ void TextEdit::keyboardPress(Action *action, State *state)
 	if (_change)
 	{
 		(state->*_change)(action);
+	}
+	if (_enter && enterPressed)
+	{
+		(state->*_enter)(action);
+	}
+	if (_escape && escapePressed)
+	{
+		(state->*_escape)(action);
 	}
 
 	InteractiveSurface::keyboardPress(action, state);
@@ -565,6 +601,15 @@ void TextEdit::onChange(ActionHandler handler)
 void TextEdit::onEnter(ActionHandler handler)
 {
 	_enter = handler;
+}
+
+/**
+* Sets a function to be called every time ESCAPE is pressed.
+* @param handler Action handler.
+*/
+void TextEdit::onEscape(ActionHandler handler)
+{
+	_escape = handler;
 }
 
 }

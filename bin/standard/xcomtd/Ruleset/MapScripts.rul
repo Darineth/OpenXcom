@@ -1,0 +1,45 @@
+mapScripts:
+  - type: SEABED
+    commands:
+    - type: addUFO
+    - type: addCraft
+    - type: addBlock
+      size: 2
+      executions: 3
+    - type: fillArea
+  - type: SEABED_GALLEON
+    commands:
+    - type: addUFO
+      UFOName: STR_SEA_SUNKEN_GALLEON
+    - type: addCraft
+    - type: addBlock
+      size: 2
+      executions: 3
+    - type: fillArea
+  - type: SEABED_CARGO_SHIP
+    commands:
+    - type: addUFO
+      UFOName: STR_SEA_SUNKEN_CARGO_SHIP
+    - type: addCraft
+    - type: addBlock
+      size: 2
+      executions: 3
+    - type: fillArea
+  - type: SEABED_USO
+    commands:
+    - type: addUFO
+      UFOName: STR_SEA_SUNKEN_USO
+    - type: addCraft
+    - type: addBlock
+      size: 2
+      executions: 3
+    - type: fillArea
+  - type: SEABED_UFO
+    commands:
+    - type: addUFO
+      UFOName: STR_SEA_SUNKEN_UFO
+    - type: addCraft
+    - type: addBlock
+      size: 2
+      executions: 3
+    - type: fillArea

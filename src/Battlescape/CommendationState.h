@@ -38,11 +38,14 @@ private:
 	Window *_window;
 	Text *_txtTitle;
 	TextList *_lstSoldiers;
+	std::vector<std::string> _commendationsNames;
 public:
 	/// Creates the Medals state.
 	CommendationState(std::vector<Soldier*> soldiers);
 	/// Cleans up the Medals state.
 	~CommendationState();
+	/// Handler for clicking on a medal.
+	void lstSoldiersMouseClick(Action *action);
 	/// Handler for clicking the OK button.
 	void btnOkClick(Action *action);
 };

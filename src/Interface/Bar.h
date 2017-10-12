@@ -31,9 +31,12 @@ namespace OpenXcom
 class Bar : public Surface
 {
 private:
-	Uint8 _color, _color2, _color3, _borderColor;
+	Uint8 _color, _color2, _color3, _color4, _borderColor;
 	double _scale, _max, _value, _value2, _value3;
-	bool _secondOnTop;
+	bool _secondOnTop, _autoScale, _bordered, _fullBorder;
+
+	void determineAutoScale();
+
 public:
 	/// Creates a new bar with the specified size and position.
 	Bar(int width, int height, int x = 0, int y = 0);
@@ -48,13 +51,29 @@ public:
 	/// Gets the bar's second color.
 	Uint8 getSecondaryColor() const;
 	/// Sets the bar's third color.
-	void setColor3(Uint8 color);
+	void setTertiaryColor(Uint8 color) override;
 	/// Gets the bar's third color.
-	Uint8 getColor3() const;
+	Uint8 getTertiaryColor() const;
+	/// Sets the bar's fourth color.
+	void setQuaternaryColor(Uint8 color) override;
+	/// Gets the bar's fourth color.
+	Uint8 getQuaternaryColor() const;
+	/// Sets the bar's background color.
+	void setColorBackground(Uint8 color);
+	/// Gets the bar's background color.
+	Uint8 getColorBackground() const;
 	/// Sets the bar's scale.
 	void setScale(double scale);
 	/// Gets the bar's scale.
 	double getScale() const;
+	/// Sets if the bar has a border.
+	void setBordered(bool bordered);
+	/// Gets if the bar has a border.
+	bool getBordered() const;
+	/// Sets if the bar has a full border.
+	void setFullBordered(bool fullBorder);
+	/// Gets if the bar has a full border.
+	bool getFullBordered() const;
 	/// Sets the bar's maximum value.
 	void setMax(double max);
 	/// Gets the bar's maximum value.
@@ -77,6 +96,10 @@ public:
 	void draw();
 	/// set the outline color for the bar.
 	void setBorderColor(Uint8 bc);
+	/// Sets auto scale mode.
+	void setAutoScale(bool autoScale);
+	/// Gets if auto scale mode is enabled.
+	bool getAutoScale() const;
 };
 
 }

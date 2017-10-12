@@ -48,6 +48,7 @@ private:
 	bool _subState;
 	bool _subStateFinished;
 	//int _projectileImpact;
+	int _range;
 	/// Tries to create a projectile sprite.
 	bool createNewProjectile();
 	bool _initialized, _targetFloor;
@@ -68,7 +69,7 @@ private:
 public:
 	/// Creates a new ProjectileFly class
 	ProjectileFlyBState(BattlescapeGame *parent, BattleAction action);
-	ProjectileFlyBState(BattlescapeGame *parent, BattleAction action, Position origin);
+	ProjectileFlyBState(BattlescapeGame *parent, BattleAction action, Position origin, int range);
 	/// Cleans up the ProjectileFly.
 	~ProjectileFlyBState();
 	/// Initializes the state.

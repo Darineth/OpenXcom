@@ -1,4 +1,25 @@
 en-US:
+#Extended+ BEGIN
+#=================== Basescape ===================
+#SoldierAvatarState.cpp
+  STR_AVATAR_NAME_1: "#01 Male, Blonde"
+  STR_AVATAR_NAME_2: "#02 Male, Brown hair"
+  STR_AVATAR_NAME_3: "#03 Male, Asian"
+  STR_AVATAR_NAME_4: "#04 Male, African"
+  STR_AVATAR_NAME_5: "#05 Female, Blonde"
+  STR_AVATAR_NAME_6: "#06 Female, Brown hair"
+  STR_AVATAR_NAME_7: "#07 Female, Asian"
+  STR_AVATAR_NAME_8: "#08 Female, African"
+#=================== Battlescape ===================
+#InventoryState.cpp
+  STR_PSI_SHORT: "PSI>{ALT}{0}/{1}"
+#=================== Geoscape ===================
+#SelectMusicTrackState.cpp
+  GMGEO1: "Geoscape Track #1"
+  GMGEO2: "Geoscape Track #2"
+  GMTACTIC: "Battlescape Track"
+#Extended+ END
+#==================================================================================================================
   STR_AVENGER_UFOPEDIA: "TRANSPORTER AND COMBAT SPACECRAFT. THE ULTIMATE REPLICATION OF ALIEN TECHNOLOGY."
   STR_INTERCEPTOR_UFOPEDIA: "COMBAT AIRCRAFT WITH DUAL PULSE DETONATION ENGINES AND SPECIALLY SHIELDED ELECTRONIC SYSTEMS. THE BEST AVAILABLE EARTH BASED TECHNOLOGY."
   STR_LIGHTNING_UFOPEDIA: "TRANSPORTER AND COMBAT CRAFT. A CRUDE BUT EFFECTIVE REPLICATION OF ALIEN PROPULSION SYSTEMS."
@@ -987,8 +1008,8 @@ en-US:
   STR_TORSO: "TORSO"
   STR_RIGHT_ARM: "RIGHT ARM"
   STR_LEFT_ARM: "LEFT ARM"
-  STR_RIGHT_LEG: "LEG"
-  STR_LEFT_LEG: "LEG"
+  STR_RIGHT_LEG: "RIGHT LEG"
+  STR_LEFT_LEG: "LEFT LEG"
   STR_PAIN_KILLER: "PAIN KILLER"
   STR_STIMULANT: "STIMULANT"
   STR_HEAL: "HEAL"
@@ -1055,8 +1076,8 @@ en-US:
   STR_ALIENS: "Aliens"
   STR_RIGHT_HAND: "RIGHT HAND"
   STR_LEFT_HAND: "LEFT HAND"
-  STR_RIGHT_SHOULDER: "SHOULDER"
-  STR_LEFT_SHOULDER: "SHOULDER"
+  STR_RIGHT_SHOULDER: "RIGHT SHOULDER"
+  STR_LEFT_SHOULDER: "LEFT SHOULDER"
   STR_BACK_PACK: "BACK PACK"
   STR_BELT: "BELT"
   STR_IS_UNDER_ALIEN_CONTROL_MALE: "{0}{NEWLINE}is under alien control"

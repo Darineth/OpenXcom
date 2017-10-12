@@ -57,6 +57,7 @@ private:
 	static const size_t GRAPH_MAX_BUTTONS=16;
 	//will be only between 0 and size()
 	size_t _butRegionsOffset, _butCountriesOffset;
+	int _zoom;
 	//scroll and repaint buttons functions
 	void scrollButtons(std::vector<GraphButInfo *> &toggles, std::vector<ToggleTextButton *> &buttons, size_t &offset, int step);
 	void updateButton(GraphButInfo *from,ToggleTextButton *to);
@@ -65,6 +66,9 @@ public:
 	GraphsState();
 	/// Cleans up the Graphs state.
 	~GraphsState();
+	/// Handler for using zoom in/out hotkeys.
+	void btnZoomInClick(Action *action);
+	void btnZoomOutClick(Action *action);
 	/// Handler for clicking the Geoscape icon.
 	void btnGeoscapeClick(Action *action);
 	/// Handler for clicking the ufo region icon.

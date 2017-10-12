@@ -255,3 +255,41 @@ extraSprites:
     singleImage: true
     files:
       0: Resources/StatusIcons/IconProxGrenade.png
+  - type: BigStunIndicator
+    singleImage: true
+    files:
+      0: Resources/UI/Zzz.png
+  - type: BigWoundIndicator
+    singleImage: true
+    files:
+      0: Resources/UI/Bleed.png
+  - type: BigBurnIndicator
+    singleImage: true
+    files:
+      0: Resources/UI/Burn.png
+  - type: FloorStunIndicator
+    singleImage: true
+    files:
+      0: Resources/UI/Zzz.png
+  - type: FloorWoundIndicator
+    singleImage: true
+    files:
+      0: Resources/UI/Bleed.png
+  - type: FloorBurnIndicator
+    singleImage: true
+    files:
+      0: Resources/UI/Burn.png
+#  - type: Commendations
+#    width: 31
+#    height: 48
+#    subX: 31
+#    subY: 8
+#    files:
+#      0: Resources/UI/MedalBars.png
+#  - type: CommendationDecorations
+#    width: 31
+#    height: 80
+#    subX: 31
+#    subY: 8
+#    files:
+#      0: Resources/UI/Decorations.png

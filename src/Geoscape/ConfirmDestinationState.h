@@ -40,6 +40,8 @@ private:
 	Window *_window;
 	Text *_txtTarget;
 	TextButton *_btnOk, *_btnCancel;
+	// Checks the starting condition
+	std::wstring checkStartingCondition();
 public:
 	/// Creates the Confirm Destination state.
 	ConfirmDestinationState(Craft *craft, Target *target);

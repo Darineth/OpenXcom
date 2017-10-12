@@ -16,6 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <algorithm>
 #include "RuleManufacture.h"
 
 namespace OpenXcom
@@ -24,7 +25,7 @@ namespace OpenXcom
  * Creates a new Manufacture.
  * @param name The unique manufacture name.
  */
-RuleManufacture::RuleManufacture(const std::string &name) : _name(name), _space(0), _time(0), _cost(0), _listOrder(0)
+RuleManufacture::RuleManufacture(const std::string &name) : _name(name), _space(0), _time(0), _cost(0), _refund(false), _listOrder(0)
 {
 	_producedItems[name] = 1;
 }
@@ -50,23 +51,28 @@ void RuleManufacture::load(const YAML::Node &node, int listOrder)
 	}
 	_category = node["category"].as<std::string>(_category);
 	_requires = node["requires"].as< std::vector<std::string> >(_requires);
+	_requiresBaseFunc = node["requiresBaseFunc"].as< std::vector<std::string> >(_requiresBaseFunc);
 	_space = node["space"].as<int>(_space);
 	_time = node["time"].as<int>(_time);
 	_cost = node["cost"].as<int>(_cost);
+	_refund = node["refund"].as<bool>(_refund);
 	_requiredItems = node["requiredItems"].as< std::map<std::string, int> >(_requiredItems);
 	_producedItems = node["producedItems"].as< std::map<std::string, int> >(_producedItems);
+	_spawnedPersonType = node["spawnedPersonType"].as<std::string>(_spawnedPersonType);
+	_spawnedPersonName = node["spawnedPersonName"].as<std::string>(_spawnedPersonName);
 	_listOrder = node["listOrder"].as<int>(_listOrder);
 	if (!_listOrder)
 	{
 		_listOrder = listOrder;
 	}
+	std::sort(_requiresBaseFunc.begin(), _requiresBaseFunc.end());
 }
 
 /**
  * Gets the unique name of the manufacture.
  * @return The name.
  */
-std::string RuleManufacture::getName() const
+const std::string &RuleManufacture::getName() const
 {
 	return _name;
 }
@@ -75,7 +81,7 @@ std::string RuleManufacture::getName() const
  * Gets the category shown in the manufacture list.
  * @return The category.
  */
-std::string RuleManufacture::getCategory() const
+const std::string &RuleManufacture::getCategory() const
 {
 	return _category;
 }
@@ -88,6 +94,16 @@ std::string RuleManufacture::getCategory() const
 const std::vector<std::string> &RuleManufacture::getRequirements() const
 {
 	return _requires;
+}
+
+/**
+ * Gets the list of base functions required to
+ * manufacture this object.
+ * @return A list of functions IDs.
+ */
+const std::vector<std::string> &RuleManufacture::getRequireBaseFunc() const
+{
+	return _requiresBaseFunc;
 }
 
 /**
@@ -119,10 +135,19 @@ int RuleManufacture::getManufactureCost() const
 }
 
 /**
+ * Should all resources of a cancelled project be refunded?
+ * @return True, if all resources should be refunded. False otherwise.
+ */
+bool RuleManufacture::getRefund() const
+{
+	return _refund;
+}
+
+/**
  * Gets the list of items required to manufacture one object.
  * @return The list of items required to manufacture one object.
  */
-const std::map<std::string, int> & RuleManufacture::getRequiredItems() const
+const std::map<std::string, int> &RuleManufacture::getRequiredItems() const
 {
 	return _requiredItems;
 }
@@ -131,9 +156,27 @@ const std::map<std::string, int> & RuleManufacture::getRequiredItems() const
  * Gets the list of items produced by completing "one object" of this project.
  * @return The list of items produced by completing "one object" of this project.
  */
-const std::map<std::string, int> & RuleManufacture::getProducedItems() const
+const std::map<std::string, int> &RuleManufacture::getProducedItems() const
 {
 	return _producedItems;
+}
+
+/**
+* Gets the "manufactured person", i.e. person spawned when manufacturing project ends.
+* @return The person type ID.
+*/
+const std::string &RuleManufacture::getSpawnedPersonType() const
+{
+	return _spawnedPersonType;
+}
+
+/**
+* Gets the custom name of the "manufactured person".
+* @return The person name translation code.
+*/
+const std::string &RuleManufacture::getSpawnedPersonName() const
+{
+	return _spawnedPersonName;
 }
 
 /**

@@ -40,6 +40,7 @@ class BaseDefenseState : public State
 {
 private:
 	TextButton *_btnOk;
+	TextButton *_btnStart, *_btnAbort;
 	Window *_window;
 	Text *_txtTitle, *_txtInit;
 	TextList *_lstDefenses;
@@ -60,6 +61,8 @@ public:
 	void nextStep();
 	/// Handler for clicking the OK button.
 	void btnOkClick(Action *action);
+	/// Handler for clicking the [Start] button.
+	void btnStartClick(Action *action);
 };
 
 }

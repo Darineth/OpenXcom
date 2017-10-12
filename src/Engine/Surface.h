@@ -25,6 +25,7 @@ namespace OpenXcom
 
 class Font;
 class Language;
+class ScriptWorkerBase;
 
 /**
  * Element that is blit (rendered) onto the screen.
@@ -223,6 +224,10 @@ public:
 	virtual void setColor(Uint8 /*color*/) { /* empty by design */ };
 	/// Sets the secondary color of the surface.
 	virtual void setSecondaryColor(Uint8 /*color*/) { /* empty by design */ };
+	/// Sets the tertiary color of the surface.
+	virtual void setTertiaryColor(Uint8 /*color*/) { /* empty by design */ };
+	/// Sets the quaternary color of the surface.
+	virtual void setQuaternaryColor(Uint8 /*color*/) { /* empty by design */ };
 	/// Sets the border colour of the surface.
 	virtual void setBorderColor(Uint8 /*color*/) { /* empty by design */ };
 	/// Sets the high contrast color setting of the surface.
@@ -231,63 +236,6 @@ public:
 	void setTFTDMode(bool mode);
 	/// checks if this is a TFTD mode surface.
 	bool isTFTDMode() const;
-
-};
-
-/**
-* help class used for Surface::blitNShade
-*/
-struct RecolorAndShade
-{
-	/**
-	* Function used by ShaderDraw in Surface::blitNShade
-	* set shade and replace color in that surface
-	* @param dest destination pixel
-	* @param src source pixel
-	* @param shade value of shade of this surface
-	* @param newColor new color to set (it should be offseted by 4)
-	*/
-	static inline void func(Uint8& dest, const Uint8& src, const int& shade, const int& newColor, const int&)
-	{
-		if (src)
-		{
-			const int newShade = (src & 15) + shade;
-			if (newShade > 15)
-				// so dark it would flip over to another color - make it black instead
-				dest = 15;
-			else
-				dest = newColor | newShade;
-		}
-	}
-
-};
-
-/**
-* help class used for Surface::blitNShade
-*/
-struct StandardShade
-{
-	/**
-	* Function used by ShaderDraw in Surface::blitNShade
-	* set shade
-	* @param dest destination pixel
-	* @param src source pixel
-	* @param shade value of shade of this surface
-	* @param notused
-	* @param notused
-	*/
-	static inline void func(Uint8& dest, const Uint8& src, const int& shade, const int&, const int&)
-	{
-		if (src)
-		{
-			const int newShade = (src & 15) + shade;
-			if (newShade > 15)
-				// so dark it would flip over to another color - make it black instead
-				dest = 15;
-			else
-				dest = (src&(15 << 4)) | newShade;
-		}
-	}
 
 };
 

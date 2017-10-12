@@ -1,4 +1,312 @@
 en-GB:
+#Extended+ BEGIN
+#=================== Basescape ===================
+#ChangeHeadquartersState.cpp
+  STR_MOVE_HQ_TO: "Move HQ to"
+#CraftArmorState.cpp
+  STR_ID: "ID"
+  STR_FIRST_LETTER: "FIRST LETTER"
+#CraftEquipmentLoadState.cpp
+  STR_LOAD_CRAFT_LOADOUT_TEMPLATE: "Load Craft Loadout"
+  STR_EMPTY_SLOT_N: "Empty slot {0}"
+  STR_UNNAMED_SLOT_N: "Unnamed slot {0}"
+#CraftEquipmentSaveState.cpp
+  STR_SAVE_CRAFT_LOADOUT_TEMPLATE: "Save Craft Loadout"
+  STR_SAVE_UC: "SAVE"
+#CraftEquipmentState.cpp
+  STR_ALL: "Everything"
+  STR_EQUIPPED: "Equipped"
+  STR_UNASSIGNED: "Other"
+#CraftInfoState.cpp
+  STR_PILOTS: "PILOTS"
+  STR_SHIELD: "SHIELD>{ALT}{0}"
+#CraftPilotSelectState.cpp
+  STR_SELECT_PILOT: "Select Pilot"
+#CraftPilotsState.cpp
+  STR_PILOTS_FOR_CRAFT: "Pilot(s) for {0}"
+  STR_PILOTS_REQUIRED: "Pilot(s) required: {ALT}{0}"
+  STR_ADD_PILOT: "Add Pilot"
+  STR_REMOVE_ALL_PILOTS: "Remove All Pilots"
+  STR_ACCURACY_BONUS: "Accuracy bonus:"
+  STR_DODGE_BONUS: "Dodge bonus:"
+  STR_APPROACH_SPEED: "Approach speed:"
+  STR_COWARDLY: "Cowardly (-50%)"
+  STR_NORMAL: "Normal"
+  STR_BOLD: "Bold (+50%)"
+  STR_VERY_BOLD: "Very bold (+100%)"
+#DismantleFacilityState.cpp
+  STR_REFUND_VALUE: "Sales value> {ALT}{0}"
+#ManageAlienContainmentState.cpp
+  STR_GO_TO_TRANSFERS: "Transfer..."
+#ManufactureDependenciesTreeState.cpp
+  STR_TOPIC: "Topic>{ALT} {0}"
+  STR_SHOW_ALL: "Show all"
+  STR_NO_DEPENDENCIES: "No dependencies."
+  STR_DIRECT_DEPENDENCIES: "Direct dependencies"
+  STR_LEVEL_2_DEPENDENCIES: "Level 2 dependencies"
+  STR_LEVEL_3_DEPENDENCIES: "Level 3 dependencies"
+  STR_LEVEL_4_DEPENDENCIES: "Level 4 dependencies"
+  STR_MORE_DEPENDENCIES: "There are even deeper dependencies..."
+  STR_END_OF_SEARCH: "End of search."
+#ManufactureInfoState.cpp
+  STR_REFUND_PRODUCTION: "REFUND!"
+#ManufactureStartState.cpp
+  STR_PERSON_JOINING: "Person Joining"
+#MonthlyCostsState.cpp
+  STR_OTHER_EMPLOYEES: "Other Staff & Inventory"
+#NewManufactureListState.cpp
+  STR_SHOW_ONLY_NEW: "Show only new"
+  STR_FILTER_DEFAULT: "Default"
+  STR_FILTER_DEFAULT_SUPPLIES_OK: "Default (supplies OK)"
+  STR_FILTER_DEFAULT_NO_SUPPLIES: "Default (no supplies)"
+  STR_FILTER_FACILITY_REQUIRED: "Facility Missing"
+  STR_FILTER_HIDDEN: "Hidden"
+#PlaceFacilityState.cpp
+  STR_CANNOT_BUILD_MORE_OF_THIS_FACILITY_TYPE_AT_BASE: "The maximum allowed number of facilities of this type in this base has been reached!"
+#SoldierArmorState.cpp
+  STR_NOT_ENOUGH_CRAFT_SPACE: "Not enough space onboard!"
+#SoldierAvatarState.cpp
+  STR_SELECT_AVATAR_FOR: "SELECT AVATAR FOR\n{0}"
+#SoldiersState.h
+  STR_TRAINING: "Training"
+#StoresState.cpp
+  STR_GRAND_TOTAL: "Grand Total"
+#TechTreeSelectState.cpp
+  STR_AVAILABLE_TOPICS: "AVAILABLE TOPICS"
+  STR_QS_THREE_LETTERS_A: "Please enter at least 3 letters"
+  STR_QS_THREE_LETTERS_B: "into the Quick Search box..."
+  STR_M_FLAG: " [m]"
+#TechTreeViewerState.cpp
+  STR_TECH_TREE_VIEWER: "Tech Tree Viewer"
+  STR_SELECT_TOPIC: "Select Topic"
+  STR_RESEARCH_PROGRESS: "Progress>{ALT} {0}%"
+  STR_ITEM_DESTROYED: "Item destroyed:"
+  STR_ITEM_REQUIRED: "Item required:"
+  STR_FACILITIES_REQUIRED: "Facilities required:"
+  STR_REQUIRES: "Requires:"
+  STR_DEPENDS_ON: "Depends on:"
+  STR_UNLOCKED_BY: "Unlocked by:"
+  STR_DISABLED_BY: "Disabled by:"
+  STR_GET_FOR_FREE_FROM: "Get for free from:"
+  STR_REQUIRED_BY: "Required by:"
+  STR_LEADS_TO: "Leads to:"
+  STR_UNLOCKS: "Unlocks:"
+  STR_DISABLES: "Disables:"
+  STR_GIVES_ONE_FOR_FREE_SEQ: "Gives one for free (sequential):"
+  STR_GIVES_ONE_FOR_FREE: "Gives one for free:"
+  STR_RESEARCH_REQUIRED: "Research required:"
+  STR_MATERIALS_REQUIRED: "Materials required:"
+  STR_ITEMS_PRODUCED: "Items produced:"
+  STR_PERSON_RECRUITED: "Person recruited:"
+#=================== Battlescape ===================
+#ActionMenuState.cpp
+  STR_MUST_USE_BOTH_HANDS: "Both hands are required for this!"
+  STR_CUT_THROAT: "Coup de grâce"
+  STR_TARGET_WAS_EXECUTED: "Target was executed."
+  STR_HIT_LOG_WEAPON: "Weapon"
+#BattlescapeGame.cpp
+  STR_NOT_ENOUGH_MORALE: "Not Enough Morale!"
+  STR_NOT_ENOUGH_HEALTH: "Not Enough Health!"
+  STR_NOT_ENOUGH_STUN: "Stun level is too high!"
+  STR_LINE_OF_SIGHT_REQUIRED: "Line of sight (LoS) required."
+#BattlescapeState.cpp
+  STR_CENTER_ON_WOUNDED_FRIEND: "Centre on Wounded Friend"
+  STR_CENTER_ON_SHOCKED_FRIEND: "Centre on Shocked Friend"
+  STR_MAP_GEN_ERROR: "Map error detected. Please send log to devs/modders."
+  STR_BUG_HUNT_ACTIVATED: "Bug Hunt mode activated: enemies are visible on the minimap!"
+  STR_TARGET_ENEMY: "; Target = ENEMY"
+  STR_TARGET_NEUTRAL: "; Target = NEUTRAL"
+  STR_TARGET_FRIEND: "; Target = FRIEND"
+  STR_TARGET_YOURSELF: "; Target = YOURSELF"
+  STR_TARGET_ON_THE_GROUND: " (on the ground)"
+#BriefingLightState.cpp
+  STR_WHAT_CAN_I_WEAR: "What can I wear?"
+  STR_STARTING_CONDITION_ARMORS: "This mission requires specific gear.{NEWLINE}{NEWLINE}Allowed armour types are: {0}"
+#ConfirmEndMissionState.cpp
+  STR_MISSION_OVER: "Mission complete."
+  STR_UNITS_WITH_FATAL_WOUNDS:
+    one: "{N} of us is still fatally wounded"
+    other: "{N} of us are still fatally wounded"
+  STR_END_MISSION_QUESTION: "End Mission?"
+#DebriefingState.cpp
+  STR_LOOT: "LOOT"
+  STR_SELL: "SELL"
+  STR_LIVE_ALIENS_SURRENDERED: "ENEMIES SURRENDERED"
+#Inventory.cpp
+  STR_FIXED_ITEMS_CANNOT_BE_MOVED: "Fixed items cannot be moved!"
+  STR_CANNOT_PLACE_ITEM_INTO_THIS_SECTION: "It's not allowed to place that item there.{NEWLINE}Don't ask why!"
+#InventoryLoadState.cpp
+  STR_LOAD_EQUIPMENT_TEMPLATE: "Load Equipment Template"
+#InventorySaveState.cpp
+  STR_SAVE_EQUIPMENT_TEMPLATE: "Save Equipment Template"
+#InventoryState.cpp
+  STR_FIRING_SHORT: "Firing>{ALT}{0}"
+  STR_THROWING_SHORT: "Throw>{ALT}{0}"
+  STR_MELEE_SHORT: "Melee>{ALT}{0}"
+#NextTurnState.cpp
+  STR_HIT_LOG_NEW_TURN: "New Turn"
+#ProjectileFlyBState.cpp
+  STR_FAILED_CQB_CHECK: "Enemy managed to interrupt your attack!"
+  STR_NO_TRAJECTORY: "No viable trajectory!"
+  STR_HIT_LOG_NEW_BULLET: "=> "
+#TileEngine.cpp
+  STR_HIT_LOG_NO_DAMAGE: "0 "
+  STR_HIT_LOG_SMALL_DAMAGE: "hit "
+  STR_HIT_LOG_BIG_DAMAGE: "hit! "
+  STR_HIT_LOG_REACTION_FIRE: "Reaction fire..."
+#=================== Engine ===================
+#Options.cpp
+  STR_ANYTIMEMARTIALTRAINING: "Martial training at any time"
+  STR_ANYTIMEMARTIALTRAINING_DESC: "Allows assigning soldiers to martial training at any time of the month."
+  STR_COUP_DE_GRACE: "Option to execute unconscious enemies"
+  STR_COUP_DE_GRACE_DESC: "Hold an enemy in one hand, and any Melee damage melee weapon in the other, then click on the enemy to kill them instantly."
+  STR_TWO_HANDED_INDICATOR: "Display if weapon is two-handed"
+  STR_TWO_HANDED_INDICATOR_DESC: "Weapons on the battle UI will have a small number displayed in the lower right corner, 1 for 1-handed, 2 for 2-handed."
+  STR_TWO_HANDED_INDICATOR_INV: "Show 2-handed indicator in inventory"
+  STR_TWO_HANDED_INDICATOR_INV_DESC: "Shows 2-handed indicator in the soldier inventory screen (right bottom corner)."
+  STR_MINIMAP_BORDER_INDICATOR: "Display map borders on the Minimap"
+  STR_MINIMAP_BORDER_INDICATOR_DESC: "Easily see the size of the map by having the black void surrounding it replaced by coloured."
+  STR_EVERYONE_FIGHTS_NOBODY_QUITS: "Wounded fight if base attacked"
+  STR_EVERYONE_FIGHTS_NOBODY_QUITS_DESC: "...But they will start with HP reduced by the number of their remaining days to heal *1.5."
+  STR_BLEEDING_INDICATOR: "Extra bleeding indicator"
+  STR_BLEEDING_INDICATOR_DESC: "Adds extra Fatal Wounds indicators for your units, displayed alongside spotted enemy indicators."
+  STR_KNOCK_OUT_INDICATOR: "High Stun indicator"
+  STR_KNOCK_OUT_INDICATOR_DESC: "When enabled, it will add purple box indicators for soldiers that are about to pass out from Stun damage."
+  STR_BULLET_SAVING: "Statistical Bullet Saving"
+  STR_BULLET_SAVING_DESC: "There's a chance to recover a full clip depending on how much ammo has remained."
+  STR_SHOW_ITEM_WEIGHT_IN_INVENTORY: "Show item weight in inventory"
+  STR_SHOW_ITEM_WEIGHT_IN_INVENTORY_DESC: "Displays item weight after item's name when an item is picked up."
+  STR_SHOW_GUN_MELEE_ON_TOP: "Show secondary Melee attack on top"
+  STR_SHOW_GUN_MELEE_ON_TOP_DESC: "When this option is enabled, any secondary melee attack mode a weapon has will be displayed as the topmost button. Otherwise it will be displayed at the bottom."
+  STR_SHOW_ALL_COMMENDATIONS: "Show All Commendations"
+  STR_SHOW_ALL_COMMENDATIONS_DESC: "If enabled, all Commendations are displayed in the UFOPaedia. If disabled, only already awarded will be displayed."
+  STR_REMOVE_WOUNDED_FROM_TRAINING: "Remove wounded soldiers from training"
+  STR_REMOVE_WOUNDED_FROM_TRAINING_DESC: "Wounded soldiers can't benefit from physical training. This option will automatically remove them from the training facility, freeing up space for others."
+  STR_FULL_NIGHT_VISION: "Maximized Night Display"
+  STR_FULL_NIGHT_VISION_DESC: "If enabled, the Night Display will show all explored terrain, not only what your units see."
+  STR_NIGHT_VISION_COLOR: "Select Night Vision colour"
+  STR_NIGHT_VISION_COLOR_DESC: "Values from 1 to 15, each representing a different shade colour. Default is 8."
+  STR_AUTO_NIGHT_VISION: "Automatic Night Vision"
+  STR_AUTO_NIGHT_VISION_DESC: "Before night missions, turn personal lights off and turn night vision on."
+  STR_AUTO_SELL: "Auto-Sell Manager"
+  STR_AUTO_SELL_DESC: "In the battle debriefing sell screen, any item types you sold in previous battles will be automatically marked for selling."
+  STR_TECH_SPOILER_PROTECTION: "No-Spoilers Tech Tree Viewer"
+  STR_TECH_SPOILER_PROTECTION_DESC: "With this option on, you won't be able to check where the yet-unresearched topics lead to."
+  STR_PLAY_BRIEFING_MUSIC_DURING_EQUIPMENT: "Play Briefing music longer"
+  STR_PLAY_BRIEFING_MUSIC_DURING_EQUIPMENT_DESC: "Briefing music will continue playing during equipment phase until the Battlescape is displayed."
+  STR_GRAPHS_ZOOM_IN: "Zoom In (Graphs)"
+  STR_GRAPHS_ZOOM_OUT: "Zoom Out (Graphs)"
+  STR_MARK_ALL_AS_SEEN: "Mark All As Seen"
+  STR_SELECT_ALL: "Select All"
+  STR_DESELECT_ALL: "Deselect All"
+  STR_RESET_ALL: "Reset All"
+  STR_INVENTORY_ARMOR: "Change Armor (via Inventory)"
+  STR_INVENTORY_AVATAR: "Change Avatar (via Inventory)"
+  STR_ACTION_ITEM_1: "Item Action 1 (Aim/Use)"
+  STR_ACTION_ITEM_2: "Item Action 2 (Snap)"
+  STR_ACTION_ITEM_3: "Item Action 3 (Auto)"
+  STR_ACTION_ITEM_4: "Item Action 4 (Melee)"
+  STR_ACTION_ITEM_5: "Item Action 5 (Throw)"
+  STR_TOGGLE_QUICK_SEARCH: "Toggle Quick Search Field"
+  STR_TOGGLE_NIGHT_VISION: "Toggle Night Vision"
+  STR_HOLD_NIGHT_VISION: "Short Night Vision"
+  STR_SELECT_MUSIC_TRACK: "Select Music Track"
+#=================== Geoscape ===================
+#AllocateTrainingState.cpp
+  STR_PHYSICAL_TRAINING: "Martial Training"
+  STR_REMAINING_TRAINING_FACILITY_CAPACITY: "REMAINING TRAINING CAPACITY> {ALT}{0}"
+  STR_NO_WOUNDED: "-"
+  STR_NO_DONE: "DONE"
+#BaseDefenseState.cpp
+  STR_START_FIRING: "Fire!"
+  STR_SKIP_FIRING: "Let them in..."
+#ConfirmDestinationState.cpp
+  STR_STARTING_CONDITION_CRAFT: "This craft is unsuitable for this mission.{NEWLINE}{NEWLINE}Allowed craft: {0}"
+#CraftNotEnoughPilotsState.cpp
+  STR_ASSIGN_PILOTS: "Assign pilots..."
+  STR_NOT_ENOUGH_PILOTS: "Not enough pilots!{NEWLINE}Minimum: {0}"
+#DogfightState.cpp
+  STR_UFO_SHIELD_HIT: "HIT THE SHIELDS!"
+  STR_UFO_HIT_NO_DAMAGE: "BOUNCED OFF THE HULL!"
+  STR_UFO_SHIELD_DOWN: "ENEMY SHIELDS DOWN!"
+  STR_UFO_HIT_GLANCING: "GLANCING HIT!"
+  STR_INTERCEPTOR_SHIELD_HIT: "OUR SHIELDS ARE HOLDING!"
+  STR_TRACTOR_BEAM_ENGAGED: "TRACTOR BEAM IS ENGAGED!"
+  STR_TRACTOR_BEAM_DISENGAGED: "DISENGAGING TRACTOR BEAM"
+#GeoscapeCraftState.cpp
+  STR_AUTO_PATROL: "AUTO-PATROL"
+#GeoscapeState.cpp
+  STR_CRAFT_IS_READY: "{0} at {1} is ready."
+  STR_ECONOMY_WARNING: "The funds {0} and income {1} are low and the maintenance {2} too high! Sell something to avoid taking a credit... funds missing: {3}"
+#InterceptState.cpp
+  STR_RETURNING: "RETURNING"
+  STR_INTERCEPTING: "INTERCEPTING"
+  STR_EN_ROUTE: "EN ROUTE"
+  STR_PILOT_MISSING: "PILOT MISSING"
+  STR_DAY_SHORT: "{0}d"
+  STR_HOUR_SHORT: "{0}h"
+#MonthlyReportState.cpp
+  STR_PERFORMANCE_BONUS: "Performance Bonus"
+#NewPossibleCraftState.cpp
+  STR_WE_CAN_NOW_RENT: "We can now rent"
+#NewPossibleFacilityState.cpp
+  STR_WE_CAN_NOW_BUILD: "We can now build"
+#NewPossiblePurchaseState.cpp
+  STR_WE_CAN_NOW_PURCHASE: "We can now purchase"
+#ProductionCompleteState.cpp
+  STR_NOT_ENOUGH_LIVING_SPACE_AT_BASE: "Not enough living space to accomodate{NEWLINE}{0}{NEWLINE}at{NEWLINE}{1}"
+#TargetInfoState.cpp
+  STR_INFO: "INFO"
+#TrainingFinishedState.cpp
+  STR_TRAINING_FINISHED: "Training Finished"
+#UfoDetectedState.cpp
+  STR_CANCEL_AND_IGNORE_UC: "CANCEL & IGNORE"
+#UfoTrackerState.cpp
+  STR_UFO_TRACKER: "UFO Tracker"
+#=================== Menu ===================
+#OptionsAdvancedState.cpp
+  STR_OXCE: "Extended"
+#TestState.cpp
+  STR_TEST_SCREEN: "TEST SCREEN"
+  STR_PALETTE: "Palette:"
+  PAL_GEOSCAPE: "PAL_GEOSCAPE"
+  PAL_BASESCAPE: "PAL_BASESCAPE"
+  PAL_GRAPHS: "PAL_GRAPHS"
+  PAL_UFOPAEDIA: "PAL_UFOPAEDIA"
+  PAL_BATTLEPEDIA: "PAL_BATTLEPEDIA"
+  PAL_BATTLESCAPE: "PAL_BATTLESCAPE"
+  PAL_BATTLESCAPE_1: "PAL_BATTLESCAPE_1"
+  PAL_BATTLESCAPE_2: "PAL_BATTLESCAPE_2"
+  PAL_BATTLESCAPE_3: "PAL_BATTLESCAPE_3"
+  STR_LOW_CONTRAST: "LOW"
+  STR_HIGH_CONTRAST: "HIGH"
+  STR_PREVIEW: "PREVIEW"
+  STR_TEST_CASE: "Test case:"
+  STR_BAD_NODES: "Bad nodes in RMP files check"
+  STR_BAD_NODES_DESC: "Checks RMP files for nodes outside of map boundaries.{NEWLINE}These will NOT cause any crashes, but they will be ignored by the game, thus not work as intended."
+  STR_RUN: "Run selected test!"
+  STR_TESTS_STARTING: "Starting..."
+  STR_TESTS_ERRORS_FOUND: "Total errors found (there may be duplicates): {0}"
+  STR_TESTS_NO_ERRORS_FOUND: "No errors found."
+  STR_TESTS_FINISHED: "Finished."
+  STR_BAD_NODES_CHECKING_TERRAIN: "Checking terrain..."
+  STR_BAD_NODES_CHECKING_UFOS: "Checking UFOs..."
+  STR_BAD_NODES_CHECKING_CRAFT: "Checking craft..."
+  STR_BAD_NODES_DETAILED_INFO: "Detailed info about bad nodes has been saved into openxcom.log"
+#=================== Savegame ===================
+#Soldier.cpp
+  STR_RANK_NONE: "-"
+#=================== Ufopaedia ===================
+#ArticleState.cpp
+  STR_DAMAGE_NONE: "NONE"
+#ArticleStateCraft.cpp
+  STR_COCKPIT_CAPACITY: "PILOTS>{ALT}{0}{ALT}"
+#ArticleStateItem.cpp
+  STR_WEIGHT_PEDIA1: "Wt: {0}"
+  STR_WEIGHT_PEDIA2: "Wt: {0}/{1}"
+  STR_SHOT_TYPE_MELEE: "Melee"
+#Extended+ END
+#==================================================================================================================
   STR_OPENXCOM: "OpenXcom"
   STR_NEW_GAME: "New Game"
   STR_LOAD_SAVED_GAME: "Load Game"

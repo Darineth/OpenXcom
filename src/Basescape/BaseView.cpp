@@ -201,9 +201,10 @@ void BaseView::setSelectable(int size)
  * Returns if a certain facility can be successfully
  * placed on the currently selected square.
  * @param rule Facility type.
+ * @param facilityBeingMoved Selected facility.
  * @return True if placeable, False otherwise.
  */
-bool BaseView::isPlaceable(RuleBaseFacility *rule) const
+bool BaseView::isPlaceable(RuleBaseFacility *rule, BaseFacility *facilityBeingMoved) const
 {
 	// Check if square isn't occupied
 	for (int y = _gridY; y < _gridY + rule->getSize(); ++y)
@@ -216,7 +217,15 @@ bool BaseView::isPlaceable(RuleBaseFacility *rule) const
 			}
 			if (_facilities[x][y] != 0)
 			{
-				return false;
+				// when moving an existing facility, it should not block itself
+				if (facilityBeingMoved == 0)
+				{
+					return false;
+				}
+				else if (_facilities[x][y] != facilityBeingMoved)
+				{
+					return false;
+				}
 			}
 		}
 	}
@@ -480,7 +489,7 @@ void BaseView::draw()
 		}
 
 		// Draw time remaining
-		if ((*i)->getBuildTime() > 0)
+		if ((*i)->getBuildTime() > 0 || (*i)->getDisabled())
 		{
 			Text *text = new Text(GRID_SIZE * (*i)->getRules()->getSize(), 16, 0, 0);
 			text->setPalette(getPalette());
@@ -489,7 +498,10 @@ void BaseView::draw()
 			text->setY((*i)->getY() * GRID_SIZE + (GRID_SIZE * (*i)->getRules()->getSize() - 16) / 2);
 			text->setBig();
 			std::wostringstream ss;
-			ss << (*i)->getBuildTime();
+			if ((*i)->getDisabled())
+				ss << L"X";
+			else
+				ss << (*i)->getBuildTime();
 			text->setAlign(ALIGN_CENTER);
 			text->setColor(_cellColor);
 			text->setText(ss.str());

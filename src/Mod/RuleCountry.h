@@ -35,6 +35,7 @@ private:
 	int _fundingBase, _fundingCap;
 	double _labelLon, _labelLat;
 	std::vector<double> _lonMin, _lonMax, _latMin, _latMax;
+	int _labelColor, _zoomLevel;
 public:
 	/// Creates a blank country ruleset.
 	RuleCountry(const std::string &type);
@@ -60,6 +61,10 @@ public:
 	const std::vector<double> &getLonMin() const { return _lonMin; }
 	const std::vector<double> &getLatMax() const { return _latMax; }
 	const std::vector<double> &getLatMin() const { return _latMin; }
+	/// Gets the country's label color.
+	int getLabelColor() const;
+	/// Gets the minimum zoom level required to display the label (Note: works for extraGlobeLabels only, not for vanilla countries).
+	int getZoomLevel() const;
 };
 
 }

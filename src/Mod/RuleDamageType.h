@@ -24,7 +24,7 @@
 namespace OpenXcom
 {
 
-enum ItemDamageType { DT_NONE, DT_AP, DT_IN, DT_HE, DT_LASER, DT_PLASMA, DT_STUN, DT_MELEE, DT_ACID, DT_SMOKE, DT_10, DT_11, DT_12, DT_13, DT_14, DT_15, DT_16, DT_17, DT_18, DT_19, DAMAGE_TYPES };
+enum ItemDamageType { DT_NONE, DT_AP, DT_IN, DT_HE, DT_LASER, DT_PLASMA, DT_STUN, DT_MELEE, DT_ACID, DT_SMOKE, DT_PSYCHIC, DT_TELEPORT, DT_10, DT_11, DT_12, DT_13, DT_14, DT_15, DT_16, DT_17, DT_18, DT_19, DAMAGE_TYPES };
 enum ItemDamageRandomType { DRT_DEFAULT, DRT_UFO, DRT_TFTD, DRT_FLAT, DRT_FIRE, DRT_NONE, DRT_UFO_WITH_TWO_DICE };
 
 /**
@@ -54,6 +54,8 @@ struct RuleDamageType
 	bool IgnoreOverKill;
 	/// How much of armor is ignored.
 	float ArmorEffectiveness;
+	/// How much projectile damage is lost per voxel.
+	float DistanceDropoff;
 	/// Conversion form power to max explosion radius.
 	float RadiusEffectiveness;
 	/// Reduction of explosion power per tile.

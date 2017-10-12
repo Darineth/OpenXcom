@@ -34,6 +34,9 @@ class Ufo;
 class MissionSite;
 class Base;
 class RuleMissionScript;
+class AirCombatState;
+
+#define NEW_AIR_COMBAT
 
 /**
  * Geoscape screen which shows an overview of
@@ -54,7 +57,14 @@ private:
 	bool _pause, _zoomInEffectDone, _zoomOutEffectDone;
 	Text *_txtDebug;
 	std::list<State*> _popups;
+
+#ifndef NEW_AIR_COMBAT
 	std::list<DogfightState*> _dogfights, _dogfightsToBeStarted;
+#else
+	std::list<AirCombatState*> _dogfights, _dogfightsToBeStarted;
+#endif
+	//std::list<Craft*> *_airCombatWaitingCraft;
+	
 	size_t _minimizedDogfights;
 	std::wstring formatTime(int total);
 public:
@@ -94,6 +104,12 @@ public:
 	void globeClick(Action *action);
 	/// Handler for clicking the Intercept button.
 	void btnInterceptClick(Action *action);
+	/// Handler for clicking the UFO Tracker button.
+	void btnUfoTrackerClick(Action *action);
+	/// Handler for clicking the TechTreeViewer button.
+	void btnTechTreeViewerClick(Action *action);
+	/// Handler for clicking the [SelectMusicTrack] button.
+	void btnSelectMusicTrackClick(Action *action);
 	/// Handler for clicking the Bases button.
 	void btnBasesClick(Action *action);
 	/// Handler for clicking the Graph button.
@@ -145,7 +161,7 @@ public:
 	/// Handler for clicking the timer button.
 	void btnTimerClick(Action *action);
 	/// Process a mission site
-	bool processMissionSite(MissionSite *site) const;
+	bool processMissionSite(MissionSite *site);
 	/// Handles base defense
 	void handleBaseDefense(Base *base, Ufo *ufo);
 	/// Update the resolution settings, we just resized the window.

@@ -18,6 +18,7 @@
  * along with OpenXcom.  If not, see <http:///www.gnu.org/licenses/>.
  */
 #include "Position.h"
+#include "../Mod/RuleItem.h"
 #include "Pathfinding.h"
 #include <SDL.h>
 #include <string>
@@ -39,19 +40,43 @@ class Mod;
 class InfoboxOKState;
 class SoldierDiary;
 
-enum BattleActionType { BA_NONE, BA_TURN, BA_WALK, BA_PRIME, BA_THROW, BA_AUTOSHOT, BA_SNAPSHOT, BA_AIMEDSHOT, BA_HIT, BA_USE, BA_LAUNCH, BA_MINDCONTROL, BA_PANIC, BA_RETHINK, BA_RELOAD, BA_OVERWATCH, BA_CLAIRVOYANCE, BA_MINDBLAST, BA_DUALFIRE, BA_EFFECT_NEGATIVE, BA_EFFECT_POSITIVE, BA_BURSTSHOT };
+enum BattleActionType : Uint8 { BA_NONE, BA_TURN, BA_WALK, BA_KNEEL, BA_PRIME, BA_UNPRIME, BA_THROW, BA_AUTOSHOT, BA_SNAPSHOT, BA_AIMEDSHOT, BA_HIT, BA_USE, BA_LAUNCH, BA_MINDCONTROL, BA_PANIC, BA_RETHINK, BA_EXECUTE, BA_CQB, BA_RELOAD, BA_OVERWATCH, BA_CLAIRVOYANCE, BA_MINDBLAST, BA_DUALFIRE, BA_EFFECT_NEGATIVE, BA_EFFECT_POSITIVE, BA_BURSTSHOT };
+enum BattleActionMove : Uint8 { BAM_NORMAL = 0, BAM_RUN = 1, BAM_STRAFE = 2, BAM_SNEAK = 3 };
 
-struct BattleAction
+struct BattleActionCost : RuleItemUseCost
 {
 	BattleActionType type;
 	BattleUnit *actor;
-	BattleItem *weapon;
+	BattleItem *weapon, *origWeapon, *ammo;
+
+	/// Default constructor.
+	BattleActionCost() : type(BA_NONE), actor(0), weapon(0), origWeapon(0), ammo(0) { }
+
+	/// Constructor from unit.
+	BattleActionCost(BattleUnit *unit) : type(BA_NONE), actor(unit), weapon(0), ammo(0) { }
+
+	/// Constructor with update.
+	BattleActionCost(BattleActionType action, BattleUnit *unit, BattleItem *item, BattleItem *ammo) : type(action), actor(unit), weapon(item), origWeapon(0), ammo(ammo) { updateTU(); }
+
+	/// Update value of TU based of actor, weapon and type.
+	void updateTU();
+	/// Set TU to zero.
+	void clearTU();
+	/// Test if actor have enough TU to perform weapon action.
+	bool haveTU(std::string *message = 0, bool allowDebt = true);
+	/// Spend TU when actor have enough TU.
+	bool spendTU(std::string *message = 0, bool allowDebt = true);
+};
+
+struct BattleAction : BattleActionCost
+{
 	Position target;
 	std::list<Position> waypoints;
-	int TU;
 	bool targeting;
 	int value;
 	std::string result;
+	BattleActionMove movementAction;
+	bool ignoreSpottedEnemies;
 	std::wstring description;
 	int diff;
 	int autoShotCounter;
@@ -63,8 +88,29 @@ struct BattleAction
 	bool dualFiring;
 	bool overwatch;
 	bool targetSprinting;
-	MovementAction movementAction;
-	BattleAction() : type(BA_NONE), actor(0), weapon(0), TU(0), targeting(false), value(0), diff(0), autoShotCounter(0), cameraPosition(0, 0, -1), desperate(false), finalFacing(-1), finalAction(false), number(0), dualFiring(false), overwatch(false), targetSprinting(false), movementAction(MV_WALK) {}
+
+	/// Default constructor
+	BattleAction() : target(-1, -1, -1), targeting(false), value(0), movementAction(BAM_NORMAL), diff(0), autoShotCounter(0), cameraPosition(0, 0, -1), desperate(false), finalFacing(-1), finalAction(false), number(0), dualFiring(false), overwatch(false), targetSprinting(false), ignoreSpottedEnemies(false) {}
+};
+
+struct BattleActionAttack
+{
+	BattleActionType type;
+	BattleUnit *attacker;
+	BattleItem *weapon_item;
+	BattleItem *damage_item;
+
+	/// Defulat constructor.
+	BattleActionAttack(BattleActionType action = BA_NONE, BattleUnit *unit = nullptr) : type{ action }, attacker{ unit }, weapon_item{ nullptr }, damage_item{ nullptr }
+	{
+
+	}
+
+	/// Constructor.
+	BattleActionAttack(BattleActionType action, BattleUnit *unit, BattleItem *item, BattleItem *ammo);
+
+	/// Constructor.
+	BattleActionAttack(const BattleActionCost &action, BattleItem *ammo);
 };
 
 /**
@@ -81,6 +127,7 @@ private:
 	BattleAction _currentAction;
 	bool _AISecondMove, _playedAggroSound;
 	bool _endTurnRequested, _endTurnProcessed;
+	bool _endConfirmationHandled;
 
 	/// Ends the turn.
 	void endTurn();
@@ -122,13 +169,13 @@ public:
 	/// Sets state think interval.
 	void setStateInterval(Uint32 interval);
 	/// Checks for casualties in battle.
-	void checkForCasualties(BattleItem *murderweapon, BattleUnit *origMurderer, bool hiddenExplosion = false, bool terrainExplosion = false, bool pushDeathFront = false);
-	/// Checks reserved tu.
-	bool checkReservedTU(BattleUnit *bu, int tu, bool justChecking = false);
+	void checkForCasualties(const RuleDamageType *damageType, BattleActionAttack attack, bool hiddenExplosion = false, bool terrainExplosion = false, bool pushDeathFront = false);
+	/// Checks reserved tu and energy.
+	bool checkReservedTU(BattleUnit *bu, int tu, int energy, bool justChecking = false);
 	/// Handles unit AI.
 	void handleAI(BattleUnit *unit);
 	/// Drops an item and affects it with gravity.
-	void dropItem(Position position, BattleItem *item, bool newItem = false, bool removeItem = false);
+	void dropItem(Position position, BattleItem *item, bool removeItem = false, bool updateLight = true, bool newItem = false);
 	/// Converts a unit into a unit of another type.
 	BattleUnit *convertUnit(BattleUnit *unit);
 	/// Handles kneeling action.
@@ -147,10 +194,12 @@ public:
 	void launchAction();
 	/// Handler for the psi button.
 	void psiButtonAction();
+	/// Handle psi attack result message.
+	void psiAttackMessage(BattleActionAttack attack, BattleUnit *victim);
 	/// Moves a unit up or down.
 	void moveUpDown(BattleUnit *unit, int dir);
 	/// Requests the end of the turn (wait for explosions etc to really end the turn).
-	void requestEndTurn();
+	void requestEndTurn(bool askForConfirmation);
 	/// Sets the TU reserved type.
 	void setTUReserved(BattleActionType tur);
 	/// Sets up the cursor taking into account the action.
@@ -180,6 +229,7 @@ public:
 	/// Returns the type of action that is reserved.
 	BattleActionType getReservedAction();
 	/// Tallies the living units, converting them if necessary.
+	bool isSurrendering(BattleUnit* bu);
 	void tallyUnits(int &liveAliens, int &liveSoldiers);
 	bool convertInfected();
 	/// Sets the kneel reservation setting.
@@ -192,6 +242,10 @@ public:
 	void cleanupDeleted();
 	/// Get the depth of the saved game.
 	int getDepth() const;
+	/// Play sound on battlefield (with direction).
+	void playSound(int sound, const Position &pos);
+	/// Play sound on battlefield.
+	void playSound(int sound);
 	/// Sets up a mission complete notification.
 	void missionComplete();
 	std::list<BattleState*> getStates();

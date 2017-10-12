@@ -23,7 +23,11 @@
 #include "../Interface/TextButton.h"
 #include "../Interface/Window.h"
 #include "../Interface/Text.h"
+#include "../Savegame/SavedGame.h"
+#include "../Savegame/AlienMission.h"
 #include "../Savegame/Base.h"
+#include "../Savegame/Region.h"
+#include "../Mod/RuleRegion.h"
 #include "../Savegame/BaseFacility.h"
 #include "../Mod/RuleBaseFacility.h"
 #include "../Savegame/Ufo.h"
@@ -60,12 +64,16 @@ BaseDefenseState::BaseDefenseState(Base *base, Ufo *ufo, GeoscapeState *state) :
 	_txtInit = new Text(300, 10, 16, 24);
 	_lstDefenses = new TextList(300, 128, 16, 40);
 	_btnOk = new TextButton(120, 18, 100, 170);
+	_btnStart = new TextButton(148, 16, 8, 176);
+	_btnAbort = new TextButton(148, 16, 164, 176);
 
 	// Set palette
 	setInterface("baseDefense");
 
 	add(_window, "window", "baseDefense");
 	add(_btnOk, "button", "baseDefense");
+	add(_btnStart, "button", "baseDefense");
+	add(_btnAbort, "button", "baseDefense");
 	add(_txtTitle, "text", "baseDefense");
 	add(_txtInit, "text", "baseDefense");
 	add(_lstDefenses, "text", "baseDefense");
@@ -81,6 +89,12 @@ BaseDefenseState::BaseDefenseState(Base *base, Ufo *ufo, GeoscapeState *state) :
 	_btnOk->onKeyboardPress((ActionHandler)&BaseDefenseState::btnOkClick, Options::keyCancel);
 	_btnOk->setVisible(false);
 
+	_btnStart->setText(tr("STR_START_FIRING"));
+	_btnStart->onMouseClick((ActionHandler)&BaseDefenseState::btnStartClick);
+
+	_btnAbort->setText(tr("STR_SKIP_FIRING"));
+	_btnAbort->onMouseClick((ActionHandler)&BaseDefenseState::btnOkClick);
+
 	_txtTitle->setBig();
 	_txtTitle->setText(tr("STR_BASE_UNDER_ATTACK").arg(_base->getName()));
 	_txtInit->setVisible(false);
@@ -92,7 +106,6 @@ BaseDefenseState::BaseDefenseState(Base *base, Ufo *ufo, GeoscapeState *state) :
 	_defenses = _base->getDefenses()->size();
 	_timer = new Timer(250);
 	_timer->onTimer((StateHandler)&BaseDefenseState::nextStep);
-	_timer->start();
 
 	_explosionCount = 0;
 }
@@ -199,7 +212,14 @@ void BaseDefenseState::nextStep()
 				_lstDefenses->setCellText(_row, 2, tr("STR_HIT"));
 				_game->getMod()->getSound("GEO.CAT", (def)->getRules()->getHitSound())->play();
 				int dmg = (def)->getRules()->getDefenseValue();
-				_ufo->setDamage(_ufo->getDamage() + (dmg / 2 + RNG::generate(0, dmg)));
+				dmg = dmg / 2 + RNG::generate(0, dmg);
+				if (_ufo->getShield() > 0)
+				{
+					int shieldDamage = dmg;
+					dmg = std::max(0, dmg - _ufo->getShield());
+					_ufo->setShield(_ufo->getShield() - shieldDamage);
+				}
+				_ufo->setDamage(_ufo->getDamage() + dmg);
 			}
 			if (_ufo->getStatus() == Ufo::DESTROYED)
 				_action = BDA_DESTROY;
@@ -212,6 +232,17 @@ void BaseDefenseState::nextStep()
 			break;
 		}
 	}
+}
+
+/**
+* Starts base defense
+* @param action Pointer to an action.
+*/
+void BaseDefenseState::btnStartClick(Action *)
+{
+	_btnStart->setVisible(false);
+	_btnAbort->setVisible(false);
+	_timer->start();
 }
 
 /**
@@ -229,7 +260,48 @@ void BaseDefenseState::btnOkClick(Action *)
 	else
 	{
 		_base->cleanupDefenses(true);
-		_base->setRetaliationTarget(false);
+
+		// aliens are not stupid and should stop trying eventually
+		if (RNG::percent(_game->getMod()->getChanceToStopRetaliation()))
+		{
+			// unmark base...
+			_base->setRetaliationTarget(false);
+
+			// ... and also remove the retaliation mission completely
+			std::vector<Region*>::iterator k = _game->getSavedGame()->getRegions()->begin();
+			for (; k != _game->getSavedGame()->getRegions()->end(); ++k)
+			{
+				if ((*k)->getRules()->insideRegion((_base)->getLongitude(), (_base)->getLatitude()))
+				{
+					break;
+				}
+			}
+
+			AlienMission* am = _game->getSavedGame()->findAlienMission((*k)->getRules()->getType(), OBJECTIVE_RETALIATION);
+			for (std::vector<Ufo*>::iterator i = _game->getSavedGame()->getUfos()->begin(); i != _game->getSavedGame()->getUfos()->end();)
+			{
+				if ((*i)->getMission() == am)
+				{
+					delete *i;
+					i = _game->getSavedGame()->getUfos()->erase(i);
+				}
+				else
+				{
+					++i;
+				}
+			}
+
+			for (std::vector<AlienMission*>::iterator i = _game->getSavedGame()->getAlienMissions().begin();
+			i != _game->getSavedGame()->getAlienMissions().end(); ++i)
+			{
+				if ((AlienMission*)(*i) == am)
+				{
+					delete (*i);
+					_game->getSavedGame()->getAlienMissions().erase(i);
+					break;
+				}
+			}
+		}
 	}
 }
 

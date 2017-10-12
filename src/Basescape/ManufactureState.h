@@ -40,7 +40,8 @@ private:
 	Window *_window;
 	Text *_txtTitle, *_txtAvailable, *_txtAllocated, *_txtSpace, *_txtFunds, *_txtItem, *_txtEngineers, *_txtProduced, *_txtCost, *_txtTimeLeft;
 	TextList *_lstManufacture;
-	void lstManufactureClick(Action * action);
+	void lstManufactureClickLeft(Action * action);
+	void lstManufactureClickMiddle(Action * action);
 	void lstManufactureLeftArrowClick(Action *action);
 	void lstManufactureRightArrowClick(Action *action);
 	void moveProductionUp(Action *action, unsigned int row, bool max = false);
@@ -58,6 +59,8 @@ public:
 	void init();
 	/// Handler for the New Production button.
 	void btnNewProductionClick(Action * action);
+	/// Fills the list of base productions.
+	void fillProductionList();
 };
 
 }

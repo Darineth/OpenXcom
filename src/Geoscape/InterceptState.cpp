@@ -28,11 +28,15 @@
 #include "../Savegame/Base.h"
 #include "../Savegame/Craft.h"
 #include "../Savegame/SavedGame.h"
+#include "../Savegame/Ufo.h"
+#include "../Savegame/MissionSite.h"
+#include "../Savegame/AlienBase.h"
 #include "../Engine/Options.h"
 #include "Globe.h"
 #include "SelectDestinationState.h"
 #include "ConfirmDestinationState.h"
 #include "../Basescape/BasescapeState.h"
+#include "../Ufopaedia/Ufopaedia.h"
 
 namespace OpenXcom
 {
@@ -55,6 +59,10 @@ bool CraftSorter::operator() (Craft* c1, Craft* c2)
  */
 InterceptState::InterceptState(Globe *globe, Base *base, Target *target) : _globe(globe), _base(base), _target(target)
 {
+	const int WIDTH_CRAFT = 72;
+	const int WIDTH_STATUS = 94;
+	const int WIDTH_BASE = 74;
+	const int WIDTH_WEAPONS = 48;
 	_screen = false;
 
 	// Create objects
@@ -62,11 +70,15 @@ InterceptState::InterceptState(Globe *globe, Base *base, Target *target) : _glob
 	_btnCancel = new TextButton(_base ? 142 : 288, 16, 16, 146);
 	_btnGotoBase = new TextButton(142, 16, 162, 146);
 	_txtTitle = new Text(300, 17, 10, 46);
-	_txtCraft = new Text(86, 9, 14, 70);
-	_txtStatus = new Text(70, 9, 100, 70);
-	_txtBase = new Text(80, 9, 170, 70);
-	_txtWeapons = new Text(80, 17, 238, 62);
-	_lstCrafts = new TextList(288, 64, 8, 78);
+	int x = 14;
+	_txtCraft = new Text(WIDTH_CRAFT, 9, x, 70);
+	x += WIDTH_CRAFT;
+	_txtStatus = new Text(WIDTH_STATUS, 9, x, 70);
+	x += WIDTH_STATUS;
+	_txtBase = new Text(WIDTH_BASE, 9, x, 70);
+	x += WIDTH_BASE;
+	_txtWeapons = new Text(WIDTH_WEAPONS + 4, 17, x - 4, 62);
+	_lstCrafts = new TextList(290, 64, 12, 78);
 
 	// Set palette
 	setInterface("intercept");
@@ -105,14 +117,17 @@ InterceptState::InterceptState(Globe *globe, Base *base, Target *target) : _glob
 
 	_txtBase->setText(tr("STR_BASE"));
 
+	_txtWeapons->setAlign(ALIGN_RIGHT);
 	_txtWeapons->setText(tr("STR_WEAPONS_CREW_HWPS"));
 
-	_lstCrafts->setColumns(4, 86, 70, 80, 46);
+	_lstCrafts->setColumns(4, WIDTH_CRAFT, WIDTH_STATUS, WIDTH_BASE, WIDTH_WEAPONS);
+	_lstCrafts->setAlign(ALIGN_RIGHT, 3);
 	_lstCrafts->setSelectable(true);
 	_lstCrafts->setBackground(_window);
-	_lstCrafts->setMargin(6);
+	_lstCrafts->setMargin(2);
 	_lstCrafts->onMouseClick((ActionHandler)&InterceptState::lstCraftsLeftClick);
 	_lstCrafts->onMouseClick((ActionHandler)&InterceptState::lstCraftsRightClick, SDL_BUTTON_RIGHT);
+	_lstCrafts->onMouseClick((ActionHandler)&InterceptState::lstCraftsMiddleClick, SDL_BUTTON_MIDDLE);
 
 	int row = 0;
 	for (std::vector<Base*>::iterator i = _game->getSavedGame()->getBases()->begin(); i != _game->getSavedGame()->getBases()->end(); ++i)
@@ -125,19 +140,102 @@ InterceptState::InterceptState(Globe *globe, Base *base, Target *target) : _glob
 		}
 	}
 
-	if(target)
+	if (target)
 	{
 		CraftSorter sorter(target);
 		std::sort(_crafts.begin(), _crafts.end(), sorter);
 	}
 
-	for(std::vector<Craft*>::const_iterator ii = _crafts.begin(); ii != _crafts.end(); ++ii)
+	for (std::vector<Craft*>::const_iterator ii = _crafts.begin(); ii != _crafts.end(); ++ii)
 	{
-		Craft *cc = *ii;
+		Craft *cc = (*ii);
 		Base *bb = cc->getBase();
 
-		std::wostringstream ss;
+		std::wostringstream ssStatus;
+		std::string status = cc->getStatus();
 
+		bool hasEnoughPilots = cc->arePilotsOnboard();
+		if (status == "STR_OUT")
+		{
+			// QoL: let's give the player a bit more info
+			if (cc->getDestination() == 0 || cc->getIsAutoPatrolling())
+			{
+				ssStatus << tr("STR_PATROLLING");
+			}
+			else if (cc->getLowFuel() || cc->getMissionComplete() || cc->getDestination() == (Target*)cc->getBase())
+			{
+				ssStatus << tr("STR_RETURNING");
+				//ssStatus << tr("STR_RETURNING_TO_BASE"); // vanilla craft info
+			}
+			else
+			{
+				Ufo *u = dynamic_cast<Ufo*>(cc->getDestination());
+				MissionSite *m = dynamic_cast<MissionSite*>(cc->getDestination());
+				AlienBase *b = dynamic_cast<AlienBase*>(cc->getDestination());
+				if (u != 0)
+				{
+					if (cc->isInDogfight())
+					{
+						ssStatus << tr("STR_TAILING_UFO");
+					}
+					else if (u->getStatus() == Ufo::FLYING)
+					{
+						ssStatus << tr("STR_INTERCEPTING");
+						//ssStatus << tr("STR_INTERCEPTING_UFO").arg(u->getId()); // vanilla craft info
+					}
+					else
+					{
+						ssStatus << tr("STR_EN_ROUTE");
+					}
+				}
+				else if (m != 0 || b != 0)
+				{
+					ssStatus << tr("STR_EN_ROUTE");
+				}
+				else
+				{
+					ssStatus << tr(status); // "STR_OUT"
+				}
+			}
+		}
+		else
+		{
+			if (!hasEnoughPilots && status == "STR_READY")
+			{
+				ssStatus << tr("STR_PILOT_MISSING");
+			}
+			else
+			{
+				ssStatus << tr(status);
+			}
+		}
+		if (status != "STR_READY" && status != "STR_OUT")
+		{
+			unsigned int maintenanceHours = 0;
+
+			maintenanceHours += cc->calcRepairTime();
+			maintenanceHours += cc->calcRefuelTime();
+			maintenanceHours += cc->calcRearmTime();
+
+			int days = maintenanceHours / 24;
+			int hours = maintenanceHours % 24;
+			ssStatus << L" (";
+			if (days > 0)
+			{
+				ssStatus << tr("STR_DAY_SHORT").arg(days);
+			}
+			if (hours > 0)
+			{
+				if (days > 0)
+				{
+					ssStatus << L"/";
+				}
+				ssStatus << tr("STR_HOUR_SHORT").arg(hours);
+			}
+			ssStatus << L")";
+		}
+
+		std::wostringstream ss;
 		if (cc->getNumWeapons() > 0)
 		{
 			ss << L'\x01' << cc->getNumWeapons() << L'\x01';
@@ -164,9 +262,9 @@ InterceptState::InterceptState(Globe *globe, Base *base, Target *target) : _glob
 		{
 			ss << 0;
 		}
-
-		_lstCrafts->addRow(4, cc->getName(_game->getLanguage()).c_str(), tr(cc->getStatus()).c_str(), bb->getName().c_str(), ss.str().c_str());
-		if (cc->getStatus() == "STR_READY")
+		//_crafts.push_back(cc);
+		_lstCrafts->addRow(4, cc->getName(_game->getLanguage()).c_str(), ssStatus.str().c_str(), bb->getName().c_str(), ss.str().c_str());
+		if (hasEnoughPilots && status == "STR_READY")
 		{
 			_lstCrafts->setCellColor(row, 1, _lstCrafts->getSecondaryColor());
 		}
@@ -233,6 +331,20 @@ void InterceptState::lstCraftsRightClick(Action *)
 	{
 		_globe->center(c->getLongitude(), c->getLatitude());
 		_game->popState();
+	}
+}
+
+/**
+* Opens the corresponding Ufopaedia article.
+* @param action Pointer to an action.
+*/
+void InterceptState::lstCraftsMiddleClick(Action *)
+{
+	Craft* c = _crafts[_lstCrafts->getSelectedRow()];
+	if (c)
+	{
+		std::string articleId = c->getRules()->getType();
+		Ufopaedia::openArticle(_game, articleId);
 	}
 }
 

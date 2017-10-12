@@ -52,7 +52,7 @@ ResearchRequiredState::ResearchRequiredState(RuleItem *item)
 	centerAllSurfaces();
 
 	std::string weapon = item->getType();
-	std::string clip = item->getCompatibleAmmo()->front();
+	std::string clip = item->getPrimaryCompatibleAmmo()->front();
 
 	// Set up objects
 	_window->setBackground(_game->getMod()->getSurface("BACK05.SCR"));

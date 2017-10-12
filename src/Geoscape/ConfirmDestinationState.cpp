@@ -16,9 +16,15 @@
  * You should have received a copy of the GNU General Public License
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "CraftErrorState.h"
+#include "CraftNotEnoughPilotsState.h"
 #include "ConfirmDestinationState.h"
 #include "../Engine/Game.h"
 #include "../Mod/Mod.h"
+#include "../Mod/AlienRace.h"
+#include "../Mod/RuleStartingCondition.h"
+#include "../Mod/AlienDeployment.h"
+#include "../Mod/ArticleDefinition.h"
 #include "../Engine/LocalizedText.h"
 #include "../Interface/Window.h"
 #include "../Interface/Text.h"
@@ -28,6 +34,9 @@
 #include "../Savegame/Target.h"
 #include "../Savegame/Waypoint.h"
 #include "../Savegame/Base.h"
+#include "../Savegame/Ufo.h"
+#include "../Savegame/MissionSite.h"
+#include "../Savegame/AlienBase.h"
 #include "../Engine/Options.h"
 
 namespace OpenXcom
@@ -94,11 +103,101 @@ ConfirmDestinationState::~ConfirmDestinationState()
 }
 
 /**
+* Checks the starting condition.
+*/
+std::wstring ConfirmDestinationState::checkStartingCondition()
+{
+	Ufo* u = dynamic_cast<Ufo*>(_target);
+	MissionSite* m = dynamic_cast<MissionSite*>(_target);
+	AlienBase* b = dynamic_cast<AlienBase*>(_target);
+
+	AlienDeployment *ruleDeploy = 0;
+	if (u != 0)
+	{
+		ruleDeploy = _game->getMod()->getDeployment(u->getRules()->getType());
+	}
+	else if (m != 0)
+	{
+		ruleDeploy = _game->getMod()->getDeployment(m->getDeployment()->getType());
+	}
+	else if (b != 0)
+	{
+		AlienRace *race = _game->getMod()->getAlienRace(b->getAlienRace());
+		ruleDeploy = _game->getMod()->getDeployment(race->getBaseCustomMission());
+		if (!ruleDeploy) ruleDeploy = _game->getMod()->getDeployment(b->getDeployment()->getType());
+	}
+	else
+	{
+		// for example just a waypoint
+		return L"";
+	}
+
+	if (ruleDeploy == 0)
+	{
+		// e.g. UFOs without alien deployment :(
+		return L"";
+	}
+
+	RuleStartingCondition *rule = _game->getMod()->getStartingCondition(ruleDeploy->getStartingCondition());
+	if (rule == 0)
+	{
+		// rule doesn't exist (mod upgrades?)
+		return L"";
+	}
+
+	if (rule->isCraftAllowed(_craft->getRules()->getType()))
+	{
+		// craft is allowed
+		return L"";
+	}
+
+	// craft is not allowed
+	const std::vector<std::string> *list = rule->getAllowedCraft();
+	std::wostringstream ss;
+	int i = 0;
+	for (std::vector<std::string>::const_iterator it = list->begin(); it != list->end(); ++it)
+	{
+		ArticleDefinition *article = _game->getMod()->getUfopaediaArticle((*it), false);
+		if (article && _game->getSavedGame()->isResearched(article->requires))
+		{
+			if (i > 0)
+				ss << L", ";
+			ss << tr(*it);
+			i++;
+		}
+	}
+	std::wstring message = ss.str();
+	if (message.empty())
+	{
+		// no suitable craft yet
+		return tr("STR_UNKNOWN");
+	}
+	return ss.str();
+}
+
+/**
  * Confirms the selected target for the craft.
  * @param action Pointer to an action.
  */
 void ConfirmDestinationState::btnOkClick(Action *)
 {
+	std::wstring message = checkStartingCondition();
+	if (!message.empty())
+	{
+		_game->popState();
+		_game->popState();
+		_game->pushState(new CraftErrorState(0, tr("STR_STARTING_CONDITION_CRAFT").arg(message)));
+		return;
+	}
+
+	if (!_craft->arePilotsOnboard())
+	{
+		_game->popState();
+		_game->popState();
+		_game->pushState(new CraftNotEnoughPilotsState(_craft));
+		return;
+	}
+
 	Waypoint *w = dynamic_cast<Waypoint*>(_target);
 	if (w != 0 && w->getId() == 0)
 	{
@@ -106,6 +205,11 @@ void ConfirmDestinationState::btnOkClick(Action *)
 		_game->getSavedGame()->getWaypoints()->push_back(w);
 	}
 	_craft->setDestination(_target);
+	if (_craft->getRules()->canAutoPatrol())
+	{
+		// cancel auto-patrol
+		_craft->setIsAutoPatrolling(false);
+	}
 	_craft->setStatus("STR_OUT");
 	if (_craft->getInterceptionOrder() == 0)
 	{

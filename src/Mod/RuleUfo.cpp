@@ -18,6 +18,7 @@
  */
 #include "RuleUfo.h"
 #include "RuleTerrain.h"
+#include "Mod.h"
 
 namespace OpenXcom
 {
@@ -27,9 +28,14 @@ namespace OpenXcom
  * type of UFO.
  * @param type String defining the type.
  */
-RuleUfo::RuleUfo(const std::string &type) : _type(type), _size("STR_VERY_SMALL"), _sprite(-1), _marker(-1), _damageMax(0), _speedMax(0), _accel(0),
-											_power(0), _range(0), _score(0), _reload(0), _breakOffTime(0), _sightRange(268), _missionScore(1), _battlescapeTerrainData(0)
+RuleUfo::RuleUfo(const std::string &type) :
+	_type(type), _size("STR_VERY_SMALL"), _sprite(-1), _combatSprite(-1), _marker(-1),
+	_power(0), _range(0), _accuracy(60), _score(0), _reload(0), _breakOffTime(0), _missionScore(1),
+	_fireSound(-1), _alertSound(-1),
+	_battlescapeTerrainData(0), _stats(), _statsRaceBonus()
 {
+	_stats.sightRange = 268;
+	_statsRaceBonus[""] = RuleUfoStats();
 }
 
 /**
@@ -54,17 +60,23 @@ void RuleUfo::load(const YAML::Node &node, Mod *mod)
 	_type = node["type"].as<std::string>(_type);
 	_size = node["size"].as<std::string>(_size);
 	_sprite = node["sprite"].as<int>(_sprite);
+
+	if (node["combatSprite"])
+	{
+		_combatSprite = node["combatSprite"].as<int>() + mod->getModOffset();
+	}
+
 	_marker = node["marker"].as<int>(_marker);
-	_damageMax = node["damageMax"].as<int>(_damageMax);
-	_speedMax = node["speedMax"].as<int>(_speedMax);
-	_accel = node["accel"].as<int>(_accel);
 	_power = node["power"].as<int>(_power);
 	_range = node["range"].as<int>(_range);
+	_accuracy = node["accuracy"].as<int>(_accuracy);
 	_score = node["score"].as<int>(_score);
 	_reload = node["reload"].as<int>(_reload);
 	_breakOffTime = node["breakOffTime"].as<int>(_breakOffTime);
-	_sightRange = node["sightRange"].as<int>(_sightRange);
 	_missionScore = node["missionScore"].as<int>(_missionScore);
+
+	_stats.load(node);
+
 	if (const YAML::Node &terrain = node["battlescapeTerrainData"])
 	{
 		if (_battlescapeTerrainData)
@@ -74,6 +86,24 @@ void RuleUfo::load(const YAML::Node &node, Mod *mod)
 		_battlescapeTerrainData = rule;
 	}
 	_modSprite = node["modSprite"].as<std::string>(_modSprite);
+	if (const YAML::Node &raceBonus = node["raceBonus"])
+	{
+		for (YAML::const_iterator i = raceBonus.begin(); i != raceBonus.end(); ++i)
+		{
+			_statsRaceBonus[i->first.as<std::string>()].load(i->second);
+		}
+	}
+
+	if (node["fireSound"])
+	{
+		_fireSound = mod->getSoundOffset(node["fireSound"].as<int>(_fireSound), "GEO.CAT");
+	}
+	if (node["alertSound"])
+	{
+		_alertSound = mod->getSoundOffset(node["alertSound"].as<int>(_alertSound), "GEO.CAT");
+	}
+
+	_escorts = node["escorts"].as<std::vector<std::string> >(_escorts);
 }
 
 /**
@@ -81,7 +111,7 @@ void RuleUfo::load(const YAML::Node &node, Mod *mod)
  * this UFO. Each UFO type has a unique name.
  * @return The Ufo's name.
  */
-std::string RuleUfo::getType() const
+const std::string &RuleUfo::getType() const
 {
 	return _type;
 }
@@ -90,7 +120,7 @@ std::string RuleUfo::getType() const
  * Gets the size of this type of UFO.
  * @return The Ufo's size.
  */
-std::string RuleUfo::getSize() const
+const std::string &RuleUfo::getSize() const
 {
 	return _size;
 }
@@ -145,36 +175,6 @@ int RuleUfo::getMarker() const
 }
 
 /**
- * Gets the maximum damage (damage the UFO can take)
- * of the UFO.
- * @return The maximum damage.
- */
-int RuleUfo::getMaxDamage() const
-{
-	return _damageMax;
-}
-
-/**
- * Gets the maximum speed of the UFO flying
- * around the Geoscape.
- * @return The maximum speed.
- */
-int RuleUfo::getMaxSpeed() const
-{
-	return _speedMax;
-}
-
-/**
- * Gets the acceleration of the UFO for
- * taking off / stopping.
- * @return The acceleration.
- */
-int RuleUfo::getAcceleration() const
-{
-	return _accel;
-}
-
-/**
  * Gets the maximum damage done by the
  * UFO's weapons per shot.
  * @return The weapon power.
@@ -192,6 +192,16 @@ int RuleUfo::getWeaponPower() const
 int RuleUfo::getWeaponRange() const
 {
 	return _range;
+}
+
+/**
+ * Gets the accuracy of the
+ * UFO's weapons.
+ * @return The weapon accuracy.
+ */
+int RuleUfo::getWeaponAccuracy() const
+{
+	return _accuracy;
 }
 
 /**
@@ -232,22 +242,54 @@ int RuleUfo::getBreakOffTime() const
 }
 
 /**
+ * Gets the UFO's fire sound.
+ * @return The fire sound ID.
+ */
+int RuleUfo::getFireSound() const
+{
+	return _fireSound;
+}
+
+/**
+ * Gets the UFO's alert sound.
+ * @return The alert sound ID.
+ */
+int RuleUfo::getAlertSound() const
+{
+	return _alertSound;
+}
+
+/**
  * For user-defined UFOs, use a surface for the "preview" image.
  * @return The name of the surface that represents this UFO.
  */
-std::string RuleUfo::getModSprite() const
+const std::string &RuleUfo::getModSprite() const
 {
 	return _modSprite;
 }
 
 /**
- * Gets the UFO's radar range
- * for detecting bases.
- * @return The range in nautical miles.
+ * Gets basic statistic of UFO.
+ * @return Basic stats of UFO.
  */
-int RuleUfo::getSightRange() const
+const RuleUfoStats& RuleUfo::getStats() const
 {
-	return _sightRange;
+	return _stats;
+}
+
+
+/**
+ * Gets bonus statistic of UFO based on race.
+ * @param s Race name.
+ * @return Bonus stats.
+ */
+const RuleUfoStats& RuleUfo::getRaceBonus(const std::string& s) const
+{
+	std::map<std::string, RuleUfoStats>::const_iterator i = _statsRaceBonus.find(s);
+	if (i != _statsRaceBonus.end())
+		return i->second;
+	else
+		return _statsRaceBonus.find("")->second;
 }
 
 /**
@@ -258,6 +300,15 @@ int RuleUfo::getSightRange() const
 int RuleUfo::getMissionScore() const
 {
 	return _missionScore;
+}
+
+/**
+ * Returns the UFO's standard escort set.
+ * @return The list of standard escorts.
+ */
+const std::vector<std::string> &RuleUfo::getEscorts() const
+{
+	return _escorts;
 }
 
 }

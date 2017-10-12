@@ -19,6 +19,7 @@
  */
 #include "../Engine/State.h"
 #include "BattlescapeGame.h"
+#include <unordered_set>
 
 namespace OpenXcom
 {
@@ -38,13 +39,16 @@ private:
 	BattleAction *_action;
 	ActionMenuItem *_actionMenu[MAX_ACTIONS];
 	Text *_selectedItem;
+	std::unordered_set<SDLKey> _usedHotkeys;
 	/// Adds a new menu item for an action.
-	void addItem(BattleActionType ba, const std::string &name, int *id);
+	void addItem(BattleActionType ba, const std::string &name, int *id, SDLKey key, BattleItem *secondaryWeapon = 0);
 public:
 	/// Creates the Action Menu state.
 	ActionMenuState(BattleAction *action, int x, int y);
 	/// Cleans up the Action Menu state.
 	~ActionMenuState();
+	/// Init function.
+	void init() override;
 	/// Handler for right-clicking anything.
 	void handle(Action *action);
 	/// Handler for clicking a action menu item.

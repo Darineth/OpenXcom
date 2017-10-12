@@ -40,17 +40,43 @@ OPT SDLKey keyBattleLeft, keyBattleRight, keyBattleUp, keyBattleDown, keyBattleL
 	keyBattleCenterEnemy1, keyBattleCenterEnemy2, keyBattleCenterEnemy3, keyBattleCenterEnemy4, keyBattleCenterEnemy5, keyBattleCenterEnemy6, keyBattleCenterEnemy7, keyBattleCenterEnemy8,
 	keyBattleCenterEnemy9, keyBattleCenterEnemy10, keyBattleVoxelView, keyBattleZeroTUs, keyInvCreateTemplate, keyInvApplyTemplate, keyInvClear, keyInvAutoEquip;
 
+// OpenXCOM+ Action Menu Keys
+OPT SDLKey keyActionAuto, keyActionBurst, keyActionAimed, keyActionSnap, keyActionLaunch,
+	keyActionThrow, keyActionPrime,
+	keyActionOverwatch, keyActionDualFire, keyActionReload,
+	keyActionMelee,
+	keyActionUse, keyActionPsi1, keyActionPsi2, keyActionPsi3, keyActionPsi4;
+
 // Extra hotkeys (Meridian's build)
-OPT SDLKey keyGeoUfoTracker,
+OPT SDLKey keyGeoUfoTracker, keyGeoTechTreeViewer,
 	keyGraphsZoomIn, keyGraphsZoomOut,
 	keyToggleQuickSearch,
 	keyCraftLoadoutSave, keyCraftLoadoutLoad,
 	keyMarkAllAsSeen, keySelectAll, keyDeselectAll, keyResetAll,
 	keyInventoryArmor, keyInventoryAvatar, keyInventorySave, keyInventoryLoad,
-	keySelectMusicTrack;
+	/*keyBattleActionItem1, keyBattleActionItem2, keyBattleActionItem3, keyBattleActionItem4, keyBattleActionItem5,*/
+	keyNightVisionToggle, keyNightVisionHold, keySelectMusicTrack;
 
+// Air Combat Keys
+OPT SDLKey keyAirMove, keyAirAttack, keyAirSpecial, keyAirWait,
+	keyAirAdvance, keyAirBackOff, keyAirPursue,
+	keyAirWeapon1, keyAirWeapon2, keyAirWeapon3, keyAirWeapon4,
+	keyAirHold, keyAirEvade;
+
+// Extra options (Meridian's build)
+OPT bool executeUnconsciousEnemies, twoHandedIndicator, twoHandedIndicatorInventory, minimapBorderIndicator, everyoneFightsNobodyQuits;
+OPT bool bleedingIndicator, knockOutIndicator, statisticalBulletConservation;
+
+OPT bool showItemNameAndWeightInInventory;
+OPT bool showGunMeleeOnTop;
+OPT bool showAllCommendations;
 OPT bool removeWoundedFromTraining;
+OPT bool fullNightVision;
+OPT int nightVisionColor;
+OPT bool autoNightVision;
+OPT bool autoSell;
 OPT bool techTreeViewerSpoilerProtection;
+OPT bool playBriefingMusicDuringEquipment;
 
 // Flags and other stuff that don't need OptionInfo's.
 OPT bool mute, reload, newOpenGL, newScaleFilter, newHQXFilter, newXBRZFilter, newRootWindowedMode, newFullscreen, newAllowResize, newBorderless;

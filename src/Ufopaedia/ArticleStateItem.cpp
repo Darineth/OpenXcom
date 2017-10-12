@@ -41,6 +41,7 @@ namespace OpenXcom
 
 		// add screen elements
 		_txtTitle = new Text(148, 32, 5, 24);
+		_txtWeight = new Text(88, 8, 104, 55);
 
 		// Set palette
 		setPalette("PAL_BATTLEPEDIA");
@@ -49,6 +50,7 @@ namespace OpenXcom
 
 		// add other elements
 		add(_txtTitle);
+		add(_txtWeight);
 
 		// Set up objects
 		_game->getMod()->getSurface("BACK08.SCR")->blit(_bg);
@@ -61,16 +63,29 @@ namespace OpenXcom
 		_txtTitle->setWordWrap(true);
 		_txtTitle->setText(tr(defs->title));
 
+		_txtWeight->setColor(Palette::blockOffset(14) + 15);
+		_txtWeight->setAlign(ALIGN_RIGHT);
+
 		// IMAGE
 		_image = new Surface(32, 48, 157, 5);
 		add(_image);
 
 		item->drawHandSprite(_game->getMod()->getSurfaceSet("BIGOBS.PCK"), _image);
 
-		std::vector<std::string> *ammo_data = item->getCompatibleAmmo();
+		const std::vector<std::string> *ammo_data = item->getPrimaryCompatibleAmmo();
 
-		// SHOT STATS TABLE (for firearms only)
-		if (item->getBattleType() == BT_FIREARM)
+		int weight = item->getWeight();
+		std::wstring weightLabel = tr("STR_WEIGHT_PEDIA1").arg(weight);
+		if (!ammo_data->empty())
+		{
+			// Note: weight including primary ammo only!
+			RuleItem *ammo_rule = _game->getMod()->getItem((*ammo_data)[0]);
+			weightLabel = tr("STR_WEIGHT_PEDIA2").arg(weight).arg(weight + ammo_rule->getWeight());
+		}
+		_txtWeight->setText(weight > 0 ? weightLabel : L"");
+
+		// SHOT STATS TABLE (for firearms and melee only)
+		if (item->getBattleType() == BT_FIREARM || item->getBattleType() == BT_MELEE)
 		{
 			_txtShotType = new Text(100, 17, 8, 66);
 			add(_txtShotType);
@@ -96,55 +111,82 @@ namespace OpenXcom
 			_lstInfo->setColor(Palette::blockOffset(15)+4); // color for %-data!
 			_lstInfo->setColumns(3, 100, 52, 52);
 			_lstInfo->setBig();
+		}
 
+		if (item->getBattleType() == BT_FIREARM)
+		{
 			int current_row = 0;
-			if (item->getTUAuto()>0)
+			if (item->getCostAuto().Time>0)
 			{
-				std::wstring tu = Text::formatPercentage(item->getTUAuto());
-				if (item->getFlatRate())
+				std::wstring tu = Text::formatPercentage(item->getCostAuto().Time);
+				if (item->getFlatUse().Time)
 				{
 					tu.erase(tu.end() - 1);
 				}
 				_lstInfo->addRow(3,
-								 tr("STR_SHOT_TYPE_AUTO").c_str(),
+								 tr("STR_SHOT_TYPE_AUTO").arg(item->getConfigAuto()->shots).c_str(),
 								 Text::formatPercentage(item->getAccuracyAuto()).c_str(),
 								 tu.c_str());
 				_lstInfo->setCellColor(current_row, 0, Palette::blockOffset(14)+15);
 				current_row++;
 			}
 
-			if (item->getTUSnap()>0)
+			if (item->getCostSnap().Time>0)
 			{
-				std::wstring tu = Text::formatPercentage(item->getTUSnap());
-				if (item->getFlatRate())
+				std::wstring tu = Text::formatPercentage(item->getCostSnap().Time);
+				if (item->getFlatUse().Time)
 				{
 					tu.erase(tu.end() - 1);
 				}
 				_lstInfo->addRow(3,
-								 tr("STR_SHOT_TYPE_SNAP").c_str(),
+								 tr("STR_SHOT_TYPE_SNAP").arg(item->getConfigSnap()->shots).c_str(),
 								 Text::formatPercentage(item->getAccuracySnap()).c_str(),
 								 tu.c_str());
 				_lstInfo->setCellColor(current_row, 0, Palette::blockOffset(14)+15);
 				current_row++;
 			}
 
-			if (item->getTUAimed()>0)
+			if (item->getCostAimed().Time>0)
 			{
-				std::wstring tu = Text::formatPercentage(item->getTUAimed());
-				if (item->getFlatRate())
+				std::wstring tu = Text::formatPercentage(item->getCostAimed().Time);
+				if (item->getFlatUse().Time)
 				{
 					tu.erase(tu.end() - 1);
 				}
 				_lstInfo->addRow(3,
-								 tr("STR_SHOT_TYPE_AIMED").c_str(),
+								 tr("STR_SHOT_TYPE_AIMED").arg(item->getConfigAimed()->shots).c_str(),
 								 Text::formatPercentage(item->getAccuracyAimed()).c_str(),
 								 tu.c_str());
 				_lstInfo->setCellColor(current_row, 0, Palette::blockOffset(14)+15);
 				current_row++;
 			}
 
-			// text_info is BELOW the info table
-			_txtInfo = new Text((ammo_data->size()<3 ? 300 : 180), 56, 8, 138);
+			// text_info is BELOW the info table (table can have 0-3 rows)
+			int shift = (3 - current_row) * 16;
+			if (ammo_data->size() == 2 && current_row <= 1)
+			{
+				shift -= (2 - current_row) * 16;
+			}
+			_txtInfo = new Text((ammo_data->size()<3 ? 300 : 180), 56 + shift, 8, 138 - shift);
+		}
+		else if (item->getBattleType() == BT_MELEE)
+		{
+			if (item->getCostMelee().Time > 0)
+			{
+				std::wstring tu = Text::formatPercentage(item->getCostMelee().Time);
+				if (item->getFlatMelee().Time)
+				{
+					tu.erase(tu.end() - 1);
+				}
+				_lstInfo->addRow(3,
+					tr("STR_SHOT_TYPE_MELEE").c_str(),
+					Text::formatPercentage(item->getAccuracyMelee()).c_str(),
+					tu.c_str());
+				_lstInfo->setCellColor(0, 0, Palette::blockOffset(14) + 15);
+			}
+
+			// text_info is BELOW the info table (with 1 row only)
+			_txtInfo = new Text(300, 88, 8, 106);
 		}
 		else
 		{
@@ -198,7 +240,7 @@ namespace OpenXcom
 
 				if (ammo_data->empty())
 				{
-					_txtAmmoType[0]->setText(tr(getDamageTypeText(item->getDamageType())));
+					_txtAmmoType[0]->setText(tr(getDamageTypeText(item->getDamageType()->ResistType)));
 
 					ss.str(L"");ss.clear();
 					ss << item->getPower();
@@ -216,7 +258,7 @@ namespace OpenXcom
 						if (Ufopaedia::isArticleAvailable(_game->getSavedGame(), ammo_article))
 						{
 							RuleItem *ammo_rule = _game->getMod()->getItem((*ammo_data)[i], true);
-							_txtAmmoType[i]->setText(tr(getDamageTypeText(ammo_rule->getDamageType())));
+							_txtAmmoType[i]->setText(tr(getDamageTypeText(ammo_rule->getDamageType()->ResistType)));
 
 							ss.str(L"");ss.clear();
 							ss << ammo_rule->getPower();
@@ -241,7 +283,7 @@ namespace OpenXcom
 				_txtDamage->setAlign(ALIGN_CENTER);
 				_txtDamage->setText(tr("STR_DAMAGE_UC"));
 
-				_txtAmmoType[0]->setText(tr(getDamageTypeText(item->getDamageType())));
+				_txtAmmoType[0]->setText(tr(getDamageTypeText(item->getDamageType()->ResistType)));
 
 				ss.str(L"");ss.clear();
 				ss << item->getPower();

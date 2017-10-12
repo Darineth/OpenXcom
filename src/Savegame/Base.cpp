@@ -1593,7 +1593,7 @@ void Base::setupDefenses()
 			{
 				size = _mod->getArmor(_mod->getUnit(itemId)->getArmor(), true)->getSize();
 			}
-			if (rule->getCompatibleAmmo()->empty()) // so this vehicle does not need ammo
+			if (rule->getPrimaryCompatibleAmmo()->empty()) // so this vehicle does not need ammo
 			{
 				for (int j = 0; j < itemQty; ++j)
 				{
@@ -1603,7 +1603,7 @@ void Base::setupDefenses()
 			}
 			else // so this vehicle needs ammo
 			{
-				RuleItem *ammo = _mod->getItem(rule->getCompatibleAmmo()->front(), true);
+				RuleItem *ammo = _mod->getItem(rule->getPrimaryCompatibleAmmo()->front(), true);
 				int ammoPerVehicle, clipSize;
 				if (ammo->getClipSize() > 0 && rule->getClipSize() > 0)
 				{
@@ -1942,9 +1942,9 @@ void Base::cleanupDefenses(bool reclaimItems)
 			RuleItem *rule = (*i)->getRules();
 			std::string type = rule->getType();
 			_items->addItem(type);
-			if (!rule->getCompatibleAmmo()->empty())
+			if (!rule->getPrimaryCompatibleAmmo()->empty())
 			{
-				RuleItem *ammo = _mod->getItem(rule->getCompatibleAmmo()->front(), true);
+				RuleItem *ammo = _mod->getItem(rule->getPrimaryCompatibleAmmo()->front(), true);
 				int ammoPerVehicle;
 				if (ammo->getClipSize() > 0 && rule->getClipSize() > 0)
 				{

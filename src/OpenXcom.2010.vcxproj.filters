@@ -965,6 +965,25 @@
     <ClCompile Include="Mod\RuleStartingCondition.cpp" />
     <ClCompile Include="Mod\RuleDamageType.cpp" />
     <ClCompile Include="Mod\RuleStatBonus.cpp" />
+    <ClCompile Include="Engine\Script.cpp" />
+    <ClCompile Include="Basescape\ChangeHeadquartersState.cpp" />
+    <ClCompile Include="Mod\CustomPalettes.cpp" />
+    <ClCompile Include="Battlescape\AlienInventory.cpp" />
+    <ClCompile Include="Battlescape\AlienInventoryState.cpp" />
+    <ClCompile Include="Battlescape\BriefingLightState.cpp" />
+    <ClCompile Include="Battlescape\ConfirmEndMissionState.cpp" />
+    <ClCompile Include="Battlescape\InventoryLoadState.cpp" />
+    <ClCompile Include="Battlescape\InventorySaveState.cpp" />
+    <ClCompile Include="Battlescape\ItemSprite.cpp" />
+    <ClCompile Include="Geoscape\CraftNotEnoughPilotsState.cpp" />
+    <ClCompile Include="Geoscape\NewPossibleCraftState.cpp" />
+    <ClCompile Include="Geoscape\NewPossibleFacilityState.cpp" />
+    <ClCompile Include="Geoscape\NewPossiblePurchaseState.cpp" />
+    <ClCompile Include="Geoscape\UfoTrackerState.cpp" />
+    <ClCompile Include="Geoscape\SelectMusicTrackState.cpp" />
+    <ClCompile Include="Menu\TestPaletteState.cpp" />
+    <ClCompile Include="Geoscape\AirCombatState.cpp" />
+    <ClCompile Include="Geoscape\AirActionMenuState.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h" />
@@ -1973,6 +1992,27 @@
     <ClInclude Include="Mod\RuleDamageType.h" />
     <ClInclude Include="Mod\RuleStatBonus.h" />
     <ClInclude Include="Mod\ModScript.h" />
+    <ClInclude Include="Engine\HelperMeta.h" />
+    <ClInclude Include="Engine\Script.h" />
+    <ClInclude Include="Engine\ScriptBind.h" />
+    <ClInclude Include="Basescape\ChangeHeadquartersState.h" />
+    <ClInclude Include="Mod\CustomPalettes.h" />
+    <ClInclude Include="Battlescape\AlienInventory.h" />
+    <ClInclude Include="Battlescape\AlienInventoryState.h" />
+    <ClInclude Include="Battlescape\BriefingLightState.h" />
+    <ClInclude Include="Battlescape\ConfirmEndMissionState.h" />
+    <ClInclude Include="Battlescape\InventoryLoadState.h" />
+    <ClInclude Include="Battlescape\InventorySaveState.h" />
+    <ClInclude Include="Battlescape\ItemSprite.h" />
+    <ClInclude Include="Geoscape\CraftNotEnoughPilotsState.h" />
+    <ClInclude Include="Geoscape\NewPossibleCraftState.h" />
+    <ClInclude Include="Geoscape\NewPossibleFacilityState.h" />
+    <ClInclude Include="Geoscape\NewPossiblePurchaseState.h" />
+    <ClInclude Include="Geoscape\SelectMusicTrackState.h" />
+    <ClInclude Include="Geoscape\UfoTrackerState.h" />
+    <ClInclude Include="Menu\TestPaletteState.h" />
+    <ClInclude Include="Geoscape\AirCombatState.h" />
+    <ClInclude Include="Geoscape\AirActionMenuState.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Geoscape">

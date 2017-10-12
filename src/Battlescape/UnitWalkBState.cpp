@@ -68,7 +68,7 @@ void UnitWalkBState::init()
 	_target = _action.target;
 	if (Options::traceAI) { Log(LOG_INFO) << "Walking from: " << _unit->getPosition() << "," << " to " << _target;}
 	int dir = _pf->getStartDirection();
-	if (_action.movementAction != MV_STRAFE && dir != -1 && dir != _unit->getDirection())
+	if (_action.movementAction != BAM_STRAFE && dir != -1 && dir != _unit->getDirection())
 	{
 		_beforeFirstStep = true;
 	}
@@ -79,16 +79,16 @@ void UnitWalkBState::init()
 	_unit->cancelEffects(ECT_MOVE);
 	switch (_action.movementAction)
 	{
-	case MV_WALK:
-	case MV_STRAFE:
+	case BAM_NORMAL:
+	case BAM_STRAFE:
 		_unit->addBattleExperience("STR_WALK");
 		_unit->cancelEffects(ECT_WALK);
 		break;
-	case MV_SNEAK:
+	case BAM_SNEAK:
 		_unit->addBattleExperience("STR_SNEAK");
 		_unit->cancelEffects(ECT_SNEAK);
 		break;
-	case MV_SPRINT:
+	case BAM_RUN:
 		_unit->addBattleExperience("STR_SPRINT");
 		_unit->cancelEffects(ECT_SPRINT);
 		break;
@@ -107,9 +107,7 @@ void UnitWalkBState::think()
 	{
 		if (_parent->kneel(_unit))
 		{
-			_unit->setCache(0);
 			_terrain->calculateFOV(_unit);
-			_parent->getMap()->cacheUnit(_unit);
 			return;
 		}
 		else
@@ -203,7 +201,7 @@ void UnitWalkBState::think()
 				_unit->getTile()->ignite(1);
 				Position posHere = _unit->getPosition();
 				Position voxelHere = (posHere * Position(16,16,24)) + Position(8,8,-(_unit->getTile()->getTerrainLevel()));
-				_parent->getTileEngine()->hit(voxelHere, _unit->getBaseStats()->strength, BA_NONE, DT_IN, _unit);
+				_parent->getTileEngine()->hit(BattleActionAttack(BA_NONE, _unit), voxelHere, _unit->getBaseStats()->strength, BA_NONE, _parent->getMod()->getDamageType(DT_IN), _unit);
 				
 				if (_unit->getStatus() != STATUS_STANDING) // ie: we burned a hole in the floor and fell through it
 				{
@@ -213,7 +211,7 @@ void UnitWalkBState::think()
 			}
 
 			// move our personal lighting with us
-			_terrain->calculateUnitLighting();
+			_terrain->calculateLighting(LL_UNITS, _unit->getPosition(), 2);
 			if (_unit->getFaction() != FACTION_PLAYER)
 			{
 				_unit->setVisible(false);
@@ -230,11 +228,9 @@ void UnitWalkBState::think()
 			// check for reaction fire
 			if (!_falling)
 			{
-				if ((reactionFire = _terrain->checkReactionFire(_unit, &_spottedUnits)))
+				if ((reactionFire = _terrain->checkReactionFire(_unit, _action, &_spottedUnits)))
 				{
 					// unit got fired upon - stop walking
-					_unit->setCache(0);
-					_parent->getMap()->cacheUnit(_unit);
 					_pf->abortPath();
 				}
 			}
@@ -244,17 +240,16 @@ void UnitWalkBState::think()
 				_parent->popState();
 				return;
 			}
-			if (unitSpotted && _action.movementAction != MV_SPRINT)
+
+			if (unitSpotted && _action.movementAction != BAM_RUN)
 			{
-				_unit->setCache(0);
-				_parent->getMap()->cacheUnit(_unit);
 				_pf->abortPath();
 				_parent->popState();
 				return;
 			}
 
 			// check for reaction fire
-			if (reactionFire && _action.movementAction != MV_SPRINT)
+			if (reactionFire && _action.movementAction != BAM_RUN)
 			{
 				_parent->popState();
 				return;
@@ -270,17 +265,12 @@ void UnitWalkBState::think()
 		else if (onScreen)
 		{
 			// make sure the unit sprites are up to date
-			if (_action.movementAction == MV_STRAFE)
+			if (_action.movementAction == BAM_STRAFE)
 			{
 				// This is where we fake out the strafe movement direction so the unit "moonwalks"
 				int dirTemp = _unit->getDirection();
 				_unit->setDirection(_unit->getFaceDirection());
-				_parent->getMap()->cacheUnit(_unit);
 				_unit->setDirection(dirTemp);
-			}
-			else
-			{
-				_parent->getMap()->cacheUnit(_unit);
 			}
 		}
 	}
@@ -293,8 +283,7 @@ void UnitWalkBState::think()
 		{
 			if (Options::traceAI) { Log(LOG_INFO) << "Uh-oh! Company!"; }
 			_unit->setHiding(false); // clearly we're not hidden now
-			_parent->getMap()->cacheUnit(_unit);
-			if (_action.movementAction != MV_SPRINT)
+			if (_action.movementAction != BAM_RUN)
 			{
 				postPathProcedures();
 				return;
@@ -317,7 +306,7 @@ void UnitWalkBState::think()
 
 		if (dir != -1)
 		{
-			if (_action.movementAction == MV_STRAFE)
+			if (_action.movementAction == BAM_STRAFE)
 			{
 				_unit->setFaceDirection(_unit->getDirection());
 			}
@@ -327,8 +316,6 @@ void UnitWalkBState::think()
 			if (!_parent->getSave()->getTile(destination))
 			{
 				_pf->abortPath();
-				_unit->setCache(0);
-				_parent->getMap()->cacheUnit(_unit);
 				_parent->popState();
 				return;
 			}
@@ -344,13 +331,13 @@ void UnitWalkBState::think()
 			{
 				tu = 0;
 			}
-			int energy = tu;
-			if (_action.movementAction == MV_SPRINT)
+			int energy = tu / 2;
+			if (_action.movementAction == BAM_RUN)
 			{
 				tu *= 0.5;
 				energy *= 2.0;
 			}
-			else if (_action.movementAction == MV_SNEAK)
+			else if (_action.movementAction == BAM_SNEAK)
 			{
 				tu *= 2.0;
 			}
@@ -365,8 +352,6 @@ void UnitWalkBState::think()
 					_action.result = "STR_NOT_ENOUGH_TIME_UNITS";
 				}
 				_pf->abortPath();
-				_unit->setCache(0);
-				_parent->getMap()->cacheUnit(_unit);
 				_parent->popState();
 				return;
 			}
@@ -378,27 +363,21 @@ void UnitWalkBState::think()
 					_action.result = "STR_NOT_ENOUGH_ENERGY";
 				}
 				_pf->abortPath();
-				_unit->setCache(0);
-				_parent->getMap()->cacheUnit(_unit);
 				_parent->popState();
 				return;
 			}
 
-			if (_parent->getPanicHandled() && _parent->checkReservedTU(_unit, tu) == false)
+			if (_parent->getPanicHandled() && _parent->checkReservedTU(_unit, tu, energy) == false)
 			{
 				_pf->abortPath();
-				_unit->setCache(0);
-				_parent->getMap()->cacheUnit(_unit);
 				return;
 			}
 
 			// we are looking in the wrong way, turn first (unless strafing)
 			// we are not using the turn state, because turning during walking costs no tu
-			if (dir != _unit->getDirection() && dir < Pathfinding::DIR_UP && _pf->getMovementAction() != MV_STRAFE)
+			if (dir != _unit->getDirection() && dir < Pathfinding::DIR_UP && _pf->getMovementAction() != BAM_STRAFE)
 			{
 				_unit->lookAt(dir);
-				_unit->setCache(0);
-				_parent->getMap()->cacheUnit(_unit);
 				return;
 			}
 
@@ -438,10 +417,8 @@ void UnitWalkBState::think()
 						(-belowDest->getTerrainLevel() + unitBelowMyWay->getFloatHeight() + unitBelowMyWay->getHeight())
 						>= 28)))  // 4+ voxels poking into the tile above, we don't kick people in the head here at XCom.
 					{
-						_action.TU = 0;
+						_action.clearTU();
 						_pf->abortPath();
-						_unit->setCache(0);
-						_parent->getMap()->cacheUnit(_unit);
 						_parent->popState();
 						return;
 					}
@@ -466,17 +443,12 @@ void UnitWalkBState::think()
 			// make sure the unit sprites are up to date
 			if (onScreen)
 			{
-				if (_pf->getMovementAction() == MV_STRAFE)
+				if (_pf->getMovementAction() == BAM_STRAFE)
 				{
 					// This is where we fake out the strafe movement direction so the unit "moonwalks"
 					int dirTemp = _unit->getDirection();
 					_unit->setDirection(_unit->getFaceDirection());
-					_parent->getMap()->cacheUnit(_unit);
 					_unit->setDirection(dirTemp);
-				}
-				else
-				{
-					_parent->getMap()->cacheUnit(_unit);
 				}
 			}
 		}
@@ -503,11 +475,7 @@ void UnitWalkBState::think()
 		_terrain->calculateFOV(_unit);
 		unitSpotted = (!_falling && !_action.desperate && _parent->getPanicHandled() && _numUnitsSpotted != _unit->getUnitsSpottedThisTurn().size());
 
-		// make sure the unit sprites are up to date
-		_unit->setCache(0);
-		_parent->getMap()->cacheUnit(_unit);
-
-		if (unitSpotted && !_action.desperate && !_unit->getCharging() && !_falling && _action.movementAction != MV_SPRINT)
+		if (unitSpotted && !_action.desperate && !_unit->getCharging() && !_falling && _action.movementAction != BAM_RUN)
 		{
 			if (_beforeFirstStep)
 			{
@@ -517,8 +485,6 @@ void UnitWalkBState::think()
 			_unit->setHiding(false); // not hidden, are we...
 			_pf->abortPath();
 			_unit->abortTurn(); //revert to a standing state.
-			_unit->setCache(0);
-			_parent->getMap()->cacheUnit(_unit);
 			_parent->popState();
 		}
 	}
@@ -529,7 +495,7 @@ void UnitWalkBState::think()
  */
 void UnitWalkBState::cancel()
 {
-	if (_parent->getSave()->getSide() == FACTION_PLAYER && _parent->getPanicHandled() && _action.movementAction != MV_SPRINT)
+	if (_parent->getSave()->getSide() == FACTION_PLAYER && _parent->getPanicHandled() && _action.movementAction != BAM_RUN)
 	{
 		_pf->abortPath();
 	}
@@ -540,7 +506,7 @@ void UnitWalkBState::cancel()
  */
 void UnitWalkBState::postPathProcedures()
 {
-	_action.TU = 0;
+	_action.clearTU();
 	if (_unit->getFaction() != FACTION_PLAYER)
 	{
 		int dir = _action.finalFacing;
@@ -556,10 +522,10 @@ void UnitWalkBState::postPathProcedures()
 				BattleAction action;
 				action.actor = _unit;
 				action.target = _unit->getCharging()->getPosition();
-				action.weapon = _unit->getMeleeWeapon();
+				action.weapon = _unit->getSpecialWeapon(BT_MELEE);
 				action.type = BA_HIT;
-				action.TU = _unit->getActionTUs(action.type, action.weapon);
 				action.targeting = true;
+				action.updateTU();
 				_unit->setCharging(0);
 				_parent->statePushBack(new MeleeAttackBState(_parent, action));
 			}
@@ -590,10 +556,8 @@ void UnitWalkBState::postPathProcedures()
 		_unit->setTimeUnits(0);
 	}
 
-	_unit->setCache(0);
-	_terrain->calculateUnitLighting();
+	_terrain->calculateLighting(LL_UNITS, _unit->getPosition());
 	_terrain->calculateFOV(_unit);
-	_parent->getMap()->cacheUnit(_unit);
 	if (!_falling)
 		_parent->popState();
 }
@@ -606,10 +570,10 @@ void UnitWalkBState::setNormalWalkSpeed()
 	double modifier = 1.0;
 	switch (_action.movementAction)
 	{
-	case MV_SPRINT:
+	case BAM_RUN:
 		modifier = 0.5;
 		break;
-	case MV_SNEAK:
+	case BAM_SNEAK:
 		modifier = 2.0;
 		break;
 	}

@@ -28,6 +28,7 @@ class BattlescapeGame;
 class BattleUnit;
 class BattleItem;
 class Tile;
+class RuleDamageType;
 class Explosion;
 class Timer;
 
@@ -38,21 +39,28 @@ class Timer;
 class ExplosionBState : public BattleState
 {
 private:
-	BattleUnit *_unit;
+	BattleActionAttack _attack;
 	Position _center;
-	BattleItem *_item;
+	const RuleDamageType *_damageType;
+	//BattleItem *_item;
 	Tile *_tile;
+	//BattleUnit *_unit;
+	BattleUnit *_targetPsiOrHit;
 	Timer *_animationTimer;
 	int _power;
+	int _radius;
+	int _range;
+	bool _areaOfEffect, _lowerWeapon, _hit, _psi, _subState, _finished, _delayExplosion;
 	float _dropoffDistance;
-	bool _areaOfEffect, _lowerWeapon, _cosmetic, _subState, _finished, _delayExplosion;
 	std::vector<Explosion*> _explosions;
 	/// Calculates the effects of the explosion.
 	void explode();
 	ExplosionBState *_terrainExplosion;
+	/// Set new value to reference if new value is not equal -1.
+	void optValue(int &oldValue, int newValue) const;
 public:
 	/// Creates a new ExplosionBState class.
-	ExplosionBState(BattlescapeGame *parent, Position center, BattleItem *item, BattleUnit *unit, Tile *tile = 0, bool lowerWeapon = false, bool cosmetic = false, bool subState = false, float dropoffDistance = -1);
+	ExplosionBState(BattlescapeGame *parent, Position center, BattleActionAttack attack, Tile *tile = 0, bool lowerWeapon = false, int range = 0, bool subState = false, float dropoffDistance = -1);
 	/// Cleans up the ExplosionBState.
 	~ExplosionBState();
 	/// Initializes the state.

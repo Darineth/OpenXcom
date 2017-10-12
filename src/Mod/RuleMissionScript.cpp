@@ -18,6 +18,7 @@
  */
 #include "RuleMissionScript.h"
 #include "../Engine/Exception.h"
+#include "../Engine/RNG.h"
 
 namespace OpenXcom
 {
@@ -27,7 +28,7 @@ namespace OpenXcom
  * Each script element is independant, and the saved game will probe the list of these each month to determine what's going to happen.
  */
 RuleMissionScript::RuleMissionScript(const std::string &type) : _type(type), _firstMonth(0), _lastMonth(-1), _label(0), _executionOdds(100),
-															_targetBaseOdds(0), _minDifficulty(0), _maxRuns(-1), _avoidRepeats(0), _delay(0),
+															_targetBaseOdds(0), _minDifficulty(0), _maxRuns(-1), _avoidRepeats(0), _delay(0), _randomDelay(0),
 															_useTable(true), _siteType(false)
 {
 }
@@ -71,6 +72,7 @@ void RuleMissionScript::load(const YAML::Node& node)
 	_maxRuns = node["maxRuns"].as<int>(_maxRuns);
 	_avoidRepeats = node["avoidRepeats"].as<int>(_avoidRepeats);
 	_delay = node["startDelay"].as<int>(_delay);
+	_randomDelay = node["randomDelay"].as<int>(_randomDelay);
 	_conditionals = node["conditionals"].as<std::vector<int> >(_conditionals);
 	if (const YAML::Node &weights = node["missionWeights"])
 	{
@@ -99,7 +101,7 @@ void RuleMissionScript::load(const YAML::Node& node)
 			_regionWeights.push_back(std::make_pair(nn->first.as<size_t>(0), nw));
 		}
 	}
-	_researchTriggers = node["researchTriggers"].as< std::map<std::string, bool> >(_researchTriggers);
+	_researchTriggers = node["researchTriggers"].as<std::map<std::string, bool> >(_researchTriggers);
 	_useTable = node["useTable"].as<bool>(_useTable);
 	if (_varName == "" && (_maxRuns > 0 || _avoidRepeats > 0))
 	{
@@ -182,11 +184,14 @@ int RuleMissionScript::getRepeatAvoidance() const
 }
 
 /**
- * @return the fixed delay on spawning the first wave (if any) to override whatever's written in the mission definition.
+ * @return the fixed (or randomized) delay on spawning the first wave (if any) to override whatever's written in the mission definition.
  */
 int RuleMissionScript::getDelay() const
 {
-	return _delay;
+	if (_randomDelay == 0)
+		return _delay;
+	else
+		return _delay + RNG::generate(0, _randomDelay);
 }
 
 /**

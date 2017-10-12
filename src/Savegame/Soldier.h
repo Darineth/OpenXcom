@@ -21,7 +21,7 @@
 #include <yaml-cpp/yaml.h>
 #include "../Mod/Unit.h"
 #include "../Mod/StatString.h"
-	 
+
 namespace OpenXcom
 {
 
@@ -58,9 +58,12 @@ private:
 	SoldierGender _gender;
 	SoldierLook _look;
 	int _lookVariant;
-	int _missions, _kills, _recovery;
+	int _missions, _kills;
+	float _recovery;
 	bool _recentlyPromoted, _psiTraining, _training, _isVehicle;
 	Armor *_armor;
+	Armor *_replacedArmor;
+	Armor *_transformedArmor;
 	Role *_role;
 	std::vector<EquipmentLayoutItem*> _equipmentLayout;
 	SoldierDeath *_death;
@@ -98,7 +101,7 @@ public:
 	/// Sets the soldier's craft.
 	void setCraft(Craft *craft);
 	/// Gets the soldier's craft string.
-	std::wstring getCraftString(Language *lang) const;
+	std::wstring getCraftString(Language *lang, float absBonus, float relBonus) const;
 	/// Gets a string version of the soldier's rank.
 	std::string getRankString() const;
 	/// Gets a sprite version of the soldier's rank.
@@ -135,22 +138,34 @@ public:
 	UnitStats *getInitStats();
 	/// Get pointer to current stats.
 	UnitStats *getCurrentStats();
+	/// Gets the soldier's total stats for sorting.
+	int getTotalStats() const;
+	/// Set initial and current stats.
+	void setBothStats(UnitStats *stats);
 	/// Get whether the unit was recently promoted.
 	bool isPromoted();
 	/// Gets the soldier armor.
 	Armor *getArmor() const;
 	/// Sets the soldier armor.
 	void setArmor(Armor *armor);
+	/// Gets the soldier's original armor (before replacement).
+	Armor *getReplacedArmor() const;
+	/// Backs up the soldier's original armor (before replacement).
+	void setReplacedArmor(Armor *armor);
+	/// Gets the soldier's original armor (before transformation).
+	Armor *getTransformedArmor() const;
+	/// Backs up the soldier's original armor (before transformation).
+	void setTransformedArmor(Armor *armor);
 	/// Is the soldier wounded or not?.
 	bool isWounded() const;
 	/// Is the soldier wounded or not?.
 	bool hasFullHealth() const;
 	/// Gets the soldier's wound recovery time.
-	int getWoundRecovery() const;
+	int getWoundRecovery(float absBonus, float relBonus) const;
 	/// Sets the soldier's wound recovery time.
 	void setWoundRecovery(int recovery);
 	/// Heals wound recoveries.
-	void heal();
+	void heal(float absBonus, float relBonus);
 	/// Gets the soldier's equipment-layout.
 	std::vector<EquipmentLayoutItem*> *getEquipmentLayout();
 	/// Trains a soldier's psychic stats

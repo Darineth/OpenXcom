@@ -40,7 +40,14 @@ namespace OpenXcom
 		_txtTitle = new Text(210, 32, 5, 24);
 
 		// Set palette
-		setPalette("PAL_UFOPAEDIA");
+		if (defs->customPalette)
+		{
+			setCustomPalette(_game->getMod()->getSurface(defs->image_id)->getPalette(), Mod::UFOPAEDIA_CURSOR);
+		}
+		else
+		{
+			setPalette("PAL_UFOPAEDIA");
+		}
 
 		ArticleState::initLayout();
 
@@ -78,6 +85,10 @@ namespace OpenXcom
 		ss << tr("STR_WEAPON_PODS").arg(craft->getWeapons()) << L'\n';
 		ss << tr("STR_DAMAGE_CAPACITY_UC").arg(Text::formatNumber(craft->getMaxDamage())) << L'\n';
 		ss << tr("STR_CARGO_SPACE").arg(craft->getSoldiers()) << L'\n';
+		if (craft->getPilots() > 0)
+		{
+			ss << tr("STR_COCKPIT_CAPACITY").arg(craft->getPilots()) << L'\n';
+		}
 		ss << tr("STR_HWP_CAPACITY").arg(craft->getVehicles());
 		_txtStats->setText(ss.str());
 

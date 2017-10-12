@@ -49,13 +49,22 @@ private:
 	BattleItem *_mouseOverItem;
 	int _groundOffset, _animFrame;
 	std::map<int, std::map<int, int> > _stackLevel;
-	std::vector<std::pair<int, int> > _grenadeIndicators;
+	Surface *_stunIndicator, *_woundIndicator, *_burnIndicator;
+	std::vector<std::pair<int, int> > _grenadeIndicators, _stunnedIndicators, _woundedIndicators, _burningIndicators;
 	NumberText *_stackNumber;
 	NumberText *_ammoNumber;
 	std::wstring _searchString;
 	Timer *_animTimer;
 	int _depth;
 	bool _locked;
+	RuleInventory *_inventorySlotRightHand = nullptr;
+	RuleInventory *_inventorySlotLeftHand = nullptr;
+	RuleInventory *_inventorySlotBackPack = nullptr;
+	RuleInventory *_inventorySlotBelt = nullptr;
+	RuleInventory *_inventorySlotGround = nullptr;
+
+	/// Moves an item to a specified slot.
+	void moveItem(BattleItem *item, RuleInventory *slot, int x, int y);
 	/// Gets the slot in the specified position.
 	RuleInventory *getSlotInPosition(int *x, int *y) const;
 	RuleInventoryLayout *_inventoryLayout;
@@ -68,14 +77,20 @@ public:
 	void setPalette(SDL_Color *colors, int firstcolor = 0, int ncolors = 256);
 	/// Sets the inventory's Time Unit mode.
 	void setTuMode(bool tu);
+	/// Gets the inventory's selected unit.
+	BattleUnit *getSelectedUnit() const;
 	/// Sets the inventory's selected unit.
 	void setSelectedUnit(BattleUnit *unit);
 	/// Draws the inventory.
 	void draw();
 	/// Draws the inventory grid.
 	void drawGrid();
+	/// Draws the inventory grid labels.
+	void drawGridLabels(bool showTuCost = false);
 	/// Draws the inventory items.
 	void drawItems();
+	/// Draws the selected item.
+	void drawSelectedItem();
 	/// Gets the currently selected item.
 	BattleItem *getSelectedItem() const;
 	/// Sets the currently selected item.
@@ -96,14 +111,26 @@ public:
 	void mouseClick(Action *action, State *state);
 	/// Unloads the selected weapon.
 	bool unload();
+	/// Checks whether the given item is visible with the current search string.
+	bool isInSearchString(BattleItem *item);
 	/// Arranges items on the ground.
-	void arrangeGround(bool alterOffset = true, int offset = 0);
+	void arrangeGround(bool alterOffset = true);
+	/// Sets the ground item offset.
+	void changeGroundOffset(int offset);
+	/// Attempts to place an item in an inventory slot.
+	bool fitItem(RuleInventory *newSlot, BattleItem *item, std::string &warning);
 	/// Checks if two items can be stacked on one another.
 	bool canBeStacked(BattleItem *itemA, BattleItem *itemB);
+	/// Checks for item overlap.
+	static bool overlapItems(BattleUnit *unit, BattleItem *item, RuleInventory *slot, int x = 0, int y = 0);
 	/// Shows a warning message.
 	void showWarning(const std::wstring &msg);
 	/// Show priming warnings on grenades.
 	void drawPrimers();
+	/// Animate surface.
+	void animate();
+	/// Get current animation frame for inventory.
+	int getAnimFrame() const { return _animFrame; }
 	void setLocked(bool locked);
 	bool getLocked() const;
 };

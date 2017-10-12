@@ -1,0 +1,49 @@
+extraSprites:
+  - type: Projectiles
+    width: 105
+    height: 33
+    subX: 3
+    subY: 3
+    files:
+      0: Resources/BulletSprites/BulletSprites.png
+  - type: UnderwaterProjectiles
+    width: 105
+    height: 33
+    subX: 3
+    subY: 3
+    files:
+      0: Resources/BulletSprites/BulletSprites-Underwater.png
+  - type: AirCombatScreen
+    width: 320
+    height: 200
+    singleImage: true
+    files:
+      0: Resources/AirCombat/AirCombatScreen.gif
+  - type: AirCombatUnknownCraft
+    width: 32
+    height: 32
+    singleImage: true
+    files:
+      0: Resources/AirCombat/UnknownCraft.gif
+  - type: AirCombatUnknownUfo
+    width: 32
+    height: 32
+    singleImage: true
+    files:
+      0: Resources/AirCombat/UnknownUfo.gif
+  - type: AirCombatSprites
+    width: 32
+    height: 32
+    files:
+      1: Resources/Craft/Skyranger/SkyrangerCombat.gif
+      2: Resources/Craft/Interceptor/InterceptorCombat.gif
+      3: Resources/Craft/Tornado/TornadoCombat.gif
+      101: Resources/UFO/SmallScout/SmallScoutCombat.gif
+      102: Resources/UFO/MediumScout/MediumScoutCombat.gif
+      103: Resources/UFO/LargeScout/LargeScoutCombat.gif
+      104: Resources/UFO/Harvester/HarvesterCombat.gif
+      105: Resources/UFO/Abductor/AbductorCombat.gif
+      106: Resources/UFO/SupplyShip/SupplyShipCombat.gif
+      107: Resources/UFO/TerrorShip/TerrorShipCombat.gif
+      108: Resources/UFO/Battleship/BattleshipCombat.gif
+  

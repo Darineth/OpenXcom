@@ -1,0 +1,519 @@
+ufopaedia:
+  - delete: STR_TANK_CANNON
+  - delete: STR_HWP_CANNON_SHELLS
+  - delete: STR_TANK_ROCKET_LAUNCHER
+  - delete: STR_HWP_ROCKETS
+  - delete: STR_TANK_LASER_CANNON
+  - delete: STR_HOVERTANK_PLASMA
+  - delete: STR_HOVERTANK_LAUNCHER
+  - delete: STR_HWP_FUSION_BOMB
+  - delete: STR_PISTOL
+  - delete: STR_PISTOL_CLIP
+  - delete: STR_RIFLE
+  - delete: STR_RIFLE_CLIP
+  - delete: STR_HEAVY_CANNON
+  - delete: STR_HC_AP_AMMO
+  - delete: STR_HC_HE_AMMO
+  - delete: STR_HC_I_AMMO
+  - delete: STR_AUTO_CANNON
+  - delete: STR_AC_AP_AMMO
+  - delete: STR_AC_HE_AMMO
+  - delete: STR_AC_I_AMMO
+  - delete: STR_HEAVY_LASER
+  - delete: STR_HEAVY_PLASMA
+
+  - id: STR_BASIC_PISTOL
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_BASIC_PISTOL_UFOPEDIA
+    listOrder: 2303
+  - id: STR_BASIC_PISTOL_AMMO
+    type_id: 4
+    section: STR_NOT_AVAILABLE
+
+#Submachine Gun
+  - id: STR_BASIC_SMG
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_BASIC_SMG_UFOPEDIA
+    listOrder: 2303
+  - id: STR_BASIC_SMG_AMMO
+    type_id: 4
+    section: STR_NOT_AVAILABLE
+
+  - id: STR_BASIC_RIFLE
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_BASIC_RIFLE_UFOPEDIA
+    listOrder: 2303
+  - id: STR_BASIC_RIFLE_AMMO
+    type_id: 4
+    section: STR_NOT_AVAILABLE
+
+#Shotgun
+  - id: STR_BASIC_SHOTGUN
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_BASIC_SHOTGUN_UFOPEDIA
+    listOrder: 2301
+  - id: STR_BASIC_SHOTGUN_BUCKSHOT
+    type_id: 4
+    section: STR_NOT_AVAILABLE
+  - id: STR_BASIC_SHOTGUN_SLUG
+    type_id: 4
+    section: STR_NOT_AVAILABLE
+
+#Marksman Rifle
+  - id: STR_BASIC_MARKSMAN
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_BASIC_MARKSMAN_UFOPEDIA
+    listOrder: 2303
+  - id: STR_BASIC_MARKSMAN_AMMO
+    type_id: 4
+    section: STR_NOT_AVAILABLE
+
+#Sniper Rifle
+  - id: STR_BASIC_SNIPER
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_BASIC_SNIPER_UFOPEDIA
+    listOrder: 2303
+  - id: STR_BASIC_SNIPER_AMMO
+    type_id: 4
+    section: STR_NOT_AVAILABLE
+
+#Machine Gun
+  - id: STR_BASIC_MACHINEGUN
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_BASIC_MACHINEGUN_UFOPEDIA
+    listOrder: 2302
+  - id: STR_BASIC_MACHINEGUN_AMMO
+    type_id: 4
+    section: STR_NOT_AVAILABLE
+
+#Minigun
+  - id: STR_BASIC_MINIGUN
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_BASIC_MINIGUN_UFOPEDIA
+    listOrder: 2304
+  - id: STR_BASIC_MINIGUN_AMMO
+    type_id: 4
+    section: STR_NOT_AVAILABLE
+
+#Heavy Rifle
+  - id: STR_BASIC_HEAVY
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_BASIC_HEAVY_UFOPEDIA
+    listOrder: 2305
+  - id: STR_BASIC_HEAVY_AMMO
+    type_id: 4
+    section: STR_NOT_AVAILABLE
+
+#Grenade Launcher
+  - id: STR_GRENADE_LAUNCHER
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_GRENADE_LAUNCHER_UFOPEDIA
+    listOrder: 2306
+  - id: STR_GL_HE_AMMO
+    type_id: 4
+    section: STR_NOT_AVAILABLE
+  - id: STR_GL_HE_FISSION_AMMO
+    type_id: 4
+    section: STR_NOT_AVAILABLE
+  - id: STR_GL_HE_FUSION_AMMO
+    type_id: 4
+    section: STR_NOT_AVAILABLE
+  - id: STR_GL_I_AMMO
+    type_id: 4
+    section: STR_NOT_AVAILABLE
+
+
+#Incendiary Grenade
+  - id: STR_INCENDIARY_GRENADE
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_INCENDIARY_GRENADE_UFOPEDIA
+    listOrder: 3901
+    clipSize: 1
+
+#Rockets
+  - id: STR_FISSION_ROCKET
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_FISSION_ROCKET_UFOPEDIA
+    listOrder: 3202
+    requires:
+      - STR_FISSION_WARHEADS
+  - id: STR_FUSION_ROCKET
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_FUSION_CLUSTER_ROCKET_UFOPEDIA
+    listOrder: 3203
+    requires:
+      - STR_FUSION_WARHEADS
+  - id: STR_PLASMA_ROCKET
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_PLASMA_ROCKET_UFOPEDIA
+    listOrder: 3201
+    requires:
+      - STR_HEAVY_PLASMA_WEAPONS
+
+#Shock Grenade
+  - id: STR_SHOCK_GRENADE
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_SHOCK_GRENADE_UFOPEDIA
+    listOrder: 3205
+    requires:
+      - STR_SHOCK_GRENADE
+
+  - id: STR_LASER_PISTOL
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_LASER_PISTOL_UFOPEDIA
+    listOrder: 3703
+    requires:
+      - STR_LASER_SIDEARMS
+
+#Pulse Laser Pistol
+  - id: STR_LASER_SMG
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_LASER_SMG_UFOPEDIA
+    listOrder: 3703
+    requires:
+      - STR_LASER_SIDEARMS
+
+  - id: STR_LASER_RIFLE
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_LASER_RIFLE_UFOPEDIA
+    listOrder: 3703
+    requires:
+      - STR_LASER_ASSAULT_WEAPONS
+
+#Prismatic Laser
+  - id: STR_LASER_SHOTGUN
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_LASER_SHOTGUN_UFOPEDIA
+    listOrder: 3701
+    requires:
+      - STR_LASER_ASSAULT_WEAPONS
+
+#Strike Beam Rifle
+  - id: STR_LASER_MARKSMAN
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_LASER_MARKSMAN_UFOPEDIA
+    listOrder: 3703
+    requires:
+      - STR_PRECISION_LASER_WEAPONS
+
+#Laser Beam Rifle
+  - id: STR_LASER_SNIPER
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_LASER_SNIPER_UFOPEDIA
+    listOrder: 3703
+    requires:
+      - STR_PRECISION_LASER_WEAPONS
+
+#Pulse Laser
+  - id: STR_LASER_MACHINEGUN
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_LASER_MACHINEGUN_UFOPEDIA
+    listOrder: 3702
+    requires:
+      - STR_HEAVY_LASER_WEAPONS
+
+#Hyper Pulse Laser
+  - id: STR_LASER_MINIGUN
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_LASER_MINIGUN_UFOPEDIA
+    listOrder: 3704
+    requires:
+      - STR_HEAVY_LASER_WEAPONS
+
+  - id: STR_LASER_HEAVY
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_LASER_HEAVY_UFOPEDIA
+    listOrder: 3703
+    requires:
+      - STR_HEAVY_LASER_WEAPONS
+
+  - id: STR_PLASMA_PISTOL
+    type_id: 4
+    section: STR_ALIEN_ARTIFACTS
+    text: STR_PLASMA_PISTOL_UFOPEDIA
+    listOrder: 5306
+    requires:
+      - STR_PLASMA_SIDEARMS
+  - id: STR_PLASMA_PISTOL_AMMO
+    type_id: 4
+    section: STR_ALIEN_ARTIFACTS
+    text: STR_PLASMA_PISTOL_AMMO_UFOPEDIA
+    listOrder: 5306
+    requires:
+      - STR_PLASMA_SIDEARMS
+
+#Plasma Blaster Pistol
+  - id: STR_PLASMA_SMG
+    type_id: 4
+    section: STR_ALIEN_ARTIFACTS
+    text: STR_PLASMA_SMG_UFOPEDIA
+    listOrder: 5306
+    requires:
+      - STR_PLASMA_SIDEARMS
+  - id: STR_PLASMA_SMG_AMMO
+    type_id: 4
+    section: STR_ALIEN_ARTIFACTS
+    text: STR_PLASMA_SMG_AMMO_UFOPEDIA
+    listOrder: 5306
+    requires:
+      - STR_PLASMA_SIDEARMS
+
+  - id: STR_PLASMA_RIFLE
+    type_id: 4
+    section: STR_ALIEN_ARTIFACTS
+    text: STR_PLASMA_RIFLE_UFOPEDIA
+    listOrder: 5306
+    requires:
+      - STR_PLASMA_ASSAULT_WEAPONS
+  - id: STR_PLASMA_RIFLE_AMMO
+    type_id: 4
+    section: STR_ALIEN_ARTIFACTS
+    text: STR_PLASMA_RIFLE_AMMO_UFOPEDIA
+    listOrder: 5306
+    requires:
+      - STR_PLASMA_ASSAULT_WEAPONS
+
+#Plasma Burst
+  - id: STR_PLASMA_SHOTGUN
+    type_id: 4
+    section: STR_ALIEN_ARTIFACTS
+    text: STR_PLASMA_SHOTGUN_UFOPEDIA
+    listOrder: 5301
+    requires:
+      - STR_PLASMA_ASSAULT_WEAPONS
+  - id: STR_PLASMA_SHOTGUN_AMMO
+    type_id: 4
+    section: STR_ALIEN_ARTIFACTS
+    text: STR_PLASMA_SHOTGUN_AMMO_UFOPEDIA
+    listOrder: 5302
+    requires:
+      - STR_PLASMA_ASSAULT_WEAPONS
+
+#Plasma Shock Rifle
+  - id: STR_PLASMA_MARKSMAN
+    type_id: 4
+    section: STR_ALIEN_ARTIFACTS
+    text: STR_PLASMA_MARKSMAN_UFOPEDIA
+    listOrder: 5305
+    requires:
+      - STR_PRECISION_PLASMA_WEAPONS
+  - id: STR_PLASMA_MARKSMAN_AMMO
+    type_id: 4
+    section: STR_ALIEN_ARTIFACTS
+    text: STR_PLASMA_MARKSMAN_AMMO_UFOPEDIA
+    listOrder: 5306
+    requires:
+      - STR_PRECISION_PLASMA_WEAPONS
+
+#Plasma Beam Rifle
+  - id: STR_PLASMA_SNIPER
+    type_id: 4
+    section: STR_ALIEN_ARTIFACTS
+    text: STR_PLASMA_SNIPER_UFOPEDIA
+    listOrder: 5305
+    requires:
+      - STR_PRECISION_PLASMA_WEAPONS
+  - id: STR_PLASMA_SNIPER_AMMO
+    type_id: 4
+    section: STR_ALIEN_ARTIFACTS
+    text: STR_PLASMA_SNIPER_AMMO_UFOPEDIA
+    listOrder: 5306
+    requires:
+      - STR_PRECISION_PLASMA_WEAPONS
+
+#Plasma Pulsar
+  - id: STR_PLASMA_MINIGUN
+    type_id: 4
+    section: STR_ALIEN_ARTIFACTS
+    text: STR_PLASMA_MINIGUN_UFOPEDIA
+    listOrder: 5307
+    requires:
+      - STR_HEAVY_PLASMA_WEAPONS
+  - id: STR_PLASMA_MINIGUN_AMMO
+    type_id: 4
+    section: STR_ALIEN_ARTIFACTS
+    text: STR_PLASMA_MINIGUN_AMMO_UFOPEDIA
+    listOrder: 5308
+    requires:
+      - STR_HEAVY_PLASMA_WEAPONS
+
+#Plasma Blaster
+  - id: STR_PLASMA_MACHINEGUN
+    type_id: 4
+    section: STR_ALIEN_ARTIFACTS
+    text: STR_PLASMA_MACHINEGUN_UFOPEDIA
+    listOrder: 5303
+    requires:
+      - STR_HEAVY_PLASMA_WEAPONS
+  - id: STR_PLASMA_MACHINEGUN_AMMO
+    type_id: 4
+    section: STR_ALIEN_ARTIFACTS
+    text: STR_PLASMA_MACHINEGUN_AMMO_UFOPEDIA
+    listOrder: 5304
+    requires:
+      - STR_HEAVY_PLASMA_WEAPONS
+
+  - id: STR_PLASMA_HEAVY
+    type_id: 4
+    section: STR_ALIEN_ARTIFACTS
+    text: STR_PLASMA_HEAVY_UFOPEDIA
+    listOrder: 5303
+    requires:
+      - STR_HEAVY_PLASMA_WEAPONS
+  - id: STR_PLASMA_HEAVY_AMMO
+    type_id: 4
+    section: STR_ALIEN_ARTIFACTS
+    text: STR_PLASMA_HEAVY_AMMO_UFOPEDIA
+    listOrder: 5304
+    requires:
+      - STR_HEAVY_PLASMA_WEAPONS
+
+  - id: STR_ARC_RIFLE
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_ARC_RIFLE_UFOPEDIA
+    listOrder: 5303
+    requires:
+      - STR_ARC_WEAPONS
+  - id: STR_ARC_RIFLE_AMMO
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_ARC_RIFLE_AMMO_UFOPEDIA
+    listOrder: 5304
+    requires:
+      - STR_ARC_WEAPONS
+
+  - id: STR_ARC_LAUNCHER
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_ARC_LAUNCHER_UFOPEDIA
+    listOrder: 5305
+    requires:
+      - STR_ARC_WEAPONS
+
+#Tornado
+  - id: STR_TORNADO
+    type_id: 1
+    section: STR_XCOM_CRAFT_ARMAMENT
+    image_id: UP002B.SPK
+    rect_stats:
+      x: 160
+      y: 5
+      width: 160
+      height: 60
+    rect_text:
+      x: 5
+      y: 40
+      width: 140
+      height: 100
+    text: STR_TORNADO_UFOPEDIA
+    requires:
+      - STR_IMPROVED_INTERCEPTOR
+    listOrder: 401
+
+#Electrolaser
+  - id: STR_ELECTROLASER
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_ELECTROLASER_UFOPEDIA
+    listOrder: 3703
+    requires:
+      - STR_ELECTROLASERS
+  - id: STR_ELECTROLASER_PACK
+    type_id: 4
+    section: STR_NOT_AVAILABLE
+
+#Fission Explosive
+  - id: STR_FISSION_EXPLOSIVE
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_FISSION_EXPLOSIVE_UFOPEDIA
+    listOrder: 3704
+    requires:
+      - STR_FISSION_EXPLOSIVES
+
+#Field Surgery Unit
+  - id: STR_FIELD_SURGERY_UNIT
+    type_id: 4
+    section: STR_WEAPONS_AND_EQUIPMENT
+    text: STR_FIELD_SURGERY_UNIT_UFOPEDIA
+    listOrder: 3705
+    requires:
+      - STR_FIELD_SURGERY_UNIT
+
+#Psi Orb
+  - id: STR_PSI_ORB
+    type_id: 4
+    section: STR_NOT_AVAILABLE
+
+  - id: STR_SCOUT_ARMOR_UC
+    type_id: 5
+    section: STR_WEAPONS_AND_EQUIPMENT
+    listOrder: 1750
+    requires:
+      - STR_SCOUT_ARMOR
+    text: STR_SCOUT_ARMOR_UFOPEDIA
+
+  - id: STR_HEAVY_ARMOR_UC
+    type_id: 5
+    section: STR_WEAPONS_AND_EQUIPMENT
+    listOrder: 1750
+    requires:
+      - STR_HEAVY_ARMOR
+    text: STR_HEAVY_ARMOR_UFOPEDIA
+
+  - id: STR_STEALTH_ARMOR_UC
+    type_id: 5
+    section: STR_WEAPONS_AND_EQUIPMENT
+    listOrder: 1750
+    requires:
+      - STR_STEALTH_ARMOR
+    text: STR_STEALTH_ARMOR_UFOPEDIA
+
+  - id: STR_ASSAULT_ARMOR_UC
+    type_id: 5
+    section: STR_WEAPONS_AND_EQUIPMENT
+    listOrder: 1750
+    requires:
+      - STR_ASSAULT_ARMOR
+    text: STR_ASSAULT_ARMOR_UFOPEDIA
+
+  - id: STR_FLYING_ARMOR_UC
+    type_id: 5
+    section: STR_WEAPONS_AND_EQUIPMENT
+    listOrder: 1750
+    requires:
+      - STR_FLYING_ARMOR
+    text: STR_FLYING_ARMOR_UFOPEDIA
+
+  - id: STR_POWER_ARMOR_UC
+    type_id: 5
+    section: STR_WEAPONS_AND_EQUIPMENT
+    listOrder: 1750
+    requires:
+      - STR_POWER_ARMOR
+    text: STR_POWER_ARMOR_UFOPEDIA

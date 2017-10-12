@@ -40,9 +40,9 @@ enum SpecialTileType{TILE=0,
 					END_POINT,
 					MUST_DESTROY};
 
-enum MovementType{ MT_WALK, MT_FLY, MT_SLIDE, MT_FLOAT, MT_SINK};
-enum VoxelType{ V_EMPTY = -1, V_FLOOR, V_WESTWALL, V_NORTHWALL, V_OBJECT, V_UNIT, V_OUTOFBOUNDS, V_UNITTARGETHIT, V_TILETARGETHIT, V_UNITTARGETOBSTRUCTED, V_TILETARGETOBSTRUCTED };
-enum MapDataType { O_FLOOR, O_WESTWALL, O_NORTHWALL, O_OBJECT };
+enum MovementType : int { MT_WALK, MT_FLY, MT_SLIDE, MT_FLOAT, MT_SINK};
+enum VoxelType : int { V_EMPTY = -1, V_FLOOR, V_WESTWALL, V_NORTHWALL, V_OBJECT, V_UNIT, V_OUTOFBOUNDS, V_UNITTARGETHIT, V_TILETARGETHIT, V_UNITTARGETOBSTRUCTED, V_TILETARGETOBSTRUCTED };
+enum MapDataType : int { O_FLOOR, O_WESTWALL, O_NORTHWALL, O_OBJECT };
 
 /**
  * MapData is the smallest piece of a Battlescape terrain, holding info about a certain object, wall, floor, ...

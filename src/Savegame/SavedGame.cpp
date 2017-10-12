@@ -170,6 +170,17 @@ SavedGame::~SavedGame()
 	{
 		delete *i;
 	}
+	for (int j = 0; j < MAX_EQUIPMENT_LAYOUT_TEMPLATES; ++j)
+	{
+		for (std::vector<EquipmentLayoutItem*>::iterator i = _globalEquipmentLayout[j].begin(); i != _globalEquipmentLayout[j].end(); ++i)
+		{
+			delete *i;
+		}
+	}
+	for (int j = 0; j < MAX_CRAFT_LOADOUT_TEMPLATES; ++j)
+	{
+		delete _globalCraftLoadout[j];
+	}
 	for (std::vector<MissionStatistics*>::iterator i = _missionStatistics.begin(); i != _missionStatistics.end(); ++i)
 	{
 		delete *i;
@@ -463,8 +474,8 @@ void SavedGame::load(const std::string &filename, Mod *mod)
 		std::string type = (*i)["type"].as<std::string>();
 		if (mod->getUfo(type))
 		{
-			Ufo *u = new Ufo(mod->getUfo(type));
-			u->load(*i, *mod, *this);
+			Ufo *u = new Ufo(mod->getUfo(type), false);
+			u->load(*i, mod, this);
 			_ufos.push_back(u);
 		}
 		else
@@ -569,6 +580,72 @@ void SavedGame::load(const std::string &filename, Mod *mod)
 		}
 	}
 
+	for (int j = 0; j < MAX_EQUIPMENT_LAYOUT_TEMPLATES; ++j)
+	{
+		std::ostringstream oss;
+		oss << "globalEquipmentLayout" << j;
+		std::string key = oss.str();
+		if (const YAML::Node &layout = doc[key])
+		{
+			for (YAML::const_iterator i = layout.begin(); i != layout.end(); ++i)
+			{
+				EquipmentLayoutItem *layoutItem = new EquipmentLayoutItem(*i);
+
+				// check if everything still exists (in case of mod upgrades)
+				bool error = false;
+				if (!mod->getInventory(layoutItem->getSlot()))
+					error = true;
+				if (!mod->getItem(layoutItem->getItemType()))
+					error = true;
+				for (int slot = 0; slot < RuleItem::AmmoSlotMax; ++slot)
+				{
+					if (layoutItem->getAmmoItemForSlot(slot) == "NONE" || mod->getItem(layoutItem->getAmmoItemForSlot(slot)))
+					{
+						// ok
+					}
+					else
+					{
+						error = true;
+						break;
+					}
+				}
+				if (!error)
+				{
+					_globalEquipmentLayout[j].push_back(layoutItem);
+				}
+				else
+				{
+					delete layoutItem;
+				}
+			}
+		}
+		std::ostringstream oss2;
+		oss2 << "globalEquipmentLayoutName" << j;
+		std::string key2 = oss2.str();
+		if (doc[key2])
+		{
+			_globalEquipmentLayoutName[j] = Language::utf8ToWstr(doc[key2].as<std::string>());
+		}
+	}
+
+	for (int j = 0; j < MAX_CRAFT_LOADOUT_TEMPLATES; ++j)
+	{
+		std::ostringstream oss;
+		oss << "globalCraftLoadout" << j;
+		std::string key = oss.str();
+		if (const YAML::Node &loadout = doc[key])
+		{
+			_globalCraftLoadout[j]->load(loadout);
+		}
+		std::ostringstream oss2;
+		oss2 << "globalCraftLoadoutName" << j;
+		std::string key2 = oss2.str();
+		if (doc[key2])
+		{
+			_globalCraftLoadoutName[j] = Language::utf8ToWstr(doc[key2].as<std::string>());
+		}
+	}
+
 	for (YAML::const_iterator i = doc["missionStatistics"].begin(); i != doc["missionStatistics"].end(); ++i)
 	{
 		MissionStatistics *ms = new MissionStatistics();
@@ -587,9 +664,10 @@ void SavedGame::load(const std::string &filename, Mod *mod)
 
 	if (const YAML::Node &battle = doc["battleGame"])
 	{
-		_battleGame = new SavedBattleGame();
+		_battleGame = new SavedBattleGame(mod);
 		_battleGame->load(battle, mod, this);
 	}
+
 }
 
 /**
@@ -736,6 +814,41 @@ void SavedGame::save(const std::string &filename) const
 	for (std::vector<Soldier*>::const_iterator i = _deadSoldiers.begin(); i != _deadSoldiers.end(); ++i)
 	{
 		node["deadSoldiers"].push_back((*i)->save());
+	}
+	for (int j = 0; j < MAX_EQUIPMENT_LAYOUT_TEMPLATES; ++j)
+	{
+		std::ostringstream oss;
+		oss << "globalEquipmentLayout" << j;
+		std::string key = oss.str();
+		if (!_globalEquipmentLayout[j].empty())
+		{
+			for (std::vector<EquipmentLayoutItem*>::const_iterator i = _globalEquipmentLayout[j].begin(); i != _globalEquipmentLayout[j].end(); ++i)
+				node[key].push_back((*i)->save());
+		}
+		std::ostringstream oss2;
+		oss2 << "globalEquipmentLayoutName" << j;
+		std::string key2 = oss2.str();
+		if (!_globalEquipmentLayoutName[j].empty())
+		{
+			node[key2] = Language::wstrToUtf8(_globalEquipmentLayoutName[j]);
+		}
+	}
+	for (int j = 0; j < MAX_CRAFT_LOADOUT_TEMPLATES; ++j)
+	{
+		std::ostringstream oss;
+		oss << "globalCraftLoadout" << j;
+		std::string key = oss.str();
+		if (_globalCraftLoadout[j])
+		{
+			node[key] = _globalCraftLoadout[j]->save();
+		}
+		std::ostringstream oss2;
+		oss2 << "globalCraftLoadoutName" << j;
+		std::string key2 = oss2.str();
+		if (!_globalCraftLoadoutName[j].empty())
+		{
+			node[key2] = Language::wstrToUtf8(_globalCraftLoadoutName[j]);
+		}
 	}
 	if (Options::soldierDiaries)
 	{

@@ -16,11 +16,40 @@
  * You should have received a copy of the GNU General Public License
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "MapBlock.h"
 #include <sstream>
 #include <algorithm>
+#include "MapBlock.h"
 #include "../Battlescape/Position.h"
 #include "../Engine/Exception.h"
+
+namespace YAML
+{
+	template<>
+	struct convert<OpenXcom::RandomizedItems>
+	{
+		static Node encode(const OpenXcom::RandomizedItems& rhs)
+		{
+			Node node;
+			node["position"] = rhs.position;
+			node["amount"] = rhs.amount;
+			node["mixed"] = rhs.mixed;
+			node["itemList"] = rhs.itemList;
+			return node;
+		}
+
+		static bool decode(const Node& node, OpenXcom::RandomizedItems& rhs)
+		{
+			if (!node.IsMap())
+				return false;
+
+			rhs.position = node["position"].as<OpenXcom::Position>(rhs.position);
+			rhs.amount = node["amount"].as<int>(rhs.amount);
+			rhs.mixed = node["mixed"].as<bool>(rhs.mixed);
+			rhs.itemList = node["itemList"].as< std::vector<std::string> >(rhs.itemList);
+			return true;
+		}
+	};
+}
 
 namespace OpenXcom
 {
@@ -80,7 +109,9 @@ void MapBlock::load(const YAML::Node &node)
 			_revealedFloors.push_back(map.as<int>(0));
 		}
 	}
-	_items = node["items"].as< std::map<std::string, std::vector<Position> > >(_items);
+	_items = node["items"].as<std::map<std::string, std::vector<Position> > >(_items);
+	_randomizedItems = node["randomizedItems"].as< std::vector<RandomizedItems> >(_randomizedItems);
+	_itemsFuseTimer = node["fuseTimers"].as<std::map<std::string, std::pair<int, int> > >(_itemsFuseTimer);
 }
 
 /**
@@ -149,9 +180,27 @@ bool MapBlock::isFloorRevealed(int floor)
  * Gets the items and their positioning for any items associated with this block.
  * @return the items and their positions.
  */
-std::map<std::string, std::vector<Position> > *MapBlock::getItems()
+const std::map<std::string, std::vector<Position> > *MapBlock::getItems() const
 {
 	return &_items;
+}
+
+/**
+* Gets the to-be-randomized items and their positioning for any items associated with this block.
+* @return the items and their positions.
+*/
+const std::vector<RandomizedItems> *MapBlock::getRandomizedItems() const
+{
+	return &_randomizedItems;
+}
+
+/**
+ * Gets the predefined fuse timers for items on this block.
+ * @return the fuse timers for items.
+ */
+const std::map<std::string, std::pair<int, int> > *MapBlock::getItemsFuseTimers() const
+{
+	return &_itemsFuseTimer;
 }
 
 }

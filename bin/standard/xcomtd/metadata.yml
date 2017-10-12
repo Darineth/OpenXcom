@@ -1,0 +1,8 @@
+name: "X-COM: Terror Defense"
+version: 0.1
+description: "Massive rework of X-COM units, weapons, craft, research, and more!"
+author: "Microprose, OpenXCOM, Xusilak, Darineth"
+id: xcomtd
+reservedSpace: 3
+isMaster: true
+master: xcom1

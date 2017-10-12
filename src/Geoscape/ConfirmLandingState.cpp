@@ -16,14 +16,15 @@
  * You should have received a copy of the GNU General Public License
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "CraftErrorState.h"
 #include "ConfirmLandingState.h"
 #include <sstream>
 #include "../Engine/Game.h"
-#include "../Mod/Mod.h"
 #include "../Engine/LocalizedText.h"
 #include "../Interface/Window.h"
 #include "../Interface/Text.h"
 #include "../Interface/TextButton.h"
+#include "../Engine/SurfaceSet.h"
 #include "../Savegame/SavedBattleGame.h"
 #include "../Savegame/SavedGame.h"
 #include "../Savegame/Craft.h"
@@ -36,7 +37,10 @@
 #include "../Battlescape/BattlescapeGenerator.h"
 #include "../Engine/Exception.h"
 #include "../Engine/Options.h"
+#include "../Mod/RuleStartingCondition.h"
 #include "../Mod/AlienDeployment.h"
+#include "../Mod/AlienRace.h"
+#include "../Mod/Mod.h"
 
 namespace OpenXcom
 {
@@ -58,6 +62,7 @@ ConfirmLandingState::ConfirmLandingState(Craft *craft, Texture *texture, int sha
 	_btnNo = new TextButton(80, 20, 136, 150);
 	_txtMessage = new Text(206, 80, 25, 40);
 	_txtBegin = new Text(206, 17, 25, 130);
+	_sprite = new Surface(24, 24, 202, 30);
 
 	// Set palette
 	setInterface("confirmLanding");
@@ -67,6 +72,7 @@ ConfirmLandingState::ConfirmLandingState(Craft *craft, Texture *texture, int sha
 	add(_btnNo, "button", "confirmLanding");
 	add(_txtMessage, "text", "confirmLanding");
 	add(_txtBegin, "text", "confirmLanding");
+	add(_sprite);
 
 	centerAllSurfaces();
 
@@ -93,6 +99,26 @@ ConfirmLandingState::ConfirmLandingState(Craft *craft, Texture *texture, int sha
 	std::wostringstream ss;
 	ss << L'\x01' << tr("STR_BEGIN_MISSION");
 	_txtBegin->setText(ss.str());
+
+	SurfaceSet *sprites = _game->getMod()->getSurfaceSet("DayNightIndicator", false);
+	if (sprites != 0)
+	{
+		if (_shade <= 0)
+		{
+			// day (0)
+			sprites->getFrame(0)->blit(_sprite);
+		}
+		else if (_shade > _game->getMod()->getMaxDarknessToSeeUnits())
+		{
+			// night (10-15); note: this is configurable in the ruleset (in OXCE only)
+			sprites->getFrame(1)->blit(_sprite);
+		}
+		else
+		{
+			// dusk/dawn (1-9)
+			sprites->getFrame(2)->blit(_sprite);
+		}
+	}
 }
 
 /**
@@ -115,17 +141,65 @@ void ConfirmLandingState::init()
 }
 
 /**
+* Checks the starting condition.
+*/
+bool ConfirmLandingState::checkStartingCondition()
+{
+	Ufo* u = dynamic_cast<Ufo*>(_craft->getDestination());
+	MissionSite* m = dynamic_cast<MissionSite*>(_craft->getDestination());
+	AlienBase* b = dynamic_cast<AlienBase*>(_craft->getDestination());
+
+	AlienDeployment *ruleDeploy = 0;
+	if (u != 0)
+	{
+		ruleDeploy = _game->getMod()->getDeployment(u->getRules()->getType());
+	}
+	else if (m != 0)
+	{
+		ruleDeploy = _game->getMod()->getDeployment(m->getDeployment()->getType());
+	}
+	else if (b != 0)
+	{
+		AlienRace *race = _game->getMod()->getAlienRace(b->getAlienRace());
+		ruleDeploy = _game->getMod()->getDeployment(race->getBaseCustomMission());
+		if (!ruleDeploy) ruleDeploy = _game->getMod()->getDeployment(b->getDeployment()->getType());
+	}
+	else
+	{
+		// irrelevant for this check
+		return true;
+	}
+
+	if (ruleDeploy == 0)
+	{
+		// just in case
+		return true;
+	}
+
+	RuleStartingCondition *rule = _game->getMod()->getStartingCondition(ruleDeploy->getStartingCondition());
+	return rule == 0 || rule->isCraftAllowed(_craft->getRules()->getType());
+}
+
+/**
  * Enters the mission.
  * @param action Pointer to an action.
  */
 void ConfirmLandingState::btnYesClick(Action *)
 {
+	if (!checkStartingCondition())
+	{
+		_craft->returnToBase();
+		_game->popState();
+		_game->pushState(new CraftErrorState(0, tr("STR_STARTING_CONDITION_CRAFT")));
+		return;
+	}
+
 	_game->popState();
 	Ufo* u = dynamic_cast<Ufo*>(_craft->getDestination());
 	MissionSite* m = dynamic_cast<MissionSite*>(_craft->getDestination());
 	AlienBase* b = dynamic_cast<AlienBase*>(_craft->getDestination());
 
-	SavedBattleGame *bgame = new SavedBattleGame();
+	SavedBattleGame *bgame = new SavedBattleGame(_game->getMod());
 	_game->getSavedGame()->setBattleGame(bgame);
 	BattlescapeGenerator bgen(_game);
 	bgen.setWorldTexture(_texture);
@@ -138,19 +212,23 @@ void ConfirmLandingState::btnYesClick(Action *)
 		else
 			bgame->setMissionType("STR_UFO_GROUND_ASSAULT");
 		bgen.setUfo(u);
+		bgen.setAlienCustomDeploy(_game->getMod()->getDeployment(u->getCraftStats().craftCustomDeploy));
 		bgen.setAlienRace(u->getAlienRace());
 	}
 	else if (m != 0)
 	{
 		bgame->setMissionType(m->getDeployment()->getType());
 		bgen.setMissionSite(m);
+		bgen.setAlienCustomDeploy(m->getMissionCustomDeploy());
 		bgen.setAlienRace(m->getAlienRace());
 	}
 	else if (b != 0)
 	{
+		AlienRace *race = _game->getMod()->getAlienRace(b->getAlienRace());
 		bgame->setMissionType(b->getDeployment()->getType());
 		bgen.setAlienBase(b);
 		bgen.setAlienRace(b->getAlienRace());
+		bgen.setAlienCustomDeploy(_game->getMod()->getDeployment(race->getBaseCustomDeploy()), _game->getMod()->getDeployment(race->getBaseCustomMission()));
 		bgen.setWorldTexture(0);
 	}
 	else

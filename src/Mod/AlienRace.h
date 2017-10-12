@@ -34,7 +34,12 @@ class AlienRace
 {
 private:
 	std::string _id;
+	std::string _baseCustomDeploy;
+	std::string _baseCustomMission;
+	std::string _retaliationMission;
 	std::vector<std::string> _members;
+	std::vector< std::vector<std::string> > _membersRandom;
+	int _retaliationAggression;
 public:
 	/// Creates a blank alien race ruleset.
 	AlienRace(const std::string &id);
@@ -43,9 +48,17 @@ public:
 	/// Loads alien race data from YAML.
 	void load(const YAML::Node& node);
 	/// Gets the alien race's id.
-	std::string getId() const;
+	const std::string &getId() const;
+	/// Gets the alien base weapon deploy.
+	const std::string &getBaseCustomDeploy() const;
+	/// Gets the alien base mission.
+	const std::string &getBaseCustomMission() const;
 	/// Gets a certain member of this alien race family.
-	std::string getMember(int id) const;
+	const std::string &getMember(int id) const;
+	/// Gets what mission is created after destroying ufo.
+	const std::string &getRetaliationMission() const;
+	/// Gets how aggressive alien are to spawn retaliation mission after destroying ufo.
+	int getRetaliationAggression() const;
 };
 
 }

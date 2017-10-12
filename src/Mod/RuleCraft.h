@@ -32,11 +32,11 @@ class Mod;
  */
 struct RuleCraftStats
 {
-	int fuelMax, damageMax, speedMax, accel, radarRange, radarChance, sightRange, hitBonus, avoidBonus, powerBonus, armor, shieldCapacity, shieldRecharge, shieldRechargeInGeoscape, shieldBleedThrough;
+	int fuelMax, combatFuelMax, damageMax, speedMax, accel, radarRange, radarChance, sightRange, hitBonus, avoidBonus, powerBonus, armor, shieldCapacity, shieldRecharge, shieldRechargeInGeoscape, shieldBleedThrough;
 
 	/// Default constructor.
 	RuleCraftStats() :
-		fuelMax(0), damageMax(0), speedMax(0), accel(0),
+		fuelMax(0), combatFuelMax(0), damageMax(0), speedMax(0), accel(0),
 		radarRange(0), radarChance(0), sightRange(0),
 		hitBonus(0), avoidBonus(0), powerBonus(0), armor(0),
 		shieldCapacity(0), shieldRecharge(0), shieldRechargeInGeoscape(0), shieldBleedThrough(0)
@@ -47,6 +47,7 @@ struct RuleCraftStats
 	RuleCraftStats& operator+=(const RuleCraftStats& r)
 	{
 		fuelMax += r.fuelMax;
+		combatFuelMax += r.combatFuelMax;
 		damageMax += r.damageMax;
 		speedMax += r.speedMax;
 		accel += r.accel;
@@ -67,6 +68,7 @@ struct RuleCraftStats
 	RuleCraftStats& operator-=(const RuleCraftStats& r)
 	{
 		fuelMax -= r.fuelMax;
+		combatFuelMax -= r.combatFuelMax;
 		damageMax -= r.damageMax;
 		speedMax -= r.speedMax;
 		accel -= r.accel;
@@ -94,6 +96,7 @@ struct RuleCraftStats
 	void load(const YAML::Node &node)
 	{
 		fuelMax = node["fuelMax"].as<int>(fuelMax);
+		combatFuelMax = node["combatFuelMax"].as<int>(combatFuelMax);
 		damageMax = node["damageMax"].as<int>(damageMax);
 		speedMax = node["speedMax"].as<int>(speedMax);
 		accel = node["accel"].as<int>(accel);
@@ -128,12 +131,12 @@ public:
 private:
 	std::string _type;
 	std::vector<std::string> _requires;
-	int _sprite, _marker;
+	int _sprite, _combatSprite, _marker;
 	int _weapons, _soldiers, _pilots, _vehicles, _costBuy, _costRent, _costSell;
 	char _weaponTypes[WeaponMax][WeaponTypeMax];
 	std::string _refuelItem;
 	std::string _weaponStrings[WeaponMax];
-	int _repairRate, _refuelRate, _transferTime, _score;
+	int _repairRate, _refuelRate, _combatRefuelRate, _transferTime, _score;
 	RuleTerrain *_battlescapeTerrainData;
 	bool _allowLanding, _spacecraft, _notifyWhenRefueled, _autoPatrol;
 	int _listOrder, _maxItems, _maxAltitude;
@@ -154,10 +157,14 @@ public:
 	const std::vector<std::string> &getRequirements() const;
 	/// Gets the craft's sprite.
 	int getSprite() const;
+	/// Gets the craft's combat sprite.
+	int getCombatSprite() const;
 	/// Gets the craft's globe marker.
 	int getMarker() const;
 	/// Gets the craft's maximum fuel.
 	int getMaxFuel() const;
+	/// Gets the craft's maximum combat fuel.
+	int getMaxCombatFuel() const;
 	/// Gets the craft's maximum damage.
 	int getMaxDamage() const;
 	/// Gets the craft's maximum speed.
@@ -184,6 +191,8 @@ public:
 	int getRepairRate() const;
 	/// Gets the craft's refuel rate.
 	int getRefuelRate() const;
+	/// Gets the craft's combat refuel rate.
+	int getCombatRefuelRate() const;
 	/// Gets the craft's radar range.
 	int getRadarRange() const;
 	/// Gets the craft's radar chance.

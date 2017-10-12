@@ -29,6 +29,7 @@
 #include "../Savegame/SoldierDiary.h"
 #include "../Engine/Options.h"
 #include "../Mod/RuleCommendations.h"
+#include "../Ufopaedia/Ufopaedia.h"
 
 namespace OpenXcom
 {
@@ -39,7 +40,7 @@ namespace OpenXcom
  */
 CommendationState::CommendationState(std::vector<Soldier*> soldiersMedalled)
 {
-	// Create objects
+	// Create object
 	_window = new Window(this, 320, 200, 0, 0);
 	_btnOk = new TextButton(288, 16, 16, 176);
 	_txtTitle = new Text(300, 16, 10, 8);
@@ -55,7 +56,7 @@ CommendationState::CommendationState(std::vector<Soldier*> soldiersMedalled)
 
 	centerAllSurfaces();
 
-	// Set up objects
+	// Set up object
 	_window->setBackground(_game->getMod()->getSurface("BACK01.SCR"));
 
 	_btnOk->setText(tr("STR_OK"));
@@ -71,6 +72,7 @@ CommendationState::CommendationState(std::vector<Soldier*> soldiersMedalled)
 	_lstSoldiers->setSelectable(true);
 	_lstSoldiers->setBackground(_window);
 	_lstSoldiers->setMargin(8);
+	_lstSoldiers->onMouseClick((ActionHandler)&CommendationState::lstSoldiersMouseClick);
 
 	int row = 0;
 	int titleRow = 0;
@@ -83,9 +85,10 @@ CommendationState::CommendationState(std::vector<Soldier*> soldiersMedalled)
 	{
 		modularCommendation = false;
 		noun = "noNoun";
-		if (titleChosen)
-		{
-			_lstSoldiers->addRow(2, L"", L""); // Blank row, will be filled in later
+        if (titleChosen)
+        {
+            _lstSoldiers->addRow(2, L"", L""); // Blank row, will be filled in later
+			_commendationsNames.push_back("");
 			row++;
 		}
 		titleChosen = false;
@@ -135,6 +138,7 @@ CommendationState::CommendationState(std::vector<Soldier*> soldiersMedalled)
 						vectorIterator++;
 					}
 					_lstSoldiers->addRow(2, wssName.str().c_str(), tr((*soldierComm)->getDecorationLevelName(skipCounter)).c_str());
+					_commendationsNames.push_back("");
 					break;
 				}
 			}
@@ -151,6 +155,7 @@ CommendationState::CommendationState(std::vector<Soldier*> soldiersMedalled)
 				_lstSoldiers->setCellText(titleRow, 0, tr((*commList).first));
 			}
 			_lstSoldiers->setRowColor(titleRow, _lstSoldiers->getSecondaryColor());
+			_commendationsNames[titleRow] = (*commList).first;
 			titleChosen = true;
 		}
 		if (noun == "noNoun")
@@ -165,6 +170,14 @@ CommendationState::CommendationState(std::vector<Soldier*> soldiersMedalled)
  */
 CommendationState::~CommendationState()
 {
+}
+
+/*
+*
+*/
+void CommendationState::lstSoldiersMouseClick(Action *)
+{
+	Ufopaedia::openArticle(_game, _commendationsNames[_lstSoldiers->getSelectedRow()]);
 }
 
 /**

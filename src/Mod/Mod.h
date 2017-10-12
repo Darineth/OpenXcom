@@ -18,6 +18,7 @@
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <map>
+#include <unordered_map>
 #include <vector>
 #include <string>
 #include <SDL.h>
@@ -28,8 +29,65 @@
 #include "Unit.h"
 #include "RuleAlienMission.h"
 
+// https://stackoverflow.com/questions/7110301/generic-hash-for-tuples-in-unordered-map-unordered-set
+namespace hash_tuple
+{
+template <typename TT>
+struct hash
+{
+	size_t
+		operator()(TT const& tt) const
+	{
+		return std::hash<TT>()(tt);
+	}
+};
+
+template <class T>
+inline void hash_combine(std::size_t& seed, T const& v)
+{
+	seed ^= hash_tuple::hash<T>()(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+}
+
+namespace
+{
+// Recursive template code derived from Matthieu M.
+template <class Tuple, size_t Index = std::tuple_size<Tuple>::value - 1>
+struct HashValueImpl
+{
+	static void apply(size_t& seed, Tuple const& tuple)
+	{
+		HashValueImpl<Tuple, Index - 1>::apply(seed, tuple);
+		hash_combine(seed, std::get<Index>(tuple));
+	}
+};
+
+template <class Tuple>
+struct HashValueImpl<Tuple, 0>
+{
+	static void apply(size_t& seed, Tuple const& tuple)
+	{
+		hash_combine(seed, std::get<0>(tuple));
+	}
+};
+}
+
+template <typename ... TT>
+struct hash<std::tuple<TT...>>
+{
+	size_t
+		operator()(std::tuple<TT...> const& tt) const
+	{
+		size_t seed = 0;
+		HashValueImpl<std::tuple<TT...> >::apply(seed, tt);
+		return seed;
+	}
+};
+
+}
+
 namespace OpenXcom
 {
+
 class Surface;
 class SurfaceSet;
 class Font;
@@ -50,6 +108,7 @@ class RuleCraft;
 class RuleCraftWeapon;
 class RuleItemCategory;
 class RuleItem;
+class RuleDamageType;
 class RuleUfo;
 class RuleTerrain;
 class MapDataSet;
@@ -83,6 +142,10 @@ class MapScript;
 class RuleVideo;
 class RuleMusic;
 class RuleMissionScript;
+class ModScript;
+class ModScriptGlobal;
+class ScriptParserBase;
+class ScriptGlobal;
 struct StatAdjustment;
 class Language;
 class RuleEffect;
@@ -102,6 +165,7 @@ private:
 	std::map<std::string, Font*> _fonts;
 	std::map<std::string, Surface*> _surfaces;
 	std::map<std::string, SurfaceSet*> _sets;
+	std::unordered_map<std::tuple<std::string, Uint8, Uint8>, SurfaceSet*, hash_tuple::hash<std::tuple<std::string, Uint8, Uint8> > > _recoloredSets;
 	std::map<std::string, SoundSet*> _sounds;
 	std::map<std::string, Music*> _musics;
 	std::vector<Uint16> _voxelData;
@@ -148,6 +212,7 @@ private:
 	std::map<std::string, RuleEffect*> _effects;
 	RuleGlobe *_globe;
 	RuleConverter *_converter;
+	ModScriptGlobal *_scriptGlobal;
 	int _maxViewDistance, _maxDarknessToSeeUnits;
 	int _maxStaticLightDistance, _maxDynamicLightDistance, _enhancedLighting;
 	int _costHireEngineer, _costHireScientist;
@@ -155,7 +220,10 @@ private:
 	int _aiUseDelayBlaster, _aiUseDelayFirearm, _aiUseDelayGrenade, _aiUseDelayMelee, _aiUseDelayPsionic;
 	int _maxLookVariant, _tooMuchSmokeThreshold, _customTrainingFactor, _minReactionAccuracy;
 	int _chanceToStopRetaliation;
+	int _kneelBonusGlobal, _oneHandedPenaltyGlobal;
+	int _enableCloseQuartersCombat, _closeQuartersAccuracyGlobal, _closeQuartersTuCostGlobal, _closeQuartersEnergyCostGlobal;
 	int _surrenderMode;
+	int _bughuntMinTurn, _bughuntMaxEnemies, _bughuntRank, _bughuntLowMorale, _bughuntTimeUnitsLeft;
 	int _ufoGlancingHitThreshold, _ufoBeamWidthParameter;
 	int _ufoTractorBeamSizeModifiers[5];
 	int _soldiersPerSergeant, _soldiersPerCaptain, _soldiersPerColonel, _soldiersPerCommander;
@@ -165,6 +233,7 @@ private:
 	bool _useCustomCategories, _showDogfightDistanceInKm;
 	int _theMostUselessOptionEver, _theBiggestRipOffEver;
 	int _defeatScore, _defeatFunds;
+	int _maxTUDebt;
 	std::pair<std::string, int> _alienFuel;
 	int _baseMissionExperience;
 	std::string _fontName, _finalResearch, _psiUnlockResearch;
@@ -193,14 +262,13 @@ private:
 	size_t _surfaceOffsetBasebits = 0;
 	size_t _soundOffsetBattle = 0;
 	size_t _soundOffsetGeo = 0;
-	std::map<std::string, Uint8> _soldierUtileColors;
-	std::vector<std::string> _soldierUtileColorIndex;
+	std::map<std::string, Uint8> _soldierArmorBaseColors;
+	std::vector<std::string> _soldierArmorBaseColorIndex;
 	std::map<std::string, int> _actionExperience;
-	std::map<int, float> _damageDropoff;
-	int _customTrainingFactor;
+	//std::map<int, float> _damageDropoff;
 
 	/// Loads a ruleset from a YAML file.
-	void loadFile(const std::string &filename);
+	void loadFile(const std::string &filename, ModScript &parsers);
 	/// Loads a ruleset element.
 	template <typename T>
 	T *loadRule(const YAML::Node &node, std::map<std::string, T*> *map, std::vector<std::string> *index = 0, const std::string &key = "type") const;
@@ -220,7 +288,7 @@ private:
 	/// Creates a transparency lookup table for a given palette.
 	void createTransparencyLUT(Palette *pal);
 	/// Loads a specified mod content.
-	void loadMod(const std::vector<std::string> &rulesetFiles, size_t modIdx);
+	void loadMod(const std::vector<std::string> &rulesetFiles, size_t modIdx, ModScript &parsers);
 	/// Loads resources from vanilla.
 	void loadVanillaResources();
 	/// Loads resources from extra rulesets.
@@ -264,8 +332,15 @@ public:
 	static int DIFFICULTY_COEFFICIENT[5];
 	static int DIFFICULTY_BASED_RETAL_DELAY[5];
 	static float ENCUMBRANCE_MULTIPLIER;
+	static int SPRINTING_SHOT_ACCURACY;
 	// reset all the statics in all classes to default values
 	static void resetGlobalStatics();
+
+	/// Name of class used in script.
+	static constexpr const char *ScriptName = "RuleMod";
+	/// Register all useful function used by script.
+	static void ScriptRegister(ScriptParserBase* parser);
+
 	/// Creates a blank mod.
 	Mod();
 	/// Cleans up the mod.
@@ -275,8 +350,12 @@ public:
 	Font *getFont(const std::string &name, bool error = true) const;
 	/// Gets a particular surface.
 	Surface *getSurface(const std::string &name, bool error = true) const;
+	/// Gets a particular surface with a recolor.
+	Surface *getSurface(const std::string &name, Uint8 recolorGroup, Uint8 recolorColor, bool error = true) const;
 	/// Gets a particular surface set.
 	SurfaceSet *getSurfaceSet(const std::string &name, bool error = true) const;
+	/// Gets a particular surface set with a recolor.
+	SurfaceSet *getSurfaceSet(const std::string &name, Uint8 recolorGroup, Uint8 recolorColor, bool error = true) const;
 	/// Gets a particular music.
 	Music *getMusic(const std::string &name, bool error = true) const;
 	/// Gets the available music tracks.
@@ -413,19 +492,49 @@ public:
 	/// Gets the transfer time of personnel.
 	int getPersonnelTime() const;
 	/// Gets first turn when AI can use Blaster launcher.
-	int getAIUseDelayBlaster() const  {return _aiUseDelayBlaster;}
+	int getAIUseDelayBlaster() const { return _aiUseDelayBlaster; }
 	/// Gets first turn when AI can use firearms.
-	int getAIUseDelayFirearm() const  {return _aiUseDelayFirearm;}
+	int getAIUseDelayFirearm() const { return _aiUseDelayFirearm; }
 	/// Gets first turn when AI can use grenades.
-	int getAIUseDelayGrenade() const  {return _aiUseDelayGrenade;}
+	int getAIUseDelayGrenade() const { return _aiUseDelayGrenade; }
 	/// Gets first turn when AI can use martial arts.
-	int getAIUseDelayMelee() const    {return _aiUseDelayMelee;}
+	int getAIUseDelayMelee() const { return _aiUseDelayMelee; }
 	/// Gets first turn when AI can use psionic abilities.
-	int getAIUseDelayPsionic() const  {return _aiUseDelayPsionic;}
+	int getAIUseDelayPsionic() const { return _aiUseDelayPsionic; }
 	/// Gets maximum supported lookVariant (0-15)
-	int getMaxLookVariant() const  {return abs(_maxLookVariant) % 16;}
+	int getMaxLookVariant() const { return abs(_maxLookVariant) % 16; }
+	/// Gets the threshold for too much smoke (vanilla default = 10).
+	int getTooMuchSmokeThreshold() const { return _tooMuchSmokeThreshold; }
+	/// Gets the custom physical training factor in percent (default = 100).
+	int getCustomTrainingFactor() const { return _customTrainingFactor; }
+	/// Gets the minimum firing accuracy for reaction fire (default = 0).
+	int getMinReactionAccuracy() const { return _minReactionAccuracy; }
+	/// Gets the chance to stop retaliation after unsuccessful xcom base attack (default = 0).
+	int getChanceToStopRetaliation() const { return _chanceToStopRetaliation; }
+	/// Gets the global kneel bonus (default = 115).
+	int getKneelBonusGlobal() const { return _kneelBonusGlobal; }
+	/// Gets the global one-handed penalty (default = 80).
+	int getOneHandedPenaltyGlobal() const { return _oneHandedPenaltyGlobal; }
+	/// Gets whether close quarters combat is enabled (default = 0 is off).
+	int getEnableCloseQuartersCombat() const { return _enableCloseQuartersCombat; }
+	/// Gets the default close quarters combat accuracy (default = 100).
+	int getCloseQuartersAccuracyGlobal() const { return _closeQuartersAccuracyGlobal; }
+	/// Gets the default close quarters combat TU cost (default = 12).
+	int getCloseQuartersTuCostGlobal() const { return _closeQuartersTuCostGlobal; }
+	/// Gets the default close quarters combat energy cost (default = 8).
+	int getCloseQuartersEnergyCostGlobal() const { return _closeQuartersEnergyCostGlobal; }
 	/// Gets the surrender mode (default = 0).
 	int getSurrenderMode() const { return _surrenderMode; }
+	/// Gets the bug hunt mode minimum turn requirement (default = 20).
+	int getBughuntMinTurn() const { return _bughuntMinTurn; }
+	/// Gets the bug hunt mode maximum remaining enemies requirement (default = 2).
+	int getBughuntMaxEnemies() const { return _bughuntMaxEnemies; }
+	/// Gets the bug hunt mode "VIP rank" parameter (default = 0).
+	int getBughuntRank() const { return _bughuntRank; }
+	/// Gets the bug hunt mode low morale threshold parameter (default = 40).
+	int getBughuntLowMorale() const { return _bughuntLowMorale; }
+	/// Gets the bug hunt mode time units % parameter (default = 60).
+	int getBughuntTimeUnitsLeft() const { return _bughuntTimeUnitsLeft; }
 	/// Gets the threshold for defining a glancing hit on a ufo during interception
 	int getUfoGlancingHitThreshold() const { return _ufoGlancingHitThreshold; }
 	/// Gets the parameter for drawing the width of a ufo's beam weapon based on power
@@ -467,11 +576,11 @@ public:
 	/// Gets whether or not to load base defense terrain from globe texture
 	int getBaseDefenseMapFromLocation() const { return _baseDefenseMapFromLocation; }
 	/// Gets the ruleset for a specific research project.
-	RuleResearch *getResearch (const std::string &id, bool error = false) const;
+	RuleResearch *getResearch(const std::string &id, bool error = false) const;
 	/// Gets the list of all research projects.
 	const std::vector<std::string> &getResearchList() const;
 	/// Gets the ruleset for a specific manufacture project.
-	RuleManufacture *getManufacture (const std::string &id, bool error = false) const;
+	RuleManufacture *getManufacture(const std::string &id, bool error = false) const;
 	/// Gets the list of all manufacture projects.
 	const std::vector<std::string> &getManufactureList() const;
 	/// Gets facilities for custom bases.
@@ -518,9 +627,11 @@ public:
 	std::string getFontName() const;
 	/// Gets the amount of base experience soldiers earn for going on a mission.
 	int getBaseMissionExperience() const { return _baseMissionExperience; }
+	/// Gets the maximum percentage of TU debt.
+	int getMaxTUDebt() const { return _maxTUDebt; }
 	/// Gets the number of user selectable colors for armor coloration.
-	const std::map<std::string, Uint8> &getSoldierUtileColors() const { return _soldierUtileColors; }
-	const std::vector<std::string> &getSoldierUtileColorIndex() const { return _soldierUtileColorIndex; }
+	const std::map<std::string, Uint8> &getSoldierArmorBaseColors() const { return _soldierArmorBaseColors; }
+	const std::vector<std::string> &getSoldierArmorBaseColorIndex() const { return _soldierArmorBaseColorIndex; }
 	/// Gets the minimum radar's range.
 	int getMinRadarRange() const;
 	/// Gets information on an interface element.
@@ -539,6 +650,8 @@ public:
 	const std::map<std::string, RuleMusic *> *getMusic() const;
 	const std::vector<std::string> *getMissionScriptList() const;
 	RuleMissionScript *getMissionScript(const std::string &name, bool error = false) const;
+	/// Get global script data.
+	ScriptGlobal *getScriptGlobal() const;
 	std::string getFinalResearch() const;
 	const std::map<int, std::string> *getMissionRatings() const;
 	const std::map<int, std::string> *getMonthlyRatings() const;
@@ -554,8 +667,6 @@ public:
 	const std::vector<std::string> &getInventoryLayoutsList() const;
 	int getActionExperience(const std::string &action) const;
 	float getDamageDropoff(int damageType) const;
-	/// Gets the custom physical training factor in percent (default = 100).
-	int getCustomTrainingFactor() const { return _customTrainingFactor; }
 };
 
 }

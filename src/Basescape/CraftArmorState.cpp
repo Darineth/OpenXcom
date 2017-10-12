@@ -17,10 +17,12 @@
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "CraftArmorState.h"
+#include <climits>
 #include "../Engine/Game.h"
 #include "../Mod/Mod.h"
 #include "../Engine/LocalizedText.h"
 #include "../Engine/Options.h"
+#include "../Interface/ComboBox.h"
 #include "../Engine/Action.h"
 #include "../Interface/TextButton.h"
 #include "../Interface/Window.h"
@@ -28,6 +30,7 @@
 #include "../Interface/TextList.h"
 #include "../Savegame/Base.h"
 #include "../Savegame/Soldier.h"
+#include "../Savegame/SavedGame.h"
 #include "../Savegame/Craft.h"
 #include "../Mod/Armor.h"
 #include "SoldierArmorState.h"
@@ -35,6 +38,7 @@
 #include "../Savegame/ItemContainer.h"
 #include "../Mod/RuleInterface.h"
 #include "../Mod/RuleSoldier.h"
+#include "../Ufopaedia/Ufopaedia.h"
 #include "../Savegame/Role.h"
 #include <algorithm>
 
@@ -47,16 +51,17 @@ namespace OpenXcom
  * @param base Pointer to the base to get info from.
  * @param craft ID of the selected craft.
  */
-CraftArmorState::CraftArmorState(Base *base, size_t craft) : _base(base), _craft(craft)
+CraftArmorState::CraftArmorState(Base *base, size_t craft) : _base(base), _craft(craft), _savedScrollPosition(0), _origSoldierOrder(*_base->getSoldiers()), _dynGetter(NULL)
 {
 	// Create objects
 	_window = new Window(this, 320, 200, 0, 0);
-	_btnOk = new TextButton(288, 16, 16, 176);
+	_btnOk = new TextButton(148, 16, 164, 176);
 	_txtTitle = new Text(300, 17, 16, 7);
 	_txtName = new Text(114, 9, 16, 32);
-	_txtCraft = new Text(76, 9, 130, 32);
-	_txtArmor = new Text(100, 9, 199, 32);
-	_lstSoldiers = new TextList(292, 128, 8, 40);
+	_txtCraft = new Text(76, 9, 122, 32);
+	_txtArmor = new Text(100, 9, 206, 32);
+	_lstSoldiers = new TextList(288, 128, 8, 40);
+	_cbxSortBy = new ComboBox(this, 148, 16, 8, 176, true);
 
 	// Set palette
 	setInterface("craftArmor");
@@ -68,6 +73,7 @@ CraftArmorState::CraftArmorState(Base *base, size_t craft) : _base(base), _craft
 	add(_txtCraft, "text", "craftArmor");
 	add(_txtArmor, "text", "craftArmor");
 	add(_lstSoldiers, "list", "craftArmor");
+	add(_cbxSortBy, "button", "craftArmor");
 
 	centerAllSurfaces();
 
@@ -77,6 +83,7 @@ CraftArmorState::CraftArmorState(Base *base, size_t craft) : _base(base), _craft
 	_btnOk->setText(tr("STR_OK"));
 	_btnOk->onMouseClick((ActionHandler)&CraftArmorState::btnOkClick);
 	_btnOk->onKeyboardPress((ActionHandler)&CraftArmorState::btnOkClick, Options::keyCancel);
+	_btnOk->onKeyboardPress((ActionHandler)&CraftArmorState::btnDeequipAllArmorClick, Options::keyResetAll);
 
 	_txtTitle->setBig();
 	_txtTitle->setText(tr("STR_SELECT_ARMOR"));
@@ -87,37 +94,174 @@ CraftArmorState::CraftArmorState(Base *base, size_t craft) : _base(base), _craft
 
 	_txtArmor->setText(tr("STR_ARMOR"));
 
-	_lstSoldiers->setColumns(3, 114, 69, 101);
+	// populate sort options
+	std::vector<std::wstring> sortOptions;
+	sortOptions.push_back(tr("STR_ORIGINAL_ORDER"));
+	_sortFunctors.push_back(NULL);
+
+#define PUSH_IN(strId, functor, asc) \
+	sortOptions.push_back(tr(strId)); \
+	_sortFunctors.push_back(new SortFunctor(_game, functor, asc));
+
+	PUSH_IN("STR_ID", idStat, true);
+	PUSH_IN("STR_FIRST_LETTER", nameStat, true);
+	PUSH_IN("STR_RANK", rankStat, false);
+	PUSH_IN("STR_MISSIONS2", missionsStat, false);
+	PUSH_IN("STR_KILLS2", killsStat, false);
+	PUSH_IN("STR_WOUND_RECOVERY2", woundRecoveryStat, false);
+	PUSH_IN("STR_TIME_UNITS", tuStat, false);
+	PUSH_IN("STR_STAMINA", staminaStat, false);
+	PUSH_IN("STR_HEALTH", healthStat, false);
+	PUSH_IN("STR_BRAVERY", braveryStat, false);
+	PUSH_IN("STR_REACTIONS", reactionsStat, false);
+	PUSH_IN("STR_FIRING_ACCURACY", firingStat, false);
+	PUSH_IN("STR_THROWING_ACCURACY", throwingStat, false);
+	PUSH_IN("STR_MELEE_ACCURACY", meleeStat, false);
+	PUSH_IN("STR_STRENGTH", strengthStat, false);
+	PUSH_IN("STR_PSIONIC_STRENGTH", psiStrengthStat, false);
+	PUSH_IN("STR_PSIONIC_SKILL", psiSkillStat, false);
+
+#undef PUSH_IN
+
+	_cbxSortBy->setOptions(sortOptions);
+	_cbxSortBy->setSelected(0);
+	_cbxSortBy->onChange((ActionHandler)&CraftArmorState::cbxSortByChange);
+	_cbxSortBy->setText(tr("STR_SORT_BY"));
+
+	_lstSoldiers->setArrowColumn(174, ARROW_VERTICAL);
+	_lstSoldiers->setColumns(4, 106, 84, 74, 16);
+	_lstSoldiers->setAlign(ALIGN_RIGHT, 3);
 	_lstSoldiers->setSelectable(true);
 	_lstSoldiers->setBackground(_window);
 	_lstSoldiers->setMargin(8);
-	_lstSoldiers->setScrolling(true, 0);
+	_lstSoldiers->onLeftArrowClick((ActionHandler)&CraftArmorState::lstItemsLeftArrowClick);
+	_lstSoldiers->onRightArrowClick((ActionHandler)&CraftArmorState::lstItemsRightArrowClick);
 	_lstSoldiers->onMousePress((ActionHandler)&CraftArmorState::lstSoldiersClick);
+}
 
-	Uint8 otherCraftColor = _game->getMod()->getInterface("craftArmor")->getElement("otherCraft")->color;
+/**
+ * cleans up dynamic state
+ */
+CraftArmorState::~CraftArmorState()
+{
+	for (std::vector<SortFunctor *>::iterator it = _sortFunctors.begin(); it != _sortFunctors.end(); ++it)
+	{
+		delete(*it);
+	}
+}
+
+/**
+ * Sorts the soldiers list by the selected criterion
+ * @param action Pointer to an action.
+ */
+void CraftArmorState::cbxSortByChange(Action *action)
+{
+	// TODO: Exclude Vehicles.
+	bool ctrlPressed = SDL_GetModState() & KMOD_CTRL;
+	size_t selIdx = _cbxSortBy->getSelected();
+	if (selIdx == (size_t)-1)
+	{
+		return;
+	}
+
+	SortFunctor *compFunc = _sortFunctors[selIdx];
+	if (compFunc)
+	{
+		// if CTRL is pressed, we only want to show the dynamic column, without actual sorting
+		if (!ctrlPressed)
+		{
+			std::stable_sort(_base->getSoldiers()->begin(), _base->getSoldiers()->end(), *compFunc);
+			bool shiftPressed = SDL_GetModState() & KMOD_SHIFT;
+			if (shiftPressed)
+			{
+				std::reverse(_base->getSoldiers()->begin(), _base->getSoldiers()->end());
+			}
+		}
+	}
+	else
+	{
+		_dynGetter = NULL;
+		// restore original ordering, ignoring (of course) those
+		// soldiers that have been sacked since this state started
+		for (std::vector<Soldier *>::const_iterator it = _origSoldierOrder.begin();
+		it != _origSoldierOrder.end(); ++it)
+		{
+			std::vector<Soldier *>::iterator soldierIt =
+			std::find(_base->getSoldiers()->begin(), _base->getSoldiers()->end(), *it);
+			if (soldierIt != _base->getSoldiers()->end())
+			{
+				Soldier *s = *soldierIt;
+				_base->getSoldiers()->erase(soldierIt);
+				_base->getSoldiers()->insert(_base->getSoldiers()->end(), s);
+			}
+		}
+	}
+
+	if (compFunc)
+	{
+		_dynGetter = compFunc->getGetter();
+	}
+	initList(_lstSoldiers->getScroll());
+}
+
+/**
+ * The soldier armors can change
+ * after going into other screens.
+ */
+void CraftArmorState::init()
+{
+	State::init();
+	initList(_savedScrollPosition);
+
 	int row = 0;
-	Craft *c = _base->getCrafts()->at(_craft);
 	for (std::vector<Soldier*>::iterator i = _base->getSoldiers()->begin(); i != _base->getSoldiers()->end(); ++i)
 	{
-		Soldier *ss = *i;
+		_lstSoldiers->setCellText(row, 2, tr((*i)->getArmor()->getType()));
+		row++;
+	}
+}
 
+/**
+ * Shows the soldiers in a list at specified offset/scroll.
+ */
+void CraftArmorState::initList(size_t scrl)
+{
+	Uint8 otherCraftColor = _game->getMod()->getInterface("craftArmor")->getElement("otherCraft")->color;
+	int row = 0;
+	_lstSoldiers->clearList();
+	Craft *c = _base->getCrafts()->at(_craft);
+	float absBonus = _base->getSickBayAbsoluteBonus();
+	float relBonus = _base->getSickBayRelativeBonus();
+	for (std::vector<Soldier*>::iterator i = _base->getSoldiers()->begin(); i != _base->getSoldiers()->end(); ++i)
+	{
 		std::wostringstream name;
 		Role* role;
-		if((role = ss->getRole()) && !role->isBlank())
+		if((role = (*i)->getRole()) && !role->isBlank())
 		{
-			name << tr(ss->getRole()->getName() + "_SHORT") << "-";
+			name << tr(role->getName() + "_SHORT") << "-";
 		}
 
-		name << ss->getName(true);
+		name << (*i)->getName(true);
 
-		_lstSoldiers->addRow(3, name.str().c_str(), ss->getCraftString(_game->getLanguage()).c_str(), tr(ss->getArmor()->getType()).c_str());
+		// call corresponding getter
+		int dynStat = 0;
+		std::wostringstream ss;
+		if (_dynGetter != NULL) {
+			dynStat = (*_dynGetter)(_game, *i);
+			ss << dynStat;
+		}
+		else {
+			ss << L"";
+		}
+
+		_lstSoldiers->addRow(4, name.str().c_str(), (*i)->getCraftString(_game->getLanguage(), absBonus, relBonus).c_str(), tr((*i)->getArmor()->getType()).c_str(), ss.str().c_str());
 
 		Uint8 color;
-		if (ss->getCraft() == c)
+		if ((*i)->getCraft() == c)
 		{
 			color = _lstSoldiers->getSecondaryColor();
 		}
-		else if (ss->getCraft() != 0)
+		else if ((*i)->getCraft() != 0)
 		{
 			color = otherCraftColor;
 		}
@@ -128,28 +272,114 @@ CraftArmorState::CraftArmorState(Base *base, size_t craft) : _base(base), _craft
 		_lstSoldiers->setRowColor(row, color);
 		row++;
 	}
+	if (scrl)
+		_lstSoldiers->scrollTo(scrl);
+	_lstSoldiers->draw();
 }
 
 /**
- *
+ * Reorders a soldier up.
+ * @param action Pointer to an action.
  */
-CraftArmorState::~CraftArmorState()
+void CraftArmorState::lstItemsLeftArrowClick(Action *action)
 {
-}
-
-/**
- * The soldier armors can change
- * after going into other screens.
- */
-void CraftArmorState::init()
-{
-	State::init();
-	int row = 0;
-	for (std::vector<Soldier*>::iterator i = _base->getSoldiers()->begin(); i != _base->getSoldiers()->end(); ++i)
+	unsigned int row = _lstSoldiers->getSelectedRow();
+	if (row > 0)
 	{
-		_lstSoldiers->setCellText(row, 2, tr((*i)->getArmor()->getType()));
-		row++;
+		if (action->getDetails()->button.button == SDL_BUTTON_LEFT)
+		{
+			moveSoldierUp(action, row);
+		}
+		else if (action->getDetails()->button.button == SDL_BUTTON_RIGHT)
+		{
+			moveSoldierUp(action, row, true);
+		}
 	}
+	_cbxSortBy->setText(tr("STR_SORT_BY"));
+	_cbxSortBy->setSelected(-1);
+}
+
+/**
+ * Moves a soldier up on the list.
+ * @param action Pointer to an action.
+ * @param row Selected soldier row.
+ * @param max Move the soldier to the top?
+ */
+void CraftArmorState::moveSoldierUp(Action *action, unsigned int row, bool max)
+{
+	Soldier *s = _base->getSoldiers()->at(row);
+	if (max)
+	{
+		_base->getSoldiers()->erase(_base->getSoldiers()->begin() + row);
+		_base->getSoldiers()->insert(_base->getSoldiers()->begin(), s);
+	}
+	else
+	{
+		_base->getSoldiers()->at(row) = _base->getSoldiers()->at(row - 1);
+		_base->getSoldiers()->at(row - 1) = s;
+		if (row != _lstSoldiers->getScroll())
+		{
+			SDL_WarpMouse(action->getLeftBlackBand() + action->getXMouse(), action->getTopBlackBand() + action->getYMouse() - static_cast<Uint16>(8 * action->getYScale()));
+		}
+		else
+		{
+			_lstSoldiers->scrollUp(false);
+		}
+	}
+	initList(_lstSoldiers->getScroll());
+}
+
+/**
+ * Reorders a soldier down.
+ * @param action Pointer to an action.
+ */
+void CraftArmorState::lstItemsRightArrowClick(Action *action)
+{
+	unsigned int row = _lstSoldiers->getSelectedRow();
+	size_t numSoldiers = _base->getSoldiers()->size();
+	if (0 < numSoldiers && INT_MAX >= numSoldiers && row < numSoldiers - 1)
+	{
+		if (action->getDetails()->button.button == SDL_BUTTON_LEFT)
+		{
+			moveSoldierDown(action, row);
+		}
+		else if (action->getDetails()->button.button == SDL_BUTTON_RIGHT)
+		{
+			moveSoldierDown(action, row, true);
+		}
+	}
+	_cbxSortBy->setText(tr("STR_SORT_BY"));
+	_cbxSortBy->setSelected(-1);
+}
+
+/**
+ * Moves a soldier down on the list.
+ * @param action Pointer to an action.
+ * @param row Selected soldier row.
+ * @param max Move the soldier to the bottom?
+ */
+void CraftArmorState::moveSoldierDown(Action *action, unsigned int row, bool max)
+{
+	Soldier *s = _base->getSoldiers()->at(row);
+	if (max)
+	{
+		_base->getSoldiers()->erase(_base->getSoldiers()->begin() + row);
+		_base->getSoldiers()->insert(_base->getSoldiers()->end(), s);
+	}
+	else
+	{
+		_base->getSoldiers()->at(row) = _base->getSoldiers()->at(row + 1);
+		_base->getSoldiers()->at(row + 1) = s;
+		if (row != _lstSoldiers->getVisibleRows() - 1 + _lstSoldiers->getScroll())
+		{
+			SDL_WarpMouse(action->getLeftBlackBand() + action->getXMouse(), action->getTopBlackBand() + action->getYMouse() + static_cast<Uint16>(8 * action->getYScale()));
+		}
+		else
+		{
+			_lstSoldiers->scrollDown(false);
+		}
+	}
+	initList(_lstSoldiers->getScroll());
 }
 
 /**
@@ -167,11 +397,18 @@ void CraftArmorState::btnOkClick(Action *)
  */
 void CraftArmorState::lstSoldiersClick(Action *action)
 {
+	double mx = action->getAbsoluteXMouse();
+	if (mx >= _lstSoldiers->getArrowsLeftEdge() && mx < _lstSoldiers->getArrowsRightEdge())
+	{
+		return;
+	}
+
 	Soldier *s = _base->getSoldiers()->at(_lstSoldiers->getSelectedRow());
-	if (!(s->getCraft() && s->getCraft()->getStatus() == "STR_OUT") && !s->isVehicle())
+	if (!(s->getCraft() && s->getCraft()->getStatus() == "STR_OUT"))
 	{
 		if (action->getDetails()->button.button == SDL_BUTTON_LEFT)
 		{
+			_savedScrollPosition = _lstSoldiers->getScroll();
 			_game->pushState(new SoldierArmorState(_base, _lstSoldiers->getSelectedRow(), SA_GEOSCAPE));
 		}
 		else if (action->getDetails()->button.button == SDL_BUTTON_RIGHT)
@@ -205,6 +442,43 @@ void CraftArmorState::lstSoldiersClick(Action *action)
 				}
 			}
 		}
+		else if (action->getDetails()->button.button == SDL_BUTTON_MIDDLE)
+		{
+			std::string articleId = s->getArmor()->getType();
+			Ufopaedia::openArticle(_game, articleId);
+		}
+	}
+}
+
+/**
+ * De-equip armor from all soldiers located in the base (i.e. not out on a mission).
+ * @param action Pointer to an action.
+ */
+void CraftArmorState::btnDeequipAllArmorClick(Action *action)
+{
+	int row = 0;
+	for (std::vector<Soldier*>::iterator i = _base->getSoldiers()->begin(); i != _base->getSoldiers()->end(); ++i)
+	{
+		if (!((*i)->getCraft() && (*i)->getCraft()->getStatus() == "STR_OUT"))
+		{
+			Armor *a = _game->getMod()->getArmor((*i)->getRules()->getArmor());
+
+			if (_base->getStorageItems()->getItem(a->getStoreItem()) > 0 || a->getStoreItem() == Armor::NONE)
+			{
+				if ((*i)->getArmor()->getStoreItem() != Armor::NONE)
+				{
+					_base->getStorageItems()->addItem((*i)->getArmor()->getStoreItem());
+				}
+				if (a->getStoreItem() != Armor::NONE)
+				{
+					_base->getStorageItems()->removeItem(a->getStoreItem());
+				}
+
+				(*i)->setArmor(a);
+				_lstSoldiers->setCellText(row, 2, tr(a->getType()));
+			}
+		}
+		row++;
 	}
 }
 
