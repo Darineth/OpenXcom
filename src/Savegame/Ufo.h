@@ -32,6 +32,7 @@ class AlienMission;
 class UfoTrajectory;
 class SavedGame;
 class Mod;
+class CraftWeapon;
 
 /**
  * Represents an alien UFO on the map.
@@ -62,14 +63,16 @@ private:
 	void calculateSpeed();
 	int _shield, _shieldRechargeHandle;
 	int _tractorBeamSlowdown;
+	Ufo *_escorting;
 	std::vector<Ufo*> _escorts;
+	std::vector<CraftWeapon*> _weapons;
 public:
 	/// Creates a UFO of the specified type.
 	Ufo(const RuleUfo *rules, bool createEscorts = true, int escortId = -1);
 	/// Cleans up the UFO.
 	~Ufo();
 	/// Loads the UFO from YAML.
-	void load(const YAML::Node& node, const Mod *ruleset, SavedGame *game);
+	void load(const YAML::Node& node, const Mod *ruleset, SavedGame *game, Ufo *escorting = nullptr);
 	/// Saves the UFO to YAML.
 	YAML::Node save(bool newBattle) const;
 	/// Saves the UFO's ID to YAML.
@@ -85,7 +88,9 @@ public:
 	/// Gets the ID of the UFO being escorted.
 	int getEscortingId() const;
 	/// Sets the ID of the UFO being escorted.
-	void setEscortingId(int id);
+	void setEscorting(Ufo *primary);
+	/// Releases an escort UFO to be a normal UFO.
+	void releaseEscort();
 	/// Gets the UFO's default name.
 	std::wstring getDefaultName(Language *lang) const;
 	/// Gets the UFO's marker.
@@ -190,8 +195,12 @@ public:
 	void setRetreating(bool retreating);
 
 	const std::vector<Ufo*> &getEscorts() const;
-
+	
 	bool isEscort() const;
+
+	Ufo* getEscorting() const;
+	/// Returns the UFO's craft weapons.
+	const std::vector<CraftWeapon*> &getWeapons() const;
 };
 
 }

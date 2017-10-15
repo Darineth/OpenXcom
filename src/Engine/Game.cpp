@@ -560,6 +560,16 @@ void Game::setMouseActive(bool active)
 	_cursor->setVisible(active);
 }
 
+
+/**
+ * Sets whether the mouse cursor is visible.
+ * @param visible Whether the cursor is visible.
+ */
+void Game::setCursorVisible(bool visible)
+{
+	_cursor->setVisible(visible);
+}
+
 /**
  * Returns whether current state is *state
  * @param state The state to test against the stack state

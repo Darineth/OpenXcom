@@ -104,6 +104,7 @@ void RuleUfo::load(const YAML::Node &node, Mod *mod)
 	}
 
 	_escorts = node["escorts"].as<std::vector<std::string> >(_escorts);
+	_weapons = node["weapons"].as<std::vector<std::string> >(_weapons);
 }
 
 /**
@@ -309,6 +310,12 @@ int RuleUfo::getMissionScore() const
 const std::vector<std::string> &RuleUfo::getEscorts() const
 {
 	return _escorts;
+}
+
+/// Returns the UFO's standard weapons.
+const std::vector<std::string> &RuleUfo::getWeapons() const
+{
+	return _weapons;
 }
 
 }

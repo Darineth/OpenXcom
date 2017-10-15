@@ -68,6 +68,7 @@ private:
 	RuleUfoStats _stats;
 	std::map<std::string, RuleUfoStats> _statsRaceBonus;
 	std::string _modSprite;
+	std::vector<std::string> _weapons;
 	std::vector<std::string> _escorts;
 public:
 	/// Creates a blank UFO ruleset.
@@ -118,6 +119,8 @@ public:
 	int getCombatSprite() const { return _combatSprite; }
 	/// Returns the UFO's standard escort set.
 	const std::vector<std::string> &getEscorts() const;
+	/// Returns the UFO's standard weapons.
+	const std::vector<std::string> &getWeapons() const;
 };
 
 }

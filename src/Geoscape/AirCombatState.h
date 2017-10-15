@@ -46,6 +46,7 @@ class Craft;
 class RuleCraft;
 class BattleUnit;
 class CraftWeapon;
+class AirCombatAI;
 
 enum CombatLogColor;
 
@@ -61,12 +62,15 @@ struct AirCombatUnit
 
 	int getHealth() const;
 	int getMaxHealth() const;
+	int getHealthPercent() const;
 
 	int getCombatFuel() const;
 	int getMaxCombatFuel() const;
 
 	bool spendCombatFuel(int fuel);
 	bool spendTime(int time);
+
+	bool canTargetPosition(int position) const;
 
 	bool isDone(Ufo *target) const;
 
@@ -87,6 +91,7 @@ struct AirCombatUnit
 	Surface *sprite;
 	double combatSpeedCost;
 	bool tooSlow;
+	AirCombatAI *ai;
 };
 
 /*struct AirCombatProjectile
@@ -137,7 +142,7 @@ public:
 	int x0, x1, y0, y1;
 	Surface *target;
 
-	AirCombatMovementAnimation(AirCombatAction *action, int x0, int y0, int x1, int y1, Surface *target, int duration, FinishedCallback callback);
+	AirCombatMovementAnimation(int x0, int y0, int x1, int y1, Surface *target, int duration, FinishedCallback callback);
 	virtual ~AirCombatMovementAnimation();
 
 	virtual bool animate(int elapsed) override;
@@ -196,14 +201,55 @@ public:
 	virtual bool animate(int elapsed) override;
 };
 
+struct AirCombatDelayCallback : public AirCombatAnimation
+{
+private:
+	int _delay, _elapsed;
+
+public:
+	AirCombatDelayCallback(FinishedCallback callback, int delay) : AirCombatAnimation(callback), _delay(delay), _elapsed(0) {}
+	virtual ~AirCombatDelayCallback() {}
+
+	virtual bool animate(int elapsed) override
+	{
+		_elapsed += elapsed;
+		return _elapsed >= _delay;
+	}
+};
+
+struct AirCombatInterpolationAnimation : public AirCombatAnimation
+{
+public:
+	typedef void (AirCombatState::* InterpolateCallback)(AirCombatInterpolationAnimation*);
+
+private:
+	InterpolateCallback _onAnimate;
+	AirCombatState *_state;
+	int _value0;
+	int _value1;
+	int _duration;
+	int _elapsed;
+
+public:
+	int value;
+
+	AirCombatInterpolationAnimation(AirCombatState *state, int value0, int value1, int duration, InterpolateCallback onAnimate, FinishedCallback callback);
+	virtual ~AirCombatInterpolationAnimation();
+
+	virtual bool animate(int elapsed) override;
+};
+
 class AirCombatState : public State
 {
+	friend class AirCombatAI;
+
 private:
 	static const int SPRITE_HEIGHT = 32;
 	static const int SPRITE_WIDTH = 32;
 	static const int COLUMN_WIDTH = 40;
 	static constexpr int SPRITE_OFFSET = (COLUMN_WIDTH - SPRITE_WIDTH) / 2;
 	static const int BULLET_PARTICLES = 35;
+	static const int VISIBLE_COLUMNS = 9;
 
 	GeoscapeState *_parent;
 
@@ -215,6 +261,12 @@ private:
 	bool _ended;
 	bool _targeting;
 	bool _checkEnd;
+	int _animationFrame;
+	bool _update;
+	bool _init;
+	int _basePosition;
+	int _positionUnitOffset;
+	int _backgroundOffset;
 
 	SurfaceSet *_projectileSet;
 	SurfaceSet *_explosionSet;
@@ -222,6 +274,7 @@ private:
 	bool _redraw;
 
 	Window *_window;
+	Surface *_background;
 	InteractiveSurface *_battle;
 
 	CombatLog *_combatLog;
@@ -245,13 +298,16 @@ private:
 	TextButton *_waitButton;
 
 	static const int MAX_UNITS = 4;
-	static const int MAX_POSITION = 7;
+	//static const int MAX_POSITION = 7;
 
-	AirCombatUnit* _enemies[MAX_UNITS];
+	std::vector<AirCombatUnit*> _units;
+
+	std::array<AirCombatUnit*, MAX_UNITS> _enemies;
 	InteractiveSurface *_enemyButtons[MAX_UNITS];
 	int _enemyCount;
+	InteractiveSurface *_hoverEnemy;
 
-	AirCombatUnit* _craft[MAX_UNITS];
+	std::array<AirCombatUnit*, MAX_UNITS> _craft;
 	InteractiveSurface *_craftButtons[MAX_UNITS];
 	int _craftCount;
 	Text *_craftName[MAX_UNITS];
@@ -285,9 +341,11 @@ private:
 	void animateAttack(AirCombatAction *action, int shot = 1);
 
 	std::tuple<int, int> getUnitDrawPosition(AirCombatUnit *unit) const;
-	std::tuple<int, int> getUnitDrawPosition(int position, int index, bool enemy) const;
+	std::tuple<int, int> getUnitDrawPosition(int position, int index) const;
 
 	AirCombatUnit *getCurrentUnit() const;
+
+	void setupCombat();
 
 	void invalidate();
 
@@ -320,6 +378,10 @@ private:
 	void onProjectileHit(AirCombatProjectileAnimation *animation);
 	void onNextShot(AirCombatMultiShotAnimation *animation);
 	void onExplosionDone(AirCombatExplosionAnimation *animation);
+	void performAIAction(AirCombatDelayCallback *delay);
+	void onPositionOffsetFinished(AirCombatDelayCallback *delay);
+	void onAnimateBackground(AirCombatInterpolationAnimation *animation);
+	void onAnimateBackgroundFinished(AirCombatInterpolationAnimation *animation);
 
 public:
 	AirCombatState(GeoscapeState *parent, Ufo *ufo);
@@ -329,9 +391,8 @@ public:
 	void blit() override;
 	void think() override;
 
-	void blitProjectiles();
-
 	Ufo* getUfo() const;
+	AirCombatUnit *getUfoUnit() const;
 
 	bool addCraft(Craft *craft);
 	bool removeCraft(Craft *craft);
@@ -352,7 +413,9 @@ public:
 
 	void updatePosition();
 
+	void requestUpdate();
 	void update();
+	bool updatePositionOffsets(bool animate);
 
 	void executeAction();
 	void cancelAction();

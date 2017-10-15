@@ -339,6 +339,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Geoscape\AirActionMenuState.cpp" />
+    <ClCompile Include="Geoscape\AirCombatAI.cpp" />
     <ClCompile Include="Geoscape\AirCombatState.cpp" />
     <ClCompile Include="Basescape\BaseInfoState.cpp" />
     <ClCompile Include="Basescape\BasescapeState.cpp" />
@@ -705,6 +706,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Geoscape\AirActionMenuState.h" />
+    <ClInclude Include="Geoscape\AirCombatAI.h" />
     <ClInclude Include="Geoscape\AirCombatState.h" />
     <ClInclude Include="Basescape\BaseInfoState.h" />
     <ClInclude Include="Basescape\BasescapeState.h" />

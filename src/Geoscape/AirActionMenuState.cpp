@@ -224,6 +224,8 @@ void AirActionMenuState::addItem(AirCombatActionType aa, CraftWeapon *weapon, co
 	}
 	_actionMenu[*id]->setAction(_action, weapon, keyName + tr(name).c_str(), ammo, accuracy, range, time, fuel, ammoError);
 	(*id)++;
+
+	_action->targeting = false;
 }
 
 /**
@@ -235,11 +237,13 @@ void AirActionMenuState::handle(Action *action)
 	State::handle(action);
 	if (action->getDetails()->type == SDL_MOUSEBUTTONDOWN && action->getDetails()->button.button == SDL_BUTTON_RIGHT)
 	{
+		_parent->cancelAction();
 		_game->popState();
 	}
 	else if (action->getDetails()->type == SDL_KEYDOWN &&
 		(action->getDetails()->key.keysym.sym == Options::keyCancel))
 	{
+		_parent->cancelAction();
 		_game->popState();
 	}
 }
@@ -491,7 +495,6 @@ bool AirCombatAction::spendCost(std::string &message)
 	if (canSpendCost(message))
 	{
 		unit->spendCombatFuel(Energy);
-		//unit->turnDelay += Time;
 		unit->spendTime(Time);
 		return true;
 	}

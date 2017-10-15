@@ -100,6 +100,8 @@ public:
 	void loadMods();
 	/// Sets whether the mouse cursor is activated.
 	void setMouseActive(bool active);
+	/// Sets whether the mouse cursor is visible.
+	void setCursorVisible(bool visible);
 	/// Returns whether current state is the param state
 	bool isState(State *state) const;
 	/// Returns whether the game is shutting down.

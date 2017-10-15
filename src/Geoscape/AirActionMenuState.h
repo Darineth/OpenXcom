@@ -33,7 +33,7 @@ class Frame;
 class CraftWeapon;
 class AirCombatUnit;
 
-enum AirCombatActionType : Uint8 { AA_NONE, AA_MOVE, AA_MOVE_FORWARD, AA_MOVE_BACKWARD, AA_MOVE_PURSUE, AA_MOVE_RETREAT, AA_WAIT, AA_HOLD, AA_EVADE, AA_ATTACK, AA_FIRE_WEAPON, AA_SPECIAL, AA_DISENGAGE };
+enum AirCombatActionType : Uint8 { AA_NONE, AA_MOVE, AA_MOVE_FORWARD, AA_MOVE_BACKWARD, AA_MOVE_PURSUE, AA_MOVE_RETREAT, AA_WAIT, AA_HOLD, AA_EVADE, AA_ATTACK, AA_FIRE_WEAPON, AA_DUAL_FIRE_WEAPONS, AA_SPECIAL, AA_DISENGAGE };
 
 struct AirCombatAction : public RuleItemUseCost
 {
@@ -63,6 +63,8 @@ struct AirCombatAction : public RuleItemUseCost
 	void updateCost();
 	bool canSpendCost(std::string &message) const;
 	bool spendCost(std::string &message);
+
+	explicit operator bool() const { return action != AA_NONE; }
 };
 
 /**

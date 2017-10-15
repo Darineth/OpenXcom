@@ -27,6 +27,8 @@ craftWeapons:
     reloadStandard: 72
     reloadAggressive: 48
     ammoMax: 3
+    bulletSprite: 0
+    bulletSpeed: 3
     launcher: STR_AVALANCHE_LAUNCHER
     clip: STR_AVALANCHE_MISSILES
     projectileType: 1
@@ -91,6 +93,45 @@ craftWeapons:
     reloadStandard: 24
     reloadAggressive: 24
     ammoMax: 100
+    bulletSprite: 12
+    bulletSpeed: 5
     rearmRate: 50
     launcher: STR_PLASMA_BEAM
     projectileType: 5
+  - type: STR_UFO_SMALL_SCOUT_PLASMA
+    sprite: 8
+    sound: 8
+    damage: 10
+    range: 2
+    accuracy: 60
+    tuAimed: 20
+    shotsAimed: 5
+    reloadCautious: 24
+    reloadStandard: 24
+    reloadAggressive: 24
+    ammoMax: 1000
+    bulletSprite: 8
+    bulletSpeed: 5
+    rearmRate: 50
+    launcher: STR_UFO_PLASMA_LAUNCHER
+    projectileType: 5
+  - type: STR_UFO_MEDIUM_SCOUT_PLASMA
+    sprite: 5
+    sound: 8
+    damage: 20
+    range: 3
+    accuracy: 60
+    tuAimed: 25
+    shotsAimed: 2
+    reloadCautious: 24
+    reloadStandard: 24
+    reloadAggressive: 24
+    ammoMax: 1000
+    bulletSprite: 12
+    bulletSpeed: 5
+    rearmRate: 50
+    launcher: STR_UFO_PLASMA_LAUNCHER
+    projectileType: 5
+    
+items:
+  - type: STR_UFO_PLASMA_LAUNCHER

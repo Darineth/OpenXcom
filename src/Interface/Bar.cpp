@@ -29,7 +29,7 @@ namespace OpenXcom
  * @param x X position in pixels.
  * @param y Y position in pixels.
  */
-Bar::Bar(int width, int height, int x, int y) : Surface(width, height, x, y), _color(0), _color2(0), _color3(0), _color4(0), _borderColor(0), _scale(0), _max(0), _value(0), _value2(0), _value3(0), _secondOnTop(true), _autoScale(false), _fullBorder(false)
+Bar::Bar(int width, int height, int x, int y) : Surface(width, height, x, y), _color(0), _color2(0), _color3(0), _color4(0), _borderColor(0), _scale(0), _max(0), _value(0), _value2(0), _value3(0), _secondOnTop(true), _autoScale(false), _fullBorder(false), _bordered(true)
 {
 
 }

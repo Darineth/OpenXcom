@@ -53,6 +53,8 @@
 #include "../Geoscape/Globe.h"
 #include "../Engine/Timer.h"
 #include "../Battlescape/TileEngine.h"
+#include "../Interface/Cursor.h"
+#include "AirCombatAI.h"
 
 #include "GeoscapeState.h"
 
@@ -180,7 +182,7 @@ typedef std::tuple<int, int> coords;
 
 // TODO: Create unit.
 AirCombatUnit::AirCombatUnit(Game *game, Ufo *ufo_) :
-	ufo(ufo_), ufoRule(ufo->getRules()), weapons(1),
+	ufo(ufo_), ufoRule(ufo->getRules()), weapons(1), ai(new AirCombatAI(this)),
 	craft(nullptr), craftRule(nullptr), enemy(true),
 	destroyed(false), position(0), index(-1), turnDelay(-1),
 	sprite(nullptr), combatSpeedCost(1.0), tooSlow(false)
@@ -202,7 +204,7 @@ AirCombatUnit::AirCombatUnit(Game *game, Ufo *ufo_) :
 
 // TODO: Create unit.
 AirCombatUnit::AirCombatUnit(Game *game, Craft *craft_, Ufo *primaryUfo) :
-	ufo(nullptr), ufoRule(nullptr),
+	ufo(nullptr), ufoRule(nullptr), ai(nullptr),
 	craft(craft_), craftRule(craft->getRules()), weapons(craftRule->getWeapons()), enemy(false),
 	destroyed(false), position(0), index(-1), turnDelay(-1),
 	sprite(nullptr),
@@ -253,16 +255,20 @@ void AirCombatUnit::getActionCost(AirCombatAction *action) const
 	switch (action->action)
 	{
 		case AA_MOVE_FORWARD:
-			action->Time = 15;
+			action->Time = 30;
 			action->Energy = 10;
 			return;
 		case AA_MOVE_BACKWARD:
-			action->Time = 10;
+			action->Time = 25;
 			action->Energy = 0;
 			return;
 		case AA_MOVE_PURSUE:
-			action->Time = 25;
-			action->Energy = 50;
+			action->Time = 40;
+			action->Energy = 30;
+			return;
+		case AA_MOVE_RETREAT:
+			action->Time = 30;
+			action->Energy = 10;
 			return;
 		case AA_HOLD:
 			action->Time = 15;
@@ -319,6 +325,11 @@ int AirCombatUnit::getMaxHealth() const
 	return 0;
 }
 
+int AirCombatUnit::getHealthPercent() const
+{
+	return getHealth() * 100 / getMaxHealth();
+}
+
 int AirCombatUnit::getCombatFuel() const
 {
 	if (craft)
@@ -365,6 +376,36 @@ bool AirCombatUnit::spendTime(int time)
 	return spendCombatFuel(time / 2);
 }
 
+bool AirCombatUnit::canTargetPosition(int targetPosition) const
+{
+	if (craft)
+	{
+		for (CraftWeapon *weapon : *craft->getWeapons())
+		{
+			if (weapon->getAmmo() && weapon->getRules()->getRange() + position >= targetPosition)
+			{
+				return true;
+			}
+		}
+	}
+	else if (ufo->getWeapons().size())
+	{
+		for (CraftWeapon *weapon : ufo->getWeapons())
+		{
+			if (weapon->getAmmo() && weapon->getRules()->getRange() + position >= targetPosition)
+			{
+				return true;
+			}
+		}
+	}
+	else
+	{
+		return ufoRule->getWeaponRange() + position >= targetPosition;
+	}
+
+	return false;
+}
+
 bool AirCombatUnit::isDone(Ufo *target) const
 {
 	if (craft)
@@ -380,16 +421,16 @@ bool AirCombatUnit::isDone(Ufo *target) const
 }
 
 AirCombatState::AirCombatState(GeoscapeState *parent, Ufo *ufo) :
-	_parent(parent), _ufo(ufo),
+	_parent(parent), _ufo(ufo), _update(false), _init(true), _basePosition(0), _positionUnitOffset(0), _backgroundOffset(0),
 	_waitForAltitude(false), _waitForPoly(false),
 	_minimized(false), _ended(false), _checkEnd(false), _interceptionNumber(0), _interceptionCount(0),
 	_minimizedIconX(0), _minimizedIconY(0),
-	_enemyCount(0), _craftCount(0)
+	_enemyCount(0), _craftCount(0), _animationFrame(0), _hoverEnemy(nullptr)
 {
 	_screen = false;
 
 	_window = new Window(this, 320, 200, 0, 0, POPUP_BOTH);
-	_battle = new InteractiveSurface(320, 140, 0, 0);
+	_battle = new InteractiveSurface(320, 138, 0, 0);
 
 	_combatLog = new CombatLog(320, 30, 0, 2);
 	_warning = new WarningMessage(224, 24, 48, 200 - 24);
@@ -421,6 +462,8 @@ AirCombatState::AirCombatState(GeoscapeState *parent, Ufo *ufo) :
 	//setPalette("PAL_BATTLESCAPE");
 
 	add(_window);
+
+	add(_background = new Surface(320, 148, 0, 0));
 
 	_battle->onMouseClick((ActionHandler)&AirCombatState::battleClick, 0);
 
@@ -531,6 +574,7 @@ AirCombatState::AirCombatState(GeoscapeState *parent, Ufo *ufo) :
 	_animationTime = 1000 / 60;
 	_animationTimer = new Timer(_animationTime);
 	_animationTimer->onTimer((StateHandler)&AirCombatState::animate);
+	_animationTimer->start();
 
 	// TODO: Check depth.
 	_projectileSet = _game->getMod()->getSurfaceSet("Projectiles");
@@ -545,6 +589,8 @@ AirCombatState::AirCombatState(GeoscapeState *parent, Ufo *ufo) :
 
 AirCombatState::~AirCombatState()
 {
+	_game->setCursorVisible(true);
+
 	for (auto ii : _enemies)
 	{
 		if (ii)
@@ -575,13 +621,24 @@ void AirCombatState::blit()
 		_redraw = false;
 		draw();
 	}
-	State::blit();
-	blitProjectiles();
-}
 
-void AirCombatState::blitProjectiles()
-{
+	_background->clear();
 	_battle->clear();
+
+	static Surface *background = _game->getMod()->getSurface("AirCombatBackground", false);
+
+	if (background)
+	{
+		background->blitNShade(_background, _backgroundOffset, 0, 0);
+		if (_backgroundOffset > 0)
+		{
+			background->blitNShade(_background, _backgroundOffset - _background->getWidth(), 0, 0);
+		}
+		else if (_backgroundOffset < 0)
+		{
+			background->blitNShade(_background, _backgroundOffset + _background->getWidth(), 0, 0);
+		}
+	}
 
 	for (AirCombatProjectileAnimation *pp : _projectiles)
 	{
@@ -605,13 +662,14 @@ void AirCombatState::blitProjectiles()
 
 		for (int i = begin; i != end; i += direction)
 		{
-			Surface *particle = _projectileSet->getFrame(pp->bulletSprite + (int)floor(i * particleScale));
-
-			XY pos = pp->getPosition(1 - i);
-
-			if (pos.x > -1 && pos.y > -1)
+			if (Surface *particle = _projectileSet->getFrame(pp->bulletSprite + (int)floor(i * particleScale)))
 			{
-				particle->blitNShade(_battle, pos.x, pos.y, 0);
+				XY pos = pp->getPosition(1 - i);
+
+				if (pos.x > -1 && pos.y > -1)
+				{
+					particle->blitNShade(_battle, pos.x, pos.y, 0);
+				}
 			}
 		}
 	}
@@ -622,6 +680,22 @@ void AirCombatState::blitProjectiles()
 
 		hit->blitNShade(_battle, ee->position.x - 15, ee->position.y - 15, 0);
 	}
+
+	static SurfaceSet *cursor = Game::getMod()->getSurfaceSet("AirCombatAimCursor");
+
+	if (_currentAction.targeting)
+	{
+		if (_hoverEnemy)
+		{
+			cursor->getFrame((_animationFrame / 10) % 4 + 1)->blitNShade(_battle, _game->getCursor()->getX() - 15, _game->getCursor()->getY() - 15, 0);
+		}
+		else
+		{
+			cursor->getFrame(0)->blitNShade(_battle, _game->getCursor()->getX() - 15, _game->getCursor()->getY() - 15, 0);
+		}
+	}
+
+	State::blit();
 }
 
 void AirCombatState::setupEnemies()
@@ -641,6 +715,8 @@ void AirCombatState::addUfo(Ufo* ufo)
 		if (!_enemies[index])
 		{
 			AirCombatUnit *unit = new AirCombatUnit(_game, ufo);
+			unit->ai->setState(this);
+			_units.push_back(unit);
 			_enemies[index] = unit;
 			unit->index = index;
 			unit->sprite->setPalette(getPalette());
@@ -648,7 +724,14 @@ void AirCombatState::addUfo(Ufo* ufo)
 			_enemyButtons[index]->setVisible(true);
 			_enemyCount += 1;
 
-			unit->position = 0;
+			if (ufo->isEscort())
+			{
+				unit->position = 6;
+			}
+			else
+			{
+				unit->position = 7;
+			}
 
 			addTurnUnit(unit);
 
@@ -657,7 +740,7 @@ void AirCombatState::addUfo(Ufo* ufo)
 				addUfo(escort);
 			}
 
-			update();
+			requestUpdate();
 
 			return;
 		}
@@ -670,6 +753,9 @@ bool AirCombatState::removeUfo(AirCombatUnit* ufo)
 	{
 		if (_enemies[ii] == ufo)
 		{
+			auto uu = std::find(_units.begin(), _units.end(), _enemies[ii]);
+			if (uu != _units.end()) { _units.erase(uu); }
+
 			delete _enemies[ii];
 			_enemies[ii] = nullptr;
 
@@ -705,6 +791,19 @@ Ufo* AirCombatState::getUfo() const
 	return _ufo;
 }
 
+AirCombatUnit *AirCombatState::getUfoUnit() const
+{
+	for (AirCombatUnit *enemy : _enemies)
+	{
+		if (enemy && enemy->ufo == _ufo)
+		{
+			return enemy;
+		}
+	}
+
+	return nullptr;
+}
+
 bool AirCombatState::addCraft(Craft *craft)
 {
 	if (craft->getCombatFuel() <= 0) { return false; }
@@ -715,6 +814,7 @@ bool AirCombatState::addCraft(Craft *craft)
 		if (!_craft[index])
 		{
 			AirCombatUnit* craftUnit = new AirCombatUnit(_game, craft, _ufo);
+			_units.push_back(craftUnit);
 			_craft[index] = craftUnit;
 			craftUnit->index = index;
 			craftUnit->sprite->setPalette(getPalette());
@@ -745,7 +845,7 @@ bool AirCombatState::addCraft(Craft *craft)
 
 			setMinimized(false);
 
-			update();
+			requestUpdate();
 
 			return true;
 		}
@@ -760,6 +860,9 @@ bool AirCombatState::removeCraft(Craft *craft)
 	{
 		if (_craft[ii] && _craft[ii]->craft == craft)
 		{
+			auto uu = std::find(_units.begin(), _units.end(), _craft[ii]);
+			if (uu != _units.end()) { _units.erase(uu); }
+
 			// TODO: Award experience;
 			_craft[ii]->craft->setInDogfight(false);
 			if (!craft->isDestroyed())
@@ -769,10 +872,10 @@ bool AirCombatState::removeCraft(Craft *craft)
 			removeTurnUnit(_craft[ii]);
 			delete _craft[ii];
 			_craft[ii] = nullptr;
-			_craftName[ii]->setVisible(true);
-			_craftHealth[ii]->setVisible(true);
-			_craftHealthLabel[ii]->setVisible(true);
-			_craftEnergy[ii]->setVisible(true);
+			_craftName[ii]->setVisible(false);
+			_craftHealth[ii]->setVisible(false);
+			_craftHealthLabel[ii]->setVisible(false);
+			_craftEnergy[ii]->setVisible(false);
 			_craftButtons[ii]->setVisible(false);
 
 			_craftCount -= 1;
@@ -912,8 +1015,18 @@ void AirCombatState::updatePosition()
 	_txtInterceptionNumber->setY(_minimizedIconY + 6);
 }
 
+void AirCombatState::requestUpdate()
+{
+	if (_init) return;
+	_update = true;
+}
+
 void AirCombatState::update()
 {
+	if (_animations.size()) { return; }
+
+	_update = false;
+
 	if (_ended) { return; }
 
 	for (int ii = 0; ii < MAX_UNITS; ++ii)
@@ -956,6 +1069,11 @@ void AirCombatState::update()
 				_game->getMod()->getSound("GEO.CAT", Mod::UFO_EXPLODE)->play(); //11
 
 				showMessage(tr("STR_UFO_DESTROYED"));
+
+				if (enemy->ufo->isEscort())
+				{
+					enemy->ufo->releaseEscort();
+				}
 
 				for (auto ii = enemy->ufo->getFollowers()->begin(); ii != enemy->ufo->getFollowers()->end();)
 				{
@@ -1037,13 +1155,124 @@ void AirCombatState::update()
 		//setMinimized(true);
 	}
 
-	updateUnitPositions();
+	invalidate();
 
+	if (!_ended)
+	{
+		if (updatePositionOffsets(true))
+		{
+			requestUpdate();
+			return;
+		}
+
+		updateUnitPositions();
+
+		if (!_animations.size() && !_ended && _enemyCount && _craftCount)
+		{
+			AirCombatUnit *current = getCurrentUnit();
+			if (current && current->ai)
+			{
+				_animations.push_back(new AirCombatDelayCallback((AirCombatAnimation::FinishedCallback) &AirCombatState::performAIAction, 250));
+			}
+		}
+	}
+}
+
+void AirCombatState::performAIAction(AirCombatDelayCallback *delay)
+{
+	setupAction();
+	getCurrentUnit()->ai->performTurn();
+}
+
+bool AirCombatState::updatePositionOffsets(bool animate)
+{
+	/*int basePosition = 1000000;
+	for (AirCombatUnit *unit : _units)
+	{
+		basePosition = std::min(basePosition, unit->position);
+	}
+
+	if (basePosition != _basePosition)
+	{
+		_basePosition = basePosition;
+		_positionUnitOffset = _basePosition * COLUMN_WIDTH;
+
+		//int positionChange = basePosition - _basePosition;
+	}*/
+
+	int oldBasePosition = _basePosition;
+
+	if (AirCombatUnit *current = getCurrentUnit())
+	{
+		if (!current->enemy || current->position > _basePosition + VISIBLE_COLUMNS)
+		{
+			_basePosition = current->position;
+			if (current->enemy)
+			{
+				_basePosition -= (VISIBLE_COLUMNS - 2);
+			}
+			_positionUnitOffset = _basePosition * COLUMN_WIDTH;
+		}
+	}
+
+	if (animate && _basePosition != oldBasePosition)
+	{
+		int basePositionChange = _basePosition - oldBasePosition;
+
+		for (AirCombatUnit *unit : _units)
+		{
+			int x0, y0, x1, y1;
+
+			std::tie(x0, y0) = getUnitDrawPosition(unit->position + basePositionChange, unit->index);
+			std::tie(x1, y1) = getUnitDrawPosition(unit->position, unit->index);
+
+			InteractiveSurface *surface = unit->craft ? _craftButtons[unit->index] : _enemyButtons[unit->index];
+
+			AirCombatMovementAnimation *anim = new AirCombatMovementAnimation(x0, y0, x1, y1, surface, 500, nullptr);
+			_animations.push_back(anim);
+		}
+
+		AirCombatInterpolationAnimation *background = new AirCombatInterpolationAnimation(this, basePositionChange * COLUMN_WIDTH, 0, 500, (AirCombatInterpolationAnimation::InterpolateCallback)&AirCombatState::onAnimateBackground, (AirCombatAnimation::FinishedCallback)&AirCombatState::onAnimateBackgroundFinished);
+		_animations.push_back(background);
+
+		return true;
+	}
+
+	return _basePosition != oldBasePosition;
+}
+
+void AirCombatState::onPositionOffsetFinished(AirCombatDelayCallback *delay)
+{
+	if (_units.size())
+	{
+		_basePosition = 1000000;
+		for (AirCombatUnit *unit : _units)
+		{
+			_basePosition = std::min(_basePosition, unit->position);
+		}
+	}
+	_positionUnitOffset = _basePosition * COLUMN_WIDTH;
+	updateUnitPositions();
+	invalidate();
+	requestUpdate();
+}
+
+void AirCombatState::onAnimateBackground(AirCombatInterpolationAnimation *animation)
+{
+	_backgroundOffset = animation->value;
+	invalidate();
+}
+
+void AirCombatState::onAnimateBackgroundFinished(AirCombatInterpolationAnimation *animation)
+{
+	_backgroundOffset = 0;
 	invalidate();
 }
 
 void AirCombatState::executeAction()
 {
+	_game->setCursorVisible(true);
+
 	if (_currentAction.action == AA_NONE)
 	{
 		return;
@@ -1064,18 +1293,17 @@ void AirCombatState::executeAction()
 
 			int targetPosition = _currentAction.unit->position + (_currentAction.action == AA_MOVE_FORWARD ? 1 : 2);
 
-			if (targetPosition > MAX_POSITION)
+			/*if (targetPosition > MAX_POSITION)
 			{
 				showWarning(tr("STR_CANT_MOVE_FORWARD").arg(_currentAction.unit->getDisplayName()));
 				return;
-			}
+			}*/
 
-			for (int ii = 0; ii < MAX_UNITS; ++ii)
+			if (!_currentAction.unit->enemy)
 			{
-				if (AirCombatUnit *enemy = (_currentAction.unit->enemy ? _craft[ii] : _enemies[ii]))
+				for (AirCombatUnit *enemy : _enemies)
 				{
-					int enemyPosition = MAX_POSITION - enemy->position;
-					if (enemyPosition <= targetPosition)
+					if (enemy && enemy->position <= targetPosition)
 					{
 						showWarning(tr("STR_MOVE_BLOCKED_BY_ENEMY").arg(_currentAction.unit->getDisplayName()));
 						return;
@@ -1095,6 +1323,18 @@ void AirCombatState::executeAction()
 			{
 				showWarning(tr("STR_CANT_MOVE_BACKWARD").arg(_currentAction.unit->getDisplayName()));
 				return;
+			}
+
+			if (_currentAction.unit->enemy)
+			{
+				for (AirCombatUnit *enemy : _craft)
+				{
+					if (enemy && enemy->position >= targetPosition)
+					{
+						showWarning(tr("STR_MOVE_BLOCKED_BY_ENEMY").arg(_currentAction.unit->getDisplayName()));
+						return;
+					}
+				}
 			}
 		}
 		break;
@@ -1116,6 +1356,7 @@ void AirCombatState::executeAction()
 
 	if (_currentAction.targeting)
 	{
+		_game->setCursorVisible(false);
 		return;
 	}
 
@@ -1132,7 +1373,7 @@ void AirCombatState::executeAction()
 			int range = _currentAction.weapon ? _currentAction.weapon->getRules()->getRange() : _currentAction.unit->ufoRule->getWeaponRange();
 
 			//int distance = (MAX_POSITION - _currentAction.unit->position) + (MAX_POSITION - _currentAction.target->position) + 1;
-			int distance = (MAX_POSITION - _currentAction.target->position) - (_currentAction.unit->position);
+			int distance = abs(_currentAction.target->position - _currentAction.unit->position);
 			if (distance > range)
 			{
 				showWarning(tr("STR_OUT_OF_RANGE").arg(_currentAction.unit->getDisplayName()));
@@ -1150,40 +1391,28 @@ void AirCombatState::executeAction()
 
 	CombatLogColor color = _currentAction.unit->enemy ? COMBAT_LOG_RED : COMBAT_LOG_GREEN;
 
-	std::stringstream ss;
+	//std::stringstream ss;
 
 	switch (_currentAction.action)
 	{
 		case AA_MOVE_FORWARD:
 			animateUnitMovement(&_currentAction);
-			_currentAction.unit->position = (_currentAction.unit->position + 1);
-			ss << "STR_AIR_POSITION_" << _currentAction.unit->position;
-			log(_currentAction.unit, tr(ss.str()), color);
-			updateUnitPositions();
+			log(_currentAction.unit, tr("STR_AIR_MOVE_FORWARD"), color);
 			break;
 
 		case AA_MOVE_PURSUE:
 			animateUnitMovement(&_currentAction);
-			_currentAction.unit->position = (_currentAction.unit->position + 2);
-			ss << "STR_AIR_POSITION_" << _currentAction.unit->position;
-			log(_currentAction.unit, tr(ss.str()), color);
-			updateUnitPositions();
+			log(_currentAction.unit, tr("STR_AIR_MOVE_PURSUE"), color);
 			break;
 
 		case AA_MOVE_BACKWARD:
 			animateUnitMovement(&_currentAction);
-			_currentAction.unit->position = (_currentAction.unit->position - 1);
-			ss << "STR_AIR_POSITION_" << _currentAction.unit->position;
-			log(_currentAction.unit, tr(ss.str()), color);
-			updateUnitPositions();
+			log(_currentAction.unit, tr("STR_AIR_MOVE_BACKWARD"), color);
 			break;
 
 		case AA_MOVE_RETREAT:
 			animateUnitMovement(&_currentAction);
-			_currentAction.unit->position = (_currentAction.unit->position - 2);
-			ss << "STR_AIR_POSITION_" << _currentAction.unit->position;
-			log(_currentAction.unit, tr(ss.str()), color);
-			updateUnitPositions();
+			log(_currentAction.unit, tr("STR_AIR_MOVE_RETREAT"), color);
 			break;
 
 		case AA_HOLD:
@@ -1236,15 +1465,80 @@ void AirCombatState::animateUnitMovement(AirCombatAction *action)
 			throw Exception(ss.str());
 	}
 
-	int x0, y0, x1, y1;
 
-	std::tie(x0, y0) = getUnitDrawPosition(p0, action->unit->index, !action->unit->craft);
-	std::tie(x1, y1) = getUnitDrawPosition(p1, action->unit->index, !action->unit->craft);
+	/*bool animateOthers = !action->unit->enemy;
+	if (p0 == _basePosition && p1 > _basePosition)
+	{
+		for (AirCombatUnit *craft : _craft)
+		{
+			if (craft && craft != action->unit && craft->position <= _basePosition)
+			{
+				animateOthers = false;
+				break;
+			}
+		}
+	}
 
-	InteractiveSurface *surface = action->unit->craft ? _craftButtons[action->unit->index] : _enemyButtons[action->unit->index];
+	if (animateOthers)
+	{*/
+	action->unit->position = p1;
 
-	AirCombatMovementAnimation *anim = new AirCombatMovementAnimation(action, x0, y0, x1, y1, surface, 250, nullptr);
-	_animations.push_back(anim);
+	int basePositionChange = _basePosition;
+
+	updatePositionOffsets(false);
+
+	basePositionChange = _basePosition - basePositionChange;
+
+	if (basePositionChange)
+	{
+		for (AirCombatUnit *unit : _units)
+		{
+			if (unit != action->unit)
+			{
+				int x0, y0, x1, y1;
+
+				std::tie(x0, y0) = getUnitDrawPosition(unit->position + (p1 - p0), unit->index);
+				std::tie(x1, y1) = getUnitDrawPosition(unit->position, unit->index);
+
+				InteractiveSurface *surface = unit->craft ? _craftButtons[unit->index] : _enemyButtons[unit->index];
+
+				AirCombatMovementAnimation *anim = new AirCombatMovementAnimation(x0, y0, x1, y1, surface, 250, nullptr);
+				_animations.push_back(anim);
+			}
+			/*else if (basePositionChange != (p1 - p0))
+			{
+				int x0, y0, x1, y1;
+
+				std::tie(x0, y0) = getUnitDrawPosition(unit->position + (basePositionChange - (p1 - p0)), unit->index);
+				std::tie(x1, y1) = getUnitDrawPosition(unit->position, unit->index);
+
+				InteractiveSurface *surface = unit->craft ? _craftButtons[unit->index] : _enemyButtons[unit->index];
+
+				AirCombatMovementAnimation *anim = new AirCombatMovementAnimation(x0, y0, x1, y1, surface, 250, nullptr);
+				_animations.push_back(anim);
+			}*/
+		}
+
+		AirCombatInterpolationAnimation *background = new AirCombatInterpolationAnimation(this, basePositionChange * COLUMN_WIDTH, 0, 250, (AirCombatInterpolationAnimation::InterpolateCallback)&AirCombatState::onAnimateBackground, (AirCombatAnimation::FinishedCallback)&AirCombatState::onAnimateBackgroundFinished);
+		_animations.push_back(background);
+	}
+	else
+	{
+		int x0, y0, x1, y1;
+
+		std::tie(x0, y0) = getUnitDrawPosition(p0, action->unit->index);
+		std::tie(x1, y1) = getUnitDrawPosition(p1, action->unit->index);
+
+		if (x0 != x1 || y0 != y1)
+		{
+			InteractiveSurface *surface = action->unit->craft ? _craftButtons[action->unit->index] : _enemyButtons[action->unit->index];
+
+			AirCombatMovementAnimation *anim = new AirCombatMovementAnimation(x0, y0, x1, y1, surface, 250, nullptr);
+			_animations.push_back(anim);
+
+			action->unit->position = p1;
+		}
+	}
 }
 
 void AirCombatState::animateAttack(AirCombatAction *action, int shot)
@@ -1264,6 +1558,7 @@ void AirCombatState::animateAttack(AirCombatAction *action, int shot)
 	int sprite = 1 * BULLET_PARTICLES;
 	int speed = 1;
 	int particles = BULLET_PARTICLES;
+	int autoDelay = 200;
 
 	if (action->weapon)
 	{
@@ -1298,11 +1593,11 @@ void AirCombatState::animateAttack(AirCombatAction *action, int shot)
 
 	if (action->unit->enemy)
 	{
-		x0 += 3 * SPRITE_WIDTH / 4;
+		x0 += SPRITE_WIDTH / 4;
 	}
 	else
 	{
-		x0 += SPRITE_WIDTH / 4;
+		x0 += 3 * SPRITE_WIDTH / 4;
 	}
 	y0 += SPRITE_HEIGHT / 2;
 
@@ -1334,46 +1629,65 @@ void AirCombatState::animateAttack(AirCombatAction *action, int shot)
 
 		double m = (double)(y1 - y0) / (x1 - x0);
 
-		int b = y0 - m * x0;
-
-		// Intercept according to left or right edge.
-		int xx = action->unit->enemy ? _battle->getWidth() : 0;
-		int yx = m * xx + b;
-
-		if (action->unit->enemy)
+		if (abs(m) < std::numeric_limits<double>::epsilon())
 		{
-			// Intercept according to top or bottom edge.
-			int yy = m > 0 ? _battle->getHeight() : 0;
-			int xy = (yy - b) / m;
-
-			// Side intercept closer.
-			if (xy > xx)
+			if (x1 > x0)
 			{
-				x1 = xx;
-				y1 = yx;
+				x1 = _battle->getWidth();
+				y1 = y0;
 			}
 			else
 			{
-				x1 = xy;
-				y1 = yy;
+				x1 = 0;
+				y1 = y0;
 			}
 		}
 		else
 		{
-			// Intercept according to top or bottom edge.
-			int yy = m < 0 ? _battle->getHeight() : 0;
-			int xy = (yy - b) / m;
+			int b = y0 - m * x0;
 
-			// Top/bottom intercept closer.
-			if (xy > xx)
+			// Intercept according to left or right edge.
+			if (x1 > x0)
 			{
-				x1 = xy;
-				y1 = yy;
+				int xx = _battle->getWidth();
+				int yx = m * xx + b;
+
+				// Intercept according to top or bottom edge.
+				int yy = m > 0 ? _battle->getHeight() : 0;
+				int xy = (yy - b) / m;
+
+				// Side intercept closer.
+				if (xy > xx)
+				{
+					x1 = xx;
+					y1 = yx;
+				}
+				else
+				{
+					x1 = xy;
+					y1 = yy;
+				}
 			}
 			else
 			{
-				x1 = xx;
-				y1 = yx;
+				int xx = 0;
+				int yx = m * xx + b;
+
+				// Intercept according to top or bottom edge.
+				int yy = m < 0 ? _battle->getHeight() : 0;
+				int xy = (yy - b) / m;
+
+				// Top/bottom intercept closer.
+				if (xy > xx)
+				{
+					x1 = xy;
+					y1 = yy;
+				}
+				else
+				{
+					x1 = xx;
+					y1 = yx;
+				}
 			}
 		}
 
@@ -1384,7 +1698,8 @@ void AirCombatState::animateAttack(AirCombatAction *action, int shot)
 
 	if (shot < shots)
 	{
-		AirCombatMultiShotAnimation *nextShot = new AirCombatMultiShotAnimation(action, 100, shot + 1, (AirCombatAnimation::FinishedCallback)&AirCombatState::onNextShot);
+		// TODO: Configurable auto delay on RuleCraftWeapon.
+		AirCombatMultiShotAnimation *nextShot = new AirCombatMultiShotAnimation(action, 200, shot + 1, (AirCombatAnimation::FinishedCallback)&AirCombatState::onNextShot);
 		_animations.push_back(nextShot);
 	}
 }
@@ -1549,7 +1864,7 @@ void AirCombatState::btnMinimizeClick(Action*)
 {
 	for (AirCombatUnit *craft : _craft)
 	{
-		if (craft && craft->position > 0)
+		if (craft && craft->position > _basePosition)
 		{
 			showWarning(tr("STR_MINIMISE_AT_STANDOFF_RANGE_ONLY"));
 			return;
@@ -1576,6 +1891,33 @@ void AirCombatState::btnMinimizedIconClick(Action*)
 	{
 		setMinimized(false);
 	}
+}
+
+void AirCombatState::setupCombat()
+{
+	_init = false;
+
+	int delay = 0;
+
+	for (AirCombatUnit *craft : _craft)
+	{
+		if (craft)
+		{
+			craft->turnDelay = delay;
+			++delay;
+		}
+	}
+
+	for (AirCombatUnit *enemy : _enemies)
+	{
+		if (enemy)
+		{
+			enemy->turnDelay = delay;
+			++delay;
+		}
+	}
+
+	update();
 }
 
 void AirCombatState::updateUnitPositions()
@@ -1607,8 +1949,8 @@ void AirCombatState::draw()
 {
 	static Element *hover = Game::getMod()->getInterface("aircombat")->getElement("hoverUnit");
 	static Element *current = Game::getMod()->getInterface("aircombat")->getElement("currentUnit");
-	//_window->draw();
-	//_battle->clear();
+
+	_game->setCursorVisible(allowInteraction());
 
 	for (int ii = 0; ii < MAX_UNITS; ++ii)
 	{
@@ -1662,13 +2004,14 @@ void AirCombatState::draw()
 
 std::tuple<int, int> AirCombatState::getUnitDrawPosition(AirCombatUnit *unit) const
 {
-	return getUnitDrawPosition(unit->position, unit->index, unit->enemy);
+	return getUnitDrawPosition(unit->position, unit->index);
 }
 
-std::tuple<int, int> AirCombatState::getUnitDrawPosition(int position, int index, bool enemy) const
+std::tuple<int, int> AirCombatState::getUnitDrawPosition(int position, int index) const
 {
 	return {
-		enemy ? (0 + SPRITE_OFFSET + position * COLUMN_WIDTH) : (320 + SPRITE_OFFSET - (position + 1) * COLUMN_WIDTH),
+		//enemy ? (0 + SPRITE_OFFSET + position * COLUMN_WIDTH) : (320 + SPRITE_OFFSET - (position + 1) * COLUMN_WIDTH),
+		SPRITE_OFFSET + (position)* COLUMN_WIDTH - _positionUnitOffset,
 		index * (SPRITE_HEIGHT + 2) + 2
 	};
 }
@@ -1722,11 +2065,13 @@ void AirCombatState::onCraftClick(Action *action)
 	}
 }
 
-void AirCombatState::onUnitMouseOver(Action *)
+void AirCombatState::onUnitMouseOver(Action *action)
 {
 	if (!allowInteraction()) return;
 
 	invalidate();
+
+	_hoverEnemy = action->getSender();
 }
 
 void AirCombatState::onUnitMouseOut(Action *)
@@ -1734,6 +2079,8 @@ void AirCombatState::onUnitMouseOut(Action *)
 	if (!allowInteraction()) return;
 
 	invalidate();
+
+	_hoverEnemy = nullptr;
 }
 
 void AirCombatState::battleClick(Action* action)
@@ -1781,6 +2128,16 @@ void AirCombatState::onWaitClick(Action*)
 void AirCombatState::think()
 {
 	State::think();
+
+	if (_init)
+	{
+		setupCombat();
+	}
+
+	if (_update)
+	{
+		update();
+	}
 
 	if (!_ended)
 	{
@@ -1919,6 +2276,7 @@ AirCombatUnit *AirCombatState::getCurrentUnit() const
 
 void AirCombatState::setupAction()
 {
+	//_game->setCursorVisible(true);
 	_currentAction.action = AA_NONE;
 	_currentAction.unit = getCurrentUnit();
 	_currentAction.description = L"";
@@ -1931,7 +2289,7 @@ void AirCombatState::setupAction()
 
 bool AirCombatState::allowInteraction() const
 {
-	return !_animations.size() && !_ended;
+	return !_animations.size() && !_ended && (!getCurrentUnit() || !getCurrentUnit()->enemy);
 }
 
 void AirCombatState::showActionMenu(AirCombatActionType type)
@@ -1942,8 +2300,11 @@ void AirCombatState::showActionMenu(AirCombatActionType type)
 
 void AirCombatState::animate()
 {
+	_animationFrame++;
+
 	if (_animations.size())
 	{
+		//_game->setCursorVisible(false);
 		int lastAnimation = _animations.size();
 		for (int ii = 0; ii < lastAnimation; )
 		{
@@ -1966,7 +2327,8 @@ void AirCombatState::animate()
 
 		if (!_animations.size())
 		{
-			update();
+			requestUpdate();
+			//_game->setCursorVisible(true);
 		}
 	}
 }
@@ -1981,7 +2343,7 @@ void AirCombatAnimation::onFinished(AirCombatState* state)
 	}
 }
 
-AirCombatMovementAnimation::AirCombatMovementAnimation(AirCombatAction *action, int x0, int y0, int x1, int y1, Surface *target, int duration, FinishedCallback callback)
+AirCombatMovementAnimation::AirCombatMovementAnimation(int x0, int y0, int x1, int y1, Surface *target, int duration, FinishedCallback callback)
 	: AirCombatAnimation(callback), x0(x0), y0(y0), x1(x1), y1(y1), target(target), _duration(duration), _elapsed(0)
 {
 
@@ -2083,6 +2445,32 @@ bool AirCombatExplosionAnimation::animate(int elapsed)
 		_frameElapsed = 0;
 	}
 	return currentFrame >= _endFrame;
+}
+
+// AirCombatInterpolationAnimation
+
+AirCombatInterpolationAnimation::AirCombatInterpolationAnimation(AirCombatState *state, int value0, int value1, int duration, InterpolateCallback onAnimate, FinishedCallback callback) : AirCombatAnimation(callback), _state(state), _value0(value0), _value1(value1), _duration(duration), _elapsed(0), _onAnimate(onAnimate)
+{
+}
+
+AirCombatInterpolationAnimation::~AirCombatInterpolationAnimation()
+{
+}
+
+bool AirCombatInterpolationAnimation::animate(int elapsed)
+{
+	_elapsed += elapsed;
+
+	if (_elapsed > _duration) { _elapsed = _duration; }
+
+	value = ((_value1 - _value0) * ((double)_elapsed / _duration)) + _value0;
+
+	if (_onAnimate)
+	{
+		(_state->*_onAnimate)(this);
+	}
+
+	return _elapsed >= _duration;
 }
 
 }

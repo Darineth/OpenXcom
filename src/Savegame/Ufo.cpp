@@ -31,6 +31,8 @@
 #include "SavedGame.h"
 #include "Waypoint.h"
 #include "../Engine/Game.h"
+#include "../Mod/RuleCraftWeapon.h"
+#include "../Savegame/CraftWeapon.h"
 
 namespace OpenXcom
 {
@@ -53,9 +55,15 @@ Ufo::Ufo(const RuleUfo *rules, bool createEscorts, int escortId) : MovingTarget(
 	_inBattlescape(false), _mission(0), _trajectory(0),
 	_trajectoryPoint(0), _detected(false), _hyperDetected(false), _processedIntercept(false),
 	_shootingAt(0), _hitFrame(0), _fireCountdown(0), _escapeCountdown(0), _stats(), _shield(-1), _shieldRechargeHandle(0),
-	_tractorBeamSlowdown(0), _retreating(false), _escortId(escortId)
+	_tractorBeamSlowdown(0), _retreating(false), _escorting(nullptr), _escortId(escortId), _weapons()
 {
 	_stats = rules->getStats();
+
+	for (const std::string &weaponType : rules->getWeapons())
+	{
+		RuleCraftWeapon *weaponRule = Game::getMod()->getCraftWeapon(weaponType, true);
+		_weapons.push_back(new CraftWeapon(weaponRule, weaponRule->getAmmoMax()));
+	}
 
 	if(createEscorts)
 	{
@@ -87,7 +95,7 @@ Ufo::~Ufo()
 			++i;
 		}
 	}
-	if (_mission)
+	if (_mission && !isEscort())
 	{
 		_mission->decreaseLiveUfos();
 	}
@@ -104,6 +112,11 @@ Ufo::~Ufo()
 	for (Ufo *escort : _escorts)
 	{
 		delete escort;
+	}
+
+	for (CraftWeapon *weapon : _weapons)
+	{
+		delete weapon;
 	}
 }
 
@@ -127,10 +140,13 @@ private:
  * @param mod The game mod. Use to access the trajectory rules.
  * @param game The game data. Used to find the UFO's mission.
  */
-void Ufo::load(const YAML::Node &node, const Mod *mod, SavedGame *game)
+void Ufo::load(const YAML::Node &node, const Mod *mod, SavedGame *game, Ufo *escorting)
 {
 	MovingTarget::load(node);
 	_id = node["id"].as<int>(_id);
+	_escorting = escorting;
+	_escortId = node["escortId"].as<int>(_escortId);
+	_escortingId = node["escortingId"].as<int>(_escortingId);
 	_crashId = node["crashId"].as<int>(_crashId);
 	_landId = node["landId"].as<int>(_landId);
 	_damage = node["damage"].as<int>(_damage);
@@ -206,7 +222,7 @@ void Ufo::load(const YAML::Node &node, const Mod *mod, SavedGame *game)
 		if (mod->getUfo(type))
 		{
 			Ufo *u = new Ufo(mod->getUfo(type), false);
-			u->load(*ii, mod, game);
+			u->load(*ii, mod, game, this);
 			_escorts.push_back(u);
 		}
 		/*else
@@ -214,8 +230,6 @@ void Ufo::load(const YAML::Node &node, const Mod *mod, SavedGame *game)
 			Log(LOG_ERROR) << "Failed to load UFO " << type;
 		}*/
 	}
-
-	_escortId = node["escortId"].as<int>(_escortId);
 
 	if (_inBattlescape)
 		setSpeed(0);
@@ -230,6 +244,8 @@ YAML::Node Ufo::save(bool newBattle) const
 	YAML::Node node = MovingTarget::save();
 	node["type"] = _rules->getType();
 	node["id"] = _id;
+	node["escortId"] = _escortId;
+	node["escortingId"] = _escortingId;
 	if (_crashId)
 	{
 		node["crashId"] = _crashId;
@@ -252,7 +268,7 @@ YAML::Node Ufo::save(bool newBattle) const
 		node["secondsRemaining"] = _secondsRemaining;
 	if (_inBattlescape)
 		node["inBattlescape"] = _inBattlescape;
-	if (!newBattle && !isEscort())
+	if (!newBattle && _mission)
 	{
 		node["mission"] = _mission->getId();
 		node["trajectory"] = _trajectory->getID();
@@ -322,7 +338,7 @@ void Ufo::setId(int id)
 	_id = id;
 	for (Ufo *escort : _escorts)
 	{
-		escort->setEscortingId(id);
+		escort->setEscorting(this);
 	}
 }
 
@@ -339,9 +355,31 @@ int Ufo::getEscortingId() const
  * Sets the ID of the UFO being escorted.
  * @param id The ID of the escorted UFO.
  */
-void Ufo::setEscortingId(int id)
+void Ufo::setEscorting(Ufo *primary)
 {
-	_escortingId = id;
+	_escorting = primary;
+	_escortingId = primary->getId();
+	_mission = primary->_mission;
+	_trajectory = primary->_trajectory;
+	_trajectoryPoint = primary->_trajectoryPoint;
+}
+
+void Ufo::releaseEscort()
+{
+	if (_escorting)
+	{
+		auto ii = std::find(_escorting->_escorts.begin(), _escorting->_escorts.end(), this);
+		if (ii != _escorting->_escorts.end())
+		{
+			_escorting->_escorts.erase(ii);
+		}
+		_escorting = nullptr;
+
+		Game::getSavedGame()->getUfos()->push_back(this);
+		/*_mission = primary->_mission;
+		_trajectory = primary->_trajectory;
+		_trajectoryPoint = primary->_trajectoryPoint;*/
+	}
 }
 
 /**
@@ -992,7 +1030,17 @@ const std::vector<Ufo*> &Ufo::getEscorts() const
 
 bool Ufo::isEscort() const
 {
-	return _escortId > 0;
+	return _escorting;
+}
+
+Ufo* Ufo::getEscorting() const
+{
+	return _escorting;
+}
+
+const std::vector<CraftWeapon*> &Ufo::getWeapons() const
+{
+	return _weapons;
 }
 
 }

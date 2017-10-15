@@ -984,6 +984,7 @@
     <ClCompile Include="Menu\TestPaletteState.cpp" />
     <ClCompile Include="Geoscape\AirCombatState.cpp" />
     <ClCompile Include="Geoscape\AirActionMenuState.cpp" />
+    <ClCompile Include="Geoscape\AirCombatAI.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h" />
@@ -2013,6 +2014,7 @@
     <ClInclude Include="Menu\TestPaletteState.h" />
     <ClInclude Include="Geoscape\AirCombatState.h" />
     <ClInclude Include="Geoscape\AirActionMenuState.h" />
+    <ClInclude Include="Geoscape\AirCombatAI.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Geoscape">

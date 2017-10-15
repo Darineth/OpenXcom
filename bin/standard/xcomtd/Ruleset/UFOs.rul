@@ -11,6 +11,8 @@ ufos:
     score: 50
     reload: 56
     breakOffTime: 200
+    weapons:
+      - STR_UFO_SMALL_SCOUT_PLASMA
     battlescapeTerrainData:
       name: UFO1A
       mapDataSets:
@@ -32,6 +34,9 @@ ufos:
     score: 75
     reload: 56
     breakOffTime: 250
+    weapons:
+      - STR_UFO_SMALL_SCOUT_PLASMA
+      - STR_UFO_MEDIUM_SCOUT_PLASMA
     escorts:
       - STR_SMALL_SCOUT
     battlescapeTerrainData:
