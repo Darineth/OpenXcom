@@ -29,6 +29,7 @@
 #include "../Mod/Mod.h"
 #include "../Mod/RuleInventory.h"
 #include "../Mod/RuleInterface.h"
+#include "../Mod/RuleInventoryLayout.h"
 #include "../Savegame/BattleUnit.h"
 #include "../Ufopaedia/Ufopaedia.h"
 
@@ -43,7 +44,7 @@ namespace OpenXcom
  * @param x X position in pixels.
  * @param y Y position in pixels.
  */
-AlienInventory::AlienInventory(Game *game, int width, int height, int x, int y) : InteractiveSurface(width, height, x, y), _game(game), _selUnit(0), _dynamicOffset(0)
+AlienInventory::AlienInventory(Game *game, int width, int height, int x, int y) : InteractiveSurface(width, height, x, y), _game(game), _selUnit(0), _dynamicOffset(0), _inventoryLayout(nullptr)
 {
 	_grid = new Surface(width, height, 0, 0);
 	_items = new Surface(width, height, 0, 0);
@@ -88,6 +89,8 @@ void AlienInventory::setSelectedUnit(BattleUnit *unit)
 {
 	_selUnit = unit;
 	_dynamicOffset = 0;
+	RuleInventoryLayout *newLayout = _game->getMod()->getInventoryLayout(unit ? unit->getInventoryLayout() : "STR_STANDARD_INV");
+	_inventoryLayout = newLayout;
 	if (unit && unit->getArmor()->getSize() > 1)
 	{
 		_dynamicOffset = 32;
@@ -109,35 +112,39 @@ void AlienInventory::draw()
 void AlienInventory::drawGrid()
 {
 	_grid->clear();
-	RuleInterface *rule = _game->getMod()->getInterface("inventory");
-	Uint8 color = rule->getElement("grid")->color;
 
-	for (std::map<std::string, RuleInventory*>::iterator i = _game->getMod()->getInventories()->begin(); i != _game->getMod()->getInventories()->end(); ++i)
+	if (_inventoryLayout)
 	{
-		if (i->second->getType() == INV_HAND)
-		{
-			SDL_Rect r;
-			r.x = i->second->getX();
-			r.x += ALIEN_INVENTORY_STATIC_OFFSET;
+		RuleInterface *rule = _game->getMod()->getInterface("inventory");
+		Uint8 color = rule->getElement("grid")->color;
 
-			if (i->second->getId() == "STR_RIGHT_HAND")
-				r.x -= _dynamicOffset;
-			else if (i->second->getId() == "STR_LEFT_HAND")
-				r.x += _dynamicOffset;
-
-			r.y = i->second->getY();
-			r.w = RuleInventory::HAND_W * RuleInventory::SLOT_W;
-			r.h = RuleInventory::HAND_H * RuleInventory::SLOT_H;
-			_grid->drawRect(&r, color);
-			r.x++;
-			r.y++;
-			r.w -= 2;
-			r.h -= 2;
-			_grid->drawRect(&r, 0);
-		}
-		else
+		for(auto slot : *_inventoryLayout->getSlots())
 		{
-			continue;
+			if (slot->getType() == INV_HAND)
+			{
+				SDL_Rect r;
+				r.x = slot->getX();
+				r.x += ALIEN_INVENTORY_STATIC_OFFSET;
+
+				if (slot->getId() == "STR_RIGHT_HAND")
+					r.x -= _dynamicOffset;
+				else if (slot->getId() == "STR_LEFT_HAND")
+					r.x += _dynamicOffset;
+
+				r.y = slot->getY();
+				r.w = RuleInventory::HAND_W * RuleInventory::SLOT_W;
+				r.h = RuleInventory::HAND_H * RuleInventory::SLOT_H;
+				_grid->drawRect(&r, color);
+				r.x++;
+				r.y++;
+				r.w -= 2;
+				r.h -= 2;
+				_grid->drawRect(&r, 0);
+			}
+			else
+			{
+				continue;
+			}
 		}
 	}
 }
@@ -148,7 +155,7 @@ void AlienInventory::drawGrid()
 void AlienInventory::drawItems()
 {
 	_items->clear();
-	if (_selUnit != 0)
+	if (_selUnit != 0 && _inventoryLayout)
 	{
 		SurfaceSet *texture = _game->getMod()->getSurfaceSet("BIGOBS.PCK");
 		for (std::vector<BattleItem*>::iterator i = _selUnit->getInventory()->begin(); i != _selUnit->getInventory()->end(); ++i)

@@ -40,7 +40,7 @@ namespace OpenXcom
 	 */
 	ArticleState::ArticleState(const std::string &article_id) : _id(article_id)
 	{
-		_game->getScreen()->pushMaximizeInfoScreen(false);
+		_game->getScreen()->pushMaximizeInfoScreen(Game::getSavedGame()->getSavedBattle());
 
 		// init background and navigation elements
 		_bg = new Surface(320, 200, 0, 0);

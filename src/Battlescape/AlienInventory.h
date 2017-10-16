@@ -25,6 +25,7 @@ namespace OpenXcom
 class RuleInventory;
 class Game;
 class BattleUnit;
+class RuleInventoryLayout;
 
 /**
  * View of an alien inventory.
@@ -37,6 +38,7 @@ private:
 	Surface *_grid, *_items;
 	BattleUnit *_selUnit;
 	int _dynamicOffset;
+	RuleInventoryLayout *_inventoryLayout;
 	/// Gets the slot in the specified position.
 	RuleInventory *getSlotInPosition(int *x, int *y) const;
 public:

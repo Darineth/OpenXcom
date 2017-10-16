@@ -91,7 +91,7 @@ public:
 	/// Checks if an item fits in a slot.
 	bool fitItemInSlot(const RuleItem *item, int x, int y) const;
 	/// Gets a certain cost in the inventory.
-	int getCost(RuleInventory *slot) const;
+	int getCost(RuleInventory *newSlot) const;
 	int getListOrder() const;
 	bool getCountStats() const;
 	int getArmorSide() const;

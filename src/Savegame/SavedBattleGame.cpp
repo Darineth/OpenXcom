@@ -1016,6 +1016,12 @@ void SavedBattleGame::endTurn()
 			selectNextPlayerUnit();
 		while (_selectedUnit && _selectedUnit->getFaction() != FACTION_PLAYER)
 			selectNextPlayerUnit();
+
+		// Force an FOV recalc to prevent issues with player unit FOVs not being updated during remote actions.
+		for (BattleUnit *unit : _units)
+		{
+			getTileEngine()->calculateFOV(unit, true, true);
+		}
 	}
 	int liveSoldiers, liveAliens;
 

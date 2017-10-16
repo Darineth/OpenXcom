@@ -89,7 +89,7 @@ AlienInventoryState::AlienInventoryState(BattleUnit *unit)
 	_soldier->clear();
 
 	Soldier *s = unit->getGeoscapeSoldier();
-	if (s)
+	if (s && !s->isVehicle())
 	{
 		const std::string look = s->getArmor()->getSpriteInventory();
 		const std::string gender = s->getGender() == GENDER_MALE ? "M" : "F";
@@ -114,9 +114,12 @@ AlienInventoryState::AlienInventoryState(BattleUnit *unit)
 			ss.str("");
 			ss << look;
 			ss << ".SPK";
-			surf = _game->getMod()->getSurface(ss.str(), true);
+			surf = _game->getMod()->getSurface(ss.str(), false);
 		}
-		surf->blit(_soldier);
+		if (surf)
+		{
+			surf->blit(_soldier);
+		}
 	}
 	else
 	{

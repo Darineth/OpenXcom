@@ -285,12 +285,12 @@ bool RuleInventory::fitItemInSlot(const RuleItem *item, int x, int y) const
  * @param slot The new section id.
  * @return The time unit cost.
  */
-int RuleInventory::getCost(RuleInventory* slot) const
+int RuleInventory::getCost(RuleInventory* newSlot) const
 {
-	if (slot == this)
+	if (newSlot == this)
 		return 0;
 
-	std::map<std::string, int>::const_iterator ii = _costs.find(slot->getId());
+	std::map<std::string, int>::const_iterator ii = _costs.find(newSlot->getId());
 	return ii == _costs.end() ? -1 : ii->second;
 }
 

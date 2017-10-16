@@ -780,10 +780,7 @@ void Inventory::setSelectedItem(BattleItem *item)
 	drawSelectedItem();
 
 	// 1. first draw the grid
-	if (_tu)
-	{
-		drawGrid();
-	}
+	drawGrid();
 
 	// 2. then the items
 	drawItems();
@@ -950,6 +947,36 @@ void Inventory::mouseClick(Action *action, State *state)
 						if (newSlot->getType() != INV_GROUND)
 						{
 							_stackLevel[item->getSlotX()][item->getSlotY()] -= 1;
+
+							if (item->getRules()->getBattleType() == BT_AMMO)
+							{
+								RuleInventory *weapon1 = _game->getMod()->getInventory(_selUnit->getWeaponSlot1());
+
+								if (weapon1)
+								{
+									int bestCost = 10000000;
+									RuleInventory *bestSlot = nullptr;
+
+									for (auto slot : *_inventoryLayout->getSlots())
+									{
+										if (slot->getType() != INV_HAND)
+										{
+											int slotCost = slot->getCost(weapon1);
+											std::string dummy;
+											if (slotCost > 0 && slotCost < bestCost && _selUnit->moveItem(item, slot, -1, -1, dummy, false, true))
+											{
+												bestSlot = slot;
+												bestCost = slotCost;
+											}
+										}
+									}
+
+									if (bestSlot)
+									{
+										newSlot = bestSlot;
+									}
+								}
+							}
 
 							placed = (std::find(_inventoryLayout->getSlots()->begin(), _inventoryLayout->getSlots()->end(), newSlot) != _inventoryLayout->getSlots()->end()) && _selUnit->moveItem(item, newSlot, -1, -1, warning, _tu);
 
