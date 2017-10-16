@@ -2618,6 +2618,12 @@ Role* SavedGame::getDefaultRole() const
 	return _defaultRole;
 }
 
+/// Gets the roles map.
+std::map<std::string, Role*> &SavedGame::getRoles()
+{
+	return _roles;
+}
+
 /// Gets the named role.
 Role* SavedGame::getRole(const std::string &name) const
 {

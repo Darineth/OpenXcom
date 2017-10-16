@@ -387,6 +387,8 @@ public:
 	Role* getRole(const std::string &name) const;
 	/// Gets the default role.
 	Role* getDefaultRole() const;
+	/// Gets the roles map.
+	std::map<std::string, Role*> &getRoles();
 	/// Loads the roles from the ruleset.
 	void loadRoles(const Mod *rule);
 };

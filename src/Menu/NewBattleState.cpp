@@ -55,6 +55,7 @@
 #include "../Mod/RuleSoldier.h"
 #include "../Engine/Game.h"
 #include "../Engine/Screen.h"
+#include "../Savegame/Role.h"
 
 namespace OpenXcom
 {
@@ -295,6 +296,22 @@ void NewBattleState::load(const std::string &filename)
 				// Load Roles
 				save->loadRoles(mod);
 
+				if (doc["roles"])
+				{
+					for (auto ii = doc["roles"].begin(); ii != doc["roles"].end(); ++ii)
+					{
+						std::string name = (*ii)["name"].as<std::string>();
+						if (RuleRole *ruleRole = mod->getRole(name))
+						{
+							std::map<std::string, Role*>::const_iterator jj = save->getRoles().find(name);
+							if (jj != save->getRoles().end())
+							{
+								jj->second->load(*ii, save);
+							}
+						}
+					}
+				}
+
 				Base *base = new Base(mod);
 				base->load(doc["base"], save, false);
 				save->getBases()->push_back(base);
@@ -376,7 +393,12 @@ void NewBattleState::save(const std::string &filename)
 	node["alienRace"] = _cbxAlienRace->getSelected();
 	node["difficulty"] = _cbxDifficulty->getSelected();
 	node["alienTech"] = _slrAlienTech->getValue();
+	for (auto role : _game->getSavedGame()->getRoles())
+	{
+		node["roles"].push_back(role.second->save());
+	}
 	node["base"] = _game->getSavedGame()->getBases()->front()->save();
+
 	out << node;
 
 	sav << out.c_str();
