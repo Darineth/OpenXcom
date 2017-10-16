@@ -435,7 +435,7 @@ AirCombatState::AirCombatState(GeoscapeState *parent, Ufo *ufo) :
 	_combatLog = new CombatLog(320, 30, 0, 2);
 	_warning = new WarningMessage(224, 24, 48, 200 - 24);
 
-	_btnMinimize = new InteractiveSurface(12, 12, 308, 0);
+	_btnMinimize = new InteractiveSurface(12, 12, 308, 188);
 
 	_btnMinimizedIcon = new InteractiveSurface(32, 20, _minimizedIconX, _minimizedIconY);
 	_txtInterceptionNumber = new Text(16, 9, _minimizedIconX + 18, _minimizedIconY + 6);
@@ -451,7 +451,15 @@ AirCombatState::AirCombatState(GeoscapeState *parent, Ufo *ufo) :
 	add(_btnMinimizedIcon);
 	add(_txtInterceptionNumber, "minimizedNumber", "aircombat");
 
+	SurfaceSet *set = _game->getMod()->getSurfaceSet("INTICON.PCK");
+
 	_btnMinimizedIcon->drawRect(0, 0, _btnMinimizedIcon->getWidth(), _btnMinimizedIcon->getHeight(), 80);
+	// Create the minimized dogfight icon.
+	Surface *frame = set->getFrame(3);
+	frame->setX(0);
+	frame->setY(0);
+	frame->blit(_btnMinimizedIcon);
+
 	_btnMinimizedIcon->onMouseClick((ActionHandler)&AirCombatState::btnMinimizedIconClick);
 	_txtInterceptionNumber->setText(Text::formatNumber(ufo->getId()));
 	_btnMinimize->onMouseClick((ActionHandler)&AirCombatState::btnMinimizeClick);
@@ -578,7 +586,8 @@ AirCombatState::AirCombatState(GeoscapeState *parent, Ufo *ufo) :
 
 	// TODO: Check depth.
 	_projectileSet = _game->getMod()->getSurfaceSet("Projectiles");
-	_explosionSet = _game->getMod()->getSurfaceSet("SMOKE.PCK");
+	_hitSet = _game->getMod()->getSurfaceSet("SMOKE.PCK");
+	_explosionSet = _game->getMod()->getSurfaceSet("X1.PCK");
 
 	setupEnemies();
 
@@ -603,7 +612,7 @@ AirCombatState::~AirCombatState()
 	{
 		if (ii)
 		{
-			removeCraft(ii->craft);
+			removeCraft(ii->craft, true);
 		}
 	}
 }
@@ -676,9 +685,9 @@ void AirCombatState::blit()
 
 	for (AirCombatExplosionAnimation *ee : _explosions)
 	{
-		Surface *hit = _explosionSet->getFrame(ee->currentFrame);
+		Surface *hit = ee->unit ? _explosionSet->getFrame(ee->currentFrame) : _hitSet->getFrame(ee->currentFrame);
 
-		hit->blitNShade(_battle, ee->position.x - 15, ee->position.y - 15, 0);
+		hit->blitNShade(_battle, ee->position.x - hit->getWidth() / 2, ee->position.y - hit->getHeight() / 2, 0);
 	}
 
 	static SurfaceSet *cursor = Game::getMod()->getSurfaceSet("AirCombatAimCursor");
@@ -767,6 +776,10 @@ bool AirCombatState::removeUfo(AirCombatUnit* ufo)
 
 			invalidate();
 
+			_checkEnd = true;
+
+			requestUpdate();
+
 			return true;
 		}
 	}
@@ -854,7 +867,7 @@ bool AirCombatState::addCraft(Craft *craft)
 	return false;
 }
 
-bool AirCombatState::removeCraft(Craft *craft)
+bool AirCombatState::removeCraft(Craft *craft, bool ending)
 {
 	for (int ii = 0; ii < MAX_UNITS; ++ii)
 	{
@@ -865,7 +878,7 @@ bool AirCombatState::removeCraft(Craft *craft)
 
 			// TODO: Award experience;
 			_craft[ii]->craft->setInDogfight(false);
-			if (!craft->isDestroyed())
+			if (ending && !craft->isDestroyed())
 			{
 				craft->returnToBase();
 			}
@@ -879,6 +892,10 @@ bool AirCombatState::removeCraft(Craft *craft)
 			_craftButtons[ii]->setVisible(false);
 
 			_craftCount -= 1;
+
+			_checkEnd = true;
+
+			requestUpdate();
 
 			return true;
 		}
@@ -1070,10 +1087,7 @@ void AirCombatState::update()
 
 				showMessage(tr("STR_UFO_DESTROYED"));
 
-				if (enemy->ufo->isEscort())
-				{
-					enemy->ufo->releaseEscort();
-				}
+				enemy->ufo->releaseEscort();
 
 				for (auto ii = enemy->ufo->getFollowers()->begin(); ii != enemy->ufo->getFollowers()->end();)
 				{
@@ -1089,7 +1103,14 @@ void AirCombatState::update()
 					}
 				}
 
-				removeUfo(enemy);
+				int unitX, unitY;
+				std::tie(unitX, unitY) = getUnitDrawPosition(enemy);
+
+				int hitSprite = Mod::EXPLOSION_OFFSET;
+
+				AirCombatExplosionAnimation *explosion = new AirCombatExplosionAnimation(hitSprite, XY(unitX + SPRITE_WIDTH / 2, unitY + SPRITE_HEIGHT / 2), enemy, (AirCombatAnimation::FinishedCallback)&AirCombatState::onUnitDeathExplosionDone);
+				_animations.push_back(explosion);
+				_explosions.push_back(explosion);
 			}
 			else if (enemy->ufo->isCrashed())
 			{
@@ -1112,6 +1133,8 @@ void AirCombatState::update()
 				_game->getMod()->getSound("GEO.CAT", Mod::UFO_CRASH)->play(); //10
 
 				showMessage(tr("STR_UFO_CRASH_LANDS"));
+
+				enemy->ufo->releaseEscort();
 
 				if (!_parent->getGlobe()->insideLand(enemy->ufo->getLongitude(), enemy->ufo->getLatitude()))
 				{
@@ -1136,7 +1159,14 @@ void AirCombatState::update()
 					}
 				}
 
-				removeUfo(enemy);
+				int unitX, unitY;
+				std::tie(unitX, unitY) = getUnitDrawPosition(enemy);
+
+				int hitSprite = Mod::EXPLOSION_OFFSET;
+
+				AirCombatExplosionAnimation *explosion = new AirCombatExplosionAnimation(hitSprite, XY(unitX + SPRITE_WIDTH / 2, unitY + SPRITE_HEIGHT / 2), enemy, (AirCombatAnimation::FinishedCallback)&AirCombatState::onUnitDeathExplosionDone);
+				_animations.push_back(explosion);
+				_explosions.push_back(explosion);
 			}
 			/*else
 			{
@@ -1341,12 +1371,13 @@ void AirCombatState::executeAction()
 
 		case AA_FIRE_WEAPON:
 			// Players can't fire from standoff.
-			if (!_currentAction.unit->enemy && !_currentAction.unit->position)
+			/*if (!_currentAction.unit->enemy && !_currentAction.unit->position)
 			{
 				showWarning(tr("STR_CANT_ATTACK_FROM_STANDOFF").arg(_currentAction.unit->getDisplayName()));
 				return;
 			}
-			else if (_currentAction.weapon && !_currentAction.weapon->getAmmo())
+			else*/
+			if (_currentAction.weapon && !_currentAction.weapon->getAmmo())
 			{
 				showWarning(tr("STR_NO_ROUNDS_LEFT").arg(tr(_currentAction.weapon->getRules()->getType())));
 				return;
@@ -1801,9 +1832,10 @@ void AirCombatState::onProjectileHit(AirCombatProjectileAnimation *animation)
 		showMessage(tr("STR_UFO_DESTROYED"));
 	}
 
+	// TODO: Get hit sprite from weapon.
 	int hitSprite = 26;
 
-	AirCombatExplosionAnimation *explosion = new AirCombatExplosionAnimation(hitSprite, XY(animation->x1, animation->y1), (AirCombatAnimation::FinishedCallback)&AirCombatState::onExplosionDone);
+	AirCombatExplosionAnimation *explosion = new AirCombatExplosionAnimation(hitSprite, XY(animation->x1, animation->y1), nullptr, (AirCombatAnimation::FinishedCallback)&AirCombatState::onExplosionDone);
 	_animations.push_back(explosion);
 	_explosions.push_back(explosion);
 }
@@ -1821,6 +1853,13 @@ void AirCombatState::onExplosionDone(AirCombatExplosionAnimation *animation)
 		_explosions.erase(ii);
 	}
 }
+
+void AirCombatState::onUnitDeathExplosionDone(AirCombatExplosionAnimation *animation)
+{
+	onExplosionDone(animation);
+	removeUfo(animation->unit);
+}
+
 
 void AirCombatState::showWarning(const std::wstring warning)
 {
@@ -2427,7 +2466,11 @@ bool AirCombatMultiShotAnimation::animate(int elapsed)
 }
 
 // AirCombatExplosionAnimation
-AirCombatExplosionAnimation::AirCombatExplosionAnimation(int sprite, XY position, FinishedCallback callback) : AirCombatAnimation(callback), currentFrame(sprite), _endFrame(sprite + HIT_FRAMES), position(position), _frameElapsed(0)
+AirCombatExplosionAnimation::AirCombatExplosionAnimation(int sprite, XY position, AirCombatUnit *unit, FinishedCallback callback) :
+	AirCombatAnimation(callback),
+	currentFrame(sprite), _endFrame(sprite + (unit ? EXPLODE_FRAMES : HIT_FRAMES)),
+	position(position),
+	_frameElapsed(0), unit(unit)
 {
 }
 

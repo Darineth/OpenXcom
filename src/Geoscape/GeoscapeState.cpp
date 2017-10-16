@@ -1122,10 +1122,18 @@ void GeoscapeState::time5Seconds()
 					}
 					if (u->getStatus() == Ufo::LANDED && (*j)->isInDogfight())
 					{
+						for (AirCombatState *ii : _dogfights)
+						{
+							ii->removeCraft(*j);
+						}
 						(*j)->setInDogfight(false);
 					}
 					else if (u->getStatus() == Ufo::DESTROYED)
 					{
+						for (AirCombatState *ii : _dogfights)
+						{
+							ii->removeCraft(*j);
+						}
 						(*j)->returnToBase();
 					}
 				}
@@ -1133,6 +1141,10 @@ void GeoscapeState::time5Seconds()
 				{
 					if ((*j)->isInDogfight())
 					{
+						for (AirCombatState *ii : _dogfights)
+						{
+							ii->removeCraft(*j);
+						}
 						(*j)->setInDogfight(false);
 					}
 				}

@@ -1,9 +1,5 @@
 #Xusilak's X-COM overhaul ruleset
 
-craftWeapons:
-#Plasma Beam range is reduced.
-  - type: STR_PLASMA_BEAM_UC
-    range: 35
 startingBase:
   facilities:
     - type: STR_ACCESS_LIFT

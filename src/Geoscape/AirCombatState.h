@@ -187,6 +187,7 @@ struct AirCombatExplosionAnimation : public AirCombatAnimation
 {
 private:
 	static const int HIT_FRAMES = 4;
+	static const int EXPLODE_FRAMES = 8;
 
 	int _endFrame;
 	int _frameElapsed;
@@ -194,8 +195,9 @@ private:
 public:
 	int currentFrame;
 	XY position;
+	AirCombatUnit *unit;
 
-	AirCombatExplosionAnimation(int sprite, XY position, FinishedCallback callback);
+	AirCombatExplosionAnimation(int sprite, XY position, AirCombatUnit *unit, FinishedCallback callback);
 	virtual ~AirCombatExplosionAnimation();
 
 	virtual bool animate(int elapsed) override;
@@ -269,6 +271,7 @@ private:
 	int _backgroundOffset;
 
 	SurfaceSet *_projectileSet;
+	SurfaceSet *_hitSet;
 	SurfaceSet *_explosionSet;
 
 	bool _redraw;
@@ -378,6 +381,7 @@ private:
 	void onProjectileHit(AirCombatProjectileAnimation *animation);
 	void onNextShot(AirCombatMultiShotAnimation *animation);
 	void onExplosionDone(AirCombatExplosionAnimation *animation);
+	void onUnitDeathExplosionDone(AirCombatExplosionAnimation *animation);
 	void performAIAction(AirCombatDelayCallback *delay);
 	void onPositionOffsetFinished(AirCombatDelayCallback *delay);
 	void onAnimateBackground(AirCombatInterpolationAnimation *animation);
@@ -395,7 +399,7 @@ public:
 	AirCombatUnit *getUfoUnit() const;
 
 	bool addCraft(Craft *craft);
-	bool removeCraft(Craft *craft);
+	bool removeCraft(Craft *craft, bool ending = false);
 	bool hasCraft(Craft *craft);
 
 	void setInterceptionNumber(int number);

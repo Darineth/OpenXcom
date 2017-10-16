@@ -165,6 +165,10 @@ items:
     accuracyMelee: 100
     tuMelee: 15
   - type: STR_BASIC_PISTOL
+    categories:
+      - STR_CAT_SIDEARM
+      - STR_CAT_PISTOL
+      - STR_CAT_BALLISTIC_DAMAGE
     battleType: 1
     size: 0.1
     costBuy: 800
@@ -200,6 +204,11 @@ items:
     armor: 20
     listOrder: 2000
   - type: STR_BASIC_PISTOL_AMMO
+    categories:
+      - STR_CAT_SIDEARM
+      - STR_CAT_PISTOL
+      - STR_CAT_BALLISTIC_DAMAGE
+      - STR_AMMUNITION
     battleType: 2
     size: 0.1
     costBuy: 35
@@ -215,6 +224,10 @@ items:
     armor: 12
     listOrder: 2001
   - type: STR_BASIC_SMG
+    categories:
+      - STR_CAT_SIDEARM
+      - STR_CAT_SMG
+      - STR_CAT_BALLISTIC_DAMAGE
     battleType: 1
     size: 0.1
     costBuy: 2200
@@ -251,6 +264,11 @@ items:
     armor: 23
     listOrder: 2002
   - type: STR_BASIC_SMG_AMMO
+    categories:
+      - STR_CAT_SIDEARM
+      - STR_CAT_SMG
+      - STR_CAT_BALLISTIC_DAMAGE
+      - STR_AMMUNITION
     battleType: 2
     size: 0.1
     costBuy: 150
@@ -266,6 +284,10 @@ items:
     armor: 12
     listOrder: 2003
   - type: STR_BASIC_RIFLE
+    categories:
+      - STR_CAT_RIFLE
+      - STR_CAT_ASSAULT_RIFLE
+      - STR_CAT_BALLISTIC_DAMAGE
     battleType: 1
     size: 0.2
     costBuy: 3000
@@ -303,6 +325,11 @@ items:
     armor: 25
     listOrder: 2004
   - type: STR_BASIC_RIFLE_AMMO
+    categories:
+      - STR_CAT_RIFLE
+      - STR_CAT_ASSAULT_RIFLE
+      - STR_CAT_BALLISTIC_DAMAGE
+      - STR_AMMUNITION
     battleType: 2
     size: 0.1
     costBuy: 200
@@ -318,6 +345,9 @@ items:
     armor: 14
     listOrder: 2005
   - type: STR_BASIC_SHOTGUN
+    categories:
+      - STR_CAT_SHOTGUN
+      - STR_CAT_BALLISTIC_DAMAGE
     battleType: 1
     size: 0.3
     costBuy: 3600
@@ -354,6 +384,10 @@ items:
     armor: 25
     listOrder: 2006
   - type: STR_BASIC_SHOTGUN_BUCKSHOT
+    categories:
+      - STR_CAT_SHOTGUN
+      - STR_CAT_BALLISTIC_DAMAGE
+      - STR_AMMUNITION
     battleType: 2
     size: 0.1
     costBuy: 100
@@ -370,6 +404,10 @@ items:
     armor: 14
     listOrder: 2007
   - type: STR_BASIC_SHOTGUN_SLUG
+    categories:
+      - STR_CAT_SHOTGUN
+      - STR_CAT_BALLISTIC_DAMAGE
+      - STR_AMMUNITION
     battleType: 2
     size: 0.1
     costBuy: 100
@@ -385,6 +423,10 @@ items:
     armor: 14
     listOrder: 2008
   - type: STR_BASIC_MARKSMAN
+    categories:
+      - STR_CAT_RIFLE
+      - STR_CAT_MARKSMAN_RIFLE
+      - STR_CAT_BALLISTIC_DAMAGE
     battleType: 1
     size: 0.2
     costBuy: 5500
@@ -422,6 +464,11 @@ items:
     armor: 23
     listOrder: 2009
   - type: STR_BASIC_MARKSMAN_AMMO
+    categories:
+      - STR_CAT_RIFLE
+      - STR_CAT_MARKSMAN_RIFLE
+      - STR_CAT_BALLISTIC_DAMAGE
+      - STR_AMMUNITION
     battleType: 2
     size: 0.1
     costBuy: 200
@@ -437,6 +484,10 @@ items:
     armor: 12
     listOrder: 2010
   - type: STR_BASIC_SNIPER
+    categories:
+      - STR_CAT_RIFLE
+      - STR_CAT_SNIPER_RIFLE
+      - STR_CAT_BALLISTIC_DAMAGE
     battleType: 1
     size: 0.3
     costBuy: 8200
@@ -471,6 +522,11 @@ items:
     armor: 20
     listOrder: 2011
   - type: STR_BASIC_SNIPER_AMMO
+    categories:
+      - STR_CAT_RIFLE
+      - STR_CAT_SNIPER_RIFLE
+      - STR_CAT_BALLISTIC_DAMAGE
+      - STR_AMMUNITION
     battleType: 2
     size: 0.1
     costBuy: 300
@@ -486,6 +542,10 @@ items:
     armor: 12
     listOrder: 2012
   - type: STR_BASIC_MACHINEGUN
+    categories:
+      - STR_CAT_AUTOMATIC_WEAPONS
+      - STR_CAT_MACHINEGUN
+      - STR_CAT_BALLISTIC_DAMAGE
     battleType: 1
     size: 0.3
     costBuy: 7200
@@ -523,6 +583,11 @@ items:
     armor: 30
     listOrder: 2013
   - type: STR_BASIC_MACHINEGUN_AMMO
+    categories:
+      - STR_CAT_AUTOMATIC_WEAPONS
+      - STR_CAT_MACHINEGUN
+      - STR_CAT_BALLISTIC_DAMAGE
+      - STR_AMMUNITION
     battleType: 2
     size: 0.2
     costBuy: 500
@@ -540,6 +605,10 @@ items:
     armor: 20
     listOrder: 2014
   - type: STR_BASIC_MINIGUN
+    categories:
+      - STR_CAT_AUTOMATIC_WEAPONS
+      - STR_CAT_MINIGUN
+      - STR_CAT_BALLISTIC_DAMAGE
     battleType: 1
     size: 0.3
     costBuy: 13500
@@ -577,6 +646,11 @@ items:
     armor: 30
     listOrder: 2015
   - type: STR_BASIC_MINIGUN_AMMO
+    categories:
+      - STR_CAT_AUTOMATIC_WEAPONS
+      - STR_CAT_MINIGUN
+      - STR_CAT_BALLISTIC_DAMAGE
+      - STR_AMMUNITION
     battleType: 2
     size: 0.1
     costBuy: 500
@@ -594,6 +668,10 @@ items:
     armor: 20
     listOrder: 2016
   - type: STR_BASIC_HEAVY
+    categories:
+      - STR_CAT_RIFLE
+      - STR_CAT_HEAVY_RIFLE
+      - STR_CAT_BALLISTIC_DAMAGE
     battleType: 1
     size: 0.3
     costBuy: 15000
@@ -629,6 +707,11 @@ items:
     armor: 30
     listOrder: 2017
   - type: STR_BASIC_HEAVY_AMMO
+    categories:
+      - STR_CAT_RIFLE
+      - STR_CAT_HEAVY_RIFLE
+      - STR_CAT_BALLISTIC_DAMAGE
+      - STR_AMMUNITION
     battleType: 2
     size: 0.1
     costBuy: 300
@@ -646,6 +729,10 @@ items:
     armor: 20
     listOrder: 2018
   - type: STR_LASER_PISTOL
+    categories:
+      - STR_CAT_SIDEARM
+      - STR_CAT_PISTOL
+      - STR_CAT_LASER_DAMAGE
     battleType: 1
     size: 0.1
     costSell: 20000
@@ -682,6 +769,10 @@ items:
     armor: 25
     listOrder: 2019
   - type: STR_LASER_SMG
+    categories:
+      - STR_CAT_SIDEARM
+      - STR_CAT_SMG
+      - STR_CAT_LASER_DAMAGE
     battleType: 1
     size: 0.1
     costSell: 28000
@@ -719,6 +810,10 @@ items:
     armor: 27
     listOrder: 2020
   - type: STR_LASER_RIFLE
+    categories:
+      - STR_CAT_RIFLE
+      - STR_CAT_ASSAULT_RIFLE
+      - STR_CAT_LASER_DAMAGE
     battleType: 1
     size: 0.2
     costSell: 36900
@@ -758,6 +853,9 @@ items:
     armor: 30
     listOrder: 2021
   - type: STR_LASER_SHOTGUN
+    categories:
+      - STR_CAT_SHOTGUN
+      - STR_CAT_LASER_DAMAGE
     battleType: 1
     size: 0.3
     costSell: 36100
@@ -796,6 +894,10 @@ items:
     armor: 25
     listOrder: 2022
   - type: STR_LASER_MARKSMAN
+    categories:
+      - STR_CAT_RIFLE
+      - STR_CAT_MARKSMAN_RIFLE
+      - STR_CAT_LASER_DAMAGE
     battleType: 1
     size: 0.2
     costSell: 38000
@@ -836,6 +938,10 @@ items:
     armor: 27
     listOrder: 2023
   - type: STR_LASER_SNIPER
+    categories:
+      - STR_CAT_RIFLE
+      - STR_CAT_SNIPER_RIFLE
+      - STR_CAT_LASER_DAMAGE
     battleType: 1
     size: 0.3
     costSell: 51100
@@ -873,6 +979,10 @@ items:
     armor: 25
     listOrder: 2024
   - type: STR_LASER_MACHINEGUN
+    categories:
+      - STR_CAT_AUTOMATIC_WEAPONS
+      - STR_CAT_MACHINEGUN
+      - STR_CAT_LASER_DAMAGE
     battleType: 1
     size: 0.3
     costSell: 53000
@@ -913,6 +1023,10 @@ items:
     armor: 30
     listOrder: 2025
   - type: STR_LASER_MINIGUN
+    categories:
+      - STR_CAT_AUTOMATIC_WEAPONS
+      - STR_CAT_MINIGUN
+      - STR_CAT_LASER_DAMAGE
     battleType: 1
     size: 0.1
     costSell: 65400
@@ -953,6 +1067,10 @@ items:
     armor: 30
     listOrder: 2026
   - type: STR_LASER_HEAVY
+    categories:
+      - STR_CAT_RIFLE
+      - STR_CAT_HEAVY_RIFLE
+      - STR_CAT_LASER_DAMAGE
     battleType: 1
     size: 0.3
     costSell: 61000
@@ -993,6 +1111,10 @@ items:
   - type: STR_XCOM_PLASMA_PISTOL
     requires:
       - STR_PLASMA_SIDEARMS
+    categories:
+      - STR_CAT_SIDEARM
+      - STR_CAT_PISTOL
+      - STR_CAT_PLASMA_DAMAGE
     battleType: 1
     size: 0.1
     costSell: 84000
@@ -1022,10 +1144,6 @@ items:
     overwatchShot: snap
     invWidth: 1
     invHeight: 2
-    
-    
-    
-    
     aiRangeClose: 4
     aiRangeMid: 6
     aiRangeLong: 10
@@ -1047,6 +1165,11 @@ items:
   - type: STR_PLASMA_PISTOL
     requires:
       - STR_ALIEN_PLASMA
+    categories:
+      - STR_CAT_SIDEARM
+      - STR_CAT_PISTOL
+      - STR_CAT_PLASMA_DAMAGE
+      - STR_CAT_ALIEN_EQUIPMENT
     battleType: 1
     size: 0.1
     costSell: 84000
@@ -1076,10 +1199,6 @@ items:
     overwatchShot: snap
     invWidth: 1
     invHeight: 2
-    
-    
-    
-    
     aiRangeClose: 4
     aiRangeMid: 6
     aiRangeLong: 10
@@ -1101,6 +1220,11 @@ items:
   - type: STR_PLASMA_PISTOL_AMMO
     requires:
       - STR_PLASMA_SIDEARMS
+    categories:
+      - STR_CAT_SIDEARM
+      - STR_CAT_PISTOL
+      - STR_CAT_PLASMA_DAMAGE
+      - STR_AMMUNITION
     battleType: 2
     size: 0.1
     costSell: 4440
@@ -1118,6 +1242,10 @@ items:
   - type: STR_XCOM_PLASMA_SMG
     requires:
       - STR_PLASMA_SIDEARMS
+    categories:
+      - STR_CAT_SIDEARM
+      - STR_CAT_SMG
+      - STR_CAT_PLASMA_DAMAGE
     battleType: 1
     size: 0.1
     costSell: 102000
@@ -1148,10 +1276,6 @@ items:
     overwatchShot: burst
     invWidth: 1
     invHeight: 2
-    
-    
-    
-    
     aiRangeClose: 6
     aiRangeMid: 10
     aiRangeLong: 14
@@ -1172,6 +1296,11 @@ items:
   - type: STR_PLASMA_SMG
     requires:
       - STR_ALIEN_PLASMA
+    categories:
+      - STR_CAT_SIDEARM
+      - STR_CAT_SMG
+      - STR_CAT_PLASMA_DAMAGE
+      - STR_CAT_ALIEN_EQUIPMENT
     battleType: 1
     size: 0.1
     costSell: 102000
@@ -1202,10 +1331,6 @@ items:
     overwatchShot: burst
     invWidth: 1
     invHeight: 2
-    
-    
-    
-    
     aiRangeClose: 6
     aiRangeMid: 10
     aiRangeLong: 14
@@ -1226,6 +1351,11 @@ items:
   - type: STR_PLASMA_SMG_AMMO
     requires:
       - STR_PLASMA_SIDEARMS
+    categories:
+      - STR_CAT_SIDEARM
+      - STR_CAT_SMG
+      - STR_CAT_PLASMA_DAMAGE
+      - STR_AMMUNITION
     battleType: 2
     size: 0.1
     costSell: 6000
@@ -1243,6 +1373,10 @@ items:
   - type: STR_XCOM_PLASMA_RIFLE
     requires:
       - STR_PLASMA_ASSAULT_WEAPONS
+    categories:
+      - STR_CAT_RIFLE
+      - STR_CAT_ASSAULT_RIFLE
+      - STR_CAT_PLASMA_DAMAGE
     battleType: 1
     size: 0.2
     costSell: 126500
@@ -1251,7 +1385,6 @@ items:
     floorSprite: 1551
     handSprite: 1184
     bulletSprite: 8
-    bulletSprites: 200
     fireSound: 18
     compatibleAmmo:
       - STR_PLASMA_RIFLE_AMMO
@@ -1276,10 +1409,6 @@ items:
     overwatchShot: burst
     invWidth: 1
     invHeight: 3
-    
-    
-    
-    
     aiRangeClose: 10
     aiRangeMid: 17
     aiRangeLong: 24
@@ -1302,6 +1431,11 @@ items:
   - type: STR_PLASMA_RIFLE
     requires:
       - STR_ALIEN_PLASMA
+    categories:
+      - STR_CAT_RIFLE
+      - STR_CAT_ASSAULT_RIFLE
+      - STR_CAT_PLASMA_DAMAGE
+      - STR_CAT_ALIEN_EQUIPMENT
     battleType: 1
     size: 0.2
     costSell: 126500
@@ -1310,7 +1444,6 @@ items:
     floorSprite: 1182
     handSprite: 1184
     bulletSprite: 8
-    bulletSpeed: 10
     fireSound: 18
     compatibleAmmo:
       - STR_PLASMA_RIFLE_AMMO
@@ -1335,10 +1468,6 @@ items:
     overwatchShot: burst
     invWidth: 1
     invHeight: 3
-    
-    
-    
-    
     aiRangeClose: 10
     aiRangeMid: 17
     aiRangeLong: 24
@@ -1361,6 +1490,11 @@ items:
   - type: STR_PLASMA_RIFLE_AMMO
     requires:
       - STR_PLASMA_ASSAULT_WEAPONS
+    categories:
+      - STR_CAT_RIFLE
+      - STR_CAT_ASSAULT_RIFLE
+      - STR_CAT_PLASMA_DAMAGE
+      - STR_AMMUNITION
     battleType: 2
     size: 0.1
     costSell: 6290
@@ -1378,6 +1512,9 @@ items:
   - type: STR_XCOM_PLASMA_SHOTGUN
     requires:
       - STR_PLASMA_ASSAULT_WEAPONS
+    categories:
+      - STR_CAT_SHOTGUN
+      - STR_CAT_PLASMA_DAMAGE
     battleType: 1
     size: 0.3
     costSell: 93500
@@ -1408,10 +1545,6 @@ items:
     overwatchShot: snap
     invWidth: 1
     invHeight: 3
-    
-    
-    
-    
     aiRangeClose: 4
     aiRangeMid: 8
     aiRangeLong: 9
@@ -1431,6 +1564,10 @@ items:
   - type: STR_PLASMA_SHOTGUN
     requires:
       - STR_ALIEN_PLASMA
+    categories:
+      - STR_CAT_SHOTGUN
+      - STR_CAT_PLASMA_DAMAGE
+      - STR_CAT_ALIEN_EQUIPMENT
     battleType: 1
     size: 0.3
     costSell: 93500
@@ -1461,10 +1598,6 @@ items:
     overwatchShot: snap
     invWidth: 1
     invHeight: 3
-    
-    
-    
-    
     aiRangeClose: 4
     aiRangeMid: 8
     aiRangeLong: 9
@@ -1484,6 +1617,10 @@ items:
   - type: STR_PLASMA_SHOTGUN_AMMO
     requires:
       - STR_PLASMA_ASSAULT_WEAPONS
+    categories:
+      - STR_CAT_SHOTGUN
+      - STR_CAT_PLASMA_DAMAGE
+      - STR_AMMUNITION
     battleType: 2
     size: 0.1
     costSell: 8240
@@ -1502,6 +1639,10 @@ items:
   - type: STR_XCOM_PLASMA_MARKSMAN
     requires:
       - STR_PRECISION_PLASMA_WEAPONS
+    categories:
+      - STR_CAT_RIFLE
+      - STR_CAT_MARKSMAN_RIFLE
+      - STR_CAT_PLASMA_DAMAGE
     battleType: 1
     size: 0.2
     costSell: 141000
@@ -1535,10 +1676,6 @@ items:
     overwatchShot: burst
     invWidth: 1
     invHeight: 3
-    
-    
-    
-    
     aiRangeClose: 10
     aiRangeMid: 30
     aiRangeLong: 45
@@ -1559,6 +1696,11 @@ items:
   - type: STR_PLASMA_MARKSMAN
     requires:
       - STR_ALIEN_PLASMA
+    categories:
+      - STR_CAT_RIFLE
+      - STR_CAT_MARKSMAN_RIFLE
+      - STR_CAT_PLASMA_DAMAGE
+      - STR_CAT_ALIEN_EQUIPMENT
     battleType: 1
     size: 0.2
     costSell: 141000
@@ -1592,10 +1734,6 @@ items:
     overwatchShot: burst
     invWidth: 1
     invHeight: 3
-    
-    
-    
-    
     aiRangeClose: 10
     aiRangeMid: 30
     aiRangeLong: 45
@@ -1616,6 +1754,11 @@ items:
   - type: STR_PLASMA_MARKSMAN_AMMO
     requires:
       - STR_PRECISION_PLASMA_WEAPONS
+    categories:
+      - STR_CAT_RIFLE
+      - STR_CAT_MARKSMAN_RIFLE
+      - STR_CAT_PLASMA_DAMAGE
+      - STR_AMMUNITION
     battleType: 2
     size: 0.1
     costSell: 7100
@@ -1633,6 +1776,10 @@ items:
   - type: STR_XCOM_PLASMA_SNIPER
     requires:
       - STR_PRECISION_PLASMA_WEAPONS
+    categories:
+      - STR_CAT_RIFLE
+      - STR_CAT_SNIPER_RIFLE
+      - STR_CAT_PLASMA_DAMAGE
     battleType: 1
     size: 0.3
     costSell: 157300
@@ -1663,10 +1810,6 @@ items:
     overwatchShot: aimed
     invWidth: 1
     invHeight: 3
-    
-    
-    
-    
     aiRangeClose: 10
     aiRangeMid: 20
     aiRangeLong: 100
@@ -1686,6 +1829,11 @@ items:
   - type: STR_PLASMA_SNIPER
     requires:
       - STR_ALIEN_PLASMA
+    categories:
+      - STR_CAT_RIFLE
+      - STR_CAT_SNIPER_RIFLE
+      - STR_CAT_PLASMA_DAMAGE
+      - STR_CAT_ALIEN_EQUIPMENT
     battleType: 1
     size: 0.3
     costSell: 157300
@@ -1716,10 +1864,6 @@ items:
     overwatchShot: aimed
     invWidth: 1
     invHeight: 3
-    
-    
-    
-    
     aiRangeClose: 10
     aiRangeMid: 20
     aiRangeLong: 100
@@ -1739,6 +1883,11 @@ items:
   - type: STR_PLASMA_SNIPER_AMMO
     requires:
       - STR_PRECISION_PLASMA_WEAPONS
+    categories:
+      - STR_CAT_RIFLE
+      - STR_CAT_SNIPER_RIFLE
+      - STR_CAT_PLASMA_DAMAGE
+      - STR_AMMUNITION
     battleType: 2
     size: 0.1
     costSell: 8240
@@ -1756,6 +1905,10 @@ items:
   - type: STR_XCOM_PLASMA_MACHINEGUN
     requires:
       - STR_HEAVY_PLASMA_WEAPONS
+    categories:
+      - STR_CAT_HEAVY_WEAPON
+      - STR_CAT_MACHINEGUN
+      - STR_CAT_PLASMA_DAMAGE
     battleType: 1
     size: 0.3
     costSell: 203000
@@ -1789,10 +1942,6 @@ items:
     overwatchShot: auto
     invWidth: 2
     invHeight: 3
-    
-    
-    
-    
     aiRangeClose: 4
     aiRangeMid: 12
     aiRangeLong: 24
@@ -1818,6 +1967,11 @@ items:
   - type: STR_PLASMA_MACHINEGUN
     requires:
       - STR_ALIEN_PLASMA
+    categories:
+      - STR_CAT_HEAVY_WEAPON
+      - STR_CAT_MACHINEGUN
+      - STR_CAT_PLASMA_DAMAGE
+      - STR_CAT_ALIEN_EQUIPMENT
     battleType: 1
     size: 0.3
     costSell: 203000
@@ -1851,10 +2005,6 @@ items:
     overwatchShot: auto
     invWidth: 2
     invHeight: 3
-    
-    
-    
-    
     aiRangeClose: 4
     aiRangeMid: 12
     aiRangeLong: 24
@@ -1880,6 +2030,11 @@ items:
   - type: STR_PLASMA_MACHINEGUN_AMMO
     requires:
       - STR_HEAVY_PLASMA_WEAPONS
+    categories:
+      - STR_CAT_HEAVY_WEAPON
+      - STR_CAT_MACHINEGUN
+      - STR_CAT_PLASMA_DAMAGE
+      - STR_AMMUNITION
     battleType: 2
     size: 0.1
     costSell: 6290
@@ -1897,6 +2052,10 @@ items:
   - type: STR_XCOM_PLASMA_MINIGUN
     requires:
       - STR_HEAVY_PLASMA_WEAPONS
+    categories:
+      - STR_CAT_HEAVY_WEAPON
+      - STR_CAT_MINIGUN
+      - STR_CAT_PLASMA_DAMAGE
     battleType: 1
     size: 0.3
     costSell: 231000
@@ -1930,10 +2089,6 @@ items:
     overwatchShot: auto
     invWidth: 2
     invHeight: 3
-    
-    
-    
-    
     aiRangeClose: 4
     aiRangeMid: 8
     aiRangeLong: 12
@@ -1956,6 +2111,11 @@ items:
   - type: STR_PLASMA_MINIGUN
     requires:
       - STR_ALIEN_PLASMA
+    categories:
+      - STR_CAT_HEAVY_WEAPON
+      - STR_CAT_MINIGUN
+      - STR_CAT_PLASMA_DAMAGE
+      - STR_CAT_ALIEN_EQUIPMENT
     battleType: 1
     size: 0.3
     costSell: 231000
@@ -1989,10 +2149,6 @@ items:
     overwatchShot: auto
     invWidth: 2
     invHeight: 3
-    
-    
-    
-    
     aiRangeClose: 4
     aiRangeMid: 8
     aiRangeLong: 12
@@ -2015,6 +2171,11 @@ items:
   - type: STR_PLASMA_MINIGUN_AMMO
     requires:
       - STR_HEAVY_PLASMA_WEAPONS
+    categories:
+      - STR_CAT_HEAVY_WEAPON
+      - STR_CAT_MINIGUN
+      - STR_CAT_PLASMA_DAMAGE
+      - STR_AMMUNITION
     battleType: 2
     size: 0.1
     costSell: 400
@@ -2034,6 +2195,10 @@ items:
   - type: STR_XCOM_PLASMA_HEAVY
     requires:
       - STR_HEAVY_PLASMA_WEAPONS
+    categories:
+      - STR_RIFLE
+      - STR_CAT_HEAVY_RIFLE
+      - STR_CAT_PLASMA_DAMAGE
     battleType: 1
     size: 0.2
     costSell: 221000
@@ -2065,10 +2230,6 @@ items:
     overwatchShot: aimed
     invWidth: 2
     invHeight: 3
-    
-    
-    
-    
     aiRangeClose: 10
     aiRangeMid: 12
     aiRangeLong: 20
@@ -2088,6 +2249,11 @@ items:
   - type: STR_PLASMA_HEAVY
     requires:
       - STR_ALIEN_PLASMA
+    categories:
+      - STR_RIFLE
+      - STR_CAT_HEAVY_RIFLE
+      - STR_CAT_PLASMA_DAMAGE
+      - STR_CAT_ALIEN_EQUIPMENT
     battleType: 1
     size: 0.2
     costSell: 221000
@@ -2119,10 +2285,6 @@ items:
     overwatchShot: aimed
     invWidth: 2
     invHeight: 3
-    
-    
-    
-    
     aiRangeClose: 10
     aiRangeMid: 12
     aiRangeLong: 20
@@ -2142,6 +2304,11 @@ items:
   - type: STR_PLASMA_HEAVY_AMMO
     requires:
       - STR_HEAVY_PLASMA_WEAPONS
+    categories:
+      - STR_RIFLE
+      - STR_CAT_HEAVY_RIFLE
+      - STR_CAT_PLASMA_DAMAGE
+      - STR_AMMUNITION
     battleType: 2
     size: 0.3
     costSell: 9590
@@ -2159,6 +2326,11 @@ items:
   - type: STR_ARC_RIFLE
     requires:
       - STR_ARC_WEAPONS
+    categories:
+      - STR_CAT_LAUNCHER
+      - STR_CAT_WAYPOINT_WEAPON
+      - STR_CAT_ARC_RIFLE
+      - _STR_CAT_PLASMA_DAMAGE
     battleType: 1
     size: 0.3
     costSell: 236000
@@ -2167,7 +2339,6 @@ items:
     floorSprite: 1022
     handSprite: 1024
     bulletSprite: 12
-    bulletSprites: 1000
     fireSound: 18
     compatibleAmmo:
       - STR_ARC_RIFLE_AMMO
@@ -2177,13 +2348,13 @@ items:
     oneHandedPenalty: 1
     blockBothHands: true
     tuAimed: 65
-    bulletSpeed: 20
+    bulletSpeed: 5
     reactionsModifier: 1
     overwatchModifier: 110
     overwatchRange: 35
     overwatchRadius: 1
     overwatchShot: aimed
-    waypoints: 500
+    waypoints: 2
     invWidth: 1
     invHeight: 3
     recoveryPoints: 4
@@ -2192,6 +2363,12 @@ items:
   - type: STR_ARC_RIFLE_AMMO
     requires:
       - STR_ARC_WEAPONS
+    categories:
+      - STR_CAT_LAUNCHER
+      - STR_CAT_WAYPOINT_WEAPON
+      - STR_CAT_ARC_RIFLE
+      - _STR_CAT_PLASMA_DAMAGE
+      - STR_AMMUNITION
     battleType: 2
     size: 0.1
     costSell: 11000
@@ -2207,6 +2384,9 @@ items:
     armor: 25
     listOrder: 2056
   - type: STR_STUN_ROD
+    categories:
+      - STR_CAT_MELEE_WEAPON
+      - STR_CAT_STUN_DAMAGE
     battleType: 3
     size: 0.1
     costBuy: 1260
@@ -2227,6 +2407,10 @@ items:
     armor: 20
     listOrder: 2057
   - type: STR_ELECTROLASER
+    categories:
+      - STR_CAT_SIDEARM
+      - STR_CAT_PISTOL
+      - STR_CAT_STUN_DAMAGE
     battleType: 1
     size: 0.2
     costBuy: 0
@@ -2255,6 +2439,11 @@ items:
     armor: 15
     listOrder: 2058
   - type: STR_ELECTROLASER_PACK
+    categories:
+      - STR_CAT_SIDEARM
+      - STR_CAT_PISTOL
+      - STR_CAT_STUN_DAMAGE
+      - STR_AMMUNITION
     battleType: 2
     size: 0.1
     costBuy: 0
@@ -2272,6 +2461,11 @@ items:
     armor: 10
     listOrder: 2059
   - type: STR_GRENADE_LAUNCHER
+    categories:
+      - STR_CAT_LAUNCHER
+      - STR_CAT_GRENADE_LAUNCHER
+      - STR_CAT_EXPLOSIVE_DAMAGE
+      - STR_CAT_INCENDIARY_DAMAGE
     battleType: 1
     size: 0.3
     costBuy: 12500
@@ -2315,6 +2509,11 @@ items:
     listOrder: 2060
     maxRange: 25
   - type: STR_GL_HE_AMMO
+    categories:
+      - STR_CAT_LAUNCHER
+      - STR_CAT_GRENADE_LAUNCHER
+      - STR_CAT_EXPLOSIVE_DAMAGE
+      - STR_AMMUNITION
     battleType: 2
     size: 0.1
     costBuy: 200
@@ -2335,6 +2534,11 @@ items:
     armor: 15
     listOrder: 2061
   - type: STR_GL_HE_FISSION_AMMO
+    categories:
+      - STR_CAT_LAUNCHER
+      - STR_CAT_GRENADE_LAUNCHER
+      - STR_CAT_EXPLOSIVE_DAMAGE
+      - STR_AMMUNITION
     battleType: 2
     size: 0.1
     costSell: 6000
@@ -2354,6 +2558,11 @@ items:
     armor: 15
     listOrder: 2062
   - type: STR_GL_HE_FUSION_AMMO
+    categories:
+      - STR_CAT_LAUNCHER
+      - STR_CAT_GRENADE_LAUNCHER
+      - STR_CAT_EXPLOSIVE_DAMAGE
+      - STR_AMMUNITION
     battleType: 2
     size: 0.1
     costSell: 11000
@@ -2373,6 +2582,11 @@ items:
     armor: 15
     listOrder: 2063
   - type: STR_GL_I_AMMO
+    categories:
+      - STR_CAT_LAUNCHER
+      - STR_CAT_GRENADE_LAUNCHER
+      - STR_CAT_INCENDIARY_DAMAGE
+      - STR_AMMUNITION
     battleType: 2
     size: 0.1
     costBuy: 450
@@ -2395,6 +2609,11 @@ items:
   - type: STR_SMALL_LAUNCHER
     requires:
       - STR_SMALL_LAUNCHER
+    categories:
+      - STR_CAT_LAUNCHER
+      - STR_CAT_SMALL_LAUNCHER
+      - STR_CAT_STUN_DAMAGE
+      - STR_CAT_EXPLOSIVE_DAMAGE
     battleType: 1
     size: 0.2
     costSell: 120000
@@ -2429,6 +2648,12 @@ items:
   - type: STR_STUN_BOMB
     requires:
       - STR_STUN_BOMB
+    categories:
+      - STR_CAT_LAUNCHER
+      - STR_CAT_SMALL_LAUNCHER
+      - STR_CAT_STUN_DAMAGE
+      - STR_CAT_EXPLOSIVE_DAMAGE
+      - STR_AMMUNITION
     battleType: 2
     size: 0.1
     costSell: 15200
@@ -2445,6 +2670,10 @@ items:
     armor: 25
     listOrder: 2066
   - type: STR_ROCKET_LAUNCHER
+    categories:
+      - STR_CAT_LAUNCHER
+      - STR_CAT_ROCKET_LAUNCHER
+      - STR_CAT_EXPLOSIVE_DAMAGE
     battleType: 1
     size: 0.4
     costBuy: 4000
@@ -2480,6 +2709,11 @@ items:
     armor: 30
     listOrder: 2067
   - type: STR_SMALL_ROCKET
+    categories:
+      - STR_CAT_LAUNCHER
+      - STR_CAT_ROCKET_LAUNCHER
+      - STR_CAT_EXPLOSIVE_DAMAGE
+      - STR_CAT_AMMUNITION
     battleType: 2
     size: 0.2
     costBuy: 600
@@ -2497,6 +2731,11 @@ items:
     armor: 15
     listOrder: 2068
   - type: STR_PLASMA_ROCKET
+    categories:
+      - STR_CAT_LAUNCHER
+      - STR_CAT_ROCKET_LAUNCHER
+      - STR_CAT_PLASMA_DAMAGE
+      - STR_CAT_AMMUNITION
     battleType: 2
     size: 0.2
     costSell: 18700
@@ -2513,6 +2752,11 @@ items:
     armor: 15
     listOrder: 2069
   - type: STR_LARGE_ROCKET
+    categories:
+      - STR_CAT_LAUNCHER
+      - STR_CAT_ROCKET_LAUNCHER
+      - STR_CAT_EXPLOSIVE_DAMAGE
+      - STR_CAT_AMMUNITION
     battleType: 2
     size: 0.2
     costBuy: 900
@@ -2532,6 +2776,11 @@ items:
     armor: 15
     listOrder: 2070
   - type: STR_FISSION_ROCKET
+    categories:
+      - STR_CAT_LAUNCHER
+      - STR_CAT_ROCKET_LAUNCHER
+      - STR_CAT_EXPLOSIVE_DAMAGE
+      - STR_CAT_AMMUNITION
     battleType: 2
     size: 0.2
     costSell: 32300
@@ -2550,6 +2799,11 @@ items:
     armor: 15
     listOrder: 2071
   - type: STR_FUSION_ROCKET
+    categories:
+      - STR_CAT_LAUNCHER
+      - STR_CAT_ROCKET_LAUNCHER
+      - STR_CAT_EXPLOSIVE_DAMAGE
+      - STR_CAT_AMMUNITION
     battleType: 2
     size: 0.2
     costSell: 51000
@@ -2568,6 +2822,11 @@ items:
     armor: 15
     listOrder: 2072
   - type: STR_INCENDIARY_ROCKET
+    categories:
+      - STR_CAT_LAUNCHER
+      - STR_CAT_ROCKET_LAUNCHER
+      - STR_CAT_INCENDIARY_DAMAGE
+      - STR_CAT_AMMUNITION
     battleType: 2
     size: 0.2
     costBuy: 1200
@@ -2587,6 +2846,11 @@ items:
   - type: STR_ARC_LAUNCHER
     requires:
       - STR_ARC_WEAPONS
+    categories:
+      - STR_CAT_LAUNCHER
+      - STR_CAT_WAYPOINT_WEAPON
+      - STR_CAT_ARC_LAUNCHER
+      - STR_CAT_EXPLOSIVE_DAMAGE
     battleType: 1
     size: 0.5
     costSell: 300500
@@ -2621,6 +2885,11 @@ items:
   - type: STR_BLASTER_LAUNCHER
     requires:
       - STR_BLASTER_LAUNCHER
+    categories:
+      - STR_CAT_LAUNCHER
+      - STR_CAT_WAYPOINT_WEAPON
+      - STR_CAT_BLASTER_LAUNCHER
+      - STR_CAT_EXPLOSIVE_DAMAGE
     battleType: 1
     size: 0.3
     costSell: 144000
@@ -2650,6 +2919,13 @@ items:
   - type: STR_BLASTER_BOMB
     requires:
       - STR_BLASTER_LAUNCHER
+    categories:
+      - STR_CAT_LAUNCHER
+      - STR_CAT_WAYPOINT_WEAPON
+      - STR_CAT_ARC_LAUNCHER
+      - STR_CAT_BLASTER_LAUNCHER
+      - STR_CAT_EXPLOSIVE_DAMAGE
+      - STR_CAT_AMMUNITION
     battleType: 2
     size: 0.2
     costSell: 17028
@@ -2669,6 +2945,9 @@ items:
     armor: 40
     listOrder: 2076
   - type: STR_GRENADE
+    categories:
+      - STR_CAT_GRENADE
+      - STR_CAT_EXPLOSIVE_DAMAGE
     battleType: 4
     size: 0.1
     costBuy: 300
@@ -2685,6 +2964,9 @@ items:
   - type: STR_ALIEN_GRENADE
     requires:
       - STR_ALIEN_GRENADE
+    categories:
+      - STR_CAT_GRENADE
+      - STR_CAT_EXPLOSIVE_DAMAGE
     battleType: 4
     size: 0.1
     costSell: 14850
@@ -2699,6 +2981,9 @@ items:
     armor: 30
     listOrder: 2078
   - type: STR_HIGH_EXPLOSIVE
+    categories:
+      - STR_CAT_GRENADE
+      - STR_CAT_EXPLOSIVE_DAMAGE
     battleType: 4
     size: 0.2
     costBuy: 1500
@@ -2715,6 +3000,9 @@ items:
     armor: 15
     listOrder: 2079
   - type: STR_FISSION_EXPLOSIVE
+    categories:
+      - STR_CAT_GRENADE
+      - STR_CAT_EXPLOSIVE_DAMAGE
     battleType: 4
     size: 0.2
     costSell: 17000
@@ -2730,6 +3018,9 @@ items:
     armor: 20
     listOrder: 2080
   - type: STR_FUSION_EXPLOSIVE
+    categories:
+      - STR_CAT_GRENADE
+      - STR_CAT_EXPLOSIVE_DAMAGE
     battleType: 4
     size: 0.2
     costSell: 53000
@@ -2745,6 +3036,9 @@ items:
     armor: 25
     listOrder: 2081
   - type: STR_INCENDIARY_GRENADE
+    categories:
+      - STR_CAT_GRENADE
+      - STR_CAT_INCENDIARY_DAMAGE
     battleType: 4
     size: 0.1
     costBuy: 260
@@ -2759,6 +3053,9 @@ items:
     armor: 12
     listOrder: 2082
   - type: STR_SHOCK_GRENADE
+    categories:
+      - STR_CAT_GRENADE
+      - STR_CAT_STUN_DAMAGE
     battleType: 4
     size: 0.1
     costSell: 18500
@@ -2772,6 +3069,9 @@ items:
     armor: 15
     listOrder: 2083
   - type: STR_SMOKE_GRENADE
+    categories:
+      - STR_CAT_GRENADE
+      - STR_CAT_SMOKE
     battleType: 4
     size: 0.1
     costBuy: 150
@@ -2786,6 +3086,9 @@ items:
     armor: 12
     listOrder: 2084
   - type: STR_PROXIMITY_GRENADE
+    categories:
+      - STR_CAT_GRENADE
+      - STR_CAT_EXPLOSIVE_DAMAGE
     battleType: 5
     size: 0.1
     costBuy: 500
@@ -2799,6 +3102,9 @@ items:
     armor: 51
     listOrder: 2085
   - type: STR_ELECTRO_FLARE
+    categories:
+      - STR_CAT_GRENADE
+      - STR_CAT_LIGHT
     battleType: 10
     size: 0.1
     costBuy: 60
@@ -2818,6 +3124,8 @@ items:
     recover: false
     listOrder: 2087
   - type: STR_MOTION_SCANNER
+    categories:
+      - STR_CAT_TOOL
     battleType: 7
     size: 0.1
     costSell: 45600
@@ -2828,6 +3136,9 @@ items:
     armor: 10
     listOrder: 2088
   - type: STR_MEDI_KIT
+    categories:
+      - STR_CAT_TOOL
+      - STR_CAT_MEDICAL
     battleType: 6
     size: 0.1
     costSell: 46500
@@ -2848,6 +3159,9 @@ items:
     armor: 15
     listOrder: 2089
   - type: STR_FIELD_SURGERY_UNIT
+    categories:
+      - STR_CAT_TOOL
+      - STR_CAT_MEDICAL
     battleType: 6
     size: 0.1
     costSell: 127200
@@ -2870,6 +3184,8 @@ items:
   - type: STR_GRAPPLING_HOOK
     requires:
       - STR_SCOUT_ARMOR
+    categories:
+      - STR_CAT_TOOL
     battleType: 1
     size: 0.1
     weight: 3
@@ -2899,6 +3215,9 @@ items:
   - type: STR_HEADLAMP
     requires:
       - STR_BATTLE_LIGHTS
+    categories:
+      - STR_CAT_TOOL
+      - STR_CAT_LIGHT
     battleType: 13
     size: 0.1
     costSell: 500
@@ -2915,6 +3234,9 @@ items:
   - type: STR_NIGHT_VISION_GOGGLES
     requires:
       - STR_NIGHT_VISION
+    categories:
+      - STR_CAT_TOOL
+      - STR_CAT_LIGHT
     battleType: 13
     size: 0.1
     costSell: 75000
@@ -2931,6 +3253,9 @@ items:
   - type: STR_MIND_PROBE
     requires:
       - STR_MIND_PROBE
+    categories:
+      - STR_CAT_TOOL
+      - STR_CAT_PSIONIC
     battleType: 8
     size: 0.1
     costSell: 304000
@@ -2947,6 +3272,10 @@ items:
   - type: STR_PSI_AMP
     requires:
       - STR_PSI_AMP
+    categories:
+      - STR_CAT_TOOL
+      - STR_CAT_PSIONIC
+      - STR_CAT_PSI_AMP
     battleType: 9
     size: 0.1
     costSell: 194700
@@ -2975,6 +3304,11 @@ items:
   - type: STR_PSI_ORB
     requires:
       - STR_PSI_AMP
+    categories:
+      - STR_CAT_TOOL
+      - STR_CAT_PSIONIC
+      - STR_CAT_PSI_AMP
+      - STR_CAT_AMMUNITION
     battleType: 2
     size: 0.1
     costSell: 36700
@@ -2986,6 +3320,10 @@ items:
     armor: 5
     listOrder: 2096
   - type: STR_HWP_BASIC_MACHINEGUN
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_WEAPON
+      - STR_CAT_BALLISTIC_DAMAGE
     battleType: 1
     size: 0.3
     costBuy: 9000
@@ -3025,6 +3363,11 @@ items:
     armor: 50
     listOrder: 2097
   - type: STR_HWP_BASIC_MACHINEGUN_AMMO
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_WEAPON
+      - STR_CAT_BALLISTIC_DAMAGE
+      - STR_CAT_VEHICLE_AMMUNITION
     battleType: 2
     size: 0.3
     costBuy: 1050
@@ -3041,6 +3384,10 @@ items:
     armor: 50
     listOrder: 2098
   - type: STR_HWP_BASIC_MINIGUN
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_WEAPON
+      - STR_CAT_BALLISTIC_DAMAGE
     battleType: 1
     size: 0.3
     costBuy: 16000
@@ -3078,6 +3425,11 @@ items:
     armor: 50
     listOrder: 2099
   - type: STR_HWP_BASIC_MINIGUN_AMMO
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_WEAPON
+      - STR_CAT_BALLISTIC_DAMAGE
+      - STR_CAT_VEHICLE_AMMUNITION
     battleType: 2
     size: 0.1
     costBuy: 1000
@@ -3094,6 +3446,10 @@ items:
     armor: 50
     listOrder: 2100
   - type: STR_HWP_BASIC_LIGHT_CANNON
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_WEAPON
+      - STR_CAT_BALLISTIC_DAMAGE
     battleType: 1
     size: 0.3
     costBuy: 9000
@@ -3128,6 +3484,11 @@ items:
     armor: 50
     listOrder: 2101
   - type: STR_HWP_BASIC_LIGHT_CANNON_AMMO
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_WEAPON
+      - STR_CAT_BALLISTIC_DAMAGE
+      - STR_CAT_VEHICLE_AMMUNITION
     battleType: 2
     size: 0.3
     costBuy: 160
@@ -3145,6 +3506,10 @@ items:
     armor: 50
     listOrder: 2102
   - type: STR_HWP_BASIC_HEAVY_CANNON
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_WEAPON
+      - STR_CAT_BALLISTIC_DAMAGE
     battleType: 1
     size: 1
     costSell: 103600
@@ -3178,6 +3543,11 @@ items:
     armor: 50
     listOrder: 2103
   - type: STR_HWP_BASIC_HEAVY_CANNON_AMMO
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_WEAPON
+      - STR_CAT_BALLISTIC_DAMAGE
+      - STR_CAT_VEHICLE_AMMUNITION
     battleType: 2
     size: 0.1
     costSell: 1500
@@ -3196,6 +3566,10 @@ items:
     armor: 50
     listOrder: 2104
   - type: STR_HWP_LASER_MACHINEGUN
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_WEAPON
+      - STR_CAT_LASER_DAMAGE
     battleType: 1
     size: 0.3
     costSell: 112000
@@ -3238,6 +3612,10 @@ items:
     armor: 50
     listOrder: 2105
   - type: STR_HWP_LASER_MINIGUN
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_WEAPON
+      - STR_CAT_LASER_DAMAGE
     battleType: 1
     size: 0.3
     costSell: 114000
@@ -3278,6 +3656,10 @@ items:
     armor: 50
     listOrder: 2106
   - type: STR_HWP_LASER_LIGHT_CANNON
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_WEAPON
+      - STR_CAT_LASER_DAMAGE
     battleType: 1
     size: 0.3
     costSell: 123000
@@ -3313,6 +3695,10 @@ items:
     armor: 50
     listOrder: 2107
   - type: STR_HWP_LASER_HEAVY_CANNON
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_WEAPON
+      - STR_CAT_LASER_DAMAGE
     battleType: 1
     size: 0.3
     costSell: 294000
@@ -3350,6 +3736,10 @@ items:
     armor: 50
     listOrder: 2108
   - type: STR_HWP_PLASMA_MACHINEGUN
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_WEAPON
+      - STR_CAT_PLASMA_DAMAGE
     battleType: 1
     size: 0.3
     costSell: 195100
@@ -3388,6 +3778,11 @@ items:
     armor: 50
     listOrder: 2109
   - type: STR_HWP_PLASMA_MACHINEGUN_AMMO
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_WEAPON
+      - STR_CAT_PLASMA_DAMAGE
+      - STR_CAT_VEHICLE_AMMUNITION
     battleType: 2
     size: 0.1
     costSell: 73100
@@ -3403,6 +3798,10 @@ items:
     armor: 50
     listOrder: 2110
   - type: STR_HWP_PLASMA_MINIGUN
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_WEAPON
+      - STR_CAT_PLASMA_DAMAGE
     battleType: 1
     size: 0.3
     costSell: 209100
@@ -3439,6 +3838,11 @@ items:
     armor: 50
     listOrder: 2111
   - type: STR_HWP_PLASMA_MINIGUN_AMMO
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_WEAPON
+      - STR_CAT_PLASMA_DAMAGE
+      - STR_CAT_VEHICLE_AMMUNITION
     battleType: 2
     size: 0.1
     costSell: 72100
@@ -3454,6 +3858,10 @@ items:
     armor: 50
     listOrder: 2112
   - type: STR_HWP_PLASMA_LIGHT_CANNON
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_WEAPON
+      - STR_CAT_PLASMA_DAMAGE
     battleType: 1
     size: 0.3
     costSell: 189100
@@ -3487,6 +3895,11 @@ items:
     armor: 50
     listOrder: 2113
   - type: STR_HWP_PLASMA_LIGHT_CANNON_AMMO
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_WEAPON
+      - STR_CAT_PLASMA_DAMAGE
+      - STR_CAT_VEHICLE_AMMUNITION
     battleType: 2
     size: 0.4
     costSell: 105000
@@ -3503,6 +3916,10 @@ items:
     armor: 50
     listOrder: 2114
   - type: STR_HWP_PLASMA_HEAVY_CANNON
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_WEAPON
+      - STR_CAT_PLASMA_DAMAGE
     battleType: 1
     size: 1
     costSell: 383100
@@ -3536,6 +3953,11 @@ items:
     armor: 50
     listOrder: 2115
   - type: STR_HWP_PLASMA_HEAVY_CANNON_AMMO
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_WEAPON
+      - STR_CAT_PLASMA_DAMAGE
+      - STR_CAT_VEHICLE_AMMUNITION
     battleType: 2
     size: 0.1
     costSell: 26900
@@ -3554,6 +3976,12 @@ items:
     armor: 50
     listOrder: 2116
   - type: STR_HWP_MISSILE_LAUNCHER
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_WEAPON
+      - STR_CAT_EXPLOSIVE_DAMAGE
+      - STR_CAT_PLASMA_DAMAGE
+      - STR_CAT_INCENDIARY_DAMAGE
     battleType: 1
     size: 0.4
     costBuy: 7300
@@ -3592,6 +4020,11 @@ items:
     armor: 50
     listOrder: 2117
   - type: STR_HWP_HEAT_MISSILE
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_WEAPON
+      - STR_CAT_EXPLOSIVE_DAMAGE
+      - STR_CAT_VEHICLE_AMMUNITION
     battleType: 2
     size: 0.1
     costBuy: 1500
@@ -3609,6 +4042,11 @@ items:
     armor: 50
     listOrder: 2118
   - type: STR_HWP_PLASMA_MISSILE
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_WEAPON
+      - STR_CAT_PLASMA_DAMAGE
+      - STR_CAT_VEHICLE_AMMUNITION
     battleType: 2
     size: 0.1
     costSell: 18200
@@ -3625,6 +4063,11 @@ items:
     armor: 50
     listOrder: 2119
   - type: STR_HWP_THERMOBARIC_MISSILE
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_WEAPON
+      - STR_CAT_EXPLOSIVE_DAMAGE
+      - STR_CAT_VEHICLE_AMMUNITION
     battleType: 2
     size: 0.1
     costBuy: 1700
@@ -3644,6 +4087,11 @@ items:
     armor: 50
     listOrder: 2120
   - type: STR_HWP_FISSION_MISSILE
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_WEAPON
+      - STR_CAT_EXPLOSIVE_DAMAGE
+      - STR_CAT_VEHICLE_AMMUNITION
     battleType: 2
     size: 0.1
     costSell: 23300
@@ -3662,6 +4110,11 @@ items:
     armor: 50
     listOrder: 2121
   - type: STR_HWP_FUSION_MISSILE
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_WEAPON
+      - STR_CAT_EXPLOSIVE_DAMAGE
+      - STR_CAT_VEHICLE_AMMUNITION
     battleType: 2
     size: 0.1
     costSell: 38000
@@ -3680,6 +4133,11 @@ items:
     armor: 50
     listOrder: 2122
   - type: STR_HWP_INCENDIARY_MISSILE
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_WEAPON
+      - STR_CAT_INCENDIARY_DAMAGE
+      - STR_CAT_VEHICLE_AMMUNITION
     battleType: 2
     size: 0.1
     costBuy: 2100
@@ -3697,6 +4155,11 @@ items:
     armor: 50
     listOrder: 2123
   - type: STR_HWP_ARTILLERY_CANNON
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_WEAPON
+      - STR_CAT_BALLISTIC_DAMAGE
+      - STR_CAT_EXPLOSIVE_DAMAGE
     battleType: 1
     size: 2
     costSell: 130500
@@ -3732,6 +4195,11 @@ items:
     armor: 50
     listOrder: 2124
   - type: STR_HWP_ARTILLERY_CANNON_HE
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_WEAPON
+      - STR_CAT_EXPLOSIVE_DAMAGE
+      - STR_CAT_VEHICLE_AMMUNITION
     battleType: 2
     size: 0.2
     costSell: 3900
@@ -3750,6 +4218,11 @@ items:
     armor: 50
     listOrder: 2125
   - type: STR_HWP_ARTILLERY_CANNON_CLUSTER
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_WEAPON
+      - STR_CAT_EXPLOSIVE_DAMAGE
+      - STR_CAT_VEHICLE_AMMUNITION
     battleType: 2
     size: 0.2
     costSell: 5100
@@ -3769,6 +4242,11 @@ items:
     armor: 50
     listOrder: 2126
   - type: STR_HWP_ARTILLERY_CANNON_I
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_WEAPON
+      - STR_CAT_INCENDIARY_DAMAGE
+      - STR_CAT_VEHICLE_AMMUNITION
     battleType: 2
     size: 0.2
     costSell: 5700
@@ -3787,6 +4265,11 @@ items:
     armor: 50
     listOrder: 2127
   - type: STR_HWP_ARTILLERY_CANNON_SMOKE
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_WEAPON
+      - STR_CAT_SMOKE
+      - STR_CAT_VEHICLE_AMMUNITION
     battleType: 2
     size: 0.2
     costSell: 3400
@@ -3804,6 +4287,11 @@ items:
     armor: 50
     listOrder: 2128
   - type: STR_HWP_FISSION_EXPLOSIVE_SHELL
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_WEAPON
+      - STR_CAT_EXPLOSIVE_DAMAGE
+      - STR_CAT_VEHICLE_AMMUNITION
     battleType: 2
     size: 0.2
     costSell: 27200
@@ -3822,6 +4310,11 @@ items:
     armor: 50
     listOrder: 2129
   - type: STR_HWP_FISSION_CLUSTER_SHELL
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_WEAPON
+      - STR_CAT_EXPLOSIVE_DAMAGE
+      - STR_CAT_VEHICLE_AMMUNITION
     battleType: 2
     size: 0.2
     costSell: 36300
@@ -3841,6 +4334,11 @@ items:
     armor: 50
     listOrder: 2130
   - type: STR_HWP_FUSION_EXPLOSIVE_SHELL
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_WEAPON
+      - STR_CAT_EXPLOSIVE_DAMAGE
+      - STR_CAT_VEHICLE_AMMUNITION
     battleType: 2
     size: 0.2
     costSell: 58500
@@ -3859,6 +4357,11 @@ items:
     armor: 50
     listOrder: 2131
   - type: STR_HWP_FUSION_CLUSTER_SHELL
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_WEAPON
+      - STR_CAT_EXPLOSIVE_DAMAGE
+      - STR_CAT_VEHICLE_AMMUNITION
     battleType: 2
     size: 0.2
     costSell: 68300
@@ -3878,6 +4381,10 @@ items:
     armor: 50
     listOrder: 2132
   - type: STR_HWP_SMART_LAUNCHER
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_WEAPON
+      - STR_CAT_EXPLOSIVE_DAMAGE
     battleType: 1
     size: 2.5
     costSell: 831900
@@ -3905,6 +4412,11 @@ items:
     armor: 50
     listOrder: 2133
   - type: STR_HWP_SMART_FUSION_BOMB
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_WEAPON
+      - STR_CAT_EXPLOSIVE_DAMAGE
+      - STR_CAT_VEHICLE_AMMUNITION
     battleType: 2
     size: 0.2
     costSell: 167800
@@ -3924,6 +4436,9 @@ items:
   - type: STR_HWP_HEADLIGHTS
     requires:
       - STR_BATTLE_LIGHTS
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_EQUIPMENT
     battleType: 13
     size: 0.1
     costSell: 750
@@ -3943,6 +4458,9 @@ items:
   - type: STR_HWP_NIGHT_VISION_MODULE
     requires:
       - STR_NIGHT_VISION
+    categories:
+      - STR_CAT_VEHICLE_ITEM
+      - STR_CAT_VEHICLE_EQUIPMENT
     battleType: 13
     size: 0.1
     costSell: 100000

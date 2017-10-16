@@ -368,6 +368,9 @@ void Ufo::releaseEscort()
 {
 	if (_escorting)
 	{
+		setLatitude(_escorting->getLatitude());
+		setLongitude(_escorting->getLongitude());
+
 		auto ii = std::find(_escorting->_escorts.begin(), _escorting->_escorts.end(), this);
 		if (ii != _escorting->_escorts.end())
 		{
@@ -477,6 +480,10 @@ bool Ufo::getDetected() const
 void Ufo::setDetected(bool detected)
 {
 	_detected = detected;
+	for (Ufo *escort : _escorts)
+	{
+		escort->setDetected(detected);
+	}
 }
 
 /**
@@ -804,6 +811,10 @@ bool Ufo::getHyperDetected() const
 void Ufo::setHyperDetected(bool hyperdetected)
 {
 	_hyperDetected = hyperdetected;
+	for (Ufo *escort : _escorts)
+	{
+		escort->setHyperDetected(hyperdetected);
+	}
 }
 
 /**

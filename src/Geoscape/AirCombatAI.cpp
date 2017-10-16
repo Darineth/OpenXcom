@@ -436,8 +436,9 @@ double AirCombatAI::getAttackerPursuitTime(AirCombatUnit *attacker) const
 
 bool AirCombatAI::canEscape() const
 {
-	double estimatedLifeEscape = getEstimatedLife(_unit, 0, nullptr, -1, true);
-	double pursuitTime = getAttackerPursuitTime();
+	// Adjust estimated life and pursuit time assuming half DPS time and half pursuit time.
+	double estimatedLifeEscape = getEstimatedLife(_unit, 0, nullptr, 0, true) * 2.0;
+	double pursuitTime = getAttackerPursuitTime() / 0.5;
 
 	return estimatedLifeEscape > pursuitTime;
 }

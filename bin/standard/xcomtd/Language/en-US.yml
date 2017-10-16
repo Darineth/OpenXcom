@@ -1309,3 +1309,52 @@ en-US:
   STR_AIR_POSITION_3: "Short Range"
   
   STR_MISSED: "Missed!"
+
+# Item Categories
+# Damage Types
+  STR_CAT_BALLISTIC_DAMAGE: "Damage: Ballistic"
+  STR_CAT_LASER_DAMAGE: "Damage: Laser"
+  STR_CAT_PLASMA_DAMAGE: "Damage: Plasma"
+  STR_CAT_EXPLOSIVE_DAMAGE: "Damage: Explosive"
+  STR_CAT_INCENDIARY_DAMAGE: "Damage: Incendiary"
+  STR_CAT_STUN_DAMAGE: "Damage: Stun"
+  STR_CAT_SMOKE: Smoke
+  STR_CAT_LIGHT: Lights
+
+# Weapon Types
+  STR_CAT_SIDEARM: Sidearms
+  STR_CAT_RIFLE: Rifles
+  STR_CAT_SHOTGUN: Shotguns
+  STR_CAT_AUTOMATIC_WEAPON: Heavy Automatics
+  STR_CAT_GRENADE: Grenades
+  STR_CAT_LAUNCHER: Launchers
+  STR_CAT_WAYPOINT_WEAPON: Waypoint Launchers
+  STR_CAT_MELEE_WEAPON: Melee
+  STR_CAT_AMMUNITION: Ammunition
+
+# Weapons
+  STR_CAT_PISTOL: Pistols
+  STR_CAT_SMG: Submachine Guns
+  STR_CAT_ASSAULT_RIFLE: Assault Rifles
+  STR_CAT_SHOTGUN: Shotguns
+  STR_CAT_MARKSMAN_RIFLE: Marksman Rifles
+  STR_CAT_SNIPER_RIFLE: Sniper Rifles
+  STR_CAT_MACHINEGUN: Machineguns
+  STR_CAT_MINIGUN: Miniguns
+  STR_CAT_HEAVY_RIFLE: Heavy Rifles
+  STR_CAT_GRENADE_LAUNCHER: Grenade Launchers
+  STR_CAT_ROCKET_LAUNCHER: Rocket Launchers
+  STR_CAT_SMALL_LAUNCHER: Small Launchers
+  STR_CAT_ARC_LAUNCHER: Arc Launchers
+  STR_CAT_BLASTER_LAUNCHER: Blaster Launchers
+  STR_CAT_PSI_AMP: Psionic Amplifiers
+  STR_CAT_TOOL: Tools
+  STR_CAT_MEDICAL: Medical Tools
+  STR_CAT_PSIONIC: Psionic Tools
+  
+# Vehicles
+  STR_CAT_VEHICLE_ITEM: Vehicle Items
+  STR_CAT_VEHICLE_WEAPON: Vehicle Weapons
+  STR_CAT_VEHICLE_AMMUNITION: Vehicle Ammunition
+  STR_CAT_VEHICLE_EQUIPMENT: Vehicle Equipment
+  STR_CAT_VEHICLE_ARMOR: Vehicle Armor

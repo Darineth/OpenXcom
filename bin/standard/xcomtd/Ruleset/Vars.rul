@@ -26,3 +26,94 @@ baseMissionExperience: 50
 constants:
   - damageRange: 50
   - encumbranceMultipler: 2
+useCustomCategories: true
+itemCategories:
+# Damage Types
+  - type: STR_CAT_BALLISTIC_DAMAGE
+    listOrder: 1010
+  - type: STR_CAT_LASER_DAMAGE
+    listOrder: 1020
+  - type: STR_CAT_PLASMA_DAMAGE
+    listOrder: 1030
+  - type: STR_CAT_EXPLOSIVE_DAMAGE
+    listOrder: 1040
+  - type: STR_CAT_INCENDIARY_DAMAGE
+    listOrder: 1050
+  - type: STR_CAT_STUN_DAMAGE
+    listOrder: 1090
+  - type: STR_CAT_SMOKE
+    listOrder: 1100
+  - type: STR_CAT_LIGHT
+    listOrder: 1110
+
+# Weapon Types
+  - type: STR_CAT_SIDEARM
+    listOrder: 2010
+  - type: STR_CAT_RIFLE
+    listOrder: 2020
+  - type: STR_CAT_SHOTGUN
+    listOrder: 2030
+  - type: STR_CAT_HEAVY_WEAPON
+    listOrder: 2040
+  - type: STR_CAT_GRENADE
+    listOrder: 2060
+  - type: STR_CAT_LAUNCHER
+    listOrder: 2070
+  - type: STR_CAT_WAYPOINT_WEAPON
+    listOrder: 2080
+  - type: STR_CAT_MELEE_WEAPON
+    listOrder: 2100
+  - type: STR_CAT_AMMUNITION
+    listOrder: 2110
+
+# Weapons
+  - type: STR_CAT_PISTOL
+    listOrder: 3010
+  - type: STR_CAT_SMG
+    listOrder: 3020
+  - type: STR_CAT_ASSAULT_RIFLE
+    listOrder: 3030
+  - type: STR_CAT_SHOTGUN
+    listOrder: 3040
+  - type: STR_CAT_MARKSMAN_RIFLE
+    listOrder: 3050
+  - type: STR_CAT_SNIPER_RIFLE
+    listOrder: 3060
+  - type: STR_CAT_MACHINEGUN
+    listOrder: 3070
+  - type: STR_CAT_MINIGUN
+    listOrder: 3080
+  - type: STR_CAT_HEAVY_RIFLE
+    listOrder: 3090
+  - type: STR_CAT_GRENADE_LAUNCHER
+    listOrder: 3100
+  - type: STR_CAT_ROCKET_LAUNCHER
+    listOrder: 3110
+  - type: STR_CAT_SMALL_LAUNCHER
+    listOrder: 3120
+  - type: STR_CAT_ARC_LAUNCHER
+    listOrder: 3130
+  - type: STR_CAT_BLASTER_LAUNCHER
+    listOrder: 3140
+  - type: STR_CAT_PSI_AMP
+    listOrder: 3150
+
+# Tools
+  - type: STR_CAT_TOOL
+    listOrder: 4000
+  - type: STR_CAT_MEDICAL
+    listOrder: 4010
+  - type: STR_CAT_PSIONIC
+    listOrder: 4020
+
+# Vehicles
+  - type: STR_CAT_VEHICLE_ITEM
+    listOrder: 5000
+  - type: STR_CAT_VEHICLE_WEAPON
+    listOrder: 5010
+  - type: STR_CAT_VEHICLE_AMMUNITION
+    listOrder: 5020
+  - type: STR_CAT_VEHICLE_EQUIPMENT
+    listOrder: 5030
+  - type: STR_CAT_VEHICLE_ARMOR
+    listOrder: 5040

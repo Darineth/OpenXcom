@@ -87,6 +87,7 @@ craftWeapons:
     sound: 9
     damage: 140
     range: 4
+    #range: 35
     accuracy: 50
     tuAimed: 25
     reloadCautious: 24
