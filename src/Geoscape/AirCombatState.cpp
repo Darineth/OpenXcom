@@ -334,7 +334,7 @@ int AirCombatUnit::getCombatFuel() const
 {
 	if (craft)
 	{
-		return craft->getCombatFuel();
+		return craft->getFuel() - craft->getFuelLimit();
 	}
 	else if (ufo)
 	{
@@ -348,7 +348,7 @@ int AirCombatUnit::getMaxCombatFuel() const
 {
 	if (craft)
 	{
-		return craftRule->getMaxCombatFuel();
+		return craft->getFuelMax() - craft->getFuelLimit();
 	}
 	else if (ufo)
 	{
@@ -365,7 +365,8 @@ bool AirCombatUnit::spendCombatFuel(int fuel)
 		return true;
 	}
 
-	craft->setCombatFuel(craft->getCombatFuel() - fuel);
+	int spend = std::min(getCombatFuel(), fuel);
+	craft->setFuel(craft->getFuel() - spend);
 
 	return craft->getCombatFuel() > 0;
 }
