@@ -250,33 +250,32 @@ void AirCombatUnit::getActionCost(AirCombatAction *action) const
 {
 	action->resetCost();
 
-	// TODO: Use Speed to calcualte movement costs.
-
+	// TODO: Use Speed or Fuel Consumption to calculate movement costs.
 	switch (action->action)
 	{
 		case AA_MOVE_FORWARD:
 			action->Time = 30;
 			action->Energy = 10;
-			return;
+			break;
 		case AA_MOVE_BACKWARD:
 			action->Time = 25;
 			action->Energy = 0;
-			return;
+			break;
 		case AA_MOVE_PURSUE:
 			action->Time = 40;
 			action->Energy = 30;
-			return;
+			break;
 		case AA_MOVE_RETREAT:
 			action->Time = 30;
 			action->Energy = 10;
-			return;
+			break;
 		case AA_HOLD:
 			action->Time = 15;
-			return;
+			break;
 		case AA_EVADE:
 			action->Time = 25;
 			action->Energy = 25;
-			return;
+			break;
 		case AA_FIRE_WEAPON:
 			action->Ammo = 1;
 
@@ -286,9 +285,15 @@ void AirCombatUnit::getActionCost(AirCombatAction *action) const
 			}
 			else
 			{
+				// TODO: Handle TU cost for UFO weapons.
 				action->Time = 20;
 			}
-			return;
+			break;
+	}
+
+	if (craft)
+	{
+		action->Energy += craft->getFuelPerTU(action->Time);
 	}
 }
 
@@ -368,13 +373,15 @@ bool AirCombatUnit::spendCombatFuel(int fuel)
 	int spend = std::min(getCombatFuel(), fuel);
 	craft->setFuel(craft->getFuel() - spend);
 
-	return craft->getCombatFuel() > 0;
+	return getCombatFuel() > 0;
 }
 
 bool AirCombatUnit::spendTime(int time)
 {
 	turnDelay += time;
-	return spendCombatFuel(time / 2);
+	//return spendCombatFuel(craft->getFuelPerTU(time));
+
+	return true;
 }
 
 bool AirCombatUnit::canTargetPosition(int targetPosition) const
@@ -820,14 +827,19 @@ AirCombatUnit *AirCombatState::getUfoUnit() const
 
 bool AirCombatState::addCraft(Craft *craft)
 {
-	if (craft->getCombatFuel() <= 0) { return false; }
-
 	for (int ii = 0; ii < MAX_UNITS; ++ii)
 	{
 		int index = (ii + 1) % MAX_UNITS;
 		if (!_craft[index])
 		{
 			AirCombatUnit* craftUnit = new AirCombatUnit(_game, craft, _ufo);
+
+			if (craftUnit->getCombatFuel() <= 0)
+			{
+				delete craftUnit;
+				return false;
+			}
+
 			_units.push_back(craftUnit);
 			_craft[index] = craftUnit;
 			craftUnit->index = index;

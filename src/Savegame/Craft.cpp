@@ -51,7 +51,7 @@ namespace OpenXcom
  * @param id ID to assign to the craft (0 to not assign).
  */
 Craft::Craft(RuleCraft *rules, Base *base, int id) : MovingTarget(),
-	_rules(rules), _base(base), _id(0), _fuel(0), _combatFuel(0), _damage(0), _shield(0),
+	_rules(rules), _base(base), _id(0), _fuel(0), _damage(0), _shield(0),
 	_interceptionOrder(0), _takeoff(0), _weapons(),
 	_status("STR_READY"), _lowFuel(false), _mission(false),
 	_inBattlescape(false), _inDogfight(false), _stats(),
@@ -100,7 +100,6 @@ void Craft::load(const YAML::Node &node, const Mod *mod, SavedGame *save)
 	MovingTarget::load(node);
 	_id = node["id"].as<int>(_id);
 	_fuel = node["fuel"].as<int>(_fuel);
-	_combatFuel = node["combatFuel"].as<int>(_combatFuel);
 	_damage = node["damage"].as<int>(_damage);
 	_shield = node["shield"].as<int>(_shield);
 
@@ -236,7 +235,6 @@ YAML::Node Craft::save() const
 	node["type"] = _rules->getType();
 	node["id"] = _id;
 	node["fuel"] = _fuel;
-	node["combatFuel"] = _combatFuel;
 	node["damage"] = _damage;
 	node["shield"] = _shield;
 	for (std::vector<CraftWeapon*>::const_iterator i = _weapons.begin(); i != _weapons.end(); ++i)
@@ -641,30 +639,24 @@ int Craft::getFuelPercentage() const
 	return (int)floor((double)_fuel / _stats.fuelMax * 100.0);
 }
 
+
 /**
- * Gets the craft's amount of combat fuel.
- * @return The amount of combat fuel.
+ * Returns the amount of fuel spent per TU used
+ * @return The amount of fuel spent per TU used.
  */
-int Craft::getCombatFuel() const
+double Craft::getFuelPerTU(int tu) const
 {
-	return _combatFuel;
+	// TODO: Include fuel consumption stat?
+	return tu * 0.5;
 }
 
 /**
- * Sets the craft's amount of combat fuel.
- * @param fuel The amount of combat fuel.
+ * Returns the number of TUs a craft has with its current fuel.
+ * @return The number of TUs a craft has with its current fuel.
  */
-void Craft::setCombatFuel(int fuel)
+int Craft::getRemainingTU() const
 {
-	_combatFuel = fuel;
-	if (_combatFuel > _stats.combatFuelMax)
-	{
-		_combatFuel = _stats.combatFuelMax;
-	}
-	else if (_combatFuel < 0)
-	{
-		_combatFuel = 0;
-	}
+	return (double)_fuel / getFuelPerTU(1);
 }
 
 /**
@@ -891,7 +883,7 @@ void Craft::checkup()
 	{
 		_status = "STR_REARMING";
 	}
-	else if (_fuel < _stats.fuelMax || _combatFuel < _stats.combatFuelMax)
+	else if (_fuel < _stats.fuelMax)
 	{
 		_status = "STR_REFUELLING";
 	}
@@ -966,11 +958,9 @@ unsigned int Craft::calcRefuelTime()
 	unsigned int refuelTime = 0;
 
 	int needed = _rules->getMaxFuel() - _fuel;
-	int neededCombat = _rules->getMaxCombatFuel() - _combatFuel;
-	if (needed > 0 || neededCombat > 0)
+	if (needed > 0)
 	{
-		refuelTime = std::max((int)ceil((double)(needed) / _rules->getRefuelRate() / 2.0),
-			(int)ceil((double)(neededCombat) / _rules->getCombatRefuelRate() / 2.0));
+		refuelTime = (int)ceil((double)(needed) / _rules->getRefuelRate() / 2.0);
 	}
 	return refuelTime;
 }
@@ -1019,8 +1009,7 @@ void Craft::repair()
 void Craft::refuel()
 {
 	setFuel(_fuel + _rules->getRefuelRate());
-	setCombatFuel(_combatFuel + _rules->getCombatRefuelRate());
-	if (_fuel >= _stats.fuelMax && _combatFuel >= _stats.combatFuelMax)
+	if (_fuel >= _stats.fuelMax)
 	{
 		_status = "STR_READY";
 		for (std::vector<CraftWeapon*>::iterator i = _weapons.begin(); i != _weapons.end(); ++i)
@@ -1466,7 +1455,7 @@ void Craft::reuseItem(const std::string& item)
 		}
 	}
 	// Check if it's fuel to refuel the craft
-	if (item == _rules->getRefuelItem() && (_fuel < _rules->getMaxFuel() || _combatFuel < _rules->getMaxCombatFuel()))
+	if (item == _rules->getRefuelItem() && _fuel < _rules->getMaxFuel())
 		_status = "STR_REFUELLING";
 }
 

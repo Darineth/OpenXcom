@@ -1906,7 +1906,7 @@ items:
     requires:
       - STR_HEAVY_PLASMA_WEAPONS
     categories:
-      - STR_CAT_HEAVY_WEAPON
+      - STR_CAT_AUTOMATIC_WEAPONS
       - STR_CAT_MACHINEGUN
       - STR_CAT_PLASMA_DAMAGE
     battleType: 1
@@ -1968,7 +1968,7 @@ items:
     requires:
       - STR_ALIEN_PLASMA
     categories:
-      - STR_CAT_HEAVY_WEAPON
+      - STR_CAT_AUTOMATIC_WEAPONS
       - STR_CAT_MACHINEGUN
       - STR_CAT_PLASMA_DAMAGE
       - STR_CAT_ALIEN_EQUIPMENT
@@ -2031,7 +2031,7 @@ items:
     requires:
       - STR_HEAVY_PLASMA_WEAPONS
     categories:
-      - STR_CAT_HEAVY_WEAPON
+      - STR_CAT_AUTOMATIC_WEAPONS
       - STR_CAT_MACHINEGUN
       - STR_CAT_PLASMA_DAMAGE
       - STR_AMMUNITION
@@ -2053,7 +2053,7 @@ items:
     requires:
       - STR_HEAVY_PLASMA_WEAPONS
     categories:
-      - STR_CAT_HEAVY_WEAPON
+      - STR_CAT_AUTOMATIC_WEAPONS
       - STR_CAT_MINIGUN
       - STR_CAT_PLASMA_DAMAGE
     battleType: 1
@@ -2112,7 +2112,7 @@ items:
     requires:
       - STR_ALIEN_PLASMA
     categories:
-      - STR_CAT_HEAVY_WEAPON
+      - STR_CAT_AUTOMATIC_WEAPONS
       - STR_CAT_MINIGUN
       - STR_CAT_PLASMA_DAMAGE
       - STR_CAT_ALIEN_EQUIPMENT
@@ -2172,7 +2172,7 @@ items:
     requires:
       - STR_HEAVY_PLASMA_WEAPONS
     categories:
-      - STR_CAT_HEAVY_WEAPON
+      - STR_CAT_AUTOMATIC_WEAPONS
       - STR_CAT_MINIGUN
       - STR_CAT_PLASMA_DAMAGE
       - STR_AMMUNITION

@@ -1187,7 +1187,7 @@ void GeoscapeState::time5Seconds()
 								continue;
 							}
 							// Can we actually fight it
-							if (!(*j)->isInDogfight() && !(*j)->getDistance(u) && (*j)->getCombatFuel())
+							if (!(*j)->isInDogfight() && !(*j)->getDistance(u))
 							{
 #ifdef NEW_AIR_COMBAT
 								AirCombatState *dogfight = 0;
@@ -1412,7 +1412,7 @@ void GeoscapeState::time10Minutes()
 			if ((*j)->getStatus() == "STR_OUT")
 			{
 				(*j)->consumeFuel();
-				if (!(*j)->getLowFuel() && ((*j)->getFuel() <= (*j)->getFuelLimit() || (*j)->getCombatFuel() == 0))
+				if (!(*j)->getLowFuel() && ((*j)->getFuel() <= (*j)->getFuelLimit()))
 				{
 					(*j)->setLowFuel(true);
 					(*j)->returnToBase();

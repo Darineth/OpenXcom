@@ -56,7 +56,7 @@ BattleItem::BattleItem(RuleItem *rules, int *id) : _id(*id), _rules(rules), _own
 			_ammoVisibility[0] = false;*/
 		}
 		// weapon does not need ammo, ammo item points to weapon
-		else if (_rules->getBattleType() == BT_FIREARM || _rules->getBattleType() == BT_MELEE || _rules->getBattleType() == BT_GRENADE)
+		else if (_rules->getBattleType() == BT_FIREARM || _rules->getBattleType() == BT_MELEE || _rules->getBattleType() == BT_GRENADE || _rules->getBattleType() == BT_PSIAMP)
 		{
 			_confAimedOrLaunch = _rules->getConfigAimed();
 			_confAuto = _rules->getConfigAuto();
