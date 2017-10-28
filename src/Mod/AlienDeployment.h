@@ -50,6 +50,7 @@ struct BriefingData
 	BriefingData() : palette(0), textOffset(0), music("GMDEFEND"), background("BACK16.SCR"), showCraft(true), showTarget(true) { /*Empty by Design*/ };
 };
 enum ChronoTrigger { FORCE_LOSE, FORCE_ABORT, FORCE_WIN };
+enum EscapeType { ESCAPE_NONE, ESCAPE_EXIT, ESCAPE_ENTRY, ESCAPE_EITHER };
 /**
  * Represents a specific type of Alien Deployment.
  * Contains constant info about a Alien Deployment like
@@ -83,6 +84,7 @@ private:
 	int _markerIcon, _durationMin, _durationMax, _minDepth, _maxDepth, _minSiteDepth, _maxSiteDepth, _genMissionFrequency;
 	int _objectiveType, _objectivesRequired, _objectiveCompleteScore, _objectiveFailedScore, _despawnPenalty, _points, _turnLimit, _cheatTurn;
 	ChronoTrigger _chronoTrigger;
+	EscapeType _escapeType;
 public:
 	/// Creates a blank Alien Deployment ruleset.
 	AlienDeployment(const std::string &type);
@@ -184,6 +186,8 @@ public:
 	std::string getGenMissionType() const;
 
 	int getGenMissionFrequency() const;
+
+	EscapeType getEscapeType() const;
 
 };
 

@@ -3,7 +3,6 @@ crafts:
     sprite: 1
     combatSprite: 1
     fuelMax: 1500
-    combatFuelMax: 1000
     damageMax: 150
     speedMax: 760
     accel: 2
@@ -13,9 +12,9 @@ crafts:
     costBuy: 500000
     costRent: 500000
     refuelRate: 50
-    combatRefuelRate: 50
     transferTime: 72
     score: 200
+    autoPatrol: true
     battlescapeTerrainData:
       name: PLANE
       mapDataSets:
@@ -31,7 +30,6 @@ crafts:
     #sprite: 24
     combatSprite: 2
     fuelMax: 1000
-    combatFuelMax: 1000
     damageMax: 100
     speedMax: 2100
     accel: 3
@@ -42,7 +40,6 @@ crafts:
     costBuy: 600000
     costRent: 600000
     refuelRate: 50
-    combatRefuelRate: 50
     transferTime: 96
     score: 250
     
@@ -55,7 +52,6 @@ crafts:
     combatSprite: 3
     costSell: 2540000
     fuelMax: 2200
-    combatFuelMax: 1500
     damageMax: 160
     speedMax: 3500
     accel: 6
@@ -64,7 +60,6 @@ crafts:
     pilots: 1
     allowLanding: false
     refuelRate: 100
-    combatRefuelRate: 100
     transferTime: 96
     score: 250
     listOrder: 204
@@ -75,7 +70,6 @@ crafts:
     sprite: 4
     costSell: 1120000
     fuelMax: 20
-    combatFuelMax: 2000
     damageMax: 800
     speedMax: 11200
     accel: 25
@@ -85,7 +79,6 @@ crafts:
     allowLanding: false
     refuelItem: STR_ELERIUM_115
     refuelRate: 20
-    combatRefuelRate: 100
     score: 250
 #Lightning is a tier 2 transport half-way between the Skyranger and Avenger.
   - type: STR_LIGHTNING
@@ -94,7 +87,6 @@ crafts:
     sprite: 1
     costSell: 1360000
     fuelMax: 100
-    combatFuelMax: 1500
     damageMax: 650
     speedMax: 1400
     accel: 3
@@ -104,7 +96,6 @@ crafts:
     pilots: 2
     refuelItem: STR_ELERIUM_115
     refuelRate: 20
-    combatRefuelRate: 100
     score: 300
     battlescapeTerrainData:
       name: LIGHTNIN
@@ -154,7 +145,6 @@ crafts:
     sprite: 2
     costSell: 2140000
     fuelMax: 200
-    combatFuelMax: 3000
     damageMax: 2000
     speedMax: 2400
     accel: 5
@@ -164,7 +154,6 @@ crafts:
     pilots: 2
     refuelItem: STR_ELERIUM_115
     refuelRate: 10
-    combatRefuelRate: 150
     score: 400
     spacecraft: true
     battlescapeTerrainData:

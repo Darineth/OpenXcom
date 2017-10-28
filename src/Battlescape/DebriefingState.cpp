@@ -1055,10 +1055,10 @@ void DebriefingState::prepareDebriefing()
 	Base *base = 0;
 	std::string target;
 
-	int playerInExitArea = 0; // if this stays 0 the craft is lost...
+	int playersInExitArea = 0; // if this stays 0 the craft is lost...
 	int playersSurvived = 0; // if this stays 0 the craft is lost...
 	int playersUnconscious = 0;
-
+	int playersInEntryArea = 0;
 
 	_stats.push_back(new DebriefingStat("STR_ALIENS_KILLED", false));
 	_stats.push_back(new DebriefingStat("STR_ALIEN_CORPSES_RECOVERED", false));
@@ -1268,6 +1268,14 @@ void DebriefingState::prepareDebriefing()
 			{
 				playersUnconscious++;
 			}
+			else if ((*j)->isInExitArea(END_POINT))
+			{
+				playersInExitArea++;
+			}
+			else if ((*j)->isInExitArea(START_POINT))
+			{
+				playersInEntryArea++;
+			}
 			playersSurvived++;
 		}
 		else if ((*j)->getOriginalFaction() == FACTION_PLAYER && (*j)->getStatus() == STATUS_DEAD)
@@ -1285,6 +1293,22 @@ void DebriefingState::prepareDebriefing()
 			}
 		}
 	}
+	
+	if (ruleDeploy && ruleDeploy->getEscapeType() != ESCAPE_NONE)
+	{
+		if (ruleDeploy->getEscapeType() != ESCAPE_EXIT)
+		{
+			success = playersInEntryArea > 0;
+		}
+		
+		if (ruleDeploy->getEscapeType() != ESCAPE_ENTRY)
+		{
+			success = success || playersInExitArea > 0;
+		}
+	}
+
+	playersInExitArea = 0;
+
 	if (playersSurvived == 1)
 	{
 		for (std::vector<BattleUnit*>::iterator j = battle->getUnits()->begin(); j != battle->getUnits()->end(); ++j)
@@ -1435,13 +1459,13 @@ void DebriefingState::prepareDebriefing()
 			if (oldFaction == FACTION_PLAYER)
 			{
 				UnitStats statIncreases;
-				if ((((*j)->isInExitArea() || (*j)->getStatus() == STATUS_IGNORE_ME) && (battle->getMissionType() != "STR_BASE_DEFENSE" || success)) || !aborted)
+				if ((((*j)->isInExitArea(START_POINT) || (*j)->getStatus() == STATUS_IGNORE_ME) && (battle->getMissionType() != "STR_BASE_DEFENSE" || success)) || !aborted || (aborted && (*j)->isInExitArea(END_POINT)))
 				{ // so game is not aborted or aborted and unit is on exit area
 					UnitStats statIncrease;
 					//(*j)->postMissionProcedures(save, statIncrease);
 					if ((*j)->getGeoscapeSoldier())
 						_soldierStats.push_back(std::pair<std::wstring, UnitStats>((*j)->getGeoscapeSoldier()->getName(), statIncrease));
-					playerInExitArea++;
+					playersInExitArea++;
 
 					if (soldier != 0)
 					{
@@ -1492,6 +1516,7 @@ void DebriefingState::prepareDebriefing()
 				else
 				{ // so game is aborted and unit is not on exit area
 					addStat("STR_XCOM_OPERATIVES_MISSING_IN_ACTION", 1, -value);
+					playersSurvived--;
 					if (soldier != 0)
 					{
 						_stats.push_back(new DebriefingStat(soldier, tr("STR_SOLDIER_DEBRIEFING_MISSING")));
@@ -1516,7 +1541,7 @@ void DebriefingState::prepareDebriefing()
 					}
 				}
 			}
-			else if (oldFaction == FACTION_HOSTILE && (!aborted || (*j)->isInExitArea()) && !_destroyBase
+			else if (oldFaction == FACTION_HOSTILE && (!aborted || (*j)->isInExitArea(START_POINT)) && !_destroyBase
 				// mind controlled units may as well count as unconscious
 				&& faction == FACTION_PLAYER && (!(*j)->isOut() || (*j)->getStatus() == STATUS_IGNORE_ME))
 			{
@@ -1563,7 +1588,7 @@ void DebriefingState::prepareDebriefing()
 			}
 		}
 	}
-	if (craft != 0 && ((playerInExitArea == 0 && aborted) || (playersSurvived == 0)))
+	if (craft != 0 && ((playersInExitArea == 0 && aborted) || (playersSurvived == 0)))
 	{
 		addStat("STR_XCOM_CRAFT_LOST", 1, -craft->getRules()->getScore());
 		// Since this is not a base defense mission, we can safely erase the craft,
@@ -1604,7 +1629,24 @@ void DebriefingState::prepareDebriefing()
 			_txtTitle->setText(tr("STR_ALIENS_DEFEATED"));
 			if (objectiveCompleteText != "")
 			{
-				addStat(objectiveCompleteText, 1, objectiveCompleteScore);
+				int victoryStat = 0;
+				if (ruleDeploy->getEscapeType() != ESCAPE_NONE)
+				{
+					if (ruleDeploy->getEscapeType() != ESCAPE_EXIT)
+					{
+						victoryStat += playersInEntryArea;
+					}
+					if (ruleDeploy->getEscapeType() != ESCAPE_ENTRY)
+					{
+						victoryStat += playersInExitArea;
+					}
+				}
+				else
+				{
+					victoryStat = 1;
+				}
+
+				addStat(objectiveCompleteText, victoryStat, objectiveCompleteScore);
 			}
 		}
 
@@ -1731,7 +1773,7 @@ void DebriefingState::prepareDebriefing()
 				int kills = 0;
 				UnitStats statIncreases;
 				(*ii)->postMissionProcedures(save, statIncreases, battle->getTurn(), experienceScore, gainedExperience, gainedLevel, kills);
-				playerInExitArea++;
+				playersInExitArea++;
 				recoverItems((*ii)->getInventory(), base);
 				// calculate new statString
 				soldier->calcStatString(_game->getMod()->getStatStrings(), (Options::psiStrengthEval && _game->getSavedGame()->isResearched(_game->getMod()->getPsiRequirements())));
