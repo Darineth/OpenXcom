@@ -934,7 +934,7 @@ void GeoscapeState::timeAdvance()
 		}
 	}
 
-	_pause = !_dogfightsToBeStarted.empty();
+	_pause = !_dogfightsToBeStarted.empty() || _zoomInEffectTimer->isRunning() || _zoomOutEffectTimer->isRunning();
 
 	timeDisplay();
 	_globe->draw();
@@ -967,66 +967,63 @@ void GeoscapeState::time5Seconds()
 		switch ((*i)->getStatus())
 		{
 			case Ufo::FLYING:
-				if (!_zoomInEffectTimer->isRunning() && !_zoomOutEffectTimer->isRunning())
+				(*i)->think();
+				if ((*i)->reachedDestination())
 				{
-					(*i)->think();
-					if ((*i)->reachedDestination())
+					size_t count = _game->getSavedGame()->getMissionSites()->size();
+					AlienMission *mission = (*i)->getMission();
+					bool detected = (*i)->getDetected();
+					mission->ufoReachedWaypoint(**i, *_game, *_globe);
+					if (detected != (*i)->getDetected() && !(*i)->getFollowers()->empty())
 					{
-						size_t count = _game->getSavedGame()->getMissionSites()->size();
-						AlienMission *mission = (*i)->getMission();
-						bool detected = (*i)->getDetected();
-						mission->ufoReachedWaypoint(**i, *_game, *_globe);
-						if (detected != (*i)->getDetected() && !(*i)->getFollowers()->empty())
+						if (!((*i)->getTrajectory().getID() == UfoTrajectory::RETALIATION_ASSAULT_RUN && (*i)->getStatus() == Ufo::LANDED))
+							popup(new UfoLostState((*i)->getName(_game->getLanguage())));
+					}
+					if (count < _game->getSavedGame()->getMissionSites()->size())
+					{
+						MissionSite *site = _game->getSavedGame()->getMissionSites()->back();
+						site->setDetected(true);
+						popup(new MissionDetectedState(site, this));
+					}
+					// If UFO was destroyed, don't spawn missions
+					if ((*i)->getStatus() == Ufo::DESTROYED)
+						return;
+					if (Base *base = dynamic_cast<Base*>((*i)->getDestination()))
+					{
+						mission->setWaveCountdown(30 * (RNG::generate(0, 400) + 48));
+						(*i)->setDestination(0);
+						base->setupDefenses();
+						timerReset();
+						if (!base->getDefenses()->empty())
 						{
-							if (!((*i)->getTrajectory().getID() == UfoTrajectory::RETALIATION_ASSAULT_RUN && (*i)->getStatus() == Ufo::LANDED))
-								popup(new UfoLostState((*i)->getName(_game->getLanguage())));
+							popup(new BaseDefenseState(base, *i, this));
 						}
-						if (count < _game->getSavedGame()->getMissionSites()->size())
+						else
 						{
-							MissionSite *site = _game->getSavedGame()->getMissionSites()->back();
-							site->setDetected(true);
-							popup(new MissionDetectedState(site, this));
-						}
-						// If UFO was destroyed, don't spawn missions
-						if ((*i)->getStatus() == Ufo::DESTROYED)
+							handleBaseDefense(base, *i);
 							return;
-						if (Base *base = dynamic_cast<Base*>((*i)->getDestination()))
-						{
-							mission->setWaveCountdown(30 * (RNG::generate(0, 400) + 48));
-							(*i)->setDestination(0);
-							base->setupDefenses();
-							timerReset();
-							if (!base->getDefenses()->empty())
-							{
-								popup(new BaseDefenseState(base, *i, this));
-							}
-							else
-							{
-								handleBaseDefense(base, *i);
-								return;
-							}
 						}
 					}
-					// Init UFO shields
-					if ((*i)->getShield() == -1)
+				}
+				// Init UFO shields
+				if ((*i)->getShield() == -1)
+				{
+					(*i)->setShield((*i)->getCraftStats().shieldCapacity);
+				}
+				// Recharge UFO shields
+				else if ((*i)->getShield() < (*i)->getCraftStats().shieldCapacity)
+				{
+					int shieldRechargeInGeoscape = (*i)->getCraftStats().shieldRechargeInGeoscape;
+					if (shieldRechargeInGeoscape == -1)
 					{
 						(*i)->setShield((*i)->getCraftStats().shieldCapacity);
 					}
-					// Recharge UFO shields
-					else if ((*i)->getShield() < (*i)->getCraftStats().shieldCapacity)
+					else if (shieldRechargeInGeoscape > 0)
 					{
-						int shieldRechargeInGeoscape = (*i)->getCraftStats().shieldRechargeInGeoscape;
-						if (shieldRechargeInGeoscape == -1)
-						{
-							(*i)->setShield((*i)->getCraftStats().shieldCapacity);
-						}
-						else if (shieldRechargeInGeoscape > 0)
-						{
-							int total = shieldRechargeInGeoscape / 100;
-							if (RNG::percent(shieldRechargeInGeoscape % 100))
-								total++;
-							(*i)->setShield((*i)->getShield() + total);
-						}
+						int total = shieldRechargeInGeoscape / 100;
+						if (RNG::percent(shieldRechargeInGeoscape % 100))
+							total++;
+						(*i)->setShield((*i)->getShield() + total);
 					}
 				}
 				break;
@@ -1149,24 +1146,21 @@ void GeoscapeState::time5Seconds()
 					}
 				}
 			}
-			if (!_zoomInEffectTimer->isRunning() && !_zoomOutEffectTimer->isRunning())
+			(*j)->think();
+			// Handle craft shield recharge
+			if ((*j)->getShield() < (*j)->getCraftStats().shieldCapacity)
 			{
-				(*j)->think();
-				// Handle craft shield recharge
-				if ((*j)->getShield() < (*j)->getCraftStats().shieldCapacity)
+				int shieldRechargeInGeoscape = (*j)->getCraftStats().shieldRechargeInGeoscape;
+				if (shieldRechargeInGeoscape == -1)
 				{
-					int shieldRechargeInGeoscape = (*j)->getCraftStats().shieldRechargeInGeoscape;
-					if (shieldRechargeInGeoscape == -1)
-					{
-						(*j)->setShield((*j)->getCraftStats().shieldCapacity);
-					}
-					else if (shieldRechargeInGeoscape > 0)
-					{
-						int total = (*j)->getCraftStats().shieldRechargeInGeoscape / 100;
-						if (RNG::percent((*j)->getCraftStats().shieldRechargeInGeoscape % 100))
-							total++;
-						(*j)->setShield((*j)->getShield() + total);
-					}
+					(*j)->setShield((*j)->getCraftStats().shieldCapacity);
+				}
+				else if (shieldRechargeInGeoscape > 0)
+				{
+					int total = (*j)->getCraftStats().shieldRechargeInGeoscape / 100;
+					if (RNG::percent((*j)->getCraftStats().shieldRechargeInGeoscape % 100))
+						total++;
+					(*j)->setShield((*j)->getShield() + total);
 				}
 			}
 			if ((*j)->reachedDestination())
@@ -1225,7 +1219,7 @@ void GeoscapeState::time5Seconds()
 									popup(new DogfightErrorState((*j), tr("STR_UNABLE_TO_ENGAGE_DEPTH")));
 									dogfight->setMinimized(true);
 									dogfight->setWaitForAltitude(true);
-								}
+							}
 								else if ((*j)->getRules()->isWaterOnly() && !_globe->insideLand((*j)->getLongitude(), (*j)->getLatitude()))
 								{
 									popup(new DogfightErrorState((*j), tr("STR_UNABLE_TO_ENGAGE_AIRBORNE")));
@@ -1241,7 +1235,7 @@ void GeoscapeState::time5Seconds()
 									_dogfightStartTimer->start();
 								}
 								_game->getMod()->playMusic("GMINTER");
-							}
+					}
 							break;
 						case Ufo::LANDED:
 						case Ufo::CRASHED:
@@ -1262,8 +1256,8 @@ void GeoscapeState::time5Seconds()
 								(*j)->returnToBase();
 							}
 							break;
-					}
 				}
+			}
 				else if (w != 0)
 				{
 					if (!(*j)->getIsAutoPatrolling())
@@ -1305,10 +1299,10 @@ void GeoscapeState::time5Seconds()
 						}
 					}
 				}
-			}
-			++j;
 		}
+			++j;
 	}
+}
 
 	// Clean up dead UFOs and end dogfights which were minimized.
 	for (std::vector<Ufo*>::iterator i = _game->getSavedGame()->getUfos()->begin(); i != _game->getSavedGame()->getUfos()->end();)
@@ -2654,7 +2648,7 @@ void GeoscapeState::handleDogfights()
 			// TODO: Handle altitude/land checks.
 			_minimizedDogfights++;
 #endif
-		}
+			}
 		else
 		{
 			_globe->rotateStop();
@@ -2673,13 +2667,13 @@ void GeoscapeState::handleDogfights()
 		{
 			++d;
 		}
-	}
+		}
 	if (_dogfights.empty())
 	{
 		_dogfightTimer->stop();
 		_zoomOutEffectTimer->start();
 	}
-}
+	}
 
 /**
  * Gets the number of minimized dogfights.
