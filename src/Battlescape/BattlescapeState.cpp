@@ -67,6 +67,7 @@
 #include "../Mod/RuleItem.h"
 #include "../Mod/AlienDeployment.h"
 #include "../Mod/Armor.h"
+#include "../Mod/RuleUfo.h"
 #include "../Savegame/Node.h"
 #include "../Savegame/SavedGame.h"
 #include "../Savegame/SavedBattleGame.h"
@@ -76,6 +77,7 @@
 #include "../Savegame/BattleItem.h"
 #include "../Ufopaedia/Ufopaedia.h"
 #include "../Mod/RuleInterface.h"
+#include "../Savegame/Ufo.h"
 #include "../Mod/RuleInventory.h"
 #include "../Mod/RuleSoldier.h"
 #include <algorithm>
@@ -2660,6 +2662,17 @@ void BattlescapeState::finishBattle(bool abort, int inExitArea)
 		_game->getMod()->getSoundByDepth(0, _save->getAmbientSound())->stopLoop();
 	}
 	AlienDeployment *ruleDeploy = _game->getMod()->getDeployment(_save->getMissionType());
+	if (!ruleDeploy)
+	{
+		for (std::vector<Ufo*>::iterator ufo = _game->getSavedGame()->getUfos()->begin(); ufo != _game->getSavedGame()->getUfos()->end(); ++ufo)
+		{
+			if ((*ufo)->isInBattlescape())
+			{
+				ruleDeploy = _game->getMod()->getDeployment((*ufo)->getRules()->getType());
+				break;
+			}
+		}
+	}
 	std::string nextStage;
 	if (ruleDeploy)
 	{

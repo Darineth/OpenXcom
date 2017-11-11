@@ -1110,8 +1110,8 @@ void GeoscapeState::time5Seconds()
 						else
 						{
 							Waypoint *w = new Waypoint();
-							w->setLongitude((*j)->getMeetLongitude());
-							w->setLatitude((*j)->getMeetLatitude());
+							w->setLongitude((*j)->getLongitude());
+							w->setLatitude((*j)->getLatitude());
 							w->setId(u->getId());
 							(*j)->setDestination(0);
 							popup(new GeoscapeCraftState((*j), _globe, w));
@@ -1219,7 +1219,7 @@ void GeoscapeState::time5Seconds()
 									popup(new DogfightErrorState((*j), tr("STR_UNABLE_TO_ENGAGE_DEPTH")));
 									dogfight->setMinimized(true);
 									dogfight->setWaitForAltitude(true);
-							}
+								}
 								else if ((*j)->getRules()->isWaterOnly() && !_globe->insideLand((*j)->getLongitude(), (*j)->getLatitude()))
 								{
 									popup(new DogfightErrorState((*j), tr("STR_UNABLE_TO_ENGAGE_AIRBORNE")));
@@ -1235,7 +1235,7 @@ void GeoscapeState::time5Seconds()
 									_dogfightStartTimer->start();
 								}
 								_game->getMod()->playMusic("GMINTER");
-					}
+							}
 							break;
 						case Ufo::LANDED:
 						case Ufo::CRASHED:
@@ -1256,8 +1256,8 @@ void GeoscapeState::time5Seconds()
 								(*j)->returnToBase();
 							}
 							break;
+					}
 				}
-			}
 				else if (w != 0)
 				{
 					if (!(*j)->getIsAutoPatrolling())
@@ -1299,10 +1299,10 @@ void GeoscapeState::time5Seconds()
 						}
 					}
 				}
-		}
+			}
 			++j;
+		}
 	}
-}
 
 	// Clean up dead UFOs and end dogfights which were minimized.
 	for (std::vector<Ufo*>::iterator i = _game->getSavedGame()->getUfos()->begin(); i != _game->getSavedGame()->getUfos()->end();)
@@ -1333,6 +1333,20 @@ void GeoscapeState::time5Seconds()
 			++i;
 		}
 	}
+
+	// Check any dogfights waiting to open
+	/*for (std::list<AirCombatState*>::iterator d = _dogfights.begin(); d != _dogfights.end(); ++d)
+	{
+		if ((*d)->isMinimized())
+		{
+			// TODO: Handle altitude/land checks.
+			if (((*d)->getWaitForPoly() && _globe->insideLand((*d)->getUfo()->getLongitude(), (*d)->getUfo()->getLatitude())) ||
+				((*d)->getWaitForAltitude() && (*d)->getUfo()->getAltitudeInt() <= (*d)->getCraft()->getRules()->getMaxAltitude()))
+			{
+				_pause = true; // the USO reached the sea during this interval period, stop the timer and let handleDogfights() take it from there.
+			}
+		}
+	}*/
 
 	// Clean up unused waypoints
 	for (std::vector<Waypoint*>::iterator i = _game->getSavedGame()->getWaypoints()->begin(); i != _game->getSavedGame()->getWaypoints()->end();)
@@ -2395,6 +2409,11 @@ void GeoscapeState::globeClick(Action *action)
  */
 void GeoscapeState::btnInterceptClick(Action *)
 {
+	if (buttonsDisabled())
+	{
+		return;
+	}
+
 	_game->pushState(new InterceptState(_globe));
 }
 
@@ -2431,6 +2450,11 @@ void GeoscapeState::btnSelectMusicTrackClick(Action *)
  */
 void GeoscapeState::btnBasesClick(Action *)
 {
+	if (buttonsDisabled())
+	{
+		return;
+	}
+
 	timerReset();
 	if (!_game->getSavedGame()->getBases()->empty())
 	{
@@ -2448,6 +2472,11 @@ void GeoscapeState::btnBasesClick(Action *)
  */
 void GeoscapeState::btnGraphsClick(Action *)
 {
+	if (buttonsDisabled())
+	{
+		return;
+	}
+
 	_game->pushState(new GraphsState);
 }
 
@@ -2457,6 +2486,11 @@ void GeoscapeState::btnGraphsClick(Action *)
  */
 void GeoscapeState::btnUfopaediaClick(Action *)
 {
+	if (buttonsDisabled())
+	{
+		return;
+	}
+
 	Ufopaedia::open(_game);
 }
 
@@ -2466,6 +2500,11 @@ void GeoscapeState::btnUfopaediaClick(Action *)
  */
 void GeoscapeState::btnOptionsClick(Action *)
 {
+	if (buttonsDisabled())
+	{
+		return;
+	}
+
 	_game->pushState(new PauseState(OPT_GEOSCAPE));
 }
 
@@ -2475,6 +2514,11 @@ void GeoscapeState::btnOptionsClick(Action *)
  */
 void GeoscapeState::btnFundingClick(Action *)
 {
+	if (buttonsDisabled())
+	{
+		return;
+	}
+
 	_game->pushState(new FundingState);
 }
 
@@ -2648,7 +2692,7 @@ void GeoscapeState::handleDogfights()
 			// TODO: Handle altitude/land checks.
 			_minimizedDogfights++;
 #endif
-			}
+}
 		else
 		{
 			_globe->rotateStop();
@@ -2667,13 +2711,13 @@ void GeoscapeState::handleDogfights()
 		{
 			++d;
 		}
-		}
+}
 	if (_dogfights.empty())
 	{
 		_dogfightTimer->stop();
 		_zoomOutEffectTimer->start();
 	}
-	}
+}
 
 /**
  * Gets the number of minimized dogfights.
@@ -2732,7 +2776,7 @@ void GeoscapeState::startDogfight()
 			(*d)->setInterceptionsCount(_dogfights.size());
 		}
 	}
-}
+	}
 
 /**
  * Returns the first free dogfight slot.
@@ -3270,6 +3314,11 @@ void GeoscapeState::resize(int &dX, int &dY)
 	_sideLine->setHeight(Options::baseYResolution);
 	_sideLine->setY(0);
 	_sideLine->drawRect(0, 0, _sideLine->getWidth(), _sideLine->getHeight(), 15);
+}
+
+bool GeoscapeState::buttonsDisabled() const
+{
+	return _zoomInEffectTimer->isRunning() || _zoomOutEffectTimer->isRunning();
 }
 
 }

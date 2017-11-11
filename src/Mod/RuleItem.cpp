@@ -21,6 +21,7 @@
 #include "RuleItem.h"
 #include "RuleInventory.h"
 #include "RuleDamageType.h"
+#include "../Engine/Exception.h"
 #include "../Savegame/BattleUnit.h"
 #include "../Engine/SurfaceSet.h"
 #include "../Engine/Surface.h"
@@ -638,6 +639,11 @@ void RuleItem::load(const YAML::Node &node, Mod *mod, int listOrder, const ModSc
 	if (_battleClipSize = node["battleClipSize"].as<int>(_battleClipSize))
 	{
 		_clipSize = 0;
+	}
+
+	if ((_battleType == BT_MELEE || _battleType == BT_FIREARM) && _clipSize == 0 && _compatibleAmmo[0].empty())
+	{
+		throw Exception("Weapon " + _type + " has clip size 0 and no ammo defined. Please use 'clipSize: -1' for unlimited ammo, or allocate a compatibleAmmo item.");
 	}
 
 	_hitEffect = node["hitEffect"].as<std::string>(_hitEffect);

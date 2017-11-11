@@ -171,6 +171,7 @@ private:
 	void determineAlienMissions();
 	/// Process each individual mission script command.
 	bool processCommand(RuleMissionScript *command);
+	bool buttonsDisabled() const;
 };
 
 }

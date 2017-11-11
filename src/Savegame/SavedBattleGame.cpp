@@ -2444,6 +2444,18 @@ bool SavedBattleGame::isBeforeGame() const
 	return _beforeGame;
 }
 
+/**
+* Resets all unit hit state flags.
+*/
+void SavedBattleGame::resetUnitHitStates()
+{
+	for (std::vector<BattleUnit*>::iterator i = _units.begin(); i != _units.end(); ++i)
+	{
+		(*i)->resetHitState();
+	}
+}
+
+
 namespace
 {
 

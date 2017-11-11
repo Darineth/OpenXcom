@@ -2049,40 +2049,37 @@ void DebriefingState::recoverItems(std::vector<BattleItem*> *from, Base *base)
 		}
 		else
 		{
-			if (rule->getRecoveryPoints() && !(*it)->getXCOMProperty())
+			if (rule->isRecoverable() && !(*it)->getXCOMProperty())
 			{
-				if (rule->getBattleType() == BT_CORPSE && (*it)->getUnit()->getStatus() == STATUS_DEAD)
+				if (rule->getBattleType() == BT_CORPSE)
 				{
-					std::string corpseItem = (*it)->getUnit()->getArmor()->getCorpseGeoscape();
-					RuleItem *rule = _game->getMod()->getItem(corpseItem);
-					if (rule->isRecoverable())
+					BattleUnit *corpseUnit = (*it)->getUnit();
+					if (corpseUnit->getStatus() == STATUS_DEAD)
 					{
-						addStat("STR_ALIEN_CORPSES_RECOVERED", 1, (*it)->getUnit()->getValue());
-						base->getStorageItems()->addItem(corpseItem, 1);
+						base->getStorageItems()->addItem(corpseUnit->getArmor()->getCorpseGeoscape(), 1);
+						if (rule->getRecoveryPoints())
+						{
+							addStat("STR_ALIEN_CORPSES_RECOVERED", 1, rule->getRecoveryPoints());
+						}
 					}
-				}
-				else if (rule->getBattleType() == BT_CORPSE)
-				{
-					// it's unconscious
-					if ((*it)->getUnit()->getStatus() == STATUS_UNCONSCIOUS ||
+					else if (corpseUnit->getStatus() == STATUS_UNCONSCIOUS ||
 						// or it's in timeout because it's unconscious from the previous stage
 						// units can be in timeout and alive, and we assume they flee.
-						((*it)->getUnit()->getStatus() == STATUS_IGNORE_ME &&
-						(*it)->getUnit()->getHealth() > 0 &&
-						(*it)->getUnit()->getHealth() < (*it)->getUnit()->getStunlevel()))
+						(corpseUnit->getStatus() == STATUS_IGNORE_ME &&
+							corpseUnit->getHealth() > 0 &&
+							corpseUnit->getHealth() < corpseUnit->getStunlevel()))
 					{
-						if ((*it)->getUnit()->getOriginalFaction() == FACTION_HOSTILE)
+						if (corpseUnit->getOriginalFaction() == FACTION_HOSTILE)
 						{
-							recoverAlien((*it)->getUnit(), base);
+							recoverAlien(corpseUnit, base);
 						}
-						else if ((*it)->getUnit()->getOriginalFaction() == FACTION_NEUTRAL)
+						else if (corpseUnit->getOriginalFaction() == FACTION_NEUTRAL)
 						{
-							addStat("STR_CIVILIANS_SAVED", 1, (*it)->getUnit()->getValue());
-							recoverCivilian((*it)->getUnit(), base);
+							addStat("STR_CIVILIANS_SAVED", 1, corpseUnit->getValue());
 						}
 					}
 				}
-				// only "recover" unresearched items
+				// only add recovery points for unresearched items
 				else if (!_game->getSavedGame()->isResearched(rule->getType()))
 				{
 					addStat("STR_ALIEN_ARTIFACTS_RECOVERED", 1, rule->getRecoveryPoints());
@@ -2095,7 +2092,7 @@ void DebriefingState::recoverItems(std::vector<BattleItem*> *from, Base *base)
 				bool recoverWeapon = true;
 				switch (rule->getBattleType())
 				{
-					case BT_CORPSE:
+					case BT_CORPSE: // corpses are handled above, do not process them here.
 						break;
 					case BT_MEDIKIT:
 						if (rule->isConsumable())
