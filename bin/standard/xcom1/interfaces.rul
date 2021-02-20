@@ -956,7 +956,7 @@ interfaces:
       - id: text
         color: 244   # even lighter blue
       - id: activity
-        color: 244
+        color: 133
         color2: 90
       - id: genericWindow
         color: 239   # bright green

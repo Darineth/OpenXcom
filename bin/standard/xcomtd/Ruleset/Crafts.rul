@@ -1,6 +1,6 @@
 crafts:
   - type: STR_SKYRANGER
-    sprite: 1
+    sprite: 0
     combatSprite: 1
     fuelMax: 1500
     damageMax: 150
@@ -8,7 +8,7 @@ crafts:
     accel: 2
     soldiers: 14
     vehicles: 3
-    pilots: 2
+    #pilots: 2
     costBuy: 500000
     costRent: 500000
     refuelRate: 50
@@ -34,8 +34,8 @@ crafts:
     speedMax: 2100
     accel: 3
     weapons: 2
-    soldiers: 1
-    pilots: 1
+    #soldiers: 1
+    #pilots: 1
     allowLanding: false
     costBuy: 600000
     costRent: 600000
@@ -56,8 +56,8 @@ crafts:
     speedMax: 3500
     accel: 6
     weapons: 2
-    soldiers: 1
-    pilots: 1
+    #soldiers: 1
+    #pilots: 1
     allowLanding: false
     refuelRate: 100
     transferTime: 96
@@ -74,8 +74,8 @@ crafts:
     speedMax: 11200
     accel: 25
     weapons: 2
-    soldiers: 2
-    pilots: 2
+    #soldiers: 2
+    #pilots: 2
     allowLanding: false
     refuelItem: STR_ELERIUM_115
     refuelRate: 20
@@ -93,7 +93,7 @@ crafts:
     weapons: 1
     soldiers: 20
     vehicles: 4
-    pilots: 2
+    #pilots: 2
     refuelItem: STR_ELERIUM_115
     refuelRate: 20
     score: 300
@@ -151,7 +151,7 @@ crafts:
     weapons: 2
     soldiers: 26
     vehicles: 4
-    pilots: 2
+    #pilots: 2
     refuelItem: STR_ELERIUM_115
     refuelRate: 10
     score: 400

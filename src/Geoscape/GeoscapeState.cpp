@@ -131,7 +131,7 @@ GeoscapeState::GeoscapeState() : _pause(false), _zoomInEffectDone(false), _zoomO
 	int screenHeight = Options::baseYGeoscape;
 
 	// Create objects
-	Surface *hd = _game->getMod()->getSurface("ALTGEOBORD.SCR");
+	Surface* hd = _game->getMod()->getSurface("ALTGEOBORD.SCR");
 	_bg = new Surface(hd->getWidth(), hd->getHeight(), 0, 0);
 	_sideLine = new Surface(64, screenHeight, screenWidth - 64, 0);
 	_sidebar = new Surface(64, 200, screenWidth - 64, screenHeight / 2 - 100);
@@ -238,7 +238,7 @@ GeoscapeState::GeoscapeState() : _pause(false), _zoomInEffectDone(false), _zoomO
 	add(_txtDebug, "text", "geoscape");
 
 	// Set up objects
-	Surface *geobord = _game->getMod()->getSurface("GEOBORD.SCR");
+	Surface* geobord = _game->getMod()->getSurface("GEOBORD.SCR");
 	geobord->setX(_sidebar->getX() - geobord->getWidth() + _sidebar->getWidth());
 	geobord->setY(_sidebar->getY());
 	_sidebar->copy(geobord);
@@ -456,7 +456,7 @@ void GeoscapeState::blit()
  * Handle key shortcuts.
  * @param action Pointer to an action.
  */
-void GeoscapeState::handle(Action *action)
+void GeoscapeState::handle(Action* action)
 {
 	if (_dogfights.size() == _minimizedDogfights)
 	{
@@ -516,7 +516,7 @@ void GeoscapeState::handle(Action *action)
 				{
 					for (auto& itemRule : _game->getMod()->getItemsList())
 					{
-						auto *item = _game->getMod()->getItem(itemRule);
+						auto* item = _game->getMod()->getItem(itemRule);
 						if (item && item->isRecoverable() && !item->isAlien() && item->getSellCost() > 0)
 						{
 							base->getStorageItems()->addItem(itemRule, 2);
@@ -532,7 +532,7 @@ void GeoscapeState::handle(Action *action)
 				{
 					for (auto& itemRule : _game->getMod()->getItemsList())
 					{
-						auto *item = _game->getMod()->getItem(itemRule);
+						auto* item = _game->getMod()->getItem(itemRule);
 						if (item && item->isRecoverable() && item->isAlien() && item->getSellCost() > 0)
 						{
 							base->getStorageItems()->addItem(itemRule, 2);
@@ -752,7 +752,7 @@ void GeoscapeState::timeDisplay()
 	ssActivity << tr("STR_ACTIVITY_RESOURCES") << "\n";
 	for (std::vector<Base*>::const_iterator ii = _game->getSavedGame()->getBases()->cbegin(); ii != _game->getSavedGame()->getBases()->cend(); ++ii)
 	{
-		Base *bb = *ii;
+		Base* bb = *ii;
 		if (int fuel = bb->getStorageItems()->getItem(_game->getMod()->getAlienFuelName()))
 		{
 			ssActivity << "[" << baseNum << "] " << Text::formatNumber(fuel) << " " << tr(_game->getMod()->getAlienFuelName()) << "\n";
@@ -764,12 +764,12 @@ void GeoscapeState::timeDisplay()
 	ssActivity << tr("STR_ACTIVITY_RESEARCH") << "\n";
 	for (std::vector<Base*>::const_iterator ii = _game->getSavedGame()->getBases()->cbegin(); ii != _game->getSavedGame()->getBases()->cend(); ++ii)
 	{
-		Base *bb = *ii;
+		Base* bb = *ii;
 		if (bb->getResearch().size())
 		{
 			for (std::vector<ResearchProject*>::const_iterator jj = bb->getResearch().cbegin(); jj != bb->getResearch().cend(); ++jj)
 			{
-				ResearchProject *pp = *jj;
+				ResearchProject* pp = *jj;
 				ssActivity << "[" << baseNum << "] " << tr(pp->getRules()->getName()) << ": " << tr(pp->getResearchProgress()) << "\n";
 			}
 		}
@@ -785,12 +785,12 @@ void GeoscapeState::timeDisplay()
 	ssActivity << tr("STR_ACTIVITY_MANUFACTURING") << "\n";
 	for (std::vector<Base*>::const_iterator ii = _game->getSavedGame()->getBases()->cbegin(); ii != _game->getSavedGame()->getBases()->cend(); ++ii)
 	{
-		Base *bb = *ii;
+		Base* bb = *ii;
 		if (bb->getProductions().size())
 		{
 			for (std::vector<Production*>::const_iterator jj = bb->getProductions().cbegin(); jj != bb->getProductions().cend(); ++jj)
 			{
-				Production *pp = *jj;
+				Production* pp = *jj;
 				if (pp->getAssignedEngineers())
 				{
 					ssActivity << "[" << baseNum << "] " << tr(pp->getRules()->getName()) << ": " << pp->getAmountProduced();
@@ -824,15 +824,15 @@ void GeoscapeState::timeDisplay()
 	bool craftActivity = false;
 	for (std::vector<Base*>::const_iterator ii = _game->getSavedGame()->getBases()->cbegin(); ii != _game->getSavedGame()->getBases()->cend(); ++ii)
 	{
-		Base *bb = *ii;
+		Base* bb = *ii;
 		if (bb->getCrafts()->size())
 		{
 			for (std::vector<Craft*>::const_iterator jj = bb->getCrafts()->cbegin(); jj != bb->getCrafts()->cend(); ++jj)
 			{
-				Craft *cc = *jj;
+				Craft* cc = *jj;
 				if (cc->getStatus() != "STR_OUT")
 				{
-					CraftWeapon *cw = 0;
+					CraftWeapon* cw = 0;
 					int maintenanceTime = cc->calcRepairTime() + cc->calcRefuelTime() + cc->calcRearmTime();
 
 					if (maintenanceTime)
@@ -971,7 +971,7 @@ void GeoscapeState::time5Seconds()
 				if ((*i)->reachedDestination())
 				{
 					size_t count = _game->getSavedGame()->getMissionSites()->size();
-					AlienMission *mission = (*i)->getMission();
+					AlienMission* mission = (*i)->getMission();
 					bool detected = (*i)->getDetected();
 					mission->ufoReachedWaypoint(**i, *_game, *_globe);
 					if (detected != (*i)->getDetected() && !(*i)->getFollowers()->empty())
@@ -981,14 +981,14 @@ void GeoscapeState::time5Seconds()
 					}
 					if (count < _game->getSavedGame()->getMissionSites()->size())
 					{
-						MissionSite *site = _game->getSavedGame()->getMissionSites()->back();
+						MissionSite* site = _game->getSavedGame()->getMissionSites()->back();
 						site->setDetected(true);
 						popup(new MissionDetectedState(site, this));
 					}
 					// If UFO was destroyed, don't spawn missions
 					if ((*i)->getStatus() == Ufo::DESTROYED)
 						return;
-					if (Base *base = dynamic_cast<Base*>((*i)->getDestination()))
+					if (Base* base = dynamic_cast<Base*>((*i)->getDestination()))
 					{
 						mission->setWaveCountdown(30 * (RNG::generate(0, 400) + 48));
 						(*i)->setDestination(0);
@@ -1031,7 +1031,7 @@ void GeoscapeState::time5Seconds()
 				(*i)->think();
 				if ((*i)->getSecondsRemaining() == 0)
 				{
-					AlienMission *mission = (*i)->getMission();
+					AlienMission* mission = (*i)->getMission();
 					bool detected = (*i)->getDetected();
 					mission->ufoLifting(**i, *_game->getSavedGame());
 					if (detected != (*i)->getDetected() && !(*i)->getFollowers()->empty())
@@ -1092,7 +1092,7 @@ void GeoscapeState::time5Seconds()
 						}
 					}
 				}
-				delete *j;
+				delete* j;
 				j = (*i)->getCrafts()->erase(j);
 				continue;
 			}
@@ -1109,7 +1109,7 @@ void GeoscapeState::time5Seconds()
 						}
 						else
 						{
-							Waypoint *w = new Waypoint();
+							Waypoint* w = new Waypoint();
 							w->setLongitude((*j)->getLongitude());
 							w->setLatitude((*j)->getLatitude());
 							w->setId(u->getId());
@@ -1119,18 +1119,22 @@ void GeoscapeState::time5Seconds()
 					}
 					if (u->getStatus() == Ufo::LANDED && (*j)->isInDogfight())
 					{
-						for (AirCombatState *ii : _dogfights)
+#ifdef NEW_AIR_COMBAT
+						for (AirCombatState* ii : _dogfights)
 						{
 							ii->removeCraft(*j);
 						}
+#endif
 						(*j)->setInDogfight(false);
 					}
 					else if (u->getStatus() == Ufo::DESTROYED)
 					{
-						for (AirCombatState *ii : _dogfights)
+#ifdef NEW_AIR_COMBAT
+						for (AirCombatState* ii : _dogfights)
 						{
 							ii->removeCraft(*j);
 						}
+#endif
 						(*j)->returnToBase();
 					}
 				}
@@ -1138,10 +1142,12 @@ void GeoscapeState::time5Seconds()
 				{
 					if ((*j)->isInDogfight())
 					{
-						for (AirCombatState *ii : _dogfights)
+#ifdef NEW_AIR_COMBAT
+						for (AirCombatState* ii : _dogfights)
 						{
 							ii->removeCraft(*j);
 						}
+#endif
 						(*j)->setInDogfight(false);
 					}
 				}
@@ -1166,7 +1172,7 @@ void GeoscapeState::time5Seconds()
 			if ((*j)->reachedDestination())
 			{
 				Ufo* u = dynamic_cast<Ufo*>((*j)->getDestination());
-				Waypoint *w = dynamic_cast<Waypoint*>((*j)->getDestination());
+				Waypoint* w = dynamic_cast<Waypoint*>((*j)->getDestination());
 				MissionSite* m = dynamic_cast<MissionSite*>((*j)->getDestination());
 				AlienBase* b = dynamic_cast<AlienBase*>((*j)->getDestination());
 				if (u != 0)
@@ -1184,8 +1190,8 @@ void GeoscapeState::time5Seconds()
 							if (!(*j)->isInDogfight() && !(*j)->getDistance(u))
 							{
 #ifdef NEW_AIR_COMBAT
-								AirCombatState *dogfight = 0;
-								for (AirCombatState *existing : _dogfights)
+								AirCombatState* dogfight = 0;
+								for (AirCombatState* existing : _dogfights)
 								{
 									if (existing->getUfo() == u)
 									{
@@ -1194,7 +1200,7 @@ void GeoscapeState::time5Seconds()
 									}
 								}
 
-								for (AirCombatState *existing : _dogfightsToBeStarted)
+								for (AirCombatState* existing : _dogfightsToBeStarted)
 								{
 									if (existing->getUfo() == u)
 									{
@@ -1211,7 +1217,7 @@ void GeoscapeState::time5Seconds()
 
 								dogfight->addCraft(*j);
 #else
-								DogfightState *dogfight = 0;
+								DogfightState* dogfight = 0;
 								_dogfightsToBeStarted.push_back(dogfight = new DogfightState(this, (*j), u));
 #endif
 								if ((*j)->getRules()->isWaterOnly() && u->getAltitudeInt() > (*j)->getRules()->getMaxAltitude())
@@ -1235,7 +1241,7 @@ void GeoscapeState::time5Seconds()
 									_dogfightStartTimer->start();
 								}
 								_game->getMod()->playMusic("GMINTER");
-							}
+					}
 							break;
 						case Ufo::LANDED:
 						case Ufo::CRASHED:
@@ -1256,8 +1262,8 @@ void GeoscapeState::time5Seconds()
 								(*j)->returnToBase();
 							}
 							break;
-					}
 				}
+			}
 				else if (w != 0)
 				{
 					if (!(*j)->getIsAutoPatrolling())
@@ -1299,10 +1305,10 @@ void GeoscapeState::time5Seconds()
 						}
 					}
 				}
-			}
-			++j;
 		}
+			++j;
 	}
+}
 
 	// Clean up dead UFOs and end dogfights which were minimized.
 	for (std::vector<Ufo*>::iterator i = _game->getSavedGame()->getUfos()->begin(); i != _game->getSavedGame()->getUfos()->end();)
@@ -1316,7 +1322,7 @@ void GeoscapeState::time5Seconds()
 				{
 					if ((*dd)->getUfo() == (*i))
 					{
-						delete *dd;
+						delete* dd;
 						dd = _dogfights.erase(dd);
 					}
 					else
@@ -1325,7 +1331,7 @@ void GeoscapeState::time5Seconds()
 					}
 				}
 			}
-			delete *i;
+			delete* i;
 			i = _game->getSavedGame()->getUfos()->erase(i);
 		}
 		else
@@ -1353,7 +1359,7 @@ void GeoscapeState::time5Seconds()
 	{
 		if ((*i)->getFollowers()->empty())
 		{
-			delete *i;
+			delete* i;
 			i = _game->getSavedGame()->getWaypoints()->erase(i);
 		}
 		else
@@ -1366,15 +1372,15 @@ void GeoscapeState::time5Seconds()
 /**
  * Functor that attempt to detect an XCOM base.
  */
-class DetectXCOMBase : public std::unary_function<Ufo *, bool>
+class DetectXCOMBase : public std::unary_function<Ufo*, bool>
 {
 public:
 	/// Create a detector for the given base.
-	DetectXCOMBase(const Base &base) : _base(base) { /* Empty by design.  */ }
+	DetectXCOMBase(const Base& base) : _base(base) { /* Empty by design.  */ }
 	/// Attempt detection
-	bool operator()(const Ufo *ufo) const;
+	bool operator()(const Ufo* ufo) const;
 private:
-	const Base &_base;	//!< The target base.
+	const Base& _base;	//!< The target base.
 };
 
 /**
@@ -1382,7 +1388,7 @@ private:
  * @param ufo Pointer to the UFO attempting detection.
  * @return If the base is detected by @a ufo.
  */
-bool DetectXCOMBase::operator()(const Ufo *ufo) const
+bool DetectXCOMBase::operator()(const Ufo* ufo) const
 {
 	if (ufo->getTrajectoryPoint() <= 1) return false;
 	if (ufo->getTrajectory().getZone(ufo->getTrajectoryPoint()) == 5) return false;
@@ -1400,10 +1406,10 @@ bool DetectXCOMBase::operator()(const Ufo *ufo) const
  * Functor that marks an XCOM base for retaliation.
  * This is required because of the iterator type.
  */
-struct SetRetaliationTarget : public std::unary_function<std::map<const Region *, Base *>::value_type, void>
+struct SetRetaliationTarget : public std::unary_function<std::map<const Region*, Base*>::value_type, void>
 {
 	/// Mark as a valid retaliation target.
-	void operator()(const argument_type &iter) const { iter.second->setRetaliationTarget(true); }
+	void operator()(const argument_type& iter) const { iter.second->setRetaliationTarget(true); }
 };
 
 /**
@@ -1464,7 +1470,7 @@ void GeoscapeState::time10Minutes()
 	else
 	{
 		// Only remember last base in each region.
-		std::map<const Region *, Base *> discovered;
+		std::map<const Region*, Base*> discovered;
 		for (std::vector<Base*>::iterator iBase = _game->getSavedGame()->getBases()->begin(); iBase != _game->getSavedGame()->getBases()->end(); ++iBase)
 		{
 			// Find a UFO that detected this base, if any.
@@ -1490,12 +1496,12 @@ public:
 	 * @param game The game engine.
 	 * @param globe The globe object.
 	 */
-	callThink(Game &game, const Globe &globe) : _game(game), _globe(globe) { /* Empty by design. */ }
+	callThink(Game& game, const Globe& globe) : _game(game), _globe(globe) { /* Empty by design. */ }
 	/// Call AlienMission::think() with stored parameters.
-	void operator()(AlienMission *am) const { am->think(_game, _globe); }
+	void operator()(AlienMission* am) const { am->think(_game, _globe); }
 private:
-	Game &_game;
-	const Globe &_globe;
+	Game& _game;
+	const Globe& _globe;
 };
 
 /** @brief Process a MissionSite.
@@ -1503,7 +1509,7 @@ private:
  * @param ts Pointer to mission site.
  * @return Has mission site expired?
  */
-bool GeoscapeState::processMissionSite(MissionSite *site)
+bool GeoscapeState::processMissionSite(MissionSite* site)
 {
 	bool removeSite = site->getSecondsRemaining() < 30 * 60;
 	if (!removeSite)
@@ -1541,7 +1547,7 @@ bool GeoscapeState::processMissionSite(MissionSite *site)
 
 	int score = removeSite ? site->getDeployment()->getDespawnPenalty() : site->getDeployment()->getPoints();
 
-	Region *region = _game->getSavedGame()->locateRegion(*site);
+	Region* region = _game->getSavedGame()->locateRegion(*site);
 	if (region)
 	{
 		region->addActivityAlien(score);
@@ -1568,7 +1574,7 @@ bool GeoscapeState::processMissionSite(MissionSite *site)
 struct expireCrashedUfo : public std::unary_function<Ufo*, void>
 {
 	/// Decrease UFO expiration timer.
-	void operator()(Ufo *ufo) const
+	void operator()(Ufo* ufo) const
 	{
 		if (ufo->getStatus() == Ufo::CRASHED)
 		{
@@ -1599,7 +1605,7 @@ void GeoscapeState::time30Minutes()
 	{
 		if ((*am)->isOver())
 		{
-			delete *am;
+			delete* am;
 			am = _game->getSavedGame()->getAlienMissions().erase(am);
 		}
 		else
@@ -1636,7 +1642,7 @@ void GeoscapeState::time30Minutes()
 					{
 						if ((*j)->getIsAutoPatrolling())
 						{
-							Waypoint *w = new Waypoint();
+							Waypoint* w = new Waypoint();
 							w->setLongitude((*j)->getLongitudeAuto());
 							w->setLatitude((*j)->getLatitudeAuto());
 							if (w != 0 && w->getId() == 0)
@@ -1667,7 +1673,7 @@ void GeoscapeState::time30Minutes()
 						{
 							if ((*j)->getIsAutoPatrolling())
 							{
-								Waypoint *w = new Waypoint();
+								Waypoint* w = new Waypoint();
 								w->setLongitude((*j)->getLongitudeAuto());
 								w->setLatitude((*j)->getLatitudeAuto());
 								if (w != 0 && w->getId() == 0)
@@ -1905,16 +1911,16 @@ void GeoscapeState::time1Hour()
  * This class will attempt to generate a supply mission for a base.
  * Each alien base has a 6/101 chance to generate a supply mission.
  */
-class GenerateSupplyMission : public std::unary_function<const AlienBase *, void>
+class GenerateSupplyMission : public std::unary_function<const AlienBase*, void>
 {
 public:
 	/// Store rules and game data references for later use.
-	GenerateSupplyMission(const Mod &mod, SavedGame &save) : _mod(mod), _save(save) { /* Empty by design */ }
+	GenerateSupplyMission(const Mod& mod, SavedGame& save) : _mod(mod), _save(save) { /* Empty by design */ }
 	/// Check and spawn mission.
-	void operator()(const AlienBase *base) const;
+	void operator()(const AlienBase* base) const;
 private:
-	const Mod &_mod;
-	SavedGame &_save;
+	const Mod& _mod;
+	SavedGame& _save;
 };
 
 /**
@@ -1922,15 +1928,15 @@ private:
  * There is a 6/101 chance of the mission spawning.
  * @param base A pointer to the alien base.
  */
-void GenerateSupplyMission::operator()(const AlienBase *base) const
+void GenerateSupplyMission::operator()(const AlienBase* base) const
 {
 	if (_mod.getAlienMission(base->getDeployment()->getGenMissionType()))
 	{
 		if (RNG::percent(base->getDeployment()->getGenMissionFrequency()))
 		{
 			//Spawn supply mission for this base.
-			const RuleAlienMission &rule = *_mod.getAlienMission(base->getDeployment()->getGenMissionType());
-			AlienMission *mission = new AlienMission(rule);
+			const RuleAlienMission& rule = *_mod.getAlienMission(base->getDeployment()->getGenMissionType());
+			AlienMission* mission = new AlienMission(rule);
 			mission->setRegion(_save.locateRegion(*base)->getRules()->getType(), _mod);
 			mission->setId(_save.getId("ALIEN_MISSIONS"));
 			mission->setRace(base->getAlienRace());
@@ -1977,7 +1983,7 @@ void GeoscapeState::time1Day()
 			}
 		}
 		// 2. remember available research before adding new finished research
-		std::vector<RuleResearch *> before;
+		std::vector<RuleResearch*> before;
 		if (!finished.empty())
 		{
 			_game->getSavedGame()->getAvailableResearchProjects(before, _game->getMod(), *i);
@@ -1988,16 +1994,16 @@ void GeoscapeState::time1Day()
 			// 3a. remove finished research from the base where it was researched
 			(*i)->removeResearch(*iter);
 			// 3b. handle interrogation and spawned items
-			RuleResearch * bonus = 0;
-			const RuleResearch * research = (*iter)->getRules();
+			RuleResearch* bonus = 0;
+			const RuleResearch* research = (*iter)->getRules();
 			if (Options::retainCorpses && research->destroyItem() && _game->getMod()->getUnit(research->getName()))
 			{
 				(*i)->getStorageItems()->addItem(_game->getMod()->getArmor(_game->getMod()->getUnit(research->getName())->getArmor(), true)->getCorpseGeoscape());
 			}
-			RuleItem *spawnedItem = _game->getMod()->getItem(research->getSpawnedItem());
+			RuleItem* spawnedItem = _game->getMod()->getItem(research->getSpawnedItem());
 			if (spawnedItem)
 			{
-				Transfer *t = new Transfer(1);
+				Transfer* t = new Transfer(1);
 				t->setItems(research->getSpawnedItem());
 				(*i)->getTransfers()->push_back(t);
 			}
@@ -2051,7 +2057,7 @@ void GeoscapeState::time1Day()
 			}
 			// 3d. determine and remember if the ufopedia article should pop up again or not
 			// Note: because different topics may lead to the same lookup
-			const RuleResearch * newResearch = research;
+			const RuleResearch* newResearch = research;
 			std::string name = research->getLookup().empty() ? research->getName() : research->getLookup();
 			if (_game->getSavedGame()->isResearched(name, false))
 			{
@@ -2079,14 +2085,14 @@ void GeoscapeState::time1Day()
 			// 3g. warning if weapon is researched before its clip
 			if (newResearch)
 			{
-				RuleItem *item = _game->getMod()->getItem(newResearch->getName());
+				RuleItem* item = _game->getMod()->getItem(newResearch->getName());
 				if (item && item->getBattleType() == BT_FIREARM && !item->getPrimaryCompatibleAmmo()->empty())
 				{
-					RuleManufacture *man = _game->getMod()->getManufacture(item->getType());
+					RuleManufacture* man = _game->getMod()->getManufacture(item->getType());
 					if (man && !man->getRequirements().empty())
 					{
-						const std::vector<std::string> &req = man->getRequirements();
-						RuleItem *ammo = _game->getMod()->getItem(item->getPrimaryCompatibleAmmo()->front());
+						const std::vector<std::string>& req = man->getRequirements();
+						RuleItem* ammo = _game->getMod()->getItem(item->getPrimaryCompatibleAmmo()->front());
 						if (ammo && std::find(req.begin(), req.end(), ammo->getType()) != req.end() && !_game->getSavedGame()->isResearched(req, true))
 						{
 							popup(new ResearchRequiredState(item));
@@ -2095,31 +2101,31 @@ void GeoscapeState::time1Day()
 				}
 			}
 			// 3h. inform about new possible research
-			std::vector<RuleResearch *> after;
+			std::vector<RuleResearch*> after;
 			_game->getSavedGame()->getAvailableResearchProjects(after, _game->getMod(), *i);
-			std::vector<RuleResearch *> newPossibleResearch;
+			std::vector<RuleResearch*> newPossibleResearch;
 			_game->getSavedGame()->getNewlyAvailableResearchProjects(before, after, newPossibleResearch);
 			popup(new NewPossibleResearchState(*i, newPossibleResearch));
 			// 3i. inform about new possible manufacture, purchase, craft and facilities
-			std::vector<RuleManufacture *> newPossibleManufacture;
+			std::vector<RuleManufacture*> newPossibleManufacture;
 			_game->getSavedGame()->getDependableManufacture(newPossibleManufacture, research, _game->getMod(), *i);
 			if (!newPossibleManufacture.empty())
 			{
 				popup(new NewPossibleManufactureState(*i, newPossibleManufacture));
 			}
-			std::vector<RuleItem *> newPossiblePurchase;
+			std::vector<RuleItem*> newPossiblePurchase;
 			_game->getSavedGame()->getDependablePurchase(newPossiblePurchase, research, _game->getMod());
 			if (!newPossiblePurchase.empty())
 			{
 				popup(new NewPossiblePurchaseState(*i, newPossiblePurchase));
 			}
-			std::vector<RuleCraft *> newPossibleCraft;
+			std::vector<RuleCraft*> newPossibleCraft;
 			_game->getSavedGame()->getDependableCraft(newPossibleCraft, research, _game->getMod());
 			if (!newPossibleCraft.empty())
 			{
 				popup(new NewPossibleCraftState(*i, newPossibleCraft));
 			}
-			std::vector<RuleBaseFacility *> newPossibleFacilities;
+			std::vector<RuleBaseFacility*> newPossibleFacilities;
 			_game->getSavedGame()->getDependableFacilities(newPossibleFacilities, research, _game->getMod());
 			if (!newPossibleFacilities.empty())
 			{
@@ -2156,7 +2162,7 @@ void GeoscapeState::time1Day()
 		// Handle soldier wounds and martial training
 		float absBonus = (*i)->getSickBayAbsoluteBonus();
 		float relBonus = (*i)->getSickBayRelativeBonus();
-		std::vector<Soldier *> trainingFinishedList;
+		std::vector<Soldier*> trainingFinishedList;
 		for (std::vector<Soldier*>::iterator j = (*i)->getSoldiers()->begin(); j != (*i)->getSoldiers()->end(); ++j)
 		{
 			if ((*j)->isWounded())
@@ -2351,7 +2357,7 @@ void GeoscapeState::timerReset()
  * and pauses the game timer respectively.
  * @param state Pointer to popup state.
  */
-void GeoscapeState::popup(State *state)
+void GeoscapeState::popup(State* state)
 {
 	_pause = true;
 	_popups.push_back(state);
@@ -2362,7 +2368,7 @@ void GeoscapeState::popup(State *state)
  * access by other substates.
  * @return Pointer to globe.
  */
-Globe *GeoscapeState::getGlobe() const
+Globe* GeoscapeState::getGlobe() const
 {
 	return _globe;
 }
@@ -2373,7 +2379,7 @@ Globe *GeoscapeState::getGlobe() const
  * @param action Pointer to an action.
  */
 
-void GeoscapeState::globeClick(Action *action)
+void GeoscapeState::globeClick(Action* action)
 {
 	int mouseX = (int)floor(action->getAbsoluteXMouse()), mouseY = (int)floor(action->getAbsoluteYMouse());
 
@@ -2407,7 +2413,7 @@ void GeoscapeState::globeClick(Action *action)
  * Opens the Intercept window.
  * @param action Pointer to an action.
  */
-void GeoscapeState::btnInterceptClick(Action *)
+void GeoscapeState::btnInterceptClick(Action*)
 {
 	if (buttonsDisabled())
 	{
@@ -2421,7 +2427,7 @@ void GeoscapeState::btnInterceptClick(Action *)
 * Opens the UFO Tracker window.
 * @param action Pointer to an action.
 */
-void GeoscapeState::btnUfoTrackerClick(Action *)
+void GeoscapeState::btnUfoTrackerClick(Action*)
 {
 	_game->pushState(new UfoTrackerState(this, _globe));
 }
@@ -2430,7 +2436,7 @@ void GeoscapeState::btnUfoTrackerClick(Action *)
 * Opens the TechTreeViewer window.
 * @param action Pointer to an action.
 */
-void GeoscapeState::btnTechTreeViewerClick(Action *)
+void GeoscapeState::btnTechTreeViewerClick(Action*)
 {
 	_game->pushState(new TechTreeViewerState());
 }
@@ -2439,7 +2445,7 @@ void GeoscapeState::btnTechTreeViewerClick(Action *)
  * Opens the jukebox.
  * @param action Pointer to an action.
  */
-void GeoscapeState::btnSelectMusicTrackClick(Action *)
+void GeoscapeState::btnSelectMusicTrackClick(Action*)
 {
 	_game->pushState(new SelectMusicTrackState(SMT_GEOSCAPE));
 }
@@ -2448,7 +2454,7 @@ void GeoscapeState::btnSelectMusicTrackClick(Action *)
  * Goes to the Basescape screen.
  * @param action Pointer to an action.
  */
-void GeoscapeState::btnBasesClick(Action *)
+void GeoscapeState::btnBasesClick(Action*)
 {
 	if (buttonsDisabled())
 	{
@@ -2470,7 +2476,7 @@ void GeoscapeState::btnBasesClick(Action *)
  * Goes to the Graphs screen.
  * @param action Pointer to an action.
  */
-void GeoscapeState::btnGraphsClick(Action *)
+void GeoscapeState::btnGraphsClick(Action*)
 {
 	if (buttonsDisabled())
 	{
@@ -2484,7 +2490,7 @@ void GeoscapeState::btnGraphsClick(Action *)
  * Goes to the Ufopaedia window.
  * @param action Pointer to an action.
  */
-void GeoscapeState::btnUfopaediaClick(Action *)
+void GeoscapeState::btnUfopaediaClick(Action*)
 {
 	if (buttonsDisabled())
 	{
@@ -2498,7 +2504,7 @@ void GeoscapeState::btnUfopaediaClick(Action *)
  * Opens the Options window.
  * @param action Pointer to an action.
  */
-void GeoscapeState::btnOptionsClick(Action *)
+void GeoscapeState::btnOptionsClick(Action*)
 {
 	if (buttonsDisabled())
 	{
@@ -2512,7 +2518,7 @@ void GeoscapeState::btnOptionsClick(Action *)
  * Goes to the Funding screen.
  * @param action Pointer to an action.
  */
-void GeoscapeState::btnFundingClick(Action *)
+void GeoscapeState::btnFundingClick(Action*)
 {
 	if (buttonsDisabled())
 	{
@@ -2526,7 +2532,7 @@ void GeoscapeState::btnFundingClick(Action *)
  * Starts rotating the globe to the left.
  * @param action Pointer to an action.
  */
-void GeoscapeState::btnRotateLeftPress(Action *)
+void GeoscapeState::btnRotateLeftPress(Action*)
 {
 	_globe->rotateLeft();
 }
@@ -2535,7 +2541,7 @@ void GeoscapeState::btnRotateLeftPress(Action *)
  * Stops rotating the globe to the left.
  * @param action Pointer to an action.
  */
-void GeoscapeState::btnRotateLeftRelease(Action *)
+void GeoscapeState::btnRotateLeftRelease(Action*)
 {
 	_globe->rotateStopLon();
 }
@@ -2544,7 +2550,7 @@ void GeoscapeState::btnRotateLeftRelease(Action *)
  * Starts rotating the globe to the right.
  * @param action Pointer to an action.
  */
-void GeoscapeState::btnRotateRightPress(Action *)
+void GeoscapeState::btnRotateRightPress(Action*)
 {
 	_globe->rotateRight();
 }
@@ -2553,7 +2559,7 @@ void GeoscapeState::btnRotateRightPress(Action *)
  * Stops rotating the globe to the right.
  * @param action Pointer to an action.
  */
-void GeoscapeState::btnRotateRightRelease(Action *)
+void GeoscapeState::btnRotateRightRelease(Action*)
 {
 	_globe->rotateStopLon();
 }
@@ -2562,7 +2568,7 @@ void GeoscapeState::btnRotateRightRelease(Action *)
  * Starts rotating the globe upwards.
  * @param action Pointer to an action.
  */
-void GeoscapeState::btnRotateUpPress(Action *)
+void GeoscapeState::btnRotateUpPress(Action*)
 {
 	_globe->rotateUp();
 }
@@ -2571,7 +2577,7 @@ void GeoscapeState::btnRotateUpPress(Action *)
  * Stops rotating the globe upwards.
  * @param action Pointer to an action.
  */
-void GeoscapeState::btnRotateUpRelease(Action *)
+void GeoscapeState::btnRotateUpRelease(Action*)
 {
 	_globe->rotateStopLat();
 }
@@ -2580,7 +2586,7 @@ void GeoscapeState::btnRotateUpRelease(Action *)
  * Starts rotating the globe downwards.
  * @param action Pointer to an action.
  */
-void GeoscapeState::btnRotateDownPress(Action *)
+void GeoscapeState::btnRotateDownPress(Action*)
 {
 	_globe->rotateDown();
 }
@@ -2589,7 +2595,7 @@ void GeoscapeState::btnRotateDownPress(Action *)
  * Stops rotating the globe downwards.
  * @param action Pointer to an action.
  */
-void GeoscapeState::btnRotateDownRelease(Action *)
+void GeoscapeState::btnRotateDownRelease(Action*)
 {
 	_globe->rotateStopLat();
 }
@@ -2598,7 +2604,7 @@ void GeoscapeState::btnRotateDownRelease(Action *)
  * Zooms into the globe.
  * @param action Pointer to an action.
  */
-void GeoscapeState::btnZoomInLeftClick(Action *)
+void GeoscapeState::btnZoomInLeftClick(Action*)
 {
 	_globe->zoomIn();
 }
@@ -2607,7 +2613,7 @@ void GeoscapeState::btnZoomInLeftClick(Action *)
  * Zooms the globe maximum.
  * @param action Pointer to an action.
  */
-void GeoscapeState::btnZoomInRightClick(Action *)
+void GeoscapeState::btnZoomInRightClick(Action*)
 {
 	_globe->zoomMax();
 }
@@ -2616,7 +2622,7 @@ void GeoscapeState::btnZoomInRightClick(Action *)
  * Zooms out of the globe.
  * @param action Pointer to an action.
  */
-void GeoscapeState::btnZoomOutLeftClick(Action *)
+void GeoscapeState::btnZoomOutLeftClick(Action*)
 {
 	_globe->zoomOut();
 }
@@ -2625,7 +2631,7 @@ void GeoscapeState::btnZoomOutLeftClick(Action *)
  * Zooms the globe minimum.
  * @param action Pointer to an action.
  */
-void GeoscapeState::btnZoomOutRightClick(Action *)
+void GeoscapeState::btnZoomOutRightClick(Action*)
 {
 	_globe->zoomMin();
 }
@@ -2692,7 +2698,7 @@ void GeoscapeState::handleDogfights()
 			// TODO: Handle altitude/land checks.
 			_minimizedDogfights++;
 #endif
-}
+			}
 		else
 		{
 			_globe->rotateStop();
@@ -2704,20 +2710,20 @@ void GeoscapeState::handleDogfights()
 			{
 				_minimizedDogfights--;
 			}
-			delete *d;
+			delete* d;
 			d = _dogfights.erase(d);
 		}
 		else
 		{
 			++d;
 		}
-}
+		}
 	if (_dogfights.empty())
 	{
 		_dogfightTimer->stop();
 		_zoomOutEffectTimer->start();
 	}
-}
+	}
 
 /**
  * Gets the number of minimized dogfights.
@@ -2759,24 +2765,24 @@ void GeoscapeState::startDogfight()
 		while (!_dogfightsToBeStarted.empty())
 		{
 #ifdef NEW_AIR_COMBAT
-			AirCombatState *state = _dogfightsToBeStarted.back();
+			AirCombatState* state = _dogfightsToBeStarted.back();
 
 			//_game->pushState(state);
 #else
-			DogfightState *state = _dogfightsToBeStarted.back();
+			DogfightState* state = _dogfightsToBeStarted.back();
 #endif
 			_dogfights.push_back(state);
 			_dogfightsToBeStarted.pop_back();
 			_dogfights.back()->setInterceptionNumber(getFirstFreeDogfightSlot());
 			_dogfights.back()->setInterceptionsCount(_dogfights.size() + _dogfightsToBeStarted.size());
-		}
+	}
 		// Set correct number of interceptions for every dogfight.
 		for (auto d = _dogfights.begin(); d != _dogfights.end(); ++d)
 		{
 			(*d)->setInterceptionsCount(_dogfights.size());
 		}
-	}
-	}
+}
+}
 
 /**
  * Returns the first free dogfight slot.
@@ -2800,7 +2806,7 @@ int GeoscapeState::getFirstFreeDogfightSlot()
  * @param base Base to defend.
  * @param ufo Ufo attacking base.
  */
-void GeoscapeState::handleBaseDefense(Base *base, Ufo *ufo)
+void GeoscapeState::handleBaseDefense(Base* base, Ufo* ufo)
 {
 	// Get the shade and texture for the globe at the location of the base, using the ufo position
 	int texture, shade;
@@ -2813,7 +2819,7 @@ void GeoscapeState::handleBaseDefense(Base *base, Ufo *ufo)
 
 	if (base->getAvailableSoldiers(true, Options::everyoneFightsNobodyQuits) > 0 || !base->getVehicles()->empty())
 	{
-		SavedBattleGame *bgame = new SavedBattleGame(_game->getMod());
+		SavedBattleGame* bgame = new SavedBattleGame(_game->getMod());
 		_game->getSavedGame()->setBattleGame(bgame);
 		bgame->setMissionType("STR_BASE_DEFENSE");
 		BattlescapeGenerator bgen = BattlescapeGenerator(_game);
@@ -2838,9 +2844,9 @@ void GeoscapeState::handleBaseDefense(Base *base, Ufo *ufo)
  */
 void GeoscapeState::determineAlienMissions()
 {
-	SavedGame *save = _game->getSavedGame();
-	AlienStrategy &strategy = save->getAlienStrategy();
-	Mod *mod = _game->getMod();
+	SavedGame* save = _game->getSavedGame();
+	AlienStrategy& strategy = save->getAlienStrategy();
+	Mod* mod = _game->getMod();
 	int month = _game->getSavedGame()->getMonthsPassed();
 	std::vector<RuleMissionScript*> availableMissions;
 	std::map<int, bool> conditions;
@@ -2850,7 +2856,7 @@ void GeoscapeState::determineAlienMissions()
 	// first we need to build a list of "valid" commands
 	for (std::vector<std::string>::const_iterator i = mod->getMissionScriptList()->begin(); i != mod->getMissionScriptList()->end(); ++i)
 	{
-		RuleMissionScript *command = mod->getMissionScript(*i);
+		RuleMissionScript* command = mod->getMissionScript(*i);
 
 		// level one condition check: make sure we're within our time constraints
 		if (command->getFirstMonth() <= month &&
@@ -2877,7 +2883,7 @@ void GeoscapeState::determineAlienMissions()
 	// start processing command array.
 	for (std::vector<RuleMissionScript*>::const_iterator i = availableMissions.begin(); i != availableMissions.end(); ++i)
 	{
-		RuleMissionScript *command = *i;
+		RuleMissionScript* command = *i;
 		bool process = true;
 		bool success = false;
 		// level three condition check: make sure our conditionals are met, if any. this list is dynamic, and must be checked here.
@@ -2926,14 +2932,14 @@ void GeoscapeState::determineAlienMissions()
  * @param command the directive from which to read information.
  * @return whether the command successfully produced a new mission.
  */
-bool GeoscapeState::processCommand(RuleMissionScript *command)
+bool GeoscapeState::processCommand(RuleMissionScript* command)
 {
-	SavedGame *save = _game->getSavedGame();
-	AlienStrategy &strategy = save->getAlienStrategy();
-	Mod *mod = _game->getMod();
+	SavedGame* save = _game->getSavedGame();
+	AlienStrategy& strategy = save->getAlienStrategy();
+	Mod* mod = _game->getMod();
 	int month = _game->getSavedGame()->getMonthsPassed();
 	std::string targetRegion;
-	const RuleAlienMission *missionRules;
+	const RuleAlienMission* missionRules;
 	std::string missionType;
 	std::string missionRace;
 	int targetZone = -1;
@@ -2984,7 +2990,7 @@ bool GeoscapeState::processCommand(RuleMissionScript *command)
 				}
 				// ok, we found a region that doesn't have our mission in it, let's see if it has an appropriate landing zone.
 				// if it does, let's add it to our list of valid areas, taking note of which mission area(s) matched.
-				RuleRegion *region = mod->getRegion(*i, true);
+				RuleRegion* region = mod->getRegion(*i, true);
 				if ((int)(region->getMissionZones().size()) > targetZone)
 				{
 					std::vector<MissionArea> areas = region->getMissionZones()[targetZone].areas;
@@ -3219,7 +3225,7 @@ bool GeoscapeState::processCommand(RuleMissionScript *command)
 	}
 
 	// ok, we've derived all the variables we need to start up our mission, let's do magic to turn those values into a mission
-	AlienMission *mission = new AlienMission(*missionRules);
+	AlienMission* mission = new AlienMission(*missionRules);
 	mission->setRace(missionRace);
 	mission->setId(_game->getSavedGame()->getId("ALIEN_MISSIONS"));
 	mission->setRegion(targetRegion, *_game->getMod());
@@ -3242,7 +3248,7 @@ bool GeoscapeState::processCommand(RuleMissionScript *command)
  * Handler for clicking on a timer button.
  * @param action pointer to the mouse action.
  */
-void GeoscapeState::btnTimerClick(Action *action)
+void GeoscapeState::btnTimerClick(Action* action)
 {
 	SDL_Event ev;
 	ev.type = SDL_MOUSEBUTTONDOWN;
@@ -3256,7 +3262,7 @@ void GeoscapeState::btnTimerClick(Action *action)
  * @param dX delta of X;
  * @param dY delta of Y;
  */
-void GeoscapeState::resize(int &dX, int &dY)
+void GeoscapeState::resize(int& dX, int& dY)
 {
 	if (_game->getSavedGame()->getSavedBattle())
 		return;

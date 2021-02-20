@@ -510,10 +510,30 @@ void NewBattleState::initSave()
 
 		if (usable && rule->getBattleType() != BT_CORPSE && rule->isRecoverable())
 		{
-			base->getStorageItems()->addItem(*i, 1);
+			int amount = 20;
+
+			switch (rule->getBattleType())
+			{
+				case BT_AMMO:
+					amount = rule->getBattleClipSize();
+					if (amount > 0)
+					{
+						amount *= 100;
+					}
+					else
+					{
+						amount = 100;
+					}
+					break;
+				case BT_EQUIPMENT:
+					amount = 100;
+					break;
+			}
+
+			base->getStorageItems()->addItem(*i, amount);
 			if (rule->getBattleType() != BT_NONE && !rule->isFixed() && rule->getBigSprite() > -1)
 			{
-				_craft->getItems()->addItem(*i, 1);
+				_craft->getItems()->addItem(*i, amount);
 			}
 		}
 	}

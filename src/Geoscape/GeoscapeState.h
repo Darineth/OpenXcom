@@ -36,7 +36,7 @@ class Base;
 class RuleMissionScript;
 class AirCombatState;
 
-#define NEW_AIR_COMBAT
+//#define NEW_AIR_COMBAT
 
 /**
  * Geoscape screen which shows an overview of
