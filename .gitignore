@@ -96,3 +96,5 @@ Dependencies/
 nbproject/
 .tx/
 /makefile
+
+bin/user/
