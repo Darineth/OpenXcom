@@ -1,283 +1,108 @@
 # Feature - Combat Log
 
-The original brief: **Floating combat log** displaying battlefield events (damage, reloads,
-  psionics, item swaps), with a colorable non-warning message channel and improved
-  damage/stun reporting; racial-research and interrogation reveal extra info.
+**Status:** ✅ Core infrastructure implemented (Phase 1). Partially wired — only 2 of ~8 planned emit points are active. See the TODO section below for remaining integration work.
 
-## Expected Capabilities
+## Overview
 
-- Display a list of recent combat events, with the most recent at the bottom.
-- Each entry should have an associated OUTCOME_* type, for color-coding.
-  - Outcomes should be:
-    - GOOD
-    - NEUTRAL
-    - WARNING (open to better names)
-    - BAD
-  - The outcome dictates the display color.
-- Colors should be loaded from interface rules.
-- The log should be capped at a certain number of visible entries (e.g. 20), with older entries scrolling off the top.
-- Over time, log entries should disappear.
-- Log entries are just for combat, and do not need to be saved or persist across battles.
-- The log is going to be displayed at the top of the battlescape, and entries should be centered.
-- If a unit is named in a log entry, the name should be gendered and reflect the player's current knowledge of that unit (e.g. "Alien is hit" vs. "Sectoid is hit").  If the unit is not visible at all, the log entry should call it Unknown or something similar.
+A floating, centered combat log displayed at the top of the battlescape screen. It shows recent battlefield events as color-coded lines that self-erase over time. Each entry has an outcome tone (NEUTRAL / GOOD / WARNING / BAD) that determines its display color, loaded from interface ruleset theming.
 
-# Implementation Plan
+## How it works
 
-**Phase:** 1 (Battlescape UX & Feedback) — see `DX-Implementation-Checklist.md`.
-**Depends on:** nothing (foundational). **Unlocks:** a feedback channel that every later DX
-combat mechanic emits into for free.
+The log is a transient store (`CombatLog`) owned by `SavedBattleGame`. Combat code calls `appendToCombatLog(text, outcome)` to push already-localized entries. A display widget (`CombatLogPanel`) reads the entries and draws them centered at the top of the screen, one per line, colored by outcome. Entries older than 8 seconds are pruned; the log caps at 20 visible entries (oldest scroll off first).
 
-## 1. Relationship to the existing OXCE `HitLog` (read first)
+The store is **not serialized** — it lives only for the duration of a battle and is cleared on new battle start.
 
-DX is not starting from zero, but the existing system is **not** what this feature needs, so
-we build alongside it rather than extend it.
+## Key files
 
-OXCE already ships a "hit log": `src/Savegame/HitLog.h` accumulates a per-turn **text blob**
-in an `ostringstream` with coarse categories (`HITLOG_NEW_TURN`, `HITLOG_PLAYER_FIRING`,
-`HITLOG_REACTION_FIRE`, `HITLOG_NEW_SHOT`, `HITLOG_NO_DAMAGE`, `HITLOG_SMALL_DAMAGE`,
-`HITLOG_BIG_DAMAGE`). It lives on `SavedBattleGame` (`_hitLog`, `SavedBattleGame.cpp:85`) and
-is shown **on demand only** via `Ctrl-H` (`InfoboxState`) / `Ctrl-Alt-H` (`TurnDiaryState`),
-`BattlescapeState.cpp:2792-2814`. It is **not serialized** (`load/save` never touch `_hitLog`).
+| File | Role |
+|------|------|
+| `src/Savegame/CombatLog.h/.cpp` | Core store: outcome enum, entry struct, add/prune/clear |
+| `src/Battlescape/CombatLogPanel.h/.cpp` | Display widget: reads log, draws centered color-coded lines |
+| `src/Savegame/SavedBattleGame.h/.cpp` | Ownership + helpers (`appendToCombatLog`, `getCombatLogName`, `combatLogVictimOutcome`, `logUnitEvent`) |
+| `src/Battlescape/BattlescapeState.h/.cpp` | Panel instantiation, interface ruleset theming, visibility toggle |
+| `src/Engine/Options.inc.h` / `Options.cpp` | `combatLogEnabled` option registration |
+| `bin/standard/xcom1/interfaces.rul` / `xcom2` | `combatLog` element + four outcome color slots (`combatLogNeutral`, `combatLogGood`, `combatLogWarning`, `combatLogBad`) |
+| `bin/common/Language/DX/en-US.yml` | DX language strings (`STR_COMBATLOG_*`) |
 
-It is the wrong base for our floating log: not always-visible, not per-event (it buckets damage
-into small/big rather than reporting an outcome per line), no per-entry color or time-decay.
-**Decision:** introduce a separate, transient, structured event channel for the floating log
-and **reuse the existing `appendToHitLog` call sites as known-good emit locations** —
-instrument those same spots to also emit a structured combat-log entry. The legacy Ctrl-H hit
-log is left untouched; the floating log is purely additive.
+## Interaction points
 
-This matches the brief: *"a colorable non-warning message channel and improved damage/stun
-reporting"* — a new channel distinct from both `HitLog` and the transient `WarningMessage`.
+- **`SavedBattleGame::appendToCombatLog(text, outcome)`** — the main emit API. Any combat code with a `SavedBattleGame*` can call it.
+- **`SavedBattleGame::logUnitEvent(msgId, unit, outcome)`** — convenience helper that resolves a gendered string + knowledge-aware unit name in one call (used for kill/stun events).
+- **`SavedBattleGame::getCombatLogName(unit)`** — returns "Sectoid" if researched, "Hostile" if not visible at all. Used by the helpers above.
+- **`SavedBattleGame::combatLogVictimOutcome(unit)`** — determines GOOD vs BAD based on whether the victim is friendly or hostile from the player's perspective.
+- **`BattlescapeState` constructor** — reads position/size from `interfaces.rul`, wires four outcome colors, gates visibility on `Options::combatLogEnabled`.
+- **`CombatLogPanel::think()`** — calls `_log->prune()` and flags redraw when entry count changes. Called as part of the battlescape think loop.
 
-## 2. Data model
+## Localization strings (existing)
 
-New files `src/Battlescape/CombatLog.h` / `.cpp` (battlescape-local because, per the brief, it
-is **transient and not saved**):
+| Key | Value | Notes |
+|-----|-------|-------|
+| `STR_COMBATLOG_UNKNOWN_UNIT` | `"Unknown"` | Fallback when unit is not visible at all |
+| `STR_COMBATLOG_HOSTILE` | `"Hostile"` | When unit type is unknown but hostile |
+| `STR_COMBATLOG_KILLED_MALE` / `_FEMALE` | `"{0} is killed"` | Gendered, used by `logUnitEvent()` |
+| `STR_COMBATLOG_KILLED_BY_MALE` / `_FEMALE` | `"{0} was killed by {1}"` | Two-arg kill message with attacker name |
+| `STR_COMBATLOG_STUNNED_MALE` / `_FEMALE` | `"{0} is knocked out"` | Gendered stun message |
+| `STR_COMBATLOG_NEW_TURN` | `"- Turn {0} -"` | Single arg: turn number, NEUTRAL outcome |
 
-```cpp
-enum CombatLogOutcome : int { OUTCOME_GOOD, OUTCOME_NEUTRAL, OUTCOME_WARNING, OUTCOME_BAD };
+## Wiring status (emit points)
 
-struct CombatLogEntry {
-    std::string text;          // already localized + arg-substituted at emit time
-    CombatLogOutcome outcome;  // drives color
-    Uint32 bornFrame;          // engine think-tick when added, for time-decay
-};
+Only **2 of ~8 planned emit points** are currently active:
 
-class CombatLog {
-    std::deque<CombatLogEntry> _entries;   // newest at back
-public:
-    void add(const std::string& text, CombatLogOutcome outcome);
-    void think();                          // age out expired entries
-    void clear();                          // on battle start / new battle
-    const std::deque<CombatLogEntry>& entries() const { return _entries; }
-};
-```
+| # | Event | File | Outcome | Status |
+|---|-------|------|---------|--------|
+| 1 | New turn | `NextTurnState.cpp:289` | NEUTRAL | ✅ Active |
+| 2 | Kill / stun (casualties) | `BattlescapeGame.cpp:951` + `SavedBattleGame.cpp:3530-3539` | GOOD/BAD via faction | ✅ Active |
+| 3 | Any unit fires weapon | `ProjectileFlyBState.cpp::createNewProjectile` + `SavedBattleGame::logFireEvent` | NEUTRAL | ✅ Active |
+| 4 | Shot fired (impact) | `ProjectileFlyBState.cpp:588`, `TileEngine.cpp:4888` | NEUTRAL | 🔲 TODO |
+| 5 | Reaction fire | `TileEngine.cpp:2877` | GOOD/BAD via faction | 🔲 TODO |
+| 6 | Unit takes damage | `TileEngine.cpp:3161/3165/3170` | GOOD/BAD via faction | 🔲 TODO |
+| 7 | Panic | (near casualty hooks) | BAD for XCOM / NEUTRAL for alien | 🔲 TODO |
+| 8 | Out-of-ammo / no-LOF | `BattlescapeState.cpp:2610+` warning sites | WARNING | 🔲 TODO |
 
-Design notes tied to the stated capabilities:
-- **Outcome → color, not faction → color.** The four outcomes map to four colors loaded from
-  `interfaces.rul` (§5). Emit sites choose the outcome (e.g. *enemy killed by player* = GOOD,
-  *XCOM soldier hit/killed* = BAD, *new turn / info* = NEUTRAL, *out-of-ammo / no-LOF* =
-  WARNING).
-- **Cap at N visible (default 20).** `add()` pops from the front past the cap so older entries
-  scroll off the top. Newest renders at the bottom (brief: "most recent at the bottom").
-- **Time-decay.** Each entry stores its birth tick; `think()` drops entries older than a
-  configurable lifetime so the log self-empties when combat is quiet. (Reuse the fade idea from
-  `WarningMessage`, `src/Battlescape/WarningMessage.*`; an optional alpha ramp in the last
-  second is a nice-to-have, not required.) Time, not save state, is the only lifecycle —
-  consistent with "do not need to be saved or persist across battles."
+---
 
-## 3. Where the store lives + emit API
+# TODO — Remaining Integration Work
 
-The store must be reachable from deep combat code (`TileEngine`, `BattlescapeGame`,
-`ProjectileFlyBState`) that has no `BattlescapeState` pointer but does have `SavedBattleGame`.
-So mirror the existing `HitLog` ownership: hold a `CombatLog` on `SavedBattleGame`
-(`_combatLog`, next to `_hitLog` at `SavedBattleGame.h:131`) with an accessor and a forwarder
-`appendToCombatLog(text, outcome)` that parallels the existing
-`appendToHitLog` forwarders (`SavedBattleGame.cpp:3394-3415`).
+The core infrastructure (store, panel, theming, helpers) is complete and builds cleanly. The following emit points need to be wired so the log actually fires during combat:
 
-**Critically: do _not_ add it to `SavedBattleGame::load/save`.** It is intentionally transient
-(brief §"Log entries ... do not need to be saved"). Just `clear()` it when a new battle starts.
+### 3. Any unit fires/throws ✅ DONE
+**File:** `src/Battlescape/ProjectileFlyBState.cpp` (`createNewProjectile`), helpers `SavedBattleGame::logFireEvent` / `logThrowEvent`.
+**What:** Emits one entry per action for *any* unit/faction — "{0} fires {1}" for shots, "{0} throws {1}" for `BA_THROW`. Wired into the shared projectile path — right beside the existing `appendToHitLog(HITLOG_NEW_SHOT, ...)` call — rather than the player-only `ActionMenuState`, so reaction fire and alien shots are covered too. Gated on `_action.autoShotCounter == 1` so a burst/auto-shot logs once, not once per bullet.
+**Color/outcome:** Actor-based via `combatLogActorOutcome` — our unit acting is GOOD, an enemy acting is BAD, civilian/other NEUTRAL (the inverse of `combatLogVictimOutcome`, which colors harm done *to* a unit). Uses the actor's *current* faction so a mind-controlled unit is colored by whose side it now fights for.
+**Knowledge gating:** Attacker name via `getCombatLogName` (unresearched hostiles read "Hostile"). Weapon/item name via `getCombatLogWeaponName`, which gates *hostile* gear on its unlocking research (`RuleItem::getRequirements`) — unresearched hostile weapons read "an unknown weapon"; our own gear and researched enemy gear are named plainly.
+**Strings:** `STR_COMBATLOG_FIRED`, `STR_COMBATLOG_THROWS`, `STR_COMBATLOG_UNKNOWN_WEAPON`.
 
-Emit is then a one-liner from any combat path:
+### 4. Shot fired / projectile impact
+**Files:** `src/Battlescape/ProjectileFlyBState.cpp:588`, `src/Battlescape/TileEngine.cpp:4888`  
+**What:** Emit a "hit" entry when a projectile connects with its target tile/unit. Call `appendToCombatLog(...)` with outcome NEUTRAL. Add `STR_COMBATLOG_HIT` to DX YAML.
 
-```cpp
-save->appendToCombatLog(tr("STR_COMBATLOG_KILLED").arg(victimName).arg(killerName),
-                        OUTCOME_GOOD);
-```
+### 5. Reaction fire
+**File:** `src/Battlescape/TileEngine.cpp:2877`  
+**What:** Emit a reaction-fire entry when a unit fires on reaction to detection. Use `combatLogVictimOutcome()` for the victim's side (GOOD if XCOM reacts, BAD if alien reacts).
 
-The string is localized and arg-substituted **at emit time** (language fixed at the moment of
-the event), so the panel render stays cheap and language-agnostic — matching how the rest of
-the battlescape composes messages.
+### 6. Unit takes damage
+**Files:** `src/Battlescape/TileEngine.cpp:3161/3165/3170`  
+**What:** Emit a "took damage" entry at the damage application hooks. GOOD for enemy, BAD for XCOM soldier. Phase 5 (firing model) will upgrade these to exact numeric damage values; for now a coarse line is sufficient.
 
-## 4. Display widget (top-of-screen, centered)
+### 7. Panic
+**Where:** Near the casualty hooks in `BattlescapeGame` (around `checkForCasualties`).  
+**What:** Emit a panic entry when a unit fails morale and panics. BAD for XCOM soldier, NEUTRAL or GOOD if alien panics.
 
-Add a `_combatLog` display to `BattlescapeState` (alongside `_warning`,
-`src/Battlescape/BattlescapeState.h`). The brief calls for **top of the battlescape, centered
-entries**, transient and self-scrolling, which is closer to a stack of centered `Text` lines
-than a bordered `TextList`. Two viable approaches:
+### 8. Out-of-ammo / no-LOF
+**Where:** Existing `warning()` call sites in `src/Battlescape/BattlescapeState.cpp:2610+`.  
+**What:** Emit a WARNING-outcome entry alongside the existing warning message for ammo shortages, line-of-fire failures, etc.
 
-- **A (recommended): a lightweight custom surface** that draws the live `CombatLog` entries as
-  centered, color-coded, word-wrapped lines top-down — full control over per-entry color,
-  centering, and fade, like `WarningMessage` but multi-line. Lowest friction for the exact UX.
-- **B: reuse `TextList`** (`src/Interface/TextList.*`: `addRow`, `scrollUp/Down`,
-  `removeLastRow`, per-row color, wheel scroll). Faster to stand up and gives free scrollback,
-  but centering + per-entry fade + top-anchoring fight its design. Reasonable fallback if
-  scrollback is later wanted.
+### 9. Research-gated text helper (optional enhancement)
+The current `getCombatLogName()` already handles basic knowledge-aware naming ("Hostile" vs specific alien type). A more granular research gate — e.g. revealing numeric damage values or unit-specific lore when a race is fully researched — can be added later as an enhancement to the name helper and string composition logic.
 
-Go with **A** for the stated requirements; keep B in mind if "scroll back through history"
-becomes a requirement later.
+### 10. Configurable options (optional)
+- `combatLogMaxEntries` — override the default of 20 visible entries.
+- `combatLogLifetime` — override the default 8-second decay lifetime.
+- Both would follow the existing pattern in `Options.inc.h` / `Options.cpp`.
 
-Integration in `BattlescapeState`:
-- Construct with position/size/colors from `interfaces.rul` using the same
-  `getInterface("battlescape")->getElement(...)` path the constructor already uses for `icons`
-  and `warning` (`BattlescapeState.cpp:~115`).
-- Drive decay from the existing think/timer path (call `_save->getCombatLog()->think()` and
-  redraw); the panel reads straight from the `SavedBattleGame` store.
-- Respect a disable option (skip blit when off).
+### 11. Localization strings to add (DX YAML)
+The following keys are referenced by planned emit points but may not yet exist:
+- `STR_COMBATLOG_FIRED` — "{0} fires {1}"
+- `STR_COMBATLOG_HIT` — "{0} hits {1}"
 
-## 5. Interface ruleset / theming (colors from rules)
-
-Per the brief, colors load from interface rules. Add a `combatLog` element to the
-`battlescape` interface in `interfaces.rul` (`bin/standard/xcom1/interfaces.rul` `battlescape:`
-block, and `xcom2`), themed like the existing `warning` / `messageWindows` / `visibleUnits`
-elements:
-
-```yaml
-      - id: combatLog
-        pos: [0, 8]          # top, full-width; entries centered within
-        size: [320, 40]
-        color: 15            # OUTCOME_NEUTRAL (default/info)
-        color2: 32           # OUTCOME_BAD (XCOM hurt / killed)
-        border: 48           # OUTCOME_GOOD (enemy down) — reuse spare fields...
-```
-
-Four outcome colors are more than the stock `color`/`color2`/`border` triple, so either add
-named DX fields to the `combatLog` element (preferred, e.g. `colorGood/colorNeutral/
-colorWarning/colorBad`) or pack them into the available slots. Read them in the
-`BattlescapeState` constructor and build an `outcome → Uint8 color` table.
-
-## 6. Emit points (Phase 1 wiring)
-
-Reuse the verified locations that already call `appendToHitLog`, plus add the casualty hook —
-the one that most directly satisfies "improved damage/stun reporting":
-
-| Event | Where (verified) | Outcome (depends on faction) |
-|-------|------------------|------------------------------|
-| New turn | `NextTurnState.cpp:281,285` | NEUTRAL |
-| Player fires weapon | `ActionMenuState.cpp:525` | NEUTRAL |
-| Shot fired | `ProjectileFlyBState.cpp:588`, `TileEngine.cpp:4888` | NEUTRAL |
-| Reaction fire | `TileEngine.cpp:2877` | GOOD if XCOM reacts, BAD if alien reacts |
-| Unit takes damage | `TileEngine.cpp:3161/3165/3170` | GOOD vs enemy / BAD vs XCOM |
-| Kill / stun / panic | `BattlescapeGame::checkForCasualties` (`BattlescapeGame.cpp:716`) | GOOD vs enemy / BAD vs XCOM |
-| Out-of-ammo, no line-of-fire, etc. | existing `warning()` sites in `BattlescapeState.cpp:2610+` | WARNING |
-
-`checkForCasualties` (`BattlescapeGame.cpp:716`) is the key new hook: it already detects
-death/stun, builds kill stats, and pushes the `STR_HAS_BEEN_KILLED` infobox
-(`BattlescapeGame.cpp:~926,3090`). Emit a structured kill/stun line there with attacker +
-victim names and the right outcome.
-
-The `TileEngine` damage hooks currently only know small/big/no-damage buckets. For Phase 1
-emit a "hit / took damage" line at the right outcome; the **firing-model phase (Phase 5)** then
-upgrades these to exact damage/stun numbers once that data is plumbed through. This is the
-"improved damage/stun reporting" path — coarse now, exact later — and a deliberate seam.
-
-**Research-gated detail (brief: "racial-research and interrogation reveal extra info").** When
-composing enemy-facing lines, gate the *richness* of the text on what the player has
-researched about that unit's race/type (the same knowledge check the Ufopaedia/auto-sell and
-stat-reveal systems use). Unknown alien → generic "Alien is hit"; researched/interrogated →
-named unit and (Phase 5) numeric damage. Implement as a helper that picks the string/args from
-the unit + `SavedGame` research state; wire the real numbers in Phase 5.
-
-## 7. Localization
-
-New `STR_COMBATLOG_*` keys live in the DX language folder (`bin/common/Language/DX/en-US.yml`),
-loaded as a dedicated VFS slice alongside the OXCE folder in `Game::loadLanguages`. They are composed
-with `.arg()` and gendered `getString(id, gender)` where a unit is the subject (matching
-`STR_HAS_BEEN_KILLED`, `BattlescapeGame.cpp:3090`). Examples:
-
-- `STR_COMBATLOG_NEW_TURN: "— Turn {0} —"`
-- `STR_COMBATLOG_FIRED: "{0} fires {1}"`
-- `STR_COMBATLOG_HIT: "{0} hits {1}"`
-- `STR_COMBATLOG_TOOK_DAMAGE: "{0} is hit"`   (Phase 5 → "{0} takes {1} damage")
-- `STR_COMBATLOG_KILLED: "{0} kills {1}"`
-- `STR_COMBATLOG_STUNNED: "{0} is knocked out"`
-- `STR_COMBATLOG_PANIC: "{0} panics!"`
-- `STR_COMBATLOG_REACTION_FIRE: "{0} fires on reaction"`
-
-## 8. Options & input
-
-- DX option `combatLogEnabled` (default on); optionally `combatLogMaxEntries` (default 20) and
-  `combatLogLifetime` (decay seconds). Register like `oxceDisableHitLog`
-  (`Options.cpp:404`, `Options.inc.h:152`).
-- Optional hotkey to toggle the floating panel (independent of the legacy `Ctrl-H` popup,
-  which is unchanged).
-
-## 9. Files
-
-**New:** `src/Battlescape/CombatLog.h` / `.cpp` (entry struct, outcome enum, store + decay).
-Optionally split the widget into `CombatLogPanel.*`; inline in `BattlescapeState` is fine for
-Phase 1.
-
-**Modified:**
-- `src/Savegame/SavedBattleGame.h/.cpp` — own `CombatLog`, accessor, `appendToCombatLog`
-  forwarder, `clear()` on battle start. **No load/save.**
-- `src/Battlescape/BattlescapeState.h/.cpp` — `_combatLog` display, construct from
-  `interfaces.rul`, blit + `think()` decay, toggle hotkey, disable guard.
-- `src/Battlescape/BattlescapeGame.cpp` — emit kill/stun/panic in `checkForCasualties`.
-- `src/Battlescape/TileEngine.cpp`, `ProjectileFlyBState.cpp`, `ActionMenuState.cpp`,
-  `NextTurnState.cpp` — `appendToCombatLog` next to existing `appendToHitLog` calls.
-- `src/Engine/Options.inc.h` / `Options.cpp` — new options.
-- `bin/standard/xcom1/interfaces.rul` (+ `xcom2`) — `combatLog` element with four outcome colors.
-- DX language YAML — `STR_COMBATLOG_*` keys.
-- **Build registration (required, no glob):** add the new `.cpp` to `src/CMakeLists.txt`
-  (`*_src` lists) **and** `src/OpenXcom.2010.vcxproj` + `.filters` (per `CLAUDE.md`).
-
-## 10. Implementation order
-
-1. `CombatLog` store + `CombatLogEntry`/`CombatLogOutcome`; hang on `SavedBattleGame` with
-   accessor, `appendToCombatLog`, and `clear()` on battle start. Build (no behavior change).
-2. Top-anchored, centered, color-coded display in `BattlescapeState`, themed from
-   `interfaces.rul`; wire `think()` decay and the cap; disable option.
-3. Emit Phase-1 events at the §6 sites — start with new-turn / fire / reaction, then
-   kill/stun/panic in `checkForCasualties`; choose outcome by faction.
-4. Add `STR_COMBATLOG_*` strings (gendered where a unit is subject).
-5. Research-gated text helper for enemy-facing lines.
-6. Manual verification (§11).
-
-## 11. Testing / verification
-
-No unit-test framework (per `CLAUDE.md`); verify in a live tactical battle:
-- Fire (snap/auto), trigger reaction fire, kill + stun units, cause panic, end a turn — each
-  produces a correctly-worded, correctly-**colored** centered line at the top.
-- Confirm the 20-entry cap scrolls old lines off the top and entries **decay/disappear** when
-  combat goes quiet.
-- Confirm WARNING-outcome lines appear for out-of-ammo / no-line-of-fire.
-- Confirm an unresearched alien shows generic text and a researched/interrogated one shows
-  richer text.
-- Save/reload mid-battle — confirm the log is (intentionally) empty afterward and nothing
-  crashes (it is not serialized).
-- Build with `-DFATAL_WARNING=ON` as the correctness gate.
-
-## 12. Future integration (later phases emit into this)
-
-The reason this is Phase-1 infrastructure: later mechanics get feedback for free via
-`save->appendToCombatLog(text, outcome)`:
-- **Phase 3 async projectile/explosion** — per-projectile impacts, concurrent blasts.
-- **Phase 5 firing model** — upgrade Phase-1 damage lines to exact damage/stun numbers,
-  crit/graze, shot mode (fulfils "improved damage/stun reporting").
-- **Phase 6 reloading / ammo** — reload + out-of-ammo lines (brief mentions reloads, item swaps).
-- **Phase 7 health/medical** — bleedout, stabilization, wound recovery.
-- **Phase 8 effects/psionics** — effect applied/expired, mind control, mind blast (brief
-  mentions psionics).
-
-## 13. Open questions
-
-- **Four outcome colors vs. the stock `color/color2/border` triple** in `interfaces.rul` —
-  add named DX fields to the `combatLog` element (preferred) or repurpose existing slots?
-- **Decay timing & cap** (lifetime seconds, 20 visible) — tune in-game; keep both as options.
-- **Top placement vs. existing top-row HUD** (visible-unit indicators) at 320×200 — verify no
-  overlap; keep position data-driven so it is trivial to move.
-- **Research-gate granularity** — per-race vs. per-unit-type knowledge; reuse whichever check
-  the Ufopaedia stat-reveal uses for consistency.
-- **Custom surface (A) vs. `TextList` (B)** for the widget — A chosen for centered/decay/top
-  UX; revisit if scrollback history is later requested.
+Add these to `bin/common/Language/DX/en-US.yml`.

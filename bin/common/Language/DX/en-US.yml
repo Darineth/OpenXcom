@@ -5,6 +5,7 @@ en-US:
 #SavedBattleGame.cpp
   STR_COMBATLOG_UNKNOWN_UNIT: "Unknown"
   STR_COMBATLOG_HOSTILE: "Hostile"
+  STR_COMBATLOG_UNKNOWN_WEAPON: "an unknown weapon"
   STR_COMBATLOG_KILLED_MALE: "{0} is killed"
   STR_COMBATLOG_KILLED_FEMALE: "{0} is killed"
   STR_COMBATLOG_KILLED_BY_MALE: "{0} was killed by {1}"
@@ -12,5 +13,7 @@ en-US:
 #BattlescapeGame.cpp
   STR_COMBATLOG_STUNNED_MALE: "{0} is knocked out"
   STR_COMBATLOG_STUNNED_FEMALE: "{0} is knocked out"
+  STR_COMBATLOG_FIRED: "{0} fires {1}"
+  STR_COMBATLOG_THROWS: "{0} throws {1}"
 #NextTurnState.cpp
   STR_COMBATLOG_NEW_TURN: "- Turn {0} -"

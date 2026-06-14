@@ -588,6 +588,19 @@ bool ProjectileFlyBState::createNewProjectile()
 		_parent->getSave()->appendToHitLog(HITLOG_NEW_SHOT, _action.actor->getFaction());
 	}
 
+	// combat log - one line per action (not per burst shot): "throws" for throws, "fires" otherwise
+	if (_action.autoShotCounter == 1)
+	{
+		if (_action.type == BA_THROW)
+		{
+			_parent->getSave()->logThrowEvent(_action.actor, _action.weapon);
+		}
+		else
+		{
+			_parent->getSave()->logFireEvent(_action.actor, _action.weapon);
+		}
+	}
+
 	return true;
 }
 

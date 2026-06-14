@@ -3490,6 +3490,38 @@ std::string SavedBattleGame::getCombatLogName(const BattleUnit *unit) const
 }
 
 /**
+ * Gets a weapon/item's display name for the combat log, reflecting player knowledge. Our own
+ * units' equipment is always named plainly; a hostile's gear is only named once its unlocking
+ * research is done (mirroring how getCombatLogName gates enemy unit names), otherwise it reads
+ * as a generic "unknown weapon".
+ * @param attacker The wielding unit (may be null).
+ * @param weapon The weapon/item (may be null).
+ * @return Display name.
+ */
+std::string SavedBattleGame::getCombatLogWeaponName(const BattleUnit *attacker, const BattleItem *weapon) const
+{
+	if (!weapon)
+	{
+		return _lang->getString("STR_COMBATLOG_UNKNOWN_WEAPON");
+	}
+
+	const RuleItem *rules = weapon->getRules();
+
+	// Only hostile equipment is secret; our own gear (and civilians') is always known.
+	if (attacker && attacker->getOriginalFaction() == FACTION_HOSTILE)
+	{
+		const SavedGame *geo = getGeoscapeSave();
+		const std::vector<const RuleResearch*> &reqs = rules->getRequirements();
+		if (geo && !reqs.empty() && !geo->isResearched(reqs))
+		{
+			return _lang->getString("STR_COMBATLOG_UNKNOWN_WEAPON");
+		}
+	}
+
+	return _lang->getString(rules->getName());
+}
+
+/**
  * Picks the combat log tone for a harmful event befalling a unit (e.g. hit, stun, kill),
  * judged from the player's perspective: harm to an enemy is good, harm to one of our own
  * is bad. Not suitable for beneficial events such as healing.
@@ -3503,6 +3535,24 @@ CombatLogOutcome SavedBattleGame::combatLogVictimOutcome(const BattleUnit *unit)
 	case FACTION_PLAYER: return OUTCOME_BAD;
 	case FACTION_HOSTILE: return OUTCOME_GOOD;
 	default: return OUTCOME_WARNING;
+	}
+}
+
+/**
+ * Picks the combat log tone for an action taken *by* a unit (e.g. firing, throwing), judged from
+ * the player's perspective: one of our units acting is good, an enemy acting against us is bad.
+ * This is the inverse of combatLogVictimOutcome, which colors harm done *to* a unit. Uses the
+ * unit's current faction so a mind-controlled unit is colored by whose side it now fights for.
+ * @param unit The acting unit.
+ * @return Outcome tone.
+ */
+CombatLogOutcome SavedBattleGame::combatLogActorOutcome(const BattleUnit *unit) const
+{
+	switch (unit->getFaction())
+	{
+	case FACTION_PLAYER: return OUTCOME_GOOD;
+	case FACTION_HOSTILE: return OUTCOME_BAD;
+	default: return OUTCOME_NEUTRAL;
 	}
 }
 
@@ -3538,6 +3588,40 @@ void SavedBattleGame::logKillEvent(const BattleUnit *victim, const BattleUnit *k
 		_combatLog->add(_lang->getString("STR_COMBATLOG_KILLED", victim->getGender())
 			.arg(getCombatLogName(victim)), outcome);
 	}
+}
+
+/**
+ * Logs a weapon being fired, reading "<attacker> fires <weapon>". The attacker name is
+ * knowledge-aware (an unresearched, unseen hostile shows as "Hostile"/"Unknown"). Fires for
+ * every unit and faction, so this is called from the shared projectile path rather than the
+ * player-only action menu. Tone is NEUTRAL: a shot is not itself a good or bad outcome.
+ * @param attacker The firing unit.
+ * @param weapon The weapon used.
+ */
+void SavedBattleGame::logFireEvent(const BattleUnit *attacker, const BattleItem *weapon)
+{
+	if (!attacker || !weapon)
+	{
+		return;
+	}
+	_combatLog->add(_lang->getString("STR_COMBATLOG_FIRED")
+		.arg(getCombatLogName(attacker)).arg(getCombatLogWeaponName(attacker, weapon)), combatLogActorOutcome(attacker));
+}
+
+/**
+ * Logs an item being thrown, reading "<attacker> throws <item>". Names are knowledge-aware in the
+ * same way as logFireEvent. Tone is NEUTRAL: throwing is not itself a good or bad outcome.
+ * @param attacker The throwing unit.
+ * @param item The thrown item.
+ */
+void SavedBattleGame::logThrowEvent(const BattleUnit *attacker, const BattleItem *item)
+{
+	if (!attacker || !item)
+	{
+		return;
+	}
+	_combatLog->add(_lang->getString("STR_COMBATLOG_THROWS")
+		.arg(getCombatLogName(attacker)).arg(getCombatLogWeaponName(attacker, item)), combatLogActorOutcome(attacker));
 }
 
 /**

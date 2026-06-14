@@ -676,12 +676,20 @@ public:
 	CombatLog *getCombatLog() const;
 	/// Gets a unit's display name for the combat log (knowledge/visibility aware).
 	std::string getCombatLogName(const BattleUnit *unit) const;
+	/// Gets a weapon/item's display name for the combat log (hostile gear gated by research).
+	std::string getCombatLogWeaponName(const BattleUnit *attacker, const BattleItem *weapon) const;
 	/// Picks the combat log tone for a harmful event befalling a unit (hit/stun/kill).
 	CombatLogOutcome combatLogVictimOutcome(const BattleUnit *unit) const;
+	/// Picks the combat log tone for an action taken by a unit (fire/throw); ours is good, enemy bad.
+	CombatLogOutcome combatLogActorOutcome(const BattleUnit *unit) const;
 	/// Logs a one-unit combat event (gendered message + knowledge-aware name).
 	void logUnitEvent(const std::string &msgId, const BattleUnit *unit, CombatLogOutcome outcome);
 	/// Logs a kill, naming the killer when one is known (else a plain "is killed").
 	void logKillEvent(const BattleUnit *victim, const BattleUnit *killer);
+	/// Logs a weapon being fired ("<attacker> fires <weapon>"), names knowledge-aware.
+	void logFireEvent(const BattleUnit *attacker, const BattleItem *weapon);
+	/// Logs an item being thrown ("<attacker> throws <item>"), names knowledge-aware.
+	void logThrowEvent(const BattleUnit *attacker, const BattleItem *item);
 	/// Reset all the unit hit state flags.
 	void resetUnitHitStates();
 };
