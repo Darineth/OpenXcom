@@ -154,3 +154,9 @@ heavily template/macro-based.
 - Adding a new source file requires registering it in **`src/CMakeLists.txt`** (the `*_src`
   lists) — there is no glob-based collection — and, for the VS build, in the
   `OpenXcom.2010.vcxproj` project files.
+
+# Planning Features
+
+When preparing to build a feature, start by writing a design doc in `plans/` describing the feature, the motivation, and the implementation approach. Link to it from `DX-Implementation-Checklist.md` near its checklist item. This helps coordinate development and provides a reference for future maintainers.
+
+If the feature is entirely new and is not in the checklist, add it to the checklist at the bottom in a "New Feature" section with a link to the design doc.
