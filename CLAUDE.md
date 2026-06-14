@@ -154,6 +154,12 @@ heavily template/macro-based.
 - Adding a new source file requires registering it in **`src/CMakeLists.txt`** (the `*_src`
   lists) — there is no glob-based collection — and, for the VS build, in the
   `OpenXcom.2010.vcxproj` project files.
+- **DX-specific language strings go in the `Language/DX/` folder** (e.g.
+  `bin/common/Language/DX/en-US.yml`), not mixed into the base or `Language/OXCE/` files. This
+  mirrors how OXCE isolates its own strings, and the folder is loaded as a dedicated VFS slice in
+  `Game::loadLanguages` (`src/Engine/Game.cpp`). Group keys by source file with the existing
+  `#=== Section ===` / `#FileName.cpp` comment convention. New `STR_*` keys referenced from C++
+  via `tr(...)` must be defined here or they render as the raw token.
 
 # Planning Features
 
