@@ -39,6 +39,17 @@ Two supported paths:
   libs/DLLs in `deps/lib/Win32` and `deps/lib/x64`); the CMake build auto-copies the DLLs next
   to the executable.
 
+  **On this dev machine**, the configured way to build is the VS Code task in
+  `.vscode/tasks.json` ("Build (Release)" / "Build (Debug)"), which shells out to MSBuild
+  directly. `cmake`/`msbuild` are **not** on the shell PATH, so invoke MSBuild by its full path:
+  ```
+  & "C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\msbuild.exe" `
+      src/OpenXcom.2010.sln /p:Configuration=Release /p:Platform=Win32 /m /v:minimal /nologo
+  ```
+  Output lands in `bin/Win32/Release/OpenXcom.exe` (or `...\Debug\...`), with the SDL DLLs from
+  `deps/` auto-copied next to it. A harmless `LNK4099: PDB 'SDLmain.pdb' not found` warning is
+  expected.
+
   Use the regular **`Release`** / **`Debug`** configs (Win32 or x64) — they use
   `$(DefaultPlatformToolset)` and build as-is on modern Visual Studio (verified on VS2026 /
   toolset v145). **DX does not support the `Release_XP` configs**: they hardcode the
