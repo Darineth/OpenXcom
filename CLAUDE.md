@@ -4,17 +4,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-This is **OpenXcom Neo**, based on **OXCE-Plus** (the `oxce-plus` branch of Darineth's fork of
+This is **OpenXcom DX**, based on **OXCE-Plus** (the `oxce-plus` branch of Darineth's fork of
 OpenXcom) — an open-source C++/SDL reimplementation of the 1994 *UFO: Enemy Unknown* / *X-COM:
 Terror From the Deep*. The lineage is: base **OpenXcom** → **OpenXcom Extended (OXCE)** → the
-**OXCE-Plus** fork → **OpenXcom Neo** (this project). OXCE is a heavily extended engine on top
+**OXCE-Plus** fork → **OpenXcom DX** (this project). OXCE is a heavily extended engine on top
 of base OpenXcom, adding a large modding surface and a built-in scripting language; OXCE-Plus
 layers further changes on top (see `Extended.txt` for the running changelog of OXCE features by
 version, and `CHANGELOG.txt` for upstream OpenXcom history).
 
-Features added by **OpenXcom Neo** specifically (on top of OXCE-Plus) are tracked in
-`Neo-Features.md`. Consult it to see what Neo has changed, and add an entry there whenever you
-implement a new Neo feature.
+Features added by **OpenXcom DX** specifically (on top of OXCE-Plus) are tracked in
+`DX-Features.md`. Consult it to see what DX has changed, and add an entry there whenever you
+implement a new DX feature.
 
 - Language: **C++17** (enforced in CMake; build fails on older compilers).
 - Rendering/audio/input: **SDL 1.2** (`SDL`, `SDL_mixer`, `SDL_gfx`, `SDL_image`) + optional OpenGL.
@@ -41,8 +41,8 @@ Two supported paths:
 
   Use the regular **`Release`** / **`Debug`** configs (Win32 or x64) — they use
   `$(DefaultPlatformToolset)` and build as-is on modern Visual Studio (verified on VS2026 /
-  toolset v145). **Neo does not support the `Release_XP` configs**: they hardcode the
-  deprecated `v141_xp` (Windows XP) toolset, which isn't installed on current VS and which Neo
+  toolset v145). **DX does not support the `Release_XP` configs**: they hardcode the
+  deprecated `v141_xp` (Windows XP) toolset, which isn't installed on current VS and which DX
   has no intention of targeting. Ignore them — or if the IDE prompts to retarget the solution,
   decline (retargeting only matters for the XP configs we don't use).
 - **CMake** (cross-platform): from the repo root,
