@@ -2130,6 +2130,18 @@ interfaces:
         color: 36
       - id: twoHandedGreen
         color: 52
+      - id: combatLog
+        pos: [0, 1]
+        size: [320, 100]
+        color: 15
+      - id: combatLogNeutral
+        color: 1
+      - id: combatLogGood
+        color: 64
+      - id: combatLogWarning
+        color: 16
+      - id: combatLogBad
+        color: 32
   - type: briefing
     elements:
       - id: window

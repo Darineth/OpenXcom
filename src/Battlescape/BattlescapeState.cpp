@@ -34,6 +34,7 @@
 #include "Pathfinding.h"
 #include "BattlescapeGame.h"
 #include "WarningMessage.h"
+#include "CombatLogPanel.h"
 #include "InfoboxState.h"
 #include "NoExperienceState.h"
 #include "ExperienceOverviewState.h"
@@ -192,6 +193,40 @@ BattlescapeState::BattlescapeState() :
 	}
 	_numVisibleUnit[9]->setX(_numVisibleUnit[9]->getX() - 2); // center number 10
 	_warning = new WarningMessage(224, 24, x + 48, y + 32);
+
+	// DX combat log: a floating, centered event log across the top of the screen.
+	// Geometry and outcome colors are read from the "battlescape" interface ruleset, with
+	// sensible fallbacks so mods without the new elements still load.
+	RuleInterface *battlescapeInterface = _game->getMod()->getInterface("battlescape");
+	const Element *combatLogElement = battlescapeInterface->getElementOptional("combatLog");
+	// The panel always spans the full battlescape width so its centered lines sit at the
+	// screen's horizontal center (the visible map is wider than the 320px icon bar). Only
+	// the vertical placement, height and colors are taken from the ruleset.
+	const int combatLogX = 0, combatLogW = screenWidth;
+	int combatLogY = 1, combatLogH = 100;
+	Uint8 combatLogNeutral = 15, combatLogGood = 52, combatLogWarning = 16, combatLogBad = 32;
+	if (combatLogElement)
+	{
+		if (combatLogElement->y != INT_MAX) combatLogY = combatLogElement->y;
+		if (combatLogElement->h != INT_MAX) combatLogH = combatLogElement->h;
+		if (combatLogElement->color != INT_MAX) combatLogNeutral = combatLogElement->color;
+	}
+	auto readOutcomeColor = [&](const std::string &id, Uint8 &out)
+	{
+		const Element *e = battlescapeInterface->getElementOptional(id);
+		if (e && e->color != INT_MAX) out = e->color;
+	};
+	readOutcomeColor("combatLogNeutral", combatLogNeutral);
+	readOutcomeColor("combatLogGood", combatLogGood);
+	readOutcomeColor("combatLogWarning", combatLogWarning);
+	readOutcomeColor("combatLogBad", combatLogBad);
+	_combatLog = new CombatLogPanel(combatLogW, combatLogH, combatLogX, combatLogY);
+	_combatLog->setLog(_save->getCombatLog());
+	_combatLog->setOutcomeColor(OUTCOME_NEUTRAL, combatLogNeutral);
+	_combatLog->setOutcomeColor(OUTCOME_GOOD, combatLogGood);
+	_combatLog->setOutcomeColor(OUTCOME_WARNING, combatLogWarning);
+	_combatLog->setOutcomeColor(OUTCOME_BAD, combatLogBad);
+	_combatLog->setVisible(Options::combatLogEnabled);
 	_btnLaunch = new BattlescapeButton(32, 24, screenWidth - 32, 0); // we need screenWidth, because that is independent of the black bars on the screen
 	_btnLaunch->setVisible(false);
 	_btnPsi = new BattlescapeButton(32, 24, screenWidth - 32, 25); // we need screenWidth, because that is independent of the black bars on the screen
@@ -379,6 +414,7 @@ BattlescapeState::BattlescapeState() :
 		add(_numVisibleUnit[i]);
 	}
 	add(_warning, "warning", "battlescape", _icons);
+	add(_combatLog);
 	add(_txtDebug);
 	add(_txtTooltip, "textTooltip", "battlescape", _icons);
 	add(_btnLaunch);

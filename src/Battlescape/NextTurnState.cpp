@@ -41,6 +41,7 @@
 #include "../Savegame/SavedBattleGame.h"
 #include "../Savegame/SavedGame.h"
 #include "../Savegame/HitLog.h"
+#include "../Savegame/CombatLog.h"
 #include "AIModule.h"
 #include "BattlescapeState.h"
 #include "BattlescapeGame.h"
@@ -284,6 +285,8 @@ NextTurnState::NextTurnState(SavedBattleGame *battleGame, BattlescapeState *stat
 	{
 		_battleGame->appendToHitLog(HITLOG_NEW_TURN_WITH_MESSAGE, _battleGame->getSide(), message);
 	}
+
+	_battleGame->appendToCombatLog(tr("STR_COMBATLOG_NEW_TURN").arg(_battleGame->getTurn()), OUTCOME_NEUTRAL);
 
 	if (_battleGame->getSide() == FACTION_PLAYER)
 	{

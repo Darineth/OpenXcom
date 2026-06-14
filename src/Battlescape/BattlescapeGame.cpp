@@ -838,6 +838,10 @@ void BattlescapeGame::checkForCasualties(const RuleDamageType *damageType, Battl
 		{
 			if (victim->getHealth() <= 0)
 			{
+				if (!victim->isCosmetic())
+				{
+					_save->logKillEvent(victim, murderer);
+				}
 				int moraleLossModifierWhenKilled = _save->getMoraleLossModifierWhenKilled(victim);
 
 				if (murderer)
@@ -942,6 +946,10 @@ void BattlescapeGame::checkForCasualties(const RuleDamageType *damageType, Battl
 			}
 			else if (victim->getStunlevel() >= victim->getHealth() && victim->getStatus() != STATUS_UNCONSCIOUS)
 			{
+				if (!victim->isCosmetic())
+				{
+					_save->logUnitEvent("STR_COMBATLOG_STUNNED", victim, _save->combatLogVictimOutcome(victim));
+				}
 				// morale change when an enemy is stunned (only for the first time!)
 				if (getMod()->getStunningImprovesMorale() && murderer && !victim->getStatistics()->wasUnconcious)
 				{

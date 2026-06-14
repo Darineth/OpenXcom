@@ -419,6 +419,9 @@
     <ClCompile Include="Battlescape\Inventory.cpp">
       <Filter>Battlescape</Filter>
     </ClCompile>
+    <ClCompile Include="Battlescape\CombatLogPanel.cpp">
+      <Filter>Battlescape</Filter>
+    </ClCompile>
     <ClCompile Include="Battlescape\WarningMessage.cpp">
       <Filter>Battlescape</Filter>
     </ClCompile>
@@ -1088,6 +1091,9 @@
     <ClCompile Include="Menu\OptionsFoldersState.cpp">
       <Filter>Menu</Filter>
     </ClCompile>
+    <ClCompile Include="Savegame\CombatLog.cpp">
+      <Filter>Savegame</Filter>
+    </ClCompile>
     <ClCompile Include="Savegame\HitLog.cpp">
       <Filter>Savegame</Filter>
     </ClCompile>
@@ -1656,6 +1662,9 @@
       <Filter>Battlescape</Filter>
     </ClInclude>
     <ClInclude Include="Battlescape\Inventory.h">
+      <Filter>Battlescape</Filter>
+    </ClInclude>
+    <ClInclude Include="Battlescape\CombatLogPanel.h">
       <Filter>Battlescape</Filter>
     </ClInclude>
     <ClInclude Include="Battlescape\WarningMessage.h">
@@ -2365,6 +2374,9 @@
     </ClInclude>
     <ClInclude Include="Menu\OptionsFoldersState.h">
       <Filter>Menu</Filter>
+    </ClInclude>
+    <ClInclude Include="Savegame\CombatLog.h">
+      <Filter>Savegame</Filter>
     </ClInclude>
     <ClInclude Include="Savegame\HitLog.h">
       <Filter>Savegame</Filter>

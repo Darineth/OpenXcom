@@ -39,6 +39,7 @@ class SavedBattleGame;
 class BattleItem;
 class Timer;
 class WarningMessage;
+class CombatLogPanel;
 class BattlescapeGame;
 
 /**
@@ -69,6 +70,7 @@ private:
 	BattleUnit *_visibleUnit[VISIBLE_MAX];
 
 	WarningMessage *_warning;
+	CombatLogPanel *_combatLog;
 	Text *_txtName;
 	NumberText *_numTimeUnits, *_numEnergy, *_numHealth, *_numMorale, *_numLayers;
 	std::vector<NumberText*> _numAmmoLeft, _numAmmoRight;

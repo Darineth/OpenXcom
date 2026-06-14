@@ -55,7 +55,7 @@ Everything below is DX-specific work confirmed **absent** from the base.
 *Goal: Immediate tactical-layer feedback improvements that need no new combat systems.*
 
 - [ ] **Combat log** — floating event log. Build the infra now; later mechanics emit into
-  it as they come online.
+  it as they come online. *(design: [plans/Feature-CombatLog.md](plans/Feature-CombatLog.md))*
 - [ ] **On-map overlays** — primed-grenade indicator, motion-detector readings,
   hovered unit name.
 - [ ] **Fog-of-war view** — per-tile visible-count rendering (currently-seen vs.

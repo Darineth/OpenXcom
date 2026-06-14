@@ -48,6 +48,8 @@ class Craft;
 class RuleItem;
 class HitLog;
 enum HitLogEntryType : int;
+class CombatLog;
+enum CombatLogOutcome : int;
 struct BattlescapeTally;
 
 /**
@@ -129,6 +131,8 @@ private:
 	int _toggleBrightnessTemp = 0, _toggleNightVisionColorTemp = 0;
 	std::string _hiddenMovementBackground;
 	HitLog *_hitLog;
+	CombatLog *_combatLog;
+	Language *_lang;
 	ScriptValues<SavedBattleGame> _scriptValues;
 	/// Selects a soldier.
 	BattleUnit *selectPlayerUnit(int dir, bool checkReselect = false, bool setReselect = false, bool checkInventory = false);
@@ -666,6 +670,18 @@ public:
 	void appendToHitLog(HitLogEntryType type, UnitFaction faction, const std::string &text);
 	/// Gets the hit log.
 	const HitLog *getHitLog() const;
+	/// Appends an already-localized line to the floating combat log.
+	void appendToCombatLog(const std::string &text, CombatLogOutcome outcome);
+	/// Gets the floating combat log.
+	CombatLog *getCombatLog() const;
+	/// Gets a unit's display name for the combat log (knowledge/visibility aware).
+	std::string getCombatLogName(const BattleUnit *unit) const;
+	/// Picks the combat log tone for a harmful event befalling a unit (hit/stun/kill).
+	CombatLogOutcome combatLogVictimOutcome(const BattleUnit *unit) const;
+	/// Logs a one-unit combat event (gendered message + knowledge-aware name).
+	void logUnitEvent(const std::string &msgId, const BattleUnit *unit, CombatLogOutcome outcome);
+	/// Logs a kill, naming the killer when one is known (else a plain "is killed").
+	void logKillEvent(const BattleUnit *victim, const BattleUnit *killer);
 	/// Reset all the unit hit state flags.
 	void resetUnitHitStates();
 };

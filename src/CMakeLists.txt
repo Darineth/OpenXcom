@@ -129,6 +129,7 @@ set ( battlescape_src
   Battlescape/UnitInfoState.cpp
   Battlescape/UnitPanicBState.cpp
   Battlescape/UnitSprite.cpp
+  Battlescape/CombatLogPanel.cpp
   Battlescape/UnitTurnBState.cpp
   Battlescape/UnitWalkBState.cpp
   Battlescape/WarningMessage.cpp
@@ -363,6 +364,7 @@ set ( savegame_src
   Savegame/CraftWeapon.cpp
   Savegame/CraftWeaponProjectile.cpp
   Savegame/EquipmentLayoutItem.cpp
+  Savegame/CombatLog.cpp
   Savegame/GameTime.cpp
   Savegame/GeoscapeEvent.cpp
   Savegame/HitLog.cpp

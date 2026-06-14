@@ -26,6 +26,7 @@
 #include "SavedGame.h"
 #include "Tile.h"
 #include "HitLog.h"
+#include "CombatLog.h"
 #include "Node.h"
 #include "../Mod/MapDataSet.h"
 #include "../Battlescape/Pathfinding.h"
@@ -36,6 +37,7 @@
 #include "../Battlescape/Inventory.h"
 #include "../Mod/Mod.h"
 #include "../Mod/Armor.h"
+#include "../Mod/Unit.h"
 #include "../Engine/Game.h"
 #include "../Engine/Sound.h"
 #include "../Mod/RuleInventory.h"
@@ -83,6 +85,8 @@ SavedBattleGame::SavedBattleGame(Mod *rule, Language *lang, bool isPreview) :
 	}
 	_baseItems = new ItemContainer();
 	_hitLog = new HitLog(lang);
+	_combatLog = new CombatLog();
+	_lang = lang;
 
 	setRandomHiddenMovementBackground(_rule);
 }
@@ -124,6 +128,7 @@ SavedBattleGame::~SavedBattleGame()
 	delete _tileEngine;
 	delete _baseItems;
 	delete _hitLog;
+	delete _combatLog;
 }
 
 /**
@@ -3413,6 +3418,126 @@ void SavedBattleGame::appendToHitLog(HitLogEntryType type, UnitFaction faction, 
 const HitLog *SavedBattleGame::getHitLog() const
 {
 	return _hitLog;
+}
+
+/**
+ * Appends an already-localized line to the floating combat log.
+ * Unlike the hit log, this is shown during both the player's and the enemy's turn.
+ */
+void SavedBattleGame::appendToCombatLog(const std::string &text, CombatLogOutcome outcome)
+{
+	_combatLog->add(text, outcome);
+}
+
+/**
+ * Gets the floating combat log.
+ * @return combat log
+ */
+CombatLog *SavedBattleGame::getCombatLog() const
+{
+	return _combatLog;
+}
+
+/**
+ * Gets a unit's display name as it should appear in the combat log, reflecting the
+ * player's current knowledge: own units use their real name, an enemy that is currently
+ * visible uses its type/race name, and an unseen unit is just "Unknown".
+ * @param unit The unit (may be null).
+ * @return Display name.
+ */
+std::string SavedBattleGame::getCombatLogName(const BattleUnit *unit) const
+{
+	if (!unit)
+	{
+		return _lang->getString("STR_COMBATLOG_UNKNOWN_UNIT");
+	}
+
+	// Our own soldiers/units and civilians are named plainly - there's nothing secret about them.
+	if (unit->getOriginalFaction() != FACTION_HOSTILE)
+	{
+		return unit->getName(_lang);
+	}
+
+	// Hostiles reveal as much as the player has earned through research:
+	//   - unit type researched (e.g. interrogation) -> its specific name ("Sectoid Soldier")
+	//   - race researched or corpse autopsied        -> its race ("Sectoid")
+	//   - otherwise                                  -> generic "Hostile"
+	const SavedGame *geo = getGeoscapeSave();
+	const Unit *rules = unit->getUnitRules();
+	if (geo && rules)
+	{
+		if (geo->isResearched(unit->getType()))
+		{
+			return unit->getName(_lang);
+		}
+		const std::string &race = rules->getRace();
+		bool raceKnown = !race.empty() && geo->isResearched(race);
+		if (!raceKnown && rules->getArmor())
+		{
+			const RuleItem *corpse = rules->getArmor()->getCorpseGeoscape();
+			if (corpse && geo->isResearched(corpse->getType()))
+			{
+				raceKnown = true;
+			}
+		}
+		if (raceKnown)
+		{
+			return _lang->getString(race);
+		}
+	}
+
+	return _lang->getString("STR_COMBATLOG_HOSTILE");
+}
+
+/**
+ * Picks the combat log tone for a harmful event befalling a unit (e.g. hit, stun, kill),
+ * judged from the player's perspective: harm to an enemy is good, harm to one of our own
+ * is bad. Not suitable for beneficial events such as healing.
+ * @param unit The affected unit.
+ * @return Outcome tone.
+ */
+CombatLogOutcome SavedBattleGame::combatLogVictimOutcome(const BattleUnit *unit) const
+{
+	switch (unit->getOriginalFaction())
+	{
+	case FACTION_PLAYER: return OUTCOME_BAD;
+	case FACTION_HOSTILE: return OUTCOME_GOOD;
+	default: return OUTCOME_WARNING;
+	}
+}
+
+/**
+ * Logs a one-unit combat event, composing a gendered message with the unit's
+ * knowledge-aware name.
+ * @param msgId Language key, e.g. "STR_COMBATLOG_KILLED".
+ * @param unit The subject unit.
+ * @param outcome Outcome tone for coloring.
+ */
+void SavedBattleGame::logUnitEvent(const std::string &msgId, const BattleUnit *unit, CombatLogOutcome outcome)
+{
+	_combatLog->add(_lang->getString(msgId, unit->getGender()).arg(getCombatLogName(unit)), outcome);
+}
+
+/**
+ * Logs a kill. When the killer is known it reads "<victim> was killed by <killer>", with both
+ * names knowledge-aware (an unknown, unseen or non-existent killer shows as "Unknown").
+ * With no killer at all (bleed-out, fire, terrain) it falls back to a plain "<victim> is killed".
+ * @param victim The unit that died.
+ * @param killer The responsible unit, or null.
+ */
+void SavedBattleGame::logKillEvent(const BattleUnit *victim, const BattleUnit *killer)
+{
+	CombatLogOutcome outcome = combatLogVictimOutcome(victim);
+	if (killer)
+	{
+		_combatLog->add(_lang->getString("STR_COMBATLOG_KILLED_BY", victim->getGender())
+			.arg(getCombatLogName(victim)).arg(getCombatLogName(killer)), outcome);
+	}
+	else
+	{
+		_combatLog->add(_lang->getString("STR_COMBATLOG_KILLED", victim->getGender())
+			.arg(getCombatLogName(victim)), outcome);
+	}
 }
 
 /**
