@@ -83,3 +83,5 @@ bin/Win32/user*
 bin/user
 /.kdev4/
 /*.kdev4
+bin/Win32/*
+.vscode/*
