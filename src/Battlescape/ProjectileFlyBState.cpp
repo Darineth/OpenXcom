@@ -611,6 +611,12 @@ bool ProjectileFlyBState::createNewProjectile()
 		}
 	}
 
+	// combat log - notify (once) when this shot emptied the weapon
+	if (_action.type != BA_THROW && _action.type != BA_LAUNCH && !_action.weapon->getAmmoForAction(_action.type))
+	{
+		_parent->getSave()->logOutOfAmmoEvent(_action.actor, _action.weapon);
+	}
+
 	return true;
 }
 
@@ -747,6 +753,11 @@ void ProjectileFlyBState::think()
 				if (_action.type == BA_LAUNCH)
 				{
 					_action.weapon->spendAmmoForAction(_action.type, _parent->getSave());
+					// combat log - launch ammo is spent here (not in createNewProjectile); report if it ran dry
+					if (!_action.weapon->getAmmoForAction(_action.type))
+					{
+						_parent->getSave()->logOutOfAmmoEvent(_action.actor, _action.weapon);
+					}
 				}
 
 				if (_projectileImpact != V_OUTOFBOUNDS)

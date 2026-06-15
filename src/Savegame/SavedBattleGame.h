@@ -696,6 +696,8 @@ public:
 	void logHitEvent(const BattleUnit *attacker, const BattleUnit *victim, int damage, int wounds);
 	/// Logs a unit panicking or going berserk ("<unit> panics" / "goes berserk").
 	void logPanicEvent(const BattleUnit *unit, UnitStatus status);
+	/// Logs a weapon running dry on the shot just fired ("<unit>'s <weapon> is out of ammo").
+	void logOutOfAmmoEvent(const BattleUnit *unit, const BattleItem *weapon);
 	/// Reset all the unit hit state flags.
 	void resetUnitHitStates();
 };

@@ -58,7 +58,8 @@ Only **2 of ~8 planned emit points** are currently active:
 | 5 | Reaction fire | `BattleAction::reaction` flag (set in `TileEngine::tryReaction`) → reaction-variant wording in #3 fire/melee lines | actor-based | ✅ Active |
 | 6 | Unit takes damage | — superseded by #4 (same `hitUnit` hook) | GOOD/BAD via victim | ✅ via #4 |
 | 7 | Panic / berserk | `BattlescapeGame::handlePanickingUnit` + `SavedBattleGame::logPanicEvent` | GOOD/BAD via unit | ✅ Active |
-| 8 | Out-of-ammo / no-LOF | `BattlescapeState.cpp:2610+` warning sites | WARNING | 🔲 TODO |
+| 8 | Out-of-ammo (weapon emptied by the shot) | `ProjectileFlyBState::createNewProjectile` + `SavedBattleGame::logOutOfAmmoEvent` | WARNING | ✅ Active |
+| 8b | No-LOF / pre-fire warnings | `BattlescapeState.cpp:2610+` warning sites | WARNING | 🔲 (deferred) |
 
 ---
 
@@ -102,9 +103,16 @@ The core infrastructure (store, panel, theming, helpers) is complete and builds 
 **Color:** `combatLogVictimOutcome(unit)` — our unit losing control is BAD, an enemy losing control is GOOD.
 **Strings:** `STR_COMBATLOG_PANIC`, `STR_COMBATLOG_BERSERK`.
 
-### 8. Out-of-ammo / no-LOF
+### 8. Out-of-ammo (weapon emptied by the shot) ✅ DONE
+**Hook:** `ProjectileFlyBState::createNewProjectile`, after ammo is spent, via `SavedBattleGame::logOutOfAmmoEvent`.
+**What:** Logs "{0}'s {1} is out of ammo" (WARNING) on the shot that empties the weapon — i.e. a *result* notification, not the pre-fire "tried to fire with no ammo" warning. Detected with `!weapon->getAmmoForAction(type)` after the spend (the same emptiness test the engine uses for `noMoreShotsToShoot`); for an auto/burst it fires exactly once, on the round that runs the clip dry. Self-powered weapons never report (their slot returns the weapon itself), and throws are excluded.
+**Launch:** Blaster/launch ammo is spent in `think()` (not `createNewProjectile`), so there's a second check right after that spend. The `createNewProjectile` check excludes `BA_LAUNCH` to avoid a premature read before the spend.
+**Player-only:** Gated to `getFaction() == FACTION_PLAYER` inside the helper — an enemy's empty gun isn't an actionable warning for the player (and avoids alien-turn spam).
+**Strings:** `STR_COMBATLOG_OUT_OF_AMMO`.
+
+### 8b. No-LOF / other pre-fire warnings (deferred)
 **Where:** Existing `warning()` call sites in `src/Battlescape/BattlescapeState.cpp:2610+`.  
-**What:** Emit a WARNING-outcome entry alongside the existing warning message for ammo shortages, line-of-fire failures, etc.
+**What:** WARNING-outcome entries alongside line-of-fire / pre-fire failure messages. Deliberately *not* done in this pass (user scoped #8 to the out-of-ammo result only).
 
 ### 9. Research-gated text helper (optional enhancement)
 The current `getCombatLogName()` already handles basic knowledge-aware naming ("Hostile" vs specific alien type). A more granular research gate — e.g. revealing numeric damage values or unit-specific lore when a race is fully researched — can be added later as an enhancement to the name helper and string composition logic.

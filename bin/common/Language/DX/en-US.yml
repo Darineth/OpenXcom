@@ -16,6 +16,7 @@ en-US:
   STR_COMBATLOG_FIRED: "{0} fires {1}"
   STR_COMBATLOG_FIRED_REACTION: "{0} took a reaction shot with {1}"
   STR_COMBATLOG_SHOT_TYPE: "({0})"
+  STR_COMBATLOG_OUT_OF_AMMO: "{0}'s {1} is out of ammo"
   STR_COMBATLOG_THROWS: "{0} throws {1}"
   STR_COMBATLOG_MELEE: "{0} strikes with {1}"
   STR_COMBATLOG_MELEE_REACTION: "{0} took a reaction swing with {1}"

@@ -3739,6 +3739,28 @@ void SavedBattleGame::logPanicEvent(const BattleUnit *unit, UnitStatus status)
 }
 
 /**
+ * Logs that the shot just fired emptied the weapon, reading "<unit>'s <weapon> is out of ammo".
+ * Meant to be called right after ammo is spent, when the weapon has no round left for that action.
+ * Only reported for the player's own units (an enemy's empty gun is not an actionable warning for
+ * the player). Tone is WARNING.
+ * @param unit The firing unit.
+ * @param weapon The weapon that ran dry.
+ */
+void SavedBattleGame::logOutOfAmmoEvent(const BattleUnit *unit, const BattleItem *weapon)
+{
+	if (!unit || !weapon)
+	{
+		return;
+	}
+	if (unit->getFaction() != FACTION_PLAYER)
+	{
+		return;
+	}
+	_combatLog->add(_lang->getString("STR_COMBATLOG_OUT_OF_AMMO")
+		.arg(getCombatLogName(unit)).arg(getCombatLogWeaponName(unit, weapon)), OUTCOME_WARNING);
+}
+
+/**
  * Resets all unit hit state flags.
  */
 void SavedBattleGame::resetUnitHitStates()
