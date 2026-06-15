@@ -158,7 +158,7 @@ void MeleeAttackBState::init()
 
 	// combat log - one "strikes" line per melee action (init runs once; multi-hit AI melee
 	// re-enters via performMeleeAttack from think(), which we don't log again)
-	_parent->getSave()->logMeleeEvent(_unit, _weapon);
+	_parent->getSave()->logMeleeEvent(_unit, _weapon, _action.reaction);
 
 	performMeleeAttack();
 }

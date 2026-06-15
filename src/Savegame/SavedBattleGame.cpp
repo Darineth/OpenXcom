@@ -3598,14 +3598,21 @@ void SavedBattleGame::logKillEvent(const BattleUnit *victim, const BattleUnit *k
  * @param attacker The firing unit.
  * @param weapon The weapon used.
  */
-void SavedBattleGame::logFireEvent(const BattleUnit *attacker, const BattleItem *weapon)
+void SavedBattleGame::logFireEvent(const BattleUnit *attacker, const BattleItem *weapon, bool reaction, const std::string &shotType)
 {
 	if (!attacker || !weapon)
 	{
 		return;
 	}
-	_combatLog->add(_lang->getString("STR_COMBATLOG_FIRED")
-		.arg(getCombatLogName(attacker)).arg(getCombatLogWeaponName(attacker, weapon)), combatLogActorOutcome(attacker));
+	std::string text = _lang->getString(reaction ? "STR_COMBATLOG_FIRED_REACTION" : "STR_COMBATLOG_FIRED")
+		.arg(getCombatLogName(attacker)).arg(getCombatLogWeaponName(attacker, weapon));
+	// Append the shot mode (Snap/Aimed/Auto/Launch, weapon-customizable) as a parenthetical.
+	if (!shotType.empty())
+	{
+		std::string shotName = _lang->getString(shotType);
+		text += " " + (std::string)_lang->getString("STR_COMBATLOG_SHOT_TYPE").arg(shotName);
+	}
+	_combatLog->add(text, combatLogActorOutcome(attacker));
 }
 
 /**
@@ -3630,13 +3637,13 @@ void SavedBattleGame::logThrowEvent(const BattleUnit *attacker, const BattleItem
  * @param attacker The attacking unit.
  * @param weapon The melee weapon used.
  */
-void SavedBattleGame::logMeleeEvent(const BattleUnit *attacker, const BattleItem *weapon)
+void SavedBattleGame::logMeleeEvent(const BattleUnit *attacker, const BattleItem *weapon, bool reaction)
 {
 	if (!attacker || !weapon)
 	{
 		return;
 	}
-	_combatLog->add(_lang->getString("STR_COMBATLOG_MELEE")
+	_combatLog->add(_lang->getString(reaction ? "STR_COMBATLOG_MELEE_REACTION" : "STR_COMBATLOG_MELEE")
 		.arg(getCombatLogName(attacker)).arg(getCombatLogWeaponName(attacker, weapon)), combatLogActorOutcome(attacker));
 }
 

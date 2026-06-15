@@ -2818,6 +2818,7 @@ bool TileEngine::tryReaction(ReactionScore *reaction, BattleUnit *target, const 
 	action.actor = reaction->unit;
 	action.weapon = reaction->weapon;
 	action.type = reaction->attackType;
+	action.reaction = true; // tag for combat log wording ("took a reaction shot/swing")
 
 	if (!_save->canUseWeapon(action.weapon, action.actor, false, action.type))
 	{

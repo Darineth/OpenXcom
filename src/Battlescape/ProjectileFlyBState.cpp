@@ -597,7 +597,17 @@ bool ProjectileFlyBState::createNewProjectile()
 		}
 		else
 		{
-			_parent->getSave()->logFireEvent(_action.actor, _action.weapon);
+			// resolve the (weapon-customizable) shot-mode label for the combat log
+			std::string shotType;
+			switch (_action.type)
+			{
+			case BA_SNAPSHOT:  shotType = _action.weapon->getRules()->getConfigSnap()->name; break;
+			case BA_AIMEDSHOT: shotType = _action.weapon->getRules()->getConfigAimed()->name; break;
+			case BA_AUTOSHOT:  shotType = _action.weapon->getRules()->getConfigAuto()->name; break;
+			case BA_LAUNCH:    shotType = "STR_LAUNCH_MISSILE"; break;
+			default: break;
+			}
+			_parent->getSave()->logFireEvent(_action.actor, _action.weapon, _action.reaction, shotType);
 		}
 	}
 

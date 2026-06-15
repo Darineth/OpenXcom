@@ -55,7 +55,7 @@ Only **2 of ~8 planned emit points** are currently active:
 | 3 | Any unit fires / throws | `ProjectileFlyBState.cpp::createNewProjectile` + `SavedBattleGame::logFireEvent`/`logThrowEvent` | actor-based | ✅ Active |
 | 3b | Any unit melee attack | `MeleeAttackBState.cpp::init` + `SavedBattleGame::logMeleeEvent` | actor-based | ✅ Active |
 | 4 | Hit / damage on a unit | `TileEngine.cpp::hitUnit` + `SavedBattleGame::logHitEvent` | GOOD/BAD via victim | ✅ Active |
-| 5 | Reaction fire | `TileEngine.cpp:2877` | GOOD/BAD via faction | 🔲 TODO |
+| 5 | Reaction fire | `BattleAction::reaction` flag (set in `TileEngine::tryReaction`) → reaction-variant wording in #3 fire/melee lines | actor-based | ✅ Active |
 | 6 | Unit takes damage | — superseded by #4 (same `hitUnit` hook) | GOOD/BAD via victim | ✅ via #4 |
 | 7 | Panic | (near casualty hooks) | BAD for XCOM / NEUTRAL for alien | 🔲 TODO |
 | 8 | Out-of-ammo / no-LOF | `BattlescapeState.cpp:2610+` warning sites | WARNING | 🔲 TODO |
@@ -68,11 +68,12 @@ The core infrastructure (store, panel, theming, helpers) is complete and builds 
 
 ### 3. Any unit fires/throws ✅ DONE
 **File:** `src/Battlescape/ProjectileFlyBState.cpp` (`createNewProjectile`), helpers `SavedBattleGame::logFireEvent` / `logThrowEvent`.
-**What:** Emits one entry per action for *any* unit/faction — "{0} fires {1}" for shots, "{0} throws {1}" for `BA_THROW`. Wired into the shared projectile path — right beside the existing `appendToHitLog(HITLOG_NEW_SHOT, ...)` call — rather than the player-only `ActionMenuState`, so reaction fire and alien shots are covered too. Gated on `_action.autoShotCounter == 1` so a burst/auto-shot logs once, not once per bullet.
+**What:** Emits one entry per action for *any* unit/faction — "{0} fires {1} (Snap Shot)" for shots, "{0} throws {1}" for `BA_THROW`. Wired into the shared projectile path — right beside the existing `appendToHitLog(HITLOG_NEW_SHOT, ...)` call — rather than the player-only `ActionMenuState`, so reaction fire and alien shots are covered too. Gated on `_action.autoShotCounter == 1` so a burst/auto-shot logs once, not once per bullet.
+**Shot type:** The fire line appends the shot mode as a parenthetical (Snap/Aimed/Auto/Launch). The label is resolved at the call site from the weapon's `RuleItemAction::name` (`getConfigSnap()/Aimed()/Auto()->name`, so it honors per-weapon custom names; `STR_LAUNCH_MISSILE` for blaster launch) and passed into `logFireEvent`, which wraps it via `STR_COMBATLOG_SHOT_TYPE` ("({0})"). Applies to the reaction variant too.
 **Color/outcome:** Actor-based via `combatLogActorOutcome` — our unit acting is GOOD, an enemy acting is BAD, civilian/other NEUTRAL (the inverse of `combatLogVictimOutcome`, which colors harm done *to* a unit). Uses the actor's *current* faction so a mind-controlled unit is colored by whose side it now fights for.
 **Melee (3b):** `MeleeAttackBState::init` emits "{0} strikes with {1}" via `logMeleeEvent`, once per melee action. Hooked in `init()` (which runs once) rather than `performMeleeAttack()` (which re-runs for multi-hit AI melee), so a multi-strike attack still logs a single line. Terrain melee (hitting a wall/object, no target unit) is not logged — `init` returns before this point for that case. Same knowledge gating and actor-based color as fire/throw.
 **Knowledge gating:** Attacker name via `getCombatLogName` (unresearched hostiles read "Hostile"). Weapon/item name via `getCombatLogWeaponName`, which gates *hostile* gear on its unlocking research (`RuleItem::getRequirements`) — unresearched hostile weapons read "an unknown weapon"; our own gear and researched enemy gear are named plainly.
-**Strings:** `STR_COMBATLOG_FIRED`, `STR_COMBATLOG_THROWS`, `STR_COMBATLOG_UNKNOWN_WEAPON`.
+**Strings:** `STR_COMBATLOG_FIRED`, `STR_COMBATLOG_THROWS`, `STR_COMBATLOG_UNKNOWN_WEAPON`, `STR_COMBATLOG_SHOT_TYPE`.
 
 ### 4. Hit / damage on a unit ✅ DONE
 **Hook:** `TileEngine::hitUnit` (the single place every attack's damage is applied to a unit — bullets, melee, explosion fragments), routed through `SavedBattleGame::logHitEvent`. `hitUnit` already captured `healthOrig`/`stunLevelOrig`; we now also capture `woundsOrig` and pass `healthDamage` + `woundsInflicted` to the helper. This means it covers all hits (incl. reaction fire and AoE) and **supersedes the old #6** ("unit takes damage"), which targeted the same code.
@@ -85,9 +86,11 @@ The core infrastructure (store, panel, theming, helpers) is complete and builds 
 **Damage = health damage only** (stun isn't counted here; stun knockouts get their own #2 line). A pure-stun hit therefore reads "for no/0 damage" — acceptable since the knockout is reported separately.
 **Strings:** `STR_COMBATLOG_HIT`, `STR_COMBATLOG_DAMAGE_EXACT/NONE/LIGHT/HEAVY`, `STR_COMBATLOG_WOUNDS_one/_other`.
 
-### 5. Reaction fire
-**File:** `src/Battlescape/TileEngine.cpp:2877`  
-**What:** Emit a reaction-fire entry when a unit fires on reaction to detection. Use `combatLogVictimOutcome()` for the victim's side (GOOD if XCOM reacts, BAD if alien reacts).
+### 5. Reaction fire ✅ DONE
+**Design:** Rather than a separate "reacts" line, the reaction is *tagged on the action* and the existing #3 fire/melee log line renders a reaction variant. A `bool reaction` flag was added to `BattleAction` (default false) and set `true` in `TileEngine::tryReaction` when it builds the reaction action. `ProjectileFlyBState::createNewProjectile` and `MeleeAttackBState::init` pass `_action.reaction` into `logFireEvent`/`logMeleeEvent`, which pick the reaction-variant string.
+**What:** A reaction shot logs "{0} took a reaction shot with {1}" instead of "{0} fires {1}"; a reaction melee logs "{0} took a reaction swing with {1}" instead of "{0} strikes with {1}". The follow-up hit line (#4) is unchanged. No extra line, no double reporting.
+**Color:** `combatLogActorOutcome(attacker)` — same actor-based coloring as a normal shot.
+**Strings:** `STR_COMBATLOG_FIRED_REACTION`, `STR_COMBATLOG_MELEE_REACTION`. (The earlier `STR_COMBATLOG_REACTION` and `logReactionEvent` were removed.)
 
 ### 6. Unit takes damage
 **Files:** `src/Battlescape/TileEngine.cpp:3161/3165/3170`  
@@ -115,3 +118,6 @@ The following keys are referenced by planned emit points but may not yet exist:
 - `STR_COMBATLOG_HIT` — "{0} hits {1}"
 
 Add these to `bin/common/Language/DX/en-US.yml`.
+
+## More changes
+- Include the shot type in the log entry (e.g. auto/burst/snap/aimed)

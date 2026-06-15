@@ -686,12 +686,12 @@ public:
 	void logUnitEvent(const std::string &msgId, const BattleUnit *unit, CombatLogOutcome outcome);
 	/// Logs a kill, naming the killer when one is known (else a plain "is killed").
 	void logKillEvent(const BattleUnit *victim, const BattleUnit *killer);
-	/// Logs a weapon being fired ("<attacker> fires <weapon>"), names knowledge-aware.
-	void logFireEvent(const BattleUnit *attacker, const BattleItem *weapon);
+	/// Logs a weapon being fired ("<attacker> fires <weapon> (<shot type>)", or a reaction variant), names knowledge-aware.
+	void logFireEvent(const BattleUnit *attacker, const BattleItem *weapon, bool reaction = false, const std::string &shotType = "");
 	/// Logs an item being thrown ("<attacker> throws <item>"), names knowledge-aware.
 	void logThrowEvent(const BattleUnit *attacker, const BattleItem *item);
-	/// Logs a melee attack ("<attacker> strikes with <weapon>"), names knowledge-aware.
-	void logMeleeEvent(const BattleUnit *attacker, const BattleItem *weapon);
+	/// Logs a melee attack ("<attacker> strikes with <weapon>", or a reaction variant), names knowledge-aware.
+	void logMeleeEvent(const BattleUnit *attacker, const BattleItem *weapon, bool reaction = false);
 	/// Logs a damaging hit on a unit, with research-gated damage/wound detail.
 	void logHitEvent(const BattleUnit *attacker, const BattleUnit *victim, int damage, int wounds);
 	/// Reset all the unit hit state flags.
