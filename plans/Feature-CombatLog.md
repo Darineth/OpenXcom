@@ -54,9 +54,9 @@ Only **2 of ~8 planned emit points** are currently active:
 | 2 | Kill / stun (casualties) | `BattlescapeGame.cpp:951` + `SavedBattleGame.cpp:3530-3539` | GOOD/BAD via faction | ✅ Active |
 | 3 | Any unit fires / throws | `ProjectileFlyBState.cpp::createNewProjectile` + `SavedBattleGame::logFireEvent`/`logThrowEvent` | actor-based | ✅ Active |
 | 3b | Any unit melee attack | `MeleeAttackBState.cpp::init` + `SavedBattleGame::logMeleeEvent` | actor-based | ✅ Active |
-| 4 | Shot fired (impact) | `ProjectileFlyBState.cpp:588`, `TileEngine.cpp:4888` | NEUTRAL | 🔲 TODO |
+| 4 | Hit / damage on a unit | `TileEngine.cpp::hitUnit` + `SavedBattleGame::logHitEvent` | GOOD/BAD via victim | ✅ Active |
 | 5 | Reaction fire | `TileEngine.cpp:2877` | GOOD/BAD via faction | 🔲 TODO |
-| 6 | Unit takes damage | `TileEngine.cpp:3161/3165/3170` | GOOD/BAD via faction | 🔲 TODO |
+| 6 | Unit takes damage | — superseded by #4 (same `hitUnit` hook) | GOOD/BAD via victim | ✅ via #4 |
 | 7 | Panic | (near casualty hooks) | BAD for XCOM / NEUTRAL for alien | 🔲 TODO |
 | 8 | Out-of-ammo / no-LOF | `BattlescapeState.cpp:2610+` warning sites | WARNING | 🔲 TODO |
 
@@ -74,9 +74,16 @@ The core infrastructure (store, panel, theming, helpers) is complete and builds 
 **Knowledge gating:** Attacker name via `getCombatLogName` (unresearched hostiles read "Hostile"). Weapon/item name via `getCombatLogWeaponName`, which gates *hostile* gear on its unlocking research (`RuleItem::getRequirements`) — unresearched hostile weapons read "an unknown weapon"; our own gear and researched enemy gear are named plainly.
 **Strings:** `STR_COMBATLOG_FIRED`, `STR_COMBATLOG_THROWS`, `STR_COMBATLOG_UNKNOWN_WEAPON`.
 
-### 4. Shot fired / projectile impact
-**Files:** `src/Battlescape/ProjectileFlyBState.cpp:588`, `src/Battlescape/TileEngine.cpp:4888`  
-**What:** Emit a "hit" entry when a projectile connects with its target tile/unit. Call `appendToCombatLog(...)` with outcome NEUTRAL. Add `STR_COMBATLOG_HIT` to DX YAML.
+### 4. Hit / damage on a unit ✅ DONE
+**Hook:** `TileEngine::hitUnit` (the single place every attack's damage is applied to a unit — bullets, melee, explosion fragments), routed through `SavedBattleGame::logHitEvent`. `hitUnit` already captured `healthOrig`/`stunLevelOrig`; we now also capture `woundsOrig` and pass `healthDamage` + `woundsInflicted` to the helper. This means it covers all hits (incl. reaction fire and AoE) and **supersedes the old #6** ("unit takes damage"), which targeted the same code.
+**Color:** `combatLogVictimOutcome(victim)` — a hostile victim is GOOD, our unit is BAD. (Note: the original spec's parenthetical was reversed; the established semantic — hitting an enemy is good for the player — is what's implemented.)
+**Hidden units:** A hostile the player can't currently see (`!getVisible()`) is not logged at all.
+**Detail tiers (`logHitEvent`):**
+- Own unit/civilian, or a hostile whose **unit type is researched** -> exact damage: "James hits Sectoid Soldier for 3 damage".
+- Visible but un-researched hostile -> vague band by `damage * 100 / maxHP`: 0 = "for no damage", ≤50% = "for light damage", >50% = "for heavy damage".
+- Wounds: only for fully-known victims and only when new wounds were inflicted -> "(N wound[s])" appended (plural via `_one`/`_other`). Never shown for un-researched enemies.
+**Damage = health damage only** (stun isn't counted here; stun knockouts get their own #2 line). A pure-stun hit therefore reads "for no/0 damage" — acceptable since the knockout is reported separately.
+**Strings:** `STR_COMBATLOG_HIT`, `STR_COMBATLOG_DAMAGE_EXACT/NONE/LIGHT/HEAVY`, `STR_COMBATLOG_WOUNDS_one/_other`.
 
 ### 5. Reaction fire
 **File:** `src/Battlescape/TileEngine.cpp:2877`  

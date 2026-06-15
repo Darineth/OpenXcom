@@ -3144,11 +3144,13 @@ bool TileEngine::hitUnit(BattleActionAttack attack, BattleUnit *target, const Po
 
 	const int healthOrig = target->getHealth();
 	const int stunLevelOrig = target->getStunlevel();
+	const int woundsOrig = target->getFatalWounds();
 
 	target->damage(relative, damage, type, _save, attack);
 
 	const int healthDamage = healthOrig - target->getHealth();
 	const int stunDamage = target->getStunlevel() - stunLevelOrig;
+	const int woundsInflicted = target->getFatalWounds() - woundsOrig;
 
 	// hit log
 	if (attack.attacker)
@@ -3169,6 +3171,9 @@ bool TileEngine::hitUnit(BattleActionAttack attack, BattleUnit *target, const Po
 		{
 			_save->appendToHitLog(HITLOG_NO_DAMAGE, attack.attacker->getFaction());
 		}
+
+		// combat log - report the hit with research-gated damage/wound detail
+		_save->logHitEvent(attack.attacker, target, healthDamage, woundsInflicted);
 	}
 
 	// single place for firing/throwing/melee experience training

@@ -692,6 +692,8 @@ public:
 	void logThrowEvent(const BattleUnit *attacker, const BattleItem *item);
 	/// Logs a melee attack ("<attacker> strikes with <weapon>"), names knowledge-aware.
 	void logMeleeEvent(const BattleUnit *attacker, const BattleItem *weapon);
+	/// Logs a damaging hit on a unit, with research-gated damage/wound detail.
+	void logHitEvent(const BattleUnit *attacker, const BattleUnit *victim, int damage, int wounds);
 	/// Reset all the unit hit state flags.
 	void resetUnitHitStates();
 };

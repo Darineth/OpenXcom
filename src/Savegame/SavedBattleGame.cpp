@@ -3641,6 +3641,76 @@ void SavedBattleGame::logMeleeEvent(const BattleUnit *attacker, const BattleItem
 }
 
 /**
+ * Logs a damaging hit on a unit, reading e.g. "James hits Sectoid Soldier for 3 damage and takes
+ * 1 wound". How much is revealed depends on player knowledge of the victim:
+ *  - Own units (and civilians) or a fully-researched hostile -> exact damage, plus any new wounds.
+ *  - A visible-but-not-researched hostile -> only a vague severity band (none/light/heavy of max
+ *    HP), and no wound count (we don't reveal an unknown enemy's internals).
+ *  - A hostile the player cannot currently see -> nothing is logged at all.
+ * Tone follows the victim (combatLogVictimOutcome): harm to an enemy is good, to one of ours bad.
+ * @param attacker The unit that dealt the hit.
+ * @param victim The unit that was hit.
+ * @param damage Health damage actually dealt (negative is clamped to 0).
+ * @param wounds Fatal wounds newly inflicted by this hit.
+ */
+void SavedBattleGame::logHitEvent(const BattleUnit *attacker, const BattleUnit *victim, int damage, int wounds)
+{
+	if (!attacker || !victim)
+	{
+		return;
+	}
+
+	// Don't report hits on hostiles the player can't currently see.
+	if (victim->getOriginalFaction() == FACTION_HOSTILE && !victim->getVisible())
+	{
+		return;
+	}
+
+	// Our own units (and civilians) are fully known; a hostile is "fully known" only once its unit
+	// type has been researched (interrogated) - the same gate that reveals its specific name.
+	bool fullInfo = victim->getOriginalFaction() != FACTION_HOSTILE;
+	if (!fullInfo)
+	{
+		const SavedGame *geo = getGeoscapeSave();
+		fullInfo = geo && geo->isResearched(victim->getType());
+	}
+
+	if (damage < 0)
+	{
+		damage = 0;
+	}
+
+	// Damage phrase: exact number when fully known, otherwise a vague severity band.
+	std::string damagePhrase;
+	if (fullInfo)
+	{
+		damagePhrase = _lang->getString("STR_COMBATLOG_DAMAGE_EXACT").arg(damage);
+	}
+	else if (damage == 0)
+	{
+		damagePhrase = _lang->getString("STR_COMBATLOG_DAMAGE_NONE");
+	}
+	else
+	{
+		const int maxHp = victim->getBaseStats()->health;
+		bool heavy = (maxHp > 0) && (damage * 100 / maxHp > 50);
+		damagePhrase = _lang->getString(heavy ? "STR_COMBATLOG_DAMAGE_HEAVY" : "STR_COMBATLOG_DAMAGE_LIGHT");
+	}
+
+	std::string suffix = damagePhrase;
+
+	// Wounds: only ever revealed for fully-known units, and only when new ones were inflicted.
+	if (fullInfo && wounds > 0)
+	{
+		std::string woundPhrase = _lang->getString("STR_COMBATLOG_WOUNDS", (unsigned)wounds).arg(wounds);
+		suffix += " " + woundPhrase;
+	}
+
+	_combatLog->add(_lang->getString("STR_COMBATLOG_HIT")
+		.arg(getCombatLogName(attacker)).arg(getCombatLogName(victim)).arg(suffix), combatLogVictimOutcome(victim));
+}
+
+/**
  * Resets all unit hit state flags.
  */
 void SavedBattleGame::resetUnitHitStates()

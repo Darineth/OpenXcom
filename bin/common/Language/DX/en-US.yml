@@ -16,5 +16,13 @@ en-US:
   STR_COMBATLOG_FIRED: "{0} fires {1}"
   STR_COMBATLOG_THROWS: "{0} throws {1}"
   STR_COMBATLOG_MELEE: "{0} strikes with {1}"
+#TileEngine.cpp
+  STR_COMBATLOG_HIT: "{0} hits {1} {2}"
+  STR_COMBATLOG_DAMAGE_EXACT: "for {0} damage"
+  STR_COMBATLOG_DAMAGE_NONE: "for no damage"
+  STR_COMBATLOG_DAMAGE_LIGHT: "for light damage"
+  STR_COMBATLOG_DAMAGE_HEAVY: "for heavy damage"
+  STR_COMBATLOG_WOUNDS_one: "({0} wound)"
+  STR_COMBATLOG_WOUNDS_other: "({0} wounds)"
 #NextTurnState.cpp
   STR_COMBATLOG_NEW_TURN: "- Turn {0} -"
