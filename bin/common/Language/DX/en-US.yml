@@ -27,5 +27,8 @@ en-US:
   STR_COMBATLOG_DAMAGE_HEAVY: "for heavy damage"
   STR_COMBATLOG_WOUNDS_one: "({0} wound)"
   STR_COMBATLOG_WOUNDS_other: "({0} wounds)"
+#BattlescapeGame.cpp - panic
+  STR_COMBATLOG_PANIC: "{0} panics"
+  STR_COMBATLOG_BERSERK: "{0} goes berserk"
 #NextTurnState.cpp
   STR_COMBATLOG_NEW_TURN: "- Turn {0} -"

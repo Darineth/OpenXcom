@@ -1553,6 +1553,9 @@ bool BattlescapeGame::handlePanickingUnit(BattleUnit *unit)
 		}
 	}
 
+	// combat log - record the morale failure (hostile visibility gated inside the helper)
+	_save->logPanicEvent(unit, status);
+
 	// show a little infobox with the name of the unit and "... is panicking"
 	Game *game = _parentState->getGame();
 	if (unit->getVisible() || !Options::noAlienPanicMessages)

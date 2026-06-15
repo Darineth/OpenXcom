@@ -57,7 +57,7 @@ Only **2 of ~8 planned emit points** are currently active:
 | 4 | Hit / damage on a unit | `TileEngine.cpp::hitUnit` + `SavedBattleGame::logHitEvent` | GOOD/BAD via victim | ✅ Active |
 | 5 | Reaction fire | `BattleAction::reaction` flag (set in `TileEngine::tryReaction`) → reaction-variant wording in #3 fire/melee lines | actor-based | ✅ Active |
 | 6 | Unit takes damage | — superseded by #4 (same `hitUnit` hook) | GOOD/BAD via victim | ✅ via #4 |
-| 7 | Panic | (near casualty hooks) | BAD for XCOM / NEUTRAL for alien | 🔲 TODO |
+| 7 | Panic / berserk | `BattlescapeGame::handlePanickingUnit` + `SavedBattleGame::logPanicEvent` | GOOD/BAD via unit | ✅ Active |
 | 8 | Out-of-ammo / no-LOF | `BattlescapeState.cpp:2610+` warning sites | WARNING | 🔲 TODO |
 
 ---
@@ -96,9 +96,11 @@ The core infrastructure (store, panel, theming, helpers) is complete and builds 
 **Files:** `src/Battlescape/TileEngine.cpp:3161/3165/3170`  
 **What:** Emit a "took damage" entry at the damage application hooks. GOOD for enemy, BAD for XCOM soldier. Phase 5 (firing model) will upgrade these to exact numeric damage values; for now a coarse line is sufficient.
 
-### 7. Panic
-**Where:** Near the casualty hooks in `BattlescapeGame` (around `checkForCasualties`).  
-**What:** Emit a panic entry when a unit fails morale and panics. BAD for XCOM soldier, NEUTRAL or GOOD if alien panics.
+### 7. Panic / berserk ✅ DONE
+**Hook:** `BattlescapeGame::handlePanickingUnit` (the single place panic/berserk is handled, beside the existing "has panicked"/"gone berserk" infobox), via `SavedBattleGame::logPanicEvent(unit, berserk)`.
+**What:** Logs "{0} panics" or "{0} goes berserk" (`berserk` = `status == STATUS_BERSERK`). A hostile the player can't currently see is not logged (gated inside the helper, like hits). Name is knowledge-aware.
+**Color:** `combatLogVictimOutcome(unit)` — our unit losing control is BAD, an enemy losing control is GOOD.
+**Strings:** `STR_COMBATLOG_PANIC`, `STR_COMBATLOG_BERSERK`.
 
 ### 8. Out-of-ammo / no-LOF
 **Where:** Existing `warning()` call sites in `src/Battlescape/BattlescapeState.cpp:2610+`.  

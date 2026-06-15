@@ -3718,6 +3718,27 @@ void SavedBattleGame::logHitEvent(const BattleUnit *attacker, const BattleUnit *
 }
 
 /**
+ * Logs a unit losing morale control, reading "<unit> panics" or "<unit> goes berserk". A hostile
+ * the player can't currently see is not logged (no leaking unseen enemy morale). Tone follows the
+ * unit (combatLogVictimOutcome): one of ours losing control is bad, an enemy losing it is good.
+ * @param unit The unit that panicked.
+ * @param status The unit's morale-failure status (STATUS_PANICKING or STATUS_BERSERK).
+ */
+void SavedBattleGame::logPanicEvent(const BattleUnit *unit, UnitStatus status)
+{
+	if (!unit)
+	{
+		return;
+	}
+	if (unit->getOriginalFaction() == FACTION_HOSTILE && !unit->getVisible())
+	{
+		return;
+	}
+	_combatLog->add(_lang->getString(status == STATUS_BERSERK ? "STR_COMBATLOG_BERSERK" : "STR_COMBATLOG_PANIC")
+		.arg(getCombatLogName(unit)), combatLogVictimOutcome(unit));
+}
+
+/**
  * Resets all unit hit state flags.
  */
 void SavedBattleGame::resetUnitHitStates()
