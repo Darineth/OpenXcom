@@ -690,6 +690,8 @@ public:
 	void logFireEvent(const BattleUnit *attacker, const BattleItem *weapon);
 	/// Logs an item being thrown ("<attacker> throws <item>"), names knowledge-aware.
 	void logThrowEvent(const BattleUnit *attacker, const BattleItem *item);
+	/// Logs a melee attack ("<attacker> strikes with <weapon>"), names knowledge-aware.
+	void logMeleeEvent(const BattleUnit *attacker, const BattleItem *weapon);
 	/// Reset all the unit hit state flags.
 	void resetUnitHitStates();
 };

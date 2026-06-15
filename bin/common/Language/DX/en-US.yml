@@ -15,5 +15,6 @@ en-US:
   STR_COMBATLOG_STUNNED_FEMALE: "{0} is knocked out"
   STR_COMBATLOG_FIRED: "{0} fires {1}"
   STR_COMBATLOG_THROWS: "{0} throws {1}"
+  STR_COMBATLOG_MELEE: "{0} strikes with {1}"
 #NextTurnState.cpp
   STR_COMBATLOG_NEW_TURN: "- Turn {0} -"

@@ -3625,6 +3625,22 @@ void SavedBattleGame::logThrowEvent(const BattleUnit *attacker, const BattleItem
 }
 
 /**
+ * Logs a melee attack, reading "<attacker> strikes with <weapon>". Names are knowledge-aware in
+ * the same way as logFireEvent, and the tone follows the actor (ours good, enemy bad).
+ * @param attacker The attacking unit.
+ * @param weapon The melee weapon used.
+ */
+void SavedBattleGame::logMeleeEvent(const BattleUnit *attacker, const BattleItem *weapon)
+{
+	if (!attacker || !weapon)
+	{
+		return;
+	}
+	_combatLog->add(_lang->getString("STR_COMBATLOG_MELEE")
+		.arg(getCombatLogName(attacker)).arg(getCombatLogWeaponName(attacker, weapon)), combatLogActorOutcome(attacker));
+}
+
+/**
  * Resets all unit hit state flags.
  */
 void SavedBattleGame::resetUnitHitStates()

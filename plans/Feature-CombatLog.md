@@ -52,7 +52,8 @@ Only **2 of ~8 planned emit points** are currently active:
 |---|-------|------|---------|--------|
 | 1 | New turn | `NextTurnState.cpp:289` | NEUTRAL | ✅ Active |
 | 2 | Kill / stun (casualties) | `BattlescapeGame.cpp:951` + `SavedBattleGame.cpp:3530-3539` | GOOD/BAD via faction | ✅ Active |
-| 3 | Any unit fires weapon | `ProjectileFlyBState.cpp::createNewProjectile` + `SavedBattleGame::logFireEvent` | NEUTRAL | ✅ Active |
+| 3 | Any unit fires / throws | `ProjectileFlyBState.cpp::createNewProjectile` + `SavedBattleGame::logFireEvent`/`logThrowEvent` | actor-based | ✅ Active |
+| 3b | Any unit melee attack | `MeleeAttackBState.cpp::init` + `SavedBattleGame::logMeleeEvent` | actor-based | ✅ Active |
 | 4 | Shot fired (impact) | `ProjectileFlyBState.cpp:588`, `TileEngine.cpp:4888` | NEUTRAL | 🔲 TODO |
 | 5 | Reaction fire | `TileEngine.cpp:2877` | GOOD/BAD via faction | 🔲 TODO |
 | 6 | Unit takes damage | `TileEngine.cpp:3161/3165/3170` | GOOD/BAD via faction | 🔲 TODO |
@@ -69,6 +70,7 @@ The core infrastructure (store, panel, theming, helpers) is complete and builds 
 **File:** `src/Battlescape/ProjectileFlyBState.cpp` (`createNewProjectile`), helpers `SavedBattleGame::logFireEvent` / `logThrowEvent`.
 **What:** Emits one entry per action for *any* unit/faction — "{0} fires {1}" for shots, "{0} throws {1}" for `BA_THROW`. Wired into the shared projectile path — right beside the existing `appendToHitLog(HITLOG_NEW_SHOT, ...)` call — rather than the player-only `ActionMenuState`, so reaction fire and alien shots are covered too. Gated on `_action.autoShotCounter == 1` so a burst/auto-shot logs once, not once per bullet.
 **Color/outcome:** Actor-based via `combatLogActorOutcome` — our unit acting is GOOD, an enemy acting is BAD, civilian/other NEUTRAL (the inverse of `combatLogVictimOutcome`, which colors harm done *to* a unit). Uses the actor's *current* faction so a mind-controlled unit is colored by whose side it now fights for.
+**Melee (3b):** `MeleeAttackBState::init` emits "{0} strikes with {1}" via `logMeleeEvent`, once per melee action. Hooked in `init()` (which runs once) rather than `performMeleeAttack()` (which re-runs for multi-hit AI melee), so a multi-strike attack still logs a single line. Terrain melee (hitting a wall/object, no target unit) is not logged — `init` returns before this point for that case. Same knowledge gating and actor-based color as fire/throw.
 **Knowledge gating:** Attacker name via `getCombatLogName` (unresearched hostiles read "Hostile"). Weapon/item name via `getCombatLogWeaponName`, which gates *hostile* gear on its unlocking research (`RuleItem::getRequirements`) — unresearched hostile weapons read "an unknown weapon"; our own gear and researched enemy gear are named plainly.
 **Strings:** `STR_COMBATLOG_FIRED`, `STR_COMBATLOG_THROWS`, `STR_COMBATLOG_UNKNOWN_WEAPON`.
 
