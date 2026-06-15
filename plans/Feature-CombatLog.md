@@ -1,6 +1,6 @@
 # Feature - Combat Log
 
-**Status:** ✅ Core infrastructure implemented (Phase 1). Partially wired — only 2 of ~8 planned emit points are active. See the TODO section below for remaining integration work.
+**Status:** ✅ Implemented. Core infrastructure plus all scoped emit points (#1–#8) are wired and committed. Remaining items are optional/deferred only: pre-fire no-LOF warnings (#8b), finer research-gated text (#9), and configurable options (#10).
 
 ## Overview
 
@@ -18,7 +18,7 @@ The store is **not serialized** — it lives only for the duration of a battle a
 |------|------|
 | `src/Savegame/CombatLog.h/.cpp` | Core store: outcome enum, entry struct, add/prune/clear |
 | `src/Battlescape/CombatLogPanel.h/.cpp` | Display widget: reads log, draws centered color-coded lines |
-| `src/Savegame/SavedBattleGame.h/.cpp` | Ownership + helpers (`appendToCombatLog`, `getCombatLogName`, `combatLogVictimOutcome`, `logUnitEvent`) |
+| `src/Savegame/SavedBattleGame.h/.cpp` | Ownership + helpers: emit API (`appendToCombatLog`), naming (`getCombatLogName`, `getCombatLogWeaponName`), tone (`combatLogVictimOutcome`, `combatLogActorOutcome`), and per-event loggers (`logUnitEvent`, `logKillEvent`, `logFireEvent`, `logThrowEvent`, `logMeleeEvent`, `logHitEvent`, `logPanicEvent`, `logOutOfAmmoEvent`) |
 | `src/Battlescape/BattlescapeState.h/.cpp` | Panel instantiation, interface ruleset theming, visibility toggle |
 | `src/Engine/Options.inc.h` / `Options.cpp` | `combatLogEnabled` option registration |
 | `bin/standard/xcom1/interfaces.rul` / `xcom2` | `combatLog` element + four outcome color slots (`combatLogNeutral`, `combatLogGood`, `combatLogWarning`, `combatLogBad`) |
@@ -33,7 +33,9 @@ The store is **not serialized** — it lives only for the duration of a battle a
 - **`BattlescapeState` constructor** — reads position/size from `interfaces.rul`, wires four outcome colors, gates visibility on `Options::combatLogEnabled`.
 - **`CombatLogPanel::think()`** — calls `_log->prune()` and flags redraw when entry count changes. Called as part of the battlescape think loop.
 
-## Localization strings (existing)
+## Localization strings (infrastructure / casualties)
+
+This table covers the original core strings. Strings added when wiring each emit point (fire/throw/shot-type, melee, hit/damage/wounds, reaction variants, panic/berserk, out-of-ammo) are listed in the **Strings:** line of the matching section under *Implementation Notes*.
 
 | Key | Value | Notes |
 |-----|-------|-------|
@@ -46,7 +48,7 @@ The store is **not serialized** — it lives only for the duration of a battle a
 
 ## Wiring status (emit points)
 
-Only **2 of ~8 planned emit points** are currently active:
+All planned emit points are active:
 
 | # | Event | File | Outcome | Status |
 |---|-------|------|---------|--------|
@@ -59,13 +61,12 @@ Only **2 of ~8 planned emit points** are currently active:
 | 6 | Unit takes damage | — superseded by #4 (same `hitUnit` hook) | GOOD/BAD via victim | ✅ via #4 |
 | 7 | Panic / berserk | `BattlescapeGame::handlePanickingUnit` + `SavedBattleGame::logPanicEvent` | GOOD/BAD via unit | ✅ Active |
 | 8 | Out-of-ammo (weapon emptied by the shot) | `ProjectileFlyBState::createNewProjectile` + `SavedBattleGame::logOutOfAmmoEvent` | WARNING | ✅ Active |
-| 8b | No-LOF / pre-fire warnings | `BattlescapeState.cpp:2610+` warning sites | WARNING | 🔲 (deferred) |
 
 ---
 
-# TODO — Remaining Integration Work
+# Implementation Notes
 
-The core infrastructure (store, panel, theming, helpers) is complete and builds cleanly. The following emit points need to be wired so the log actually fires during combat:
+The core infrastructure (store, panel, theming, helpers) and all scoped emit points are complete. Each section below documents how a point was wired (✅ DONE) or why it remains open (deferred/optional).
 
 ### 3. Any unit fires/throws ✅ DONE
 **File:** `src/Battlescape/ProjectileFlyBState.cpp` (`createNewProjectile`), helpers `SavedBattleGame::logFireEvent` / `logThrowEvent`.
@@ -93,9 +94,8 @@ The core infrastructure (store, panel, theming, helpers) is complete and builds 
 **Color:** `combatLogActorOutcome(attacker)` — same actor-based coloring as a normal shot.
 **Strings:** `STR_COMBATLOG_FIRED_REACTION`, `STR_COMBATLOG_MELEE_REACTION`. (The earlier `STR_COMBATLOG_REACTION` and `logReactionEvent` were removed.)
 
-### 6. Unit takes damage
-**Files:** `src/Battlescape/TileEngine.cpp:3161/3165/3170`  
-**What:** Emit a "took damage" entry at the damage application hooks. GOOD for enemy, BAD for XCOM soldier. Phase 5 (firing model) will upgrade these to exact numeric damage values; for now a coarse line is sufficient.
+### 6. Unit takes damage ✅ via #4 (superseded)
+Folded into #4: `TileEngine::hitUnit` is the single damage-application point, so the richer #4 hit line (exact/vague damage + wounds) replaced the originally-planned coarse "took damage" line at the same hook. No separate emit point.
 
 ### 7. Panic / berserk ✅ DONE
 **Hook:** `BattlescapeGame::handlePanickingUnit` (the single place panic/berserk is handled, beside the existing "has panicked"/"gone berserk" infobox), via `SavedBattleGame::logPanicEvent(unit, berserk)`.
@@ -122,12 +122,5 @@ The current `getCombatLogName()` already handles basic knowledge-aware naming ("
 - `combatLogLifetime` — override the default 8-second decay lifetime.
 - Both would follow the existing pattern in `Options.inc.h` / `Options.cpp`.
 
-### 11. Localization strings to add (DX YAML)
-The following keys are referenced by planned emit points but may not yet exist:
-- `STR_COMBATLOG_FIRED` — "{0} fires {1}"
-- `STR_COMBATLOG_HIT` — "{0} hits {1}"
-
-Add these to `bin/common/Language/DX/en-US.yml`.
-
-## More changes
-- Include the shot type in the log entry (e.g. auto/burst/snap/aimed)
+### 11. Localization strings ✅ DONE
+All combat-log strings live in `bin/common/Language/DX/en-US.yml` under the `#=== DX Combat Log ===` section. The full set added during wiring is documented per emit-point in the **Strings:** line of each section above (fire/throw/shot-type, melee, hit/damage/wounds, reaction variants, panic/berserk, out-of-ammo). No keys outstanding.
