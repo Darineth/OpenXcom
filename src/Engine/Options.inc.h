@@ -149,6 +149,7 @@ OPT bool oxceBaseManufactureInfinityButton;
 OPT bool oxceBaseTouchButtons;
 
 OPT bool combatLogEnabled;
+OPT bool hoveredUnitNameEnabled;
 OPT bool oxceDisableAlienInventory;
 OPT bool oxceDisableHitLog;
 OPT bool oxceDisableInventoryTuCost;

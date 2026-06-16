@@ -176,6 +176,14 @@ Map::Map(Game *game, int width, int height, int x, int y, int visibleMapHeight) 
 	_txtAccuracy->setPalette(_game->getScreen()->getPalette());
 	_txtAccuracy->setHighContrast(true);
 	_txtAccuracy->initText(_game->getMod()->getFont("FONT_BIG"), _game->getMod()->getFont("FONT_SMALL"), _game->getLanguage());
+	// Floating label for the hovered unit's name (DX on-map overlay). Wide and centered so the
+	// name balances over the tile regardless of length.
+	_txtUnitName = new Text(120, 9, 0, 0);
+	_txtUnitName->setSmall();
+	_txtUnitName->setAlign(ALIGN_CENTER);
+	_txtUnitName->setPalette(_game->getScreen()->getPalette());
+	_txtUnitName->setHighContrast(true);
+	_txtUnitName->initText(_game->getMod()->getFont("FONT_BIG"), _game->getMod()->getFont("FONT_SMALL"), _game->getLanguage());
 	_cacheActiveWeaponUfopediaArticleUnlocked = -1;
 	_cacheIsCtrlPressed = false;
 	_cacheCursorPosition = TileEngine::invalid;
@@ -252,6 +260,7 @@ Map::~Map()
 	delete _message;
 	delete _camera;
 	delete _txtAccuracy;
+	delete _txtUnitName;
 }
 
 /**
@@ -1561,6 +1570,28 @@ void Map::drawTerrain(Surface *surface)
 								Surface::blitRaw(surface, tmpSurface, screenPosition.x, screenPosition.y, 0);
 							}
 						}
+					}
+
+					// DX: floating name label over the unit under the cursor (knowledge-aware,
+					// faction-colored). Only the exact hovered tile on the current view level, and
+					// never for a unit the player can't see.
+					if (Options::hoveredUnitNameEnabled && unit
+						&& _selectorX == itX && _selectorY == itY && _camera->getViewLevel() == itZ
+						&& (unit->getVisible() || _save->getDebugMode())
+						&& !_save->getBattleState()->getMouseOverIcons())
+					{
+						int nameColor;
+						switch (unit->getFaction())
+						{
+						case FACTION_PLAYER:  nameColor = Palette::blockOffset(Pathfinding::green - 1) - 1; break;
+						case FACTION_HOSTILE: nameColor = Palette::blockOffset(Pathfinding::red - 1) - 1; break;
+						default:              nameColor = Palette::blockOffset(Pathfinding::yellow - 1) - 1; break;
+						}
+						_txtUnitName->setColor(nameColor);
+						_txtUnitName->setText(_save->getCombatLogName(unit));
+						_txtUnitName->draw();
+						// Center the 120px label over the 32px tile and lift it above the unit's head.
+						_txtUnitName->blitNShade(surface, screenPosition.x + 16 - 60, screenPosition.y - 10, 0);
 					}
 
 					// Draw waypoints if any on this tile

@@ -61,8 +61,13 @@ Everything below is DX-specific work confirmed **absent** from the base.
   labels on the popup. *(the effective-range readout is deferred to Phase 5 — it needs the aim-cone)*, display
   when out of TU or Ammo for an action, show shot count for shotgun-mode and burst/auto-fire modes.
   *(design: [plans/Feature-ActionMenuRevamp.md](plans/Feature-ActionMenuRevamp.md))*
-- [ ] **On-map overlays** — primed-grenade indicator, motion-detector readings,
-  hovered unit name.
+- **On-map overlays** — small always-on visual cues drawn onto the Battlescape map.
+  *(design: [plans/Feature-MapOverlays.md](plans/Feature-MapOverlays.md))*
+  - [x] **Hovered unit name** — knowledge-aware, faction-colored name label over the unit
+    under the cursor.
+  - [ ] **Primed-grenade indicator** — pulsing icon over live grenades on visible tiles.
+  - [ ] **Bleeding indicators** — wound icon over visible units with fatal wounds.
+  - [ ] **Motion-detector readings** — motion blips painted in-world.
 - [ ] **Fog-of-war view** — per-tile visible-count rendering (currently-seen vs.
   remembered-but-unobserved vs. undiscovered). *(also a prereq for Clairvoyance later)*
 - [ ] **Kneel/stand pathing recalculation** — refresh path preview on kneel/stand toggle.

@@ -33,6 +33,9 @@ en-US:
   STR_COMBATLOG_BERSERK: "{0} goes berserk"
 #NextTurnState.cpp
   STR_COMBATLOG_NEW_TURN: "- Turn {0} -"
+#=================== DX On-Map Overlays ===================
+#Options.cpp
+  STR_HOVERED_UNIT_NAME: "Hovered unit name"
 #=================== DX Action Menu Revamp ===================
 #OptionsAdvancedState.cpp / OptionsControlsState.cpp - DX options tab
   STR_ENGINE_DX: "DX"

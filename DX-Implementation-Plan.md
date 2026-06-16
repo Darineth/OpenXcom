@@ -104,7 +104,11 @@ This document serves as a high-level checklist of features from the original Ope
     - [ ] Implement Clear / Auto-equip actions
 - [ ] **Combat Feedback**
     - [ ] Implement floating combat log
-    - [ ] Implement on-map overlays (primed grenades, motion, unit names)
+    - [ ] Implement on-map overlays
+        - [x] Implement hovered unit name overlay
+        - [ ] Implement primed-grenade indicator overlay
+        - [ ] Implement bleeding indicator overlay
+        - [ ] Implement motion-detector readings overlay
     - [ ] Implement fog-of-war view
 - [ ] **Night Vision & Lighting**
     - [ ] Implement night-vision modes (full/local), auto/toggle/hold keys, night-vision color

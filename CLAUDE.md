@@ -162,6 +162,8 @@ heavily template/macro-based.
   `save(...)` pair — keep them in sync when adding a field, and remember new persisted fields
   affect save compatibility.
 - The codebase is GPLv3; preserve the license header block at the top of source files.
+- **Git commits: do not list AI/Claude as an author or co-author.** Omit any
+  `Co-Authored-By: Claude ...` trailer (and similar AI attribution) from commit messages.
 - Adding a new source file requires registering it in **`src/CMakeLists.txt`** (the `*_src`
   lists) — there is no glob-based collection — and, for the VS build, in the
   `OpenXcom.2010.vcxproj` project files.

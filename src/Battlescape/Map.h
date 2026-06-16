@@ -102,6 +102,7 @@ private:
 	int _bgColor;
 	bool _previewSettingArrows, _previewSettingTu, _previewSettingEnergy;
 	Text *_txtAccuracy;
+	Text *_txtUnitName;
 	SurfaceSet *_projectileSet;
 
 	void drawUnit(UnitSprite &unitSprite, Tile *unitTile, Tile *currTile, Position tileScreenPosition, bool topLayer, BattleUnit* movingUnit = nullptr);
