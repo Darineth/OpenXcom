@@ -112,6 +112,11 @@ Everything below is DX-specific work confirmed **absent** from the base.
 - [ ] **Directional armor** — `frontArmor`/`sideArmor`/`rearArmor`/`underArmor`,
   `armorSide`. *(feeds the Phase 3 damage model)*
 - [ ] **Inventory layouts** — `RuleInventoryLayout`, `RuleSoldier.inventoryLayout`.
+  - ⚠️ **Fix:** `Inventory::unload` (and the Unload button / shift-unload path) hardcodes
+    `_inventorySlotRightHand`/`_inventorySlotLeftHand` ([src/Battlescape/Inventory.cpp:1354-1381](src/Battlescape/Inventory.cpp#L1354-L1381))
+    and forces the weapon/ammo into hand slots. On layouts that lack those hand slots this
+    fails (or would dereference missing slots). Make the unload destination layout-aware
+    (e.g. any free slot the item fits, falling back to ground) instead of assuming hands exist.
 - [ ] **Typed slots / filtering / move-cost** — `battleType`, `allowCombatSwap`, `costs`,
   `countStats`, `armorSide`.
 - [ ] **Utility equipment slots** — `INV_UTILITY`. *(needs typed slots)*
@@ -187,3 +192,18 @@ Everything below is DX-specific work confirmed **absent** from the base.
 | `battleClipSize` (P6) | psi-amp ammo |
 | Effects framework (P8) | light equipment, Sneak light-gating |
 | Firing system (P5) | per-weapon AI targeting (P9) |
+
+---
+
+# New Features
+
+*Items added outside the original plan. Each should get a design doc in `plans/` before
+implementation (see CLAUDE.md "Planning Features").*
+
+- [ ] **Overrush / TU debt** — let a unit spend past 0 into negative TUs during its turn to
+  push an extra action ("over rush"), at the cost of starting the next turn with reduced TUs
+  (the debt carried over). *(design: TBD)*
+  - Open questions: cap on how far negative; whether energy/morale is also taxed; interaction
+    with reaction fire and TU reserves; AI usage; whether the debt is a flat carryover or
+    scaled. Touches `BattleUnit` TU accounting (`spendTimeUnits`, `prepareNewTurn`/turn
+    recovery) and the action-cost checks that gate actions on available TUs.
