@@ -22,6 +22,9 @@ uses. This skill is how you do that.
 The authoritative, offline reference is the UFOpaedia PALETTES.DAT dump vendored in the repo:
 - Page: [reference/PALETTES.DAT.htm](../../../reference/PALETTES.DAT.htm)
 - Spectrum images: [reference/PALETTES.DAT_files/](../../../reference/PALETTES.DAT_files/)
+- **Block-by-block index tables** (what each 16-index range contains, per palette):
+  [palette-color-reference](../palette-color-reference/SKILL.md) — use this to look up a hue's
+  index range without eyeballing the strips.
 
 Each spectrum PNG is **256×75**: a horizontal strip of all 256 colors, **left→right = index 0→255**,
 **one pixel wide per color**.
