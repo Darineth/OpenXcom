@@ -34,7 +34,7 @@ class TextList;
 class OptionsControlsState : public OptionsBaseState
 {
 private:
-	TextButton *_btnOXC, *_btnOXCE, *_btnOTHER;
+	TextButton *_btnOXC, *_btnOXCE, *_btnOTHER, *_btnDX;
 	TextButton *_owner;
 	TextList *_lstControls;
 	std::vector<OptionInfo> _controlsGeneral[OPTION_OWNER_MAX];

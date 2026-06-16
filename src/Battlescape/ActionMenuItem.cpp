@@ -33,39 +33,58 @@ namespace OpenXcom
  * @param x Position on the x-axis.
  * @param y Position on the y-axis.
  */
-ActionMenuItem::ActionMenuItem(int id, Game *game, int x, int y) : InteractiveSurface(272, 40, x + 24, y - (id*40)), _highlighted(false), _action(BA_NONE), _skill(nullptr), _tu(0)
+ActionMenuItem::ActionMenuItem(int id, Game *game, int x, int y) : InteractiveSurface(272, 25, x + 24, y - (id*25)), _highlighted(false), _action(BA_NONE), _skill(nullptr), _tu(0), _affordable(true)
 {
 	Font *big = game->getMod()->getFont("FONT_BIG"), *small = game->getMod()->getFont("FONT_SMALL");
 	Language *lang = game->getLanguage();
 
 	const Element *actionMenu = game->getMod()->getInterface("battlescape")->getElement("actionMenu");
+	const Element *disabled = game->getMod()->getInterface("battlescape")->getElementOptional("actionMenuDisabled");
+	const Element *warning = game->getMod()->getInterface("battlescape")->getElementOptional("actionMenuWarning");
 
 	_highlightModifier = actionMenu->TFTDMode ? 12 : 3;
+	_normalColor = actionMenu->color;
+	_disabledColor = disabled ? disabled->color : actionMenu->color2;
+	_warningColor = warning ? warning->color : _disabledColor;
+	_borderColor = actionMenu->border;
 
 	_frame = new Frame(getWidth(), getHeight(), 0, 0);
 	_frame->setHighContrast(true);
-	_frame->setColor(actionMenu->border);
+	_frame->setColor(_borderColor);
 	_frame->setSecondaryColor(actionMenu->color2);
-	_frame->setThickness(8);
+	_frame->setThickness(3);
 
-	_txtDescription = new Text(200, 20, 10, 13);
+	// compact small-font row layout
+	_txtKey = new Text(12, 9, 5, 8);
+	_txtKey->initText(big, small, lang);
+	_txtKey->setSmall();
+	_txtKey->setHighContrast(true);
+	_txtKey->setColor(_normalColor);
+
+	_txtDescription = new Text(104, 9, 18, 8);
 	_txtDescription->initText(big, small, lang);
-	_txtDescription->setBig();
+	_txtDescription->setSmall();
 	_txtDescription->setHighContrast(true);
-	_txtDescription->setColor(actionMenu->color);
+	_txtDescription->setColor(_normalColor);
 	_txtDescription->setVisible(true);
 
-	_txtAcc = new Text(100, 20, 140, 13);
-	_txtAcc->initText(big, small, lang);
-	_txtAcc->setBig();
-	_txtAcc->setHighContrast(true);
-	_txtAcc->setColor(actionMenu->color);
+	_txtShots = new Text(66, 9, 122, 8);
+	_txtShots->initText(big, small, lang);
+	_txtShots->setSmall();
+	_txtShots->setHighContrast(true);
+	_txtShots->setColor(_normalColor);
 
-	_txtTU = new Text(80, 20, 210, 13);
+	_txtAcc = new Text(46, 9, 188, 8);
+	_txtAcc->initText(big, small, lang);
+	_txtAcc->setSmall();
+	_txtAcc->setHighContrast(true);
+	_txtAcc->setColor(_normalColor);
+
+	_txtTU = new Text(36, 9, 234, 8);
 	_txtTU->initText(big, small, lang);
-	_txtTU->setBig();
+	_txtTU->setSmall();
 	_txtTU->setHighContrast(true);
-	_txtTU->setColor(actionMenu->color);
+	_txtTU->setColor(_normalColor);
 }
 
 /**
@@ -74,7 +93,9 @@ ActionMenuItem::ActionMenuItem(int id, Game *game, int x, int y) : InteractiveSu
 ActionMenuItem::~ActionMenuItem()
 {
 	delete _frame;
+	delete _txtKey;
 	delete _txtDescription;
+	delete _txtShots;
 	delete _txtAcc;
 	delete _txtTU;
 }
@@ -94,6 +115,67 @@ void ActionMenuItem::setAction(BattleActionType action, const std::string &descr
 	_txtAcc->setText(accuracy);
 	_txtTU->setText(timeunits);
 	_tu = tu;
+	// reset the optional columns/affordability so reused rows don't keep stale data
+	_affordable = true;
+	_txtKey->setText("");
+	_txtShots->setText("");
+	_redraw = true;
+}
+
+/**
+ * Sets the on-row hotkey label.
+ * @param key The key glyph (e.g. "3"), or empty for none.
+ */
+void ActionMenuItem::setHotkey(const std::string &key)
+{
+	_txtKey->setText(key);
+	_redraw = true;
+}
+
+/**
+ * Sets the shot-count column text.
+ * @param shots e.g. "x3 (9 pellets)", or empty for none.
+ */
+void ActionMenuItem::setShots(const std::string &shots)
+{
+	_txtShots->setText(shots);
+	_redraw = true;
+}
+
+/**
+ * Flags the action as unaffordable: dims every column to the disabled color and shows the reason
+ * tag in the shot-count column (an unaffordable action's shot count is moot). Empty = affordable.
+ * @param reason Localized reason tag (e.g. "No TU" / "No Ammo"), or empty to leave affordable.
+ */
+void ActionMenuItem::setUnaffordable(const std::string &reason)
+{
+	_affordable = reason.empty();
+	int color = _affordable ? _normalColor : _disabledColor;
+	_txtKey->setColor(color);
+	_txtDescription->setColor(color);
+	_txtShots->setColor(color);
+	_txtAcc->setColor(color);
+	_txtTU->setColor(color);
+	_frame->setColor(_affordable ? _borderColor : _disabledColor);
+	if (!_affordable)
+	{
+		_txtShots->setText(reason);
+	}
+	_redraw = true;
+}
+
+/**
+ * Flags partial ammo: the action can fire, but there aren't enough rounds for the full shot count.
+ * Recolors every column and the frame to the warning color, keeping the shot-count text visible.
+ */
+void ActionMenuItem::setPartialAmmo()
+{
+	_txtKey->setColor(_warningColor);
+	_txtDescription->setColor(_warningColor);
+	_txtShots->setColor(_warningColor);
+	_txtAcc->setColor(_warningColor);
+	_txtTU->setColor(_warningColor);
+	_frame->setColor(_warningColor);
 	_redraw = true;
 }
 
@@ -143,7 +225,9 @@ void ActionMenuItem::setPalette(const SDL_Color *colors, int firstcolor, int nco
 {
 	Surface::setPalette(colors, firstcolor, ncolors);
 	_frame->setPalette(colors, firstcolor, ncolors);
+	_txtKey->setPalette(colors, firstcolor, ncolors);
 	_txtDescription->setPalette(colors, firstcolor, ncolors);
+	_txtShots->setPalette(colors, firstcolor, ncolors);
 	_txtAcc->setPalette(colors, firstcolor, ncolors);
 	_txtTU->setPalette(colors, firstcolor, ncolors);
 }
@@ -154,7 +238,9 @@ void ActionMenuItem::setPalette(const SDL_Color *colors, int firstcolor, int nco
 void ActionMenuItem::draw()
 {
 	_frame->blit(this->getSurface());
+	_txtKey->blit(this->getSurface());
 	_txtDescription->blit(this->getSurface());
+	_txtShots->blit(this->getSurface());
 	_txtAcc->blit(this->getSurface());
 	_txtTU->blit(this->getSurface());
 }

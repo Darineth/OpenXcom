@@ -34,7 +34,7 @@ class TextList;
 class OptionsAdvancedState : public OptionsBaseState
 {
 private:
-	TextButton *_btnOXC, *_btnOXCE, *_btnOTHER;
+	TextButton *_btnOXC, *_btnOXCE, *_btnOTHER, *_btnDX;
 	TextButton *_owner;
 	TextList *_lstOptions;
 	bool _isTFTD;

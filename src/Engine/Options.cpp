@@ -88,6 +88,14 @@ void create()
 	createOptionsOTHER();
 	createAdvancedOptionsOTHER();
 	createControlsOTHER();
+
+	////////////////////////////////////////////////////////////
+	//					DX - OpenXcom DX
+	////////////////////////////////////////////////////////////
+
+	createOptionsDX();
+	createAdvancedOptionsDX();
+	createControlsDX();
 }
 
 void createOptionsOXC()
@@ -491,7 +499,6 @@ void createAdvancedOptionsOXCE()
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceShowAccuracyOnCrosshair", &oxceShowAccuracyOnCrosshair, 1, "STR_SHOW_ACCURACY_ON_CROSSHAIR", "STR_BATTLESCAPE"));
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceReactionFireThreshold", &oxceReactionFireThreshold, 0, "STR_REACTION_FIRE_THRESHOLD", "STR_BATTLESCAPE"));
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceAutoSell", &oxceAutoSell, false, "STR_AUTO_SELL", "STR_BATTLESCAPE"));
-	_info.push_back(OptionInfo(OPTION_OXCE, "combatLogEnabled", &combatLogEnabled, true, "STR_COMBAT_LOG", "STR_BATTLESCAPE"));
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceAutomaticPromotions", &oxceAutomaticPromotions, true, "STR_AUTOMATICPROMOTIONS", "STR_BATTLESCAPE"));
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceEnableOffCentreShooting", &oxceEnableOffCentreShooting, false, "STR_OFF_CENTRE_SHOOTING", "STR_BATTLESCAPE"));
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceUniformShootingSpread", &oxceUniformShootingSpread, false, "STR_UNIFORM_SHOOTING_SPREAD", "STR_BATTLESCAPE"));
@@ -580,6 +587,23 @@ void createAdvancedOptionsOTHER()
 void createControlsOTHER()
 {
 	// your fork's controls here
+}
+
+void createOptionsDX()
+{
+	// DX hidden options here
+}
+
+void createAdvancedOptionsDX()
+{
+	// DX advanced options
+	_info.push_back(OptionInfo(OPTION_DX, "combatLogEnabled", &combatLogEnabled, true, "STR_COMBAT_LOG", "STR_BATTLESCAPE"));
+}
+
+void createControlsDX()
+{
+	// DX controls
+	_info.push_back(OptionInfo(OPTION_DX, "keyBattleActionItem6", &keyBattleActionItem6, SDLK_6, "STR_ACTION_ITEM_6", "STR_BATTLESCAPE"));
 }
 
 

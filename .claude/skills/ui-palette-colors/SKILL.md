@@ -26,6 +26,9 @@ The authoritative, offline reference is the UFOpaedia PALETTES.DAT dump vendored
 Each spectrum PNG is **256×75**: a horizontal strip of all 256 colors, **left→right = index 0→255**,
 **one pixel wide per color**.
 
+When selecting a text color, prefer to pick the first shade in a block that has the hue you want,
+so the widget's built-in shading (e.g. `+1..+5` for `TextButton`) stays within the same hue ramp.
+
 ## Image geometry — converting X pixel ↔ color index
 
 - The strip is **1 px per color**, so the mapping is direct: **`index = X`** (the pixel at column X

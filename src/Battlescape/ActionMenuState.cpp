@@ -228,10 +228,73 @@ void ActionMenuState::addItem(BattleActionType ba, const std::string &name, int 
 	s2 = tr("STR_TIME_UNITS_SHORT").arg(tu);
 	_actionMenu[*id]->setAction(ba, tr(name), s1, s2, tu);
 	_actionMenu[*id]->setVisible(true);
+
+	// on-row hotkey label
 	if (key != SDLK_UNKNOWN)
 	{
+		_actionMenu[*id]->setHotkey(SDL_GetKeyName(key));
 		_actionMenu[*id]->onKeyboardPress((ActionHandler)&ActionMenuState::btnActionMenuItemClick, key);
 	}
+
+	// action config + loaded ammo for this mode (conf/ammo are null for non-shot actions)
+	const RuleItemAction *conf = _action->weapon->getActionConf(ba);
+	const BattleItem *ammo = nullptr;
+	if (ba == BA_SNAPSHOT || ba == BA_AIMEDSHOT || ba == BA_AUTOSHOT || ba == BA_LAUNCH || ba == BA_HIT)
+	{
+		ammo = _action->weapon->getAmmoForAction(ba);
+	}
+
+	// shot count for multi-shot modes, plus shotgun pellets (shown separately)
+	int shots = conf ? conf->shots : 0;
+	int pellets = ammo ? ammo->getRules()->getShotgunPellets() : 0;
+	std::string shotsText;
+	if (shots > 1)
+	{
+		shotsText = tr("STR_ACTION_SHOTS_SHORT").arg(shots);
+	}
+	if (pellets > 0)
+	{
+		std::string pelletsText = tr("STR_ACTION_PELLETS_SHORT").arg(pellets);
+		shotsText = shotsText.empty() ? pelletsText : shotsText + " " + pelletsText;
+	}
+	if (!shotsText.empty())
+	{
+		_actionMenu[*id]->setShots(shotsText);
+	}
+
+	// affordability (all flagged but still clickable):
+	//   red     - can't perform at all: not enough TU, or no usable ammo
+	//   warning - some ammo, but fewer rounds than a full multi-shot burst needs
+	std::string reason;
+	bool partialAmmo = false;
+	if (_action->actor->getTimeUnits() < tu)
+	{
+		reason = tr("STR_ACTION_NO_TU");
+	}
+	else if (ba == BA_SNAPSHOT || ba == BA_AIMEDSHOT || ba == BA_AUTOSHOT || ba == BA_LAUNCH || ba == BA_HIT)
+	{
+		const int perShot = (conf && conf->spendPerShot > 0) ? conf->spendPerShot : 1;
+		// self-powered weapons return themselves from getAmmoForAction - not clip-limited
+		const bool clipBased = ammo && ammo != _action->weapon;
+		const int available = clipBased ? ammo->getAmmoQuantity() : -1;
+		if (!ammo || (clipBased && available < perShot))
+		{
+			reason = tr("STR_ACTION_NO_AMMO");
+		}
+		else if (clipBased && shots > 1 && available < shots * perShot)
+		{
+			partialAmmo = true;
+		}
+	}
+	if (!reason.empty())
+	{
+		_actionMenu[*id]->setUnaffordable(reason);
+	}
+	else if (partialAmmo)
+	{
+		_actionMenu[*id]->setPartialAmmo();
+	}
+
 	(*id)++;
 }
 

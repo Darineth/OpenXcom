@@ -33,3 +33,13 @@ en-US:
   STR_COMBATLOG_BERSERK: "{0} goes berserk"
 #NextTurnState.cpp
   STR_COMBATLOG_NEW_TURN: "- Turn {0} -"
+#=================== DX Action Menu Revamp ===================
+#OptionsAdvancedState.cpp / OptionsControlsState.cpp - DX options tab
+  STR_ENGINE_DX: "DX"
+#Options.cpp
+  STR_ACTION_ITEM_6: "Item Action 6"
+#ActionMenuState.cpp
+  STR_ACTION_SHOTS_SHORT: "x{0}"
+  STR_ACTION_PELLETS_SHORT: "({0} pellets)"
+  STR_ACTION_NO_TU: "No TU"
+  STR_ACTION_NO_AMMO: "No Ammo"

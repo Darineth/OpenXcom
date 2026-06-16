@@ -41,6 +41,7 @@ OptionsControlsState::OptionsControlsState(OptionsOrigin origin) : OptionsBaseSt
 	_btnOXC = new TextButton(70, 16, 94, 8);
 	_btnOXCE = new TextButton(70, 16, 168, 8);
 	_btnOTHER = new TextButton(70, 16, 242, 8);
+	_btnDX = new TextButton(70, 16, 242, 8); // DX fork tab (shares OTHER's slot, which stays hidden)
 	_lstControls = new TextList(200, 120, 94, 26);
 
 	_owner = _btnOXC;
@@ -48,6 +49,7 @@ OptionsControlsState::OptionsControlsState(OptionsOrigin origin) : OptionsBaseSt
 	add(_btnOXC, "button", "controlsMenu");
 	add(_btnOXCE, "button", "controlsMenu");
 	add(_btnOTHER, "button", "controlsMenu");
+	add(_btnDX, "button", "controlsMenu");
 
 	if (origin != OPT_BATTLESCAPE)
 	{
@@ -72,6 +74,10 @@ OptionsControlsState::OptionsControlsState(OptionsOrigin origin) : OptionsBaseSt
 	_btnOTHER->setGroup(&_owner);
 	_btnOTHER->onMousePress((ActionHandler)&OptionsControlsState::btnGroupPress, SDL_BUTTON_LEFT);
 	_btnOTHER->setVisible(false); // enable in your fork
+
+	_btnDX->setText(tr("STR_ENGINE_DX"));
+	_btnDX->setGroup(&_owner);
+	_btnDX->onMousePress((ActionHandler)&OptionsControlsState::btnGroupPress, SDL_BUTTON_LEFT);
 
 	// Set up objects
 	_lstControls->setColumns(2, 152, 48);
@@ -135,7 +141,7 @@ void OptionsControlsState::init()
  */
 void OptionsControlsState::updateList()
 {
-	OptionOwner idx = _owner == _btnOXC ? OPTION_OXC : _owner == _btnOXCE ? OPTION_OXCE : OPTION_OTHER;
+	OptionOwner idx = _owner == _btnOXC ? OPTION_OXC : _owner == _btnOXCE ? OPTION_OXCE : _owner == _btnDX ? OPTION_DX : OPTION_OTHER;
 
 	_offsetGeneralMin = -1;
 	_offsetGeneralMax = -1;
@@ -241,7 +247,7 @@ void OptionsControlsState::addControls(const std::vector<OptionInfo> &keys)
 OptionInfo *OptionsControlsState::getControl(size_t sel)
 {
 	int selInt = sel;
-	OptionOwner idx = _owner == _btnOXC ? OPTION_OXC : _owner == _btnOXCE ? OPTION_OXCE : OPTION_OTHER;
+	OptionOwner idx = _owner == _btnOXC ? OPTION_OXC : _owner == _btnOXCE ? OPTION_OXCE : _owner == _btnDX ? OPTION_DX : OPTION_OTHER;
 
 	if (selInt > _offsetGeneralMin && selInt <= _offsetGeneralMax)
 	{

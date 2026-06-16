@@ -67,6 +67,7 @@ SkillMenuState::SkillMenuState(BattleAction *action, int x, int y) : ActionMenuS
 	int id = 0;
 
 	std::vector<SDLKey> hotkeys = {
+		Options::keyBattleActionItem6,
 		Options::keyBattleActionItem5,
 		Options::keyBattleActionItem4,
 		Options::keyBattleActionItem3,
@@ -144,6 +145,7 @@ void SkillMenuState::addItem(const RuleSkill* skill, int *id, SDLKey key)
 
 	if (key != SDLK_UNKNOWN)
 	{
+		_actionMenu[*id]->setHotkey(SDL_GetKeyName(key));
 		_actionMenu[*id]->onKeyboardPress((ActionHandler)&SkillMenuState::btnActionMenuItemClick, key);
 	}
 	(*id)++;

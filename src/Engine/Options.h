@@ -85,6 +85,9 @@ namespace Options
 	void createOptionsOTHER();
 	void createAdvancedOptionsOTHER();
 	void createControlsOTHER();
+	void createOptionsDX();
+	void createAdvancedOptionsDX();
+	void createControlsDX();
 	/// Restores default options.
 	void resetDefault(bool includeMods);
 	/// Initializes the options settings.

@@ -2114,6 +2114,10 @@ interfaces:
         color: -1
         color2: 14
         border: 3
+      - id: actionMenuDisabled
+        color: 35    # red (unaffordable action: out of TU / ammo)
+      - id: actionMenuWarning
+        color: 16    # orange (partial ammo: fewer rounds than a full burst)
       - id: grenadeBackground
         color: 24
         color2: 28

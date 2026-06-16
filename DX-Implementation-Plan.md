@@ -65,6 +65,7 @@ This document serves as a high-level checklist of features from the original Ope
     - [ ] Implement Role definitions (Sniper, Medic, etc.)
     - [ ] Implement Role equipment templates
     - [ ] Implement Role UI icons (Soldier, Craft, Inventory, Battlescape marker)
+    - [ ] Implement per-Role armor colors
 
 ## 7. Psionics Overhaul
 - [ ] **Advanced Psionic Powers**

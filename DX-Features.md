@@ -21,3 +21,20 @@ transient (never serialized) and distinct from the on-demand OXCE hit log (Ctrl-
 - Theming: the `combatLog` element in the `battlescape` interface ruleset sets the panel's
   position and size; `combatLogNeutral` / `combatLogGood` / `combatLogWarning` / `combatLogBad`
   set the four outcome colors.
+
+## Action Menu Revamp
+
+The battlescape action popup (Throw / Snap / Aimed / Auto / Hit / …) is more compact and more
+informative. Rows use a small font in ~25px boxes, and each row now shows its configurable
+hotkey at the left. Multi-shot modes show a shot count (e.g. `x3`) and shotgun ammo shows pellets
+(`x3 (9 pellets)`). Affordability is flagged at a glance: an action you can't perform — not
+enough TU, or no usable ammo — turns the whole row (text + border) red with a "No TU" / "No Ammo"
+tag, while an action with *some* ammo but not enough for a full burst turns amber. Flagged rows
+stay clickable (the usual warning still fires).
+
+- A sixth configurable action hotkey (`keyBattleActionItem6`, default `6`) was added so the
+  six-slot popup and the skill menu are fully keyboard-reachable.
+- Theming: `actionMenuDisabled` (red) and `actionMenuWarning` (amber) elements in the
+  `battlescape` interface ruleset color the unaffordable / partial-ammo states.
+- DX options now live under their own **DX** tab in Options → Advanced and Options → Controls
+  (a dedicated `OPTION_DX` owner), separate from the OXC/OXCE tabs.

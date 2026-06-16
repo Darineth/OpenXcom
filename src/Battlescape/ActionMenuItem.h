@@ -42,8 +42,10 @@ private:
 	BattleActionType _action;
 	const RuleSkill* _skill;
 	int _tu, _highlightModifier;
+	int _normalColor, _disabledColor, _warningColor, _borderColor;
+	bool _affordable;
 	Frame *_frame;
-	Text *_txtDescription, *_txtAcc, *_txtTU;
+	Text *_txtKey, *_txtDescription, *_txtShots, *_txtAcc, *_txtTU;
 public:
 	/// Creates a new ActionMenuItem.
 	ActionMenuItem(int id, Game *game, int x, int y);
@@ -52,6 +54,14 @@ public:
 	/// Assigns an action to it.
 	void setAction(BattleActionType action, const std::string &description, const std::string &accuracy, const std::string &timeunits, int tu);
 	void setSkill(const RuleSkill* skill);
+	/// Sets the on-row hotkey label (e.g. "3"); empty for none.
+	void setHotkey(const std::string &key);
+	/// Sets the shot-count column text (e.g. "x3 (9 pellets)"); empty for none.
+	void setShots(const std::string &shots);
+	/// Flags the action as unaffordable: dims the row and shows a reason tag (empty = affordable).
+	void setUnaffordable(const std::string &reason);
+	/// Flags partial ammo (some, but fewer rounds than a full burst): recolors the row to warning.
+	void setPartialAmmo();
 	/// Gets the assigned action.
 	BattleActionType getAction() const;
 	/// Gets the assigned skill.

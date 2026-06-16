@@ -57,13 +57,14 @@ Everything below is DX-specific work confirmed **absent** from the base.
 - [x] **Combat log** — floating event log. Infra + emit points (turn, casualties, fire/throw,
   melee, hit/damage, reaction, panic, out-of-ammo) wired; later mechanics can emit as they come
   online. *(design: [plans/Feature-CombatLog.md](plans/Feature-CombatLog.md))*
+- [x] **Action menu revamp** - More compact layout (small font), numeric action hotkeys + per-action configurable hotkey
+  labels on the popup. *(the effective-range readout is deferred to Phase 5 — it needs the aim-cone)*, display
+  when out of TU or Ammo for an action, show shot count for shotgun-mode and burst/auto-fire modes.
+  *(design: [plans/Feature-ActionMenuRevamp.md](plans/Feature-ActionMenuRevamp.md))*
 - [ ] **On-map overlays** — primed-grenade indicator, motion-detector readings,
   hovered unit name.
 - [ ] **Fog-of-war view** — per-tile visible-count rendering (currently-seen vs.
   remembered-but-unobserved vs. undiscovered). *(also a prereq for Clairvoyance later)*
-- [ ] **Action-menu hotkeys** — numeric action hotkeys + per-action configurable hotkey
-  labels on the popup. *(the effective-range readout is deferred to Phase 5 — it needs the
-  aim-cone)*
 - [ ] **Kneel/stand pathing recalculation** — refresh path preview on kneel/stand toggle.
 - [ ] **Tanks/HWPs open doors** — allow vehicles to click-open doors.
 - [ ] **Grenade tweaks** — instant-fuse option, reduced grenade LOS accuracy penalty.
@@ -144,7 +145,7 @@ Everything below is DX-specific work confirmed **absent** from the base.
 - [ ] **Health & Medical** — bleedout + indicators, medikit/stabilization rework,
   proportional wound recovery, Field Surgery research.
 - [ ] **Soldier Roles** — `RuleRole`/`Role`, role-as-template, UI icons, battlescape
-  marker. *(reuses the Phase 2 loadout-template plumbing + Phase 4 inventory layouts)*
+  marker, per-role armor colors. *(reuses the Phase 2 loadout-template plumbing + Phase 4 inventory layouts)*
 
 ## Phase 8: Effects, Lighting & Psionics
 

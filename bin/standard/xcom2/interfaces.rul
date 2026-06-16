@@ -2211,6 +2211,10 @@ interfaces: #done
         color2: 61
         border: 51
         TFTDMode: true
+      - id: actionMenuDisabled
+        color: 11    # red (unaffordable action: out of TU / ammo)
+      - id: actionMenuWarning
+        color: 160   # amber (partial ammo: fewer rounds than a full burst)
       - id: grenadeBackground
         color: 59
         color2: 63
