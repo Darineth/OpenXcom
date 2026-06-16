@@ -150,6 +150,7 @@ OPT bool oxceBaseTouchButtons;
 
 OPT bool combatLogEnabled;
 OPT bool hoveredUnitNameEnabled;
+OPT bool grenadeIndicatorEnabled;
 OPT bool oxceDisableAlienInventory;
 OPT bool oxceDisableHitLog;
 OPT bool oxceDisableInventoryTuCost;

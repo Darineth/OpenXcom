@@ -65,7 +65,8 @@ Everything below is DX-specific work confirmed **absent** from the base.
   *(design: [plans/Feature-MapOverlays.md](plans/Feature-MapOverlays.md))*
   - [x] **Hovered unit name** — knowledge-aware, faction-colored name label over the unit
     under the cursor.
-  - [ ] **Primed-grenade indicator** — pulsing icon over live grenades on visible tiles.
+  - [x] **Primed-grenade indicator** — pulsing icon over player-thrown live grenades on
+    discovered tiles (red disc for normal, cyan ring for proximity).
   - [ ] **Bleeding indicators** — wound icon over visible units with fatal wounds.
   - [ ] **Motion-detector readings** — motion blips painted in-world.
 - [ ] **Fog-of-war view** — per-tile visible-count rendering (currently-seen vs.

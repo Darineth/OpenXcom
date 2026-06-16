@@ -75,6 +75,9 @@ private:
 	SavedBattleGame *_save;
 	bool _isTFTD;
 	Surface *_arrow;
+	Surface *_grenadeIndicator;
+	static const int PROXY_PING_FRAMES = 2;
+	Surface *_proxyPing[PROXY_PING_FRAMES];
 	Surface *_stunIndicator, *_woundIndicator, *_burnIndicator, *_shockIndicator;
 	bool _anyIndicator, _isAltPressed, _isCtrlPressed;
 	int _spriteWidth, _spriteHeight;

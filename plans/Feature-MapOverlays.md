@@ -1,8 +1,8 @@
 # Feature - On-Map Overlays
 
-**Status:** 🚧 In progress. This pass implements the **hovered unit name** overlay. The other
-three overlays bundled under the checklist item — primed-grenade indicator, motion-detector
-readings, bleeding indicators — are deferred to later passes (see *Deferred* below).
+**Status:** 🚧 In progress. The **hovered unit name** and **primed-grenade indicator** overlays
+are implemented. The remaining two bundled under the checklist item — motion-detector readings
+and bleeding indicators — are deferred to later passes (see *Deferred* below).
 
 ## Overview
 
@@ -77,11 +77,71 @@ the UFO and TFTD palettes:
 
 ---
 
+---
+
+## 2. Primed-grenade indicator (this pass)
+
+### What it does
+
+Every **primed grenade the player threw** that is now **lying on a discovered tile** gets a small
+pulsing marker hovering just above it, so the player can see at a glance where their live ordnance
+is before it goes off. Two distinct icons by type:
+
+- **Normal primed grenade** (`BT_GRENADE`) → a **red filled disc** (static, brightness-pulsed).
+- **Proximity grenade** (`BT_PROXIMITYGRENADE`) → an **animated red "wifi ping"**: a core flanked
+  by a `( . )` bracket-arc pair that jumps from near to far, reading as a wave broadcasting outward
+  — an active detection field. Same red as the disc (distinguished by shape + animation, not
+  color), and it pulses in brightness on top of the broadcast cycle.
+
+Both markers carry a **black outline** (like the selection arrow) so they stay readable against any
+terrain.
+
+Only the player's own grenades are marked — a grenade thrown by an enemy is never shown (no free
+intel). "Player-thrown" is read from the grenade's *previous owner* (a thrown item's previous
+owner is the thrower, set when `moveToOwner(nullptr)` drops it on throw): the marker shows only
+when `getPreviousOwner()->getFaction() == FACTION_PLAYER`. The tile must be discovered, so the
+marker never x-rays through unexplored walls. "Primed" is the same `getFuseTimer() >= 0` test the
+inventory primer uses.
+
+### How it works
+
+The markers are built **procedurally** in `Map::init()` — `Surface`s drawn from pixel-index math,
+the technique the existing selection `_arrow` uses — so the feature ships no art assets and works
+out of the box. Both markers use the **block-2 red ramp** (disc: fill `34`, highlight `32`; ping: core `32`, near
+arc `34`, far arc `38`) with a **black (`15`) outline**, with all red indices ≤ 43 so the `+0..+4`
+brightness pulse never spills out of the red block (and `15` clamps back to black under the pulse).
+
+- The **disc** is a single 9×9 surface; its outline cells are black.
+- The **ping** is `PROXY_PING_FRAMES` (2) separate 11×11 surfaces drawn from explicit grid arrays
+  (`0` clear / `1` arc / `2` core): frame 0 is the core + a near `( . )` arc pair, frame 1 the core
+  + a far pair. A build-time pass paints a black halo on every transparent cell that borders a lit
+  cell (8-neighbourhood), giving the thin arcs the same outline the selection arrow has.
+  `drawTerrain` toggles the frames with `_proxyPing[(_animFrame / 2) % PROXY_PING_FRAMES]`.
+- Both are blitted with the inventory primer's `Pulsate[_animFrame % 8]` shade for a brightness
+  pulse — so the ping both broadcasts (frame cycle) and pulses (shade), the disc just pulses.
+
+The draw is a per-tile block in `Map::drawTerrain`, right after the on-ground-item block: for each
+item in `tile->getInventory()` that passes the primed / grenade-type / player-thrower tests, it
+blits the type-appropriate marker centered over the tile and lifted one icon-height above the
+floor item (`screenPosition.y + getTerrainLevel() - height`), then stops (one marker per tile).
+
+### Key code
+
+| File | Role |
+|------|------|
+| `src/Battlescape/Map.h` / `Map.cpp` | New `_grenadeIndicator` surface + `_proxyPing[PROXY_PING_FRAMES]` animation frames, built in `init()`, freed in dtor; scan-and-blit block in `drawTerrain` |
+| `src/Engine/Options.inc.h` / `Options.cpp` | `grenadeIndicatorEnabled` option (default on), registered in `createAdvancedOptionsDX` |
+| `bin/common/Language/DX/en-US.yml` | `STR_GRENADE_INDICATOR` option label |
+
+### Future enhancement
+
+The procedural icons could be overridden by mod-supplied named surfaces (à la `reactionIndicator`)
+once the ownership split (Mod-owned vs Map-owned) is handled cleanly. Not done in this pass.
+
+---
+
 ## Deferred (later passes)
 
-- **Primed-grenade indicator** — iterate `tile->getInventory()` for items with
-  `getFuseTimer() >= 0`, blit the pulsing `SCANG.DAT` frame-6 primer (the same sprite/animation
-  `Inventory::drawPrimers` uses) over the tile. Reuses the `_animFrame` pulse.
 - **Bleeding indicators** — for a visible `tile->getUnit()` with `getFatalWounds() > 0`, blit the
   existing `FloorWoundIndicator` surface (already loaded in the `Map` ctor and already used for
   unconscious bodies on the ground).

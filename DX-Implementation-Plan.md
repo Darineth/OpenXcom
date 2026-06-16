@@ -106,7 +106,7 @@ This document serves as a high-level checklist of features from the original Ope
     - [ ] Implement floating combat log
     - [ ] Implement on-map overlays
         - [x] Implement hovered unit name overlay
-        - [ ] Implement primed-grenade indicator overlay
+        - [x] Implement primed-grenade indicator overlay
         - [ ] Implement bleeding indicator overlay
         - [ ] Implement motion-detector readings overlay
     - [ ] Implement fog-of-war view

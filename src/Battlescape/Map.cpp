@@ -105,7 +105,7 @@ namespace OpenXcom
  * @param visibleMapHeight Current visible map height.
  */
 Map::Map(Game *game, int width, int height, int x, int y, int visibleMapHeight) : InteractiveSurface(width, height, x, y),
-	_game(game), _isTFTD(false), _arrow(0), _anyIndicator(false), _isAltPressed(false), _isCtrlPressed(false),
+	_game(game), _isTFTD(false), _arrow(0), _grenadeIndicator(0), _proxyPing{}, _anyIndicator(false), _isAltPressed(false), _isCtrlPressed(false),
 	_selectorX(0), _selectorY(0), _mouseX(0), _mouseY(0), _cursorType(CT_NORMAL), _cursorSize(1), _animFrame(0),
 	_projectile(0), _followProjectile(true), _projectileInFOV(false), _explosionInFOV(false), _launch(false), _visibleMapHeight(visibleMapHeight),
 	_unitDying(false), _smoothingEngaged(false), _flashScreen(false), _bgColor(15), _projectileSet(0), _showObstacles(false), _showInfoOnCursor(false)
@@ -257,6 +257,9 @@ Map::~Map()
 	delete _fadeTimer;
 	delete _obstacleTimer;
 	delete _arrow;
+	delete _grenadeIndicator;
+	for (Surface* frame : _proxyPing)
+		delete frame;
 	delete _message;
 	delete _camera;
 	delete _txtAccuracy;
@@ -288,6 +291,111 @@ void Map::init()
 		for (int x = 0; x < 9; ++x)
 			_arrow->setPixel(x, y, pixels[x+(y*9)]);
 	_arrow->unlock();
+
+	// DX on-map overlay: hovering markers for primed grenades lying on the ground (built once,
+	// procedurally, in the battlescape palette - same technique as the selection arrow above). A
+	// filled red disc marks a normal primed grenade; a cyan target-ring marks a proximity grenade,
+	// so the two read as clearly different icons. Both can be overridden by a mod-supplied surface
+	// (see drawTerrain). Palette indices: block 2 = red ramp, block 13 = cyan/blue ramp, 0 = clear.
+	if (!_grenadeIndicator)
+	{
+		const int R = 0, F = 34, H = 32, B = 15; // clear / red fill / red highlight / black outline
+		int disc[81] = {
+			R, R, R, B, B, B, R, R, R,
+			R, R, B, F, F, F, B, R, R,
+			R, B, F, H, F, F, F, B, R,
+			B, F, H, F, F, F, F, F, B,
+			B, F, F, F, F, F, F, F, B,
+			B, F, F, F, F, F, F, F, B,
+			R, B, F, F, F, F, F, B, R,
+			R, R, B, F, F, F, B, R, R,
+			R, R, R, B, B, B, R, R, R };
+		_grenadeIndicator = new Surface(9, 9);
+		_grenadeIndicator->setPalette(this->getPalette());
+		_grenadeIndicator->lock();
+		for (int y = 0; y < 9; ++y)
+			for (int x = 0; x < 9; ++x)
+				_grenadeIndicator->setPixel(x, y, disc[x + (y * 9)]);
+		_grenadeIndicator->unlock();
+	}
+	// The proximity marker is a two-frame "wifi" ping: a red core (same red as the grenade disc)
+	// flanked by a ( . ) bracket-arc pair that jumps from near to far, so it reads as a wave
+	// broadcasting outward. drawTerrain applies the disc's brightness pulse on top. Each lit pixel
+	// gets a black halo (like the selection arrow) so the thin arcs stay readable on any terrain.
+	// Grid cells: 0 = transparent, 1 = arc, 2 = core. Red ramp indices kept <= 43 so the +0..+4
+	// pulse never spills out of the red block; the black halo (15) clamps back to black under pulse.
+	if (!_proxyPing[0])
+	{
+		const int pingNear[121] = {
+			0,0,0,0,0,0,0,0,0,0,0,
+			0,0,0,0,0,0,0,0,0,0,0,
+			0,0,0,0,0,0,0,0,0,0,0,
+			0,0,0,0,1,0,1,0,0,0,0,
+			0,0,0,1,0,0,0,1,0,0,0,
+			0,0,0,1,0,2,0,1,0,0,0,
+			0,0,0,1,0,0,0,1,0,0,0,
+			0,0,0,0,1,0,1,0,0,0,0,
+			0,0,0,0,0,0,0,0,0,0,0,
+			0,0,0,0,0,0,0,0,0,0,0,
+			0,0,0,0,0,0,0,0,0,0,0 };
+		const int pingFar[121] = {
+			0,0,0,0,0,0,0,0,0,0,0,
+			0,0,0,0,0,0,0,0,0,0,0,
+			0,0,0,0,0,0,0,0,0,0,0,
+			0,0,1,0,0,0,0,0,1,0,0,
+			0,1,0,0,0,0,0,0,0,1,0,
+			0,1,0,0,0,2,0,0,0,1,0,
+			0,1,0,0,0,0,0,0,0,1,0,
+			0,0,1,0,0,0,0,0,1,0,0,
+			0,0,0,0,0,0,0,0,0,0,0,
+			0,0,0,0,0,0,0,0,0,0,0,
+			0,0,0,0,0,0,0,0,0,0,0 };
+		const int* grids[PROXY_PING_FRAMES] = { pingNear, pingFar };
+		const int arcColor[PROXY_PING_FRAMES] = { 34, 38 }; // near arc = disc's red fill; far arc a touch darker
+		const int coreColor = 32; // brightest red (matches the grenade disc highlight)
+		const int black = 15;
+		for (int f = 0; f < PROXY_PING_FRAMES; ++f)
+		{
+			const int* grid = grids[f];
+			Surface* frame = new Surface(11, 11);
+			frame->setPalette(this->getPalette());
+			frame->lock();
+			for (int y = 0; y < 11; ++y)
+			{
+				for (int x = 0; x < 11; ++x)
+				{
+					const int cell = grid[x + (y * 11)];
+					if (cell == 2)
+					{
+						frame->setPixel(x, y, coreColor);
+					}
+					else if (cell == 1)
+					{
+						frame->setPixel(x, y, arcColor[f]);
+					}
+					else
+					{
+						// transparent: paint black where it borders a lit pixel (8-neighbourhood)
+						bool border = false;
+						for (int dy = -1; dy <= 1 && !border; ++dy)
+							for (int dx = -1; dx <= 1; ++dx)
+							{
+								const int nx = x + dx, ny = y + dy;
+								if (nx >= 0 && nx < 11 && ny >= 0 && ny < 11 && grid[nx + (ny * 11)] != 0)
+								{
+									border = true;
+									break;
+								}
+							}
+						if (border)
+							frame->setPixel(x, y, black);
+					}
+				}
+			}
+			frame->unlock();
+			_proxyPing[f] = frame;
+		}
+	}
 
 	_projectile = 0;
 	if (_save->getDepth() == 0)
@@ -1080,6 +1188,33 @@ void Map::drawTerrain(Surface *surface)
 									}
 								}
 							}
+						}
+					}
+
+					// DX on-map overlay: a hovering marker over each player-thrown primed grenade
+					// lying on a discovered tile (red disc for a normal grenade, cyan ring for a
+					// proximity grenade). Enemy grenades are never marked - only the player's own.
+					if (Options::grenadeIndicatorEnabled && tile->isDiscovered(O_FLOOR))
+					{
+						for (BattleItem* groundItem : *tile->getInventory())
+						{
+							if (groundItem->getFuseTimer() < 0 || !groundItem->getRules()->isGrenadeOrProxy())
+								continue;
+							const BattleUnit* thrower = groundItem->getPreviousOwner();
+							if (!thrower || thrower->getFaction() != FACTION_PLAYER)
+								continue;
+							// A proximity grenade gets the animated wifi ping (its frame cycles the
+							// broadcasting arc); a normal grenade gets the static red disc. Both then
+							// pulse in brightness off the same Pulsate shade.
+							const int Pulsate[8] = { 0, 1, 2, 3, 4, 3, 2, 1 };
+							Surface* marker = (groundItem->getRules()->getBattleType() == BT_PROXIMITYGRENADE)
+								? _proxyPing[(_animFrame / 2) % PROXY_PING_FRAMES]
+								: _grenadeIndicator;
+							marker->blitNShade(surface,
+								screenPosition.x + (_spriteWidth / 2) - (marker->getWidth() / 2),
+								screenPosition.y + tile->getTerrainLevel() - marker->getHeight(),
+								Pulsate[_animFrame % 8]);
+							break; // one marker per tile is enough
 						}
 					}
 
