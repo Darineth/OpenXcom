@@ -803,6 +803,23 @@ A large subsystem turning HWPs into customizable, soldier-like units.
   (ambient / fire / items / units), keeping the brightest per layer. Carrying a
   light source **disqualifies a unit from Sneak movement** (§3) — you can't creep
   unseen while illuminated.
+- **Stealth / cloaking armor** — armor can make its wearer **harder to spot**, the
+  inverse of the light feature. An armor lists effect ids in
+  **`Armor.equippedEffects`** (a `RuleEffect` list applied to the wearer via the
+  effects framework, §12; items can likewise grant one via RuleItem
+  `equippedEffect`). An effect carrying an **`EC_STEALTH`** component with a
+  `magnitude` shrinks the range at which **other units can see the wearer**: when
+  spotting checks run, the observer's max-visible-distance to a stealthed target is
+  scaled by `(100 − magnitude) / 100`, and a **`magnitude ≥ 100` makes the unit
+  effectively invisible** (spot distance 0 — seen only point-blank/adjacent)
+  (`TileEngine`, FOV/spotting calc). So e.g. a magnitude-50 cloak halves how far
+  enemies can detect you, letting a scout in stealth armor operate close to the
+  enemy. Stealthed units are drawn with a translucent **`RecolorStealth`** shader;
+  this cloak render is wired in the **inventory paperdoll** but the battlescape
+  unit-sprite path (`UnitSprite::drawRecolored`) is **commented out / TODO**, so the
+  in-field visual is only partially implemented even though the spotting mechanic
+  works. *(A separate `EC_NIGHT_VISION` effect component also exists for
+  effect-granted night vision.)*
 
 ---
 
@@ -1160,6 +1177,11 @@ uncommitted working tree carries a handful of smaller behavior fixes worth notin
   behavior.
 
 ---
+
+## 25. Stealth Equipment
+
+DX originally also added a stealth feature where armor could grant a stealth effect, which reduced the range
+at which a unit could be spotted.  
 
 ## Appendix A — New / Notable Ruleset (YAML) Keys
 

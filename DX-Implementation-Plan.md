@@ -107,13 +107,14 @@ This document serves as a high-level checklist of features from the original Ope
     - [ ] Implement on-map overlays
         - [x] Implement hovered unit name overlay
         - [x] Implement primed-grenade indicator overlay
-        - [ ] Implement bleeding indicator overlay
+        - [x] Implement unit status indicators overlay (bleeding / fire / shock / near-knockout)
         - [ ] Implement motion-detector readings overlay
     - [ ] Implement fog-of-war view
 - [ ] **Night Vision & Lighting**
     - [ ] Implement night-vision modes (full/local), auto/toggle/hold keys, night-vision color
     - [ ] Implement per-armor sight ranges (`visibilityAtDark`/`visibilityAtDay`) + camouflage values
     - [ ] Implement light/illumination equipment (carried light sources, layered lighting)
+    - [ ] Implement stealth/cloaking armor (`Armor.equippedEffects` → `EC_STEALTH` scales enemy spot range, ≥100 = invisible; `RecolorStealth` render) — inverse of light equipment, needs Effects (§13)
 - [ ] **General UI/QoL**
     - [ ] Implement numeric action hotkeys
     - [ ] Implement action-menu per-action hotkey labels + accuracy/effective-range readouts
@@ -150,6 +151,7 @@ This document serves as a high-level checklist of features from the original Ope
     - [ ] Implement `RuleEffect` / `BattleEffect` / `EffectComponent` (initial/ongoing/final, duration, maxStack)
     - [ ] Implement item effect hooks (`hitEffect` / `equippedEffect`)
     - [ ] Implement light-emitting effect components (`EC_CIRCULAR_LIGHT` / `EC_DIRECTIONAL_LIGHT`)
+    - [ ] Implement stealth / visibility effect components (`EC_STEALTH`, `EC_NIGHT_VISION`)
 
 ## 14. AI Enhancements
 - [ ] **Per-Weapon AI Targeting**

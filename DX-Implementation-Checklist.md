@@ -166,6 +166,10 @@ Everything below is DX-specific work confirmed **absent** from the base.
   item `hitEffect`/`equippedEffect`. *(needs `Game::getGame()`)*
 - [ ] **Light / illumination equipment** — `EC_CIRCULAR_LIGHT`/`EC_DIRECTIONAL_LIGHT`;
   finalizes Sneak's light gate. *(needs Effects)*
+- [ ] **Stealth / cloaking armor** — `Armor.equippedEffects` → `EC_STEALTH` magnitude scales
+  down enemy spot range (≥100 = effectively invisible); translucent `RecolorStealth` render
+  (inventory paperdoll wired, `UnitSprite::drawRecolored` still TODO). *(needs Effects; the
+  inverse of light equipment)* *(legacy: [Legacy-DX-Features.md](Legacy-DX-Features.md) §15)*
 - [ ] **Psionics Overhaul** — channeled Mind Control + backlash/counter-control; Mind
   Blast *(needs damage model)*; Clairvoyance *(needs Phase 1 fog-of-war)*; psi-amp ammo
   *(needs Phase 6 `battleClipSize`)*.
