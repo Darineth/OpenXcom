@@ -79,6 +79,9 @@ private:
 	static const int PROXY_PING_FRAMES = 2;
 	Surface *_proxyPing[PROXY_PING_FRAMES];
 	Surface *_stunIndicator, *_woundIndicator, *_burnIndicator, *_shockIndicator;
+	// DX: procedural fallback status icons, built in init() and owned by Map, used when the mod
+	// supplies no matching Floor*Indicator surface so the on-map status glyphs work out of the box.
+	Surface *_stunIndicatorFallback, *_woundIndicatorFallback, *_burnIndicatorFallback, *_shockIndicatorFallback;
 	bool _anyIndicator, _isAltPressed, _isCtrlPressed;
 	int _spriteWidth, _spriteHeight;
 	int _selectorX, _selectorY;

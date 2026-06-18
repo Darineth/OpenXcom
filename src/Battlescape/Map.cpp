@@ -105,7 +105,9 @@ namespace OpenXcom
  * @param visibleMapHeight Current visible map height.
  */
 Map::Map(Game *game, int width, int height, int x, int y, int visibleMapHeight) : InteractiveSurface(width, height, x, y),
-	_game(game), _isTFTD(false), _arrow(0), _grenadeIndicator(0), _proxyPing{}, _anyIndicator(false), _isAltPressed(false), _isCtrlPressed(false),
+	_game(game), _isTFTD(false), _arrow(0), _grenadeIndicator(0), _proxyPing{},
+	_stunIndicatorFallback(0), _woundIndicatorFallback(0), _burnIndicatorFallback(0), _shockIndicatorFallback(0),
+	_anyIndicator(false), _isAltPressed(false), _isCtrlPressed(false),
 	_selectorX(0), _selectorY(0), _mouseX(0), _mouseY(0), _cursorType(CT_NORMAL), _cursorSize(1), _animFrame(0),
 	_projectile(0), _followProjectile(true), _projectileInFOV(false), _explosionInFOV(false), _launch(false), _visibleMapHeight(visibleMapHeight),
 	_unitDying(false), _smoothingEngaged(false), _flashScreen(false), _bgColor(15), _projectileSet(0), _showObstacles(false), _showInfoOnCursor(false)
@@ -260,6 +262,10 @@ Map::~Map()
 	delete _grenadeIndicator;
 	for (Surface* frame : _proxyPing)
 		delete frame;
+	delete _stunIndicatorFallback;
+	delete _woundIndicatorFallback;
+	delete _burnIndicatorFallback;
+	delete _shockIndicatorFallback;
 	delete _message;
 	delete _camera;
 	delete _txtAccuracy;
@@ -395,6 +401,126 @@ void Map::init()
 			frame->unlock();
 			_proxyPing[f] = frame;
 		}
+	}
+
+	// DX: procedural fallback status icons (built once, in the battlescape palette) shown over
+	// unconscious bodies - and, for the wound icon, over conscious bleeding units - when a mod
+	// supplies no Floor*Indicator art, so the status overlays work out of the box. Each glyph is a
+	// small grid (0 = clear, 1..3 = colour-ramp slots) with an auto-painted black halo on every
+	// transparent cell bordering a lit one (same readable-outline technique as the proxy ping).
+	// Colours use only the red (block 2) and yellow (block 1) ramps + black, all palette-safe in
+	// both the UFO and TFTD palettes (same blocks the grenade disc and selection arrow rely on);
+	// the four are distinguished by shape, not colour.
+	if (!_woundIndicatorFallback)
+	{
+		auto buildIcon = [this](const int* grid, int w, int h, const int* colors) -> Surface*
+		{
+			Surface* s = new Surface(w, h);
+			s->setPalette(this->getPalette());
+			s->lock();
+			for (int y = 0; y < h; ++y)
+			{
+				for (int x = 0; x < w; ++x)
+				{
+					const int cell = grid[x + (y * w)];
+					if (cell > 0)
+					{
+						s->setPixel(x, y, colors[cell]);
+					}
+					else
+					{
+						// transparent: paint black where it borders a lit cell (8-neighbourhood)
+						bool border = false;
+						for (int dy = -1; dy <= 1 && !border; ++dy)
+							for (int dx = -1; dx <= 1; ++dx)
+							{
+								const int nx = x + dx, ny = y + dy;
+								if (nx >= 0 && nx < w && ny >= 0 && ny < h && grid[nx + (ny * w)] > 0)
+								{
+									border = true;
+									break;
+								}
+							}
+						if (border)
+							s->setPixel(x, y, 15); // black halo
+					}
+				}
+			}
+			s->unlock();
+			return s;
+		};
+
+		// Wound: a red blood drop (pointed top, round bottom).
+		const int woundColors[3] = { 0, 34, 32 }; // red fill / brighter red highlight
+		const int wound[121] = {
+			0,0,0,0,0,1,0,0,0,0,0,
+			0,0,0,0,0,1,0,0,0,0,0,
+			0,0,0,0,1,1,1,0,0,0,0,
+			0,0,0,0,1,1,1,0,0,0,0,
+			0,0,0,1,1,1,1,1,0,0,0,
+			0,0,0,1,1,2,1,1,0,0,0,
+			0,0,1,1,1,1,1,1,1,0,0,
+			0,0,1,1,1,1,1,1,1,0,0,
+			0,0,0,1,1,1,1,1,0,0,0,
+			0,0,0,0,1,1,1,0,0,0,0,
+			0,0,0,0,0,0,0,0,0,0,0 };
+
+		// Burn: a flame - red body, yellow inner, bright-yellow tip.
+		const int burnColors[4] = { 0, 34, 18, 16 }; // red / yellow / bright yellow
+		const int burn[121] = {
+			0,0,0,0,0,0,3,0,0,0,0,
+			0,0,0,0,0,3,3,0,0,0,0,
+			0,0,0,0,0,2,3,0,0,0,0,
+			0,0,0,0,2,2,2,0,0,0,0,
+			0,0,0,1,2,2,3,0,0,0,0,
+			0,0,0,1,2,3,2,1,0,0,0,
+			0,0,1,1,2,2,2,1,0,0,0,
+			0,0,1,1,1,2,1,1,1,0,0,
+			0,0,1,1,1,1,1,1,1,0,0,
+			0,0,0,1,1,1,1,1,0,0,0,
+			0,0,0,0,1,1,1,0,0,0,0 };
+
+		// Shock: a yellow lightning bolt.
+		const int shockColors[2] = { 0, 16 }; // bright yellow
+		const int shock[121] = {
+			0,0,0,0,0,0,1,1,0,0,0,
+			0,0,0,0,0,1,1,0,0,0,0,
+			0,0,0,0,1,1,0,0,0,0,0,
+			0,0,0,1,1,1,1,0,0,0,0,
+			0,0,0,0,1,1,1,1,0,0,0,
+			0,0,0,0,0,0,1,1,0,0,0,
+			0,0,0,0,0,1,1,0,0,0,0,
+			0,0,0,0,1,1,0,0,0,0,0,
+			0,0,0,1,1,0,0,0,0,0,0,
+			0,0,0,0,0,0,0,0,0,0,0,
+			0,0,0,0,0,0,0,0,0,0,0 };
+
+		// Stun: a "Zzz" sleep glyph (asleep / about-to-drop cue). The lit cells are transcribed
+		// pixel-for-pixel from reference/Zzz.png (its bright pixels -> lit; its own outline/colours
+		// discarded), then buildIcon paints the fill + the shared black halo. 14x14. Each Z is a
+		// step darker down the greyscale ramp than the next-bigger one (1 = big/white, 2 = medium,
+		// 3 = small), so the trio reads as fading away as it drifts up.
+		const int stunColors[4] = { 0, 1, 3, 5 }; // white -> light grey -> mid grey (greyscale ramp)
+		const int stun[14 * 14] = {
+			0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+			0,1,1,1,1,1,1,0,0,0,0,0,0,0,
+			0,0,0,0,0,0,1,0,0,0,0,0,0,0,
+			0,0,0,0,0,1,0,0,0,0,0,0,0,0,
+			0,0,0,0,1,0,2,2,2,2,0,0,0,0,
+			0,0,0,1,0,0,0,0,0,2,0,0,0,0,
+			0,0,1,0,0,0,0,0,2,0,0,0,0,0,
+			0,1,0,0,0,0,0,2,0,0,3,3,3,0,
+			0,1,1,1,1,1,1,0,0,0,0,0,3,0,
+			0,0,0,0,0,0,0,0,0,0,0,3,0,0,
+			0,0,0,0,0,0,2,2,2,2,0,0,0,0,
+			0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+			0,0,0,0,0,0,0,0,0,3,3,3,3,0,
+			0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
+
+		_woundIndicatorFallback = buildIcon(wound, 11, 11, woundColors);
+		_burnIndicatorFallback = buildIcon(burn, 11, 11, burnColors);
+		_shockIndicatorFallback = buildIcon(shock, 11, 11, shockColors);
+		_stunIndicatorFallback = buildIcon(stun, 14, 14, stunColors);
 	}
 
 	_projectile = 0;
@@ -1153,37 +1279,44 @@ void Map::drawTerrain(Surface *surface)
 								screenPosition.y + tile->getTerrainLevel(),
 								tileShade
 							);
-							if (_anyIndicator)
 							{
 								BattleUnit *itemUnit = item->getUnit();
 								if (itemUnit && itemUnit->getStatus() == STATUS_UNCONSCIOUS && itemUnit->indicatorsAreEnabled())
 								{
-									if (_burnIndicator && itemUnit->getFire() > 0)
+									// Pick the highest-priority status glyph, preferring mod-supplied
+									// Floor*Indicator art and falling back to the DX procedural icon so
+									// the overlay always shows (burn > wound > shock > stun).
+									Surface *modArt = nullptr, *fallback = nullptr;
+									if (itemUnit->getFire() > 0)
 									{
-										_burnIndicator->blitNShade(surface,
+										modArt = _burnIndicator; fallback = _burnIndicatorFallback;
+									}
+									else if (itemUnit->getFatalWounds() > 0)
+									{
+										modArt = _woundIndicator; fallback = _woundIndicatorFallback;
+									}
+									else if (itemUnit->hasNegativeHealthRegen())
+									{
+										modArt = _shockIndicator; fallback = _shockIndicatorFallback;
+									}
+									else
+									{
+										modArt = _stunIndicator; fallback = _stunIndicatorFallback;
+									}
+									if (modArt)
+									{
+										// Mod art is tile-aligned: blit at the tile origin as before.
+										modArt->blitNShade(surface,
 											screenPosition.x,
 											screenPosition.y + tile->getTerrainLevel(),
 											tileShade);
 									}
-									else if (_woundIndicator && itemUnit->getFatalWounds() > 0)
+									else if (fallback)
 									{
-										_woundIndicator->blitNShade(surface,
-											screenPosition.x,
-											screenPosition.y + tile->getTerrainLevel(),
-											tileShade);
-									}
-									else if (_shockIndicator && itemUnit->hasNegativeHealthRegen())
-									{
-										_shockIndicator->blitNShade(surface,
-											screenPosition.x,
-											screenPosition.y + tile->getTerrainLevel(),
-											tileShade);
-									}
-									else if (_stunIndicator)
-									{
-										_stunIndicator->blitNShade(surface,
-											screenPosition.x,
-											screenPosition.y + tile->getTerrainLevel(),
+										// The small procedural icon is centered over the tile floor.
+										fallback->blitNShade(surface,
+											screenPosition.x + (_spriteWidth - fallback->getWidth()) / 2,
+											screenPosition.y + tile->getTerrainLevel() + 6,
 											tileShade);
 									}
 								}
@@ -1878,6 +2011,76 @@ void Map::drawTerrain(Surface *surface)
 		if (this->getCursorType() != CT_NONE)
 		{
 			_arrow->blitNShade(surface, screenPosition.x + offset.x + (_spriteWidth / 2) - (_arrow->getWidth() / 2), screenPosition.y + offset.y - _arrow->getHeight() + getArrowBobForFrame(_animFrame), 0);
+		}
+	}
+
+	// DX on-map overlay: status markers hovering over the player's own living units, one per active
+	// ongoing-harm condition - on fire, bleeding (fatal wounds), or losing HP each turn (negative
+	// health regen) - plus a stun warning when accumulated stun is close to dropping the unit. Uses
+	// the same glyphs as the unconscious-body floor overlay (mod art when present, else the DX
+	// procedural fallback). All active markers stack side-by-side, centered above the head and
+	// lifted clear of the selection arrow, with the arrow's hover bob. Honours the per-unit
+	// disableIndicators script flag and the current view level.
+	if (Options::unitStatusIndicatorEnabled)
+	{
+		for (auto* statusUnit : *_save->getUnits())
+		{
+			if (statusUnit->getFaction() != FACTION_PLAYER || statusUnit->isOut() || !statusUnit->indicatorsAreEnabled())
+				continue;
+			if (statusUnit->getPosition().z > _camera->getViewLevel())
+				continue;
+
+			// Gather the active condition glyphs (mod art preferred, procedural fallback otherwise).
+			Surface* markers[4];
+			int markerCount = 0;
+			auto addMarker = [&](Surface* mod, Surface* fb)
+			{
+				Surface* s = mod ? mod : fb;
+				if (s)
+					markers[markerCount++] = s;
+			};
+			if (statusUnit->getFire() > 0)
+				addMarker(_burnIndicator, _burnIndicatorFallback);
+			if (statusUnit->getFatalWounds() > 0)
+				addMarker(_woundIndicator, _woundIndicatorFallback);
+			if (statusUnit->hasNegativeHealthRegen())
+				addMarker(_shockIndicator, _shockIndicatorFallback);
+			// Stun: warn when the unit is within a quarter of its current health of being knocked out.
+			if (statusUnit->getHealth() > 0 && statusUnit->getStunlevel() * 4 >= statusUnit->getHealth() * 3)
+				addMarker(_stunIndicator, _stunIndicatorFallback);
+			if (markerCount == 0)
+				continue;
+
+			_camera->convertMapToScreen(statusUnit->getPosition(), &screenPosition);
+			screenPosition += _camera->getMapOffset();
+			Position offset = calculateWalkingOffset(statusUnit).ScreenOffset;
+			if (statusUnit->isBigUnit())
+			{
+				offset.y += 4;
+			}
+			offset.y += Position::TileZ - (statusUnit->getHeight() + statusUnit->getFloatHeight());
+			if (statusUnit->isKneeled())
+			{
+				offset.y -= 2;
+			}
+
+			// Lay the markers out as a centered row above the head, lifted by the arrow's height so
+			// the row clears the selection arrow when this unit is also the selected one.
+			const int gap = 1;
+			int totalWidth = 0, maxHeight = 0;
+			for (int i = 0; i < markerCount; ++i)
+			{
+				totalWidth += markers[i]->getWidth() + (i ? gap : 0);
+				if (markers[i]->getHeight() > maxHeight)
+					maxHeight = markers[i]->getHeight();
+			}
+			int drawX = screenPosition.x + offset.x + (_spriteWidth / 2) - (totalWidth / 2);
+			int baseY = screenPosition.y + offset.y - _arrow->getHeight() - maxHeight + getArrowBobForFrame(_animFrame);
+			for (int i = 0; i < markerCount; ++i)
+			{
+				markers[i]->blitNShade(surface, drawX, baseY + (maxHeight - markers[i]->getHeight()), 0);
+				drawX += markers[i]->getWidth() + gap;
+			}
 		}
 	}
 

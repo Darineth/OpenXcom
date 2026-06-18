@@ -37,6 +37,7 @@ en-US:
 #Options.cpp
   STR_HOVERED_UNIT_NAME: "Hovered unit name"
   STR_GRENADE_INDICATOR: "Primed grenade indicator"
+  STR_UNIT_STATUS_INDICATOR: "Unit status indicators"
 #=================== DX Action Menu Revamp ===================
 #OptionsAdvancedState.cpp / OptionsControlsState.cpp - DX options tab
   STR_ENGINE_DX: "DX"

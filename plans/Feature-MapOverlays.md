@@ -1,8 +1,9 @@
 # Feature - On-Map Overlays
 
-**Status:** 🚧 In progress. The **hovered unit name** and **primed-grenade indicator** overlays
-are implemented. The remaining two bundled under the checklist item — motion-detector readings
-and bleeding indicators — are deferred to later passes (see *Deferred* below).
+**Status:** 🚧 In progress. The **hovered unit name**, **primed-grenade indicator**, and
+**unit status indicators** (bleeding + fire/shock/stun) overlays are implemented. The remaining one
+bundled under the checklist item — motion-detector readings — is deferred to a later pass (see
+*Deferred* below).
 
 ## Overview
 
@@ -140,11 +141,71 @@ once the ownership split (Mod-owned vs Map-owned) is handled cleanly. Not done i
 
 ---
 
+## 3. Unit status indicators (this pass)
+
+### What it does
+
+Every one of the **player's own living units** gets a hovering status marker above its head for each
+active ongoing-harm condition, so the player can spot at a glance who needs attention. Four
+conditions, each its own glyph:
+
+- **Bleeding** — `getFatalWounds() > 0` (a wound, losing HP each turn until treated).
+- **On fire** — `getFire() > 0`.
+- **Shock** — `hasNegativeHealthRegen()` (losing HP per turn from a damage-over-time effect).
+- **Near knockout** — accumulated stun is within a quarter of current health of dropping the unit
+  (`getStunlevel() * 4 >= getHealth() * 3`), an early warning before the soldier passes out.
+
+All conditions that apply to a unit are shown **at once**, stacked side-by-side. Only the player's
+own units are marked (the player always knows the state of their own soldiers); enemy/neutral units
+are never shown. The stun *catch-all* still only applies to **unconscious bodies** on the floor — a
+healthy conscious unit is not marked.
+
+### How it works
+
+This **reuses the existing status indicators** rather than introducing new visuals. The same glyphs
+the engine already paints over *unconscious* bodies on the ground (burn/wound/shock/stun) are now
+also blitted hovering over *conscious* player units, gated per condition. Markers honour the per-unit
+`disableIndicators` script flag (`indicatorsAreEnabled()`) exactly like the floor overlay does.
+
+The draw is a unit-iteration block in `Map::drawTerrain`, right after the selected-unit selection
+arrow. It mirrors that arrow's positioning math — `calculateWalkingOffset`, big-unit / kneel / float
+height adjustments, the `getArrowBobForFrame` hover bob. The active glyphs are gathered into a small
+array (priority order burn → wound → shock → stun) and laid out as a centered row above the head,
+lifted by one arrow-height so the row clears the centered selection arrow when the unit is also the
+selected one. Units above the current view level are skipped.
+
+### Source for the glyph — and the procedural fallback
+
+The four OXCE status indicators (`FloorWoundIndicator` / `FloorBurnIndicator` /
+`FloorShockIndicator` / `FloorStunIndicator`) are all **mod-supplied** — loaded in the `Map` ctor
+with `required = false`, so `getSurface` returns `nullptr` when no mod provides them. No mod bundled
+with DX defines them, which means the *unconscious-body* floor overlay has historically rendered
+nothing out of the box, and a wound-only bleeding overlay would too.
+
+To make the overlays work with no assets (the same philosophy as the procedural grenade disc), DX now
+builds a **procedural fallback** for *all four* indicators in `Map::init()`: small 11×11 icons drawn
+from pixel-index grids with an auto-painted black halo (the proxy-ping outline technique), owned by
+`Map` and freed in the dtor. They use only the palette-safe red (block 2) and yellow (block 1) ramps
+plus black, and are distinguished by shape — wound = red blood drop, burn = flame, shock = lightning
+bolt, stun = a "Zzz" sleep glyph. At each draw site the engine prefers mod art when present and falls back to the
+procedural icon otherwise (mod art keeps its tile-aligned blit; the small fallback is centered over
+the tile). A side effect: the long-dormant unconscious-body indicators now render by default too.
+
+### Key code
+
+| File | Role |
+|------|------|
+| `src/Battlescape/Map.h` / `Map.cpp` | Four `_*IndicatorFallback` surfaces built in `init()`, freed in dtor; unconscious-body floor block and the living-unit hover block both pick mod-art-or-fallback |
+| `src/Engine/Options.inc.h` / `Options.cpp` | `unitStatusIndicatorEnabled` option (default on), registered in `createAdvancedOptionsDX` |
+| `bin/common/Language/DX/en-US.yml` | `STR_UNIT_STATUS_INDICATOR` option label |
+
+A mod can still override any of the four by supplying the matching `Floor*Indicator` surface via
+`extraSprites` (`singleImage: true`), which takes precedence over the procedural fallback.
+
+---
+
 ## Deferred (later passes)
 
-- **Bleeding indicators** — for a visible `tile->getUnit()` with `getFatalWounds() > 0`, blit the
-  existing `FloorWoundIndicator` surface (already loaded in the `Map` ctor and already used for
-  unconscious bodies on the ground).
 - **Motion-detector readings in-world** — paint `DETBLOB.DAT` blips for units with
   `getMotionPoints() > 0`, frame `motionPoints / 5`, mirroring `ScannerView`. The heaviest of the
   four: needs a design decision on whether/how it gates on the player actually carrying a motion

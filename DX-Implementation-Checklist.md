@@ -67,7 +67,9 @@ Everything below is DX-specific work confirmed **absent** from the base.
     under the cursor.
   - [x] **Primed-grenade indicator** — pulsing icon over player-thrown live grenades on
     discovered tiles (red disc for normal, cyan ring for proximity).
-  - [ ] **Bleeding indicators** — wound icon over visible units with fatal wounds.
+  - [x] **Unit status indicators** — bleeding / fire / shock / near-knockout glyphs hovering over
+    the player's own living units (reuses the engine's `Floor*Indicator` surfaces, with procedural
+    fallbacks so they work without mod art).
   - [ ] **Motion-detector readings** — motion blips painted in-world.
 - [ ] **Fog-of-war view** — per-tile visible-count rendering (currently-seen vs.
   remembered-but-unobserved vs. undiscovered). *(also a prereq for Clairvoyance later)*

@@ -38,3 +38,29 @@ stay clickable (the usual warning still fires).
   `battlescape` interface ruleset color the unaffordable / partial-ammo states.
 - DX options now live under their own **DX** tab in Options → Advanced and Options → Controls
   (a dedicated `OPTION_DX` owner), separate from the OXC/OXCE tabs.
+
+## On-Map Overlays
+
+A family of small, always-on visual cues drawn directly onto the Battlescape map, each with its
+own toggle so they can be enabled independently. *(design:
+[plans/Feature-MapOverlays.md](plans/Feature-MapOverlays.md))*
+
+- **Hovered unit name** — a knowledge-aware, faction-colored floating name label over the unit
+  under the cursor. Toggle: **Hovered unit name** (`hoveredUnitNameEnabled`, default on).
+- **Primed-grenade indicator** — a pulsing marker hovering over each player-thrown primed
+  grenade lying on a discovered tile (a brightness-pulsed red disc for normal grenades, an
+  animated red "wifi ping" for proximity grenades). Enemy grenades are never shown. Toggle:
+  **Primed grenade indicator** (`grenadeIndicatorEnabled`, default on).
+- **Unit status indicators** — status glyphs hovering over each of the player's own *living*
+  units, one per active condition: **bleeding** (fatal wounds), **on fire**, **shock** (losing
+  HP each turn), and a **near-knockout** stun warning when accumulated stun is close to dropping
+  the unit. All active conditions stack side-by-side above the head. Uses the same glyphs the
+  engine already shows over unconscious bodies. Toggle: **Unit status indicators**
+  (`unitStatusIndicatorEnabled`, default on).
+
+  The four OXCE status indicators (`Floor{Wound,Burn,Shock,Stun}Indicator`) are mod-supplied and
+  absent from base data, so they used to render nothing out of the box. DX now builds a small
+  **procedural fallback** for all four in `Map::init()` (red blood drop / flame / lightning bolt /
+  "Zzz" sleep glyph, palette-safe and shape-distinct), preferred only when no mod art is present — so both the
+  living-unit overlay and the long-dormant unconscious-body indicators now work by default. A mod
+  can still override any of them with an `extraSprites` `Floor*Indicator` (`singleImage: true`).
