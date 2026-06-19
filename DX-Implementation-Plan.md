@@ -121,7 +121,7 @@ This document serves as a high-level checklist of features from the original Ope
     - [ ] Implement maximize info screens
     - [ ] Implement craft stat display
     - [ ] Implement debriefing soldier status
-    - [ ] Implement allow tanks/HWPs to click-open doors
+    - [x] Implement allow tanks/HWPs to click-open doors — *already in OXCE-Plus* (`unitOpensDoor` loops all size tiles, no size gate)
     - [ ] Implement loading rulesets from subdirectories
 
 ## 11. Strategic & Geoscape Features
@@ -142,9 +142,9 @@ This document serves as a high-level checklist of features from the original Ope
 - [ ] **Utility Equipment Slots**
     - [ ] Implement `INV_UTILITY` slot type (dedicated quick-access slot)
 - [ ] **Grenade Improvements**
-    - [ ] Implement instant grenade fuse option
-    - [ ] Implement reduced grenade accuracy penalty
-    - [ ] Implement kneel/stand pathing recalculation (path preview refresh on toggle)
+    - [x] Implement instant grenade fuse option — *already in OXCE-Plus* (`Options::battleInstantGrenade` / per-item `fuseType: -2`)
+    - [ ] Implement reduced grenade accuracy penalty — N/A on current base (OXCE has no throw penalty); revisit with aim-cone firing (§5)
+    - [x] Implement kneel/stand pathing recalculation (path preview refresh on toggle) — *already in OXCE-Plus* (`btnKneelClick` → `refreshPath`)
 
 ## 13. Effects Framework
 - [ ] **Effects System**

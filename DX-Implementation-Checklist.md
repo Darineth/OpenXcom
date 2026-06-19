@@ -75,9 +75,17 @@ Everything below is DX-specific work confirmed **absent** from the base.
     Alt-held arrow. Detection gating unchanged (still requires using a scanner).
 - [ ] **Fog-of-war view** — per-tile visible-count rendering (currently-seen vs.
   remembered-but-unobserved vs. undiscovered). *(also a prereq for Clairvoyance later)*
-- [ ] **Kneel/stand pathing recalculation** — refresh path preview on kneel/stand toggle.
-- [ ] **Tanks/HWPs open doors** — allow vehicles to click-open doors.
-- [ ] **Grenade tweaks** — instant-fuse option, reduced grenade LOS accuracy penalty.
+- [x] **Kneel/stand pathing recalculation** — *already in OXCE-Plus.* `btnKneelClick` calls
+  `Pathfinding::refreshPath()` on toggle ([BattlescapeState.cpp:1257](src/Battlescape/BattlescapeState.cpp#L1257)). No work needed.
+- [x] **Tanks/HWPs open doors** — *already in OXCE-Plus.* `TileEngine::unitOpensDoor` loops over all
+  `armor->getSize()` tiles with no size gate ([TileEngine.cpp:4074](src/Battlescape/TileEngine.cpp#L4074)), so big units open doors. No work needed.
+- **Grenade tweaks**
+  - [x] **Instant-fuse option** — *already in OXCE-Plus.* `Options::battleInstantGrenade`
+    ([BattleItem.cpp:344](src/Savegame/BattleItem.cpp#L344)) makes thrown grenades detonate without the prime dialog; per-item
+    `fuseType: -2` (`BFT_INSTANT`) does the same per grenade. No work needed.
+  - [ ] **Reduced grenade LOS accuracy penalty** — N/A on the current base: OXCE applies no throw
+    accuracy penalty (`accuracyThrow` default 100; `_noLOSAccuracyPenalty` is aimed-shot-only).
+    Revisit only if the **aim-cone firing model (Phase 5)** introduces a throw penalty to soften.
 
 ## Phase 2: Base / Geoscape / Inventory UX
 
