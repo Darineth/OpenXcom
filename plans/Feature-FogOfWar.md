@@ -1,6 +1,6 @@
 # Feature - Fog-of-War View
 
-**Status:** 📝 Planned. Design only; not yet implemented.
+**Status:** ✅ Implemented. Gated behind the `fogOfWarEnabled` DX option (default on).
 
 ## Overview
 

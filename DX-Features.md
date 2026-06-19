@@ -64,10 +64,24 @@ own toggle so they can be enabled independently. *(design:
   "Zzz" sleep glyph, palette-safe and shape-distinct), preferred only when no mod art is present — so both the
   living-unit overlay and the long-dormant unconscious-body indicators now work by default. A mod
   can still override any of them with an `extraSprites` `Floor*Indicator` (`singleImage: true`).
-- **Motion-detector readings** — the authentic `DETBLOB` scanner blip painted directly on the
-  tile of each enemy/neutral unit detected this turn by a motion scanner, at an intensity that
-  grows with how far the unit moved (the same near→far reading the scanner popup shows). It shows
-  passively as a tile-level marker (no key held), replacing OXCE's hard-to-see Alt-held bobbing
-  arrow. Detection is unchanged from OXCE — a unit only lights up once actually scanned, so the
-  overlay grants no intel a scanner wouldn't. Toggle: **Motion detector readings on map**
-  (`motionDetectorOverlayEnabled`, default on).
+- **Motion-detector readings** — a pulsing amber target reticle painted on the floor of each
+  enemy/neutral unit detected this turn by a motion scanner (a path-preview-style floor decal),
+  brighter the more the unit moved. It shows passively (no key held) and is drawn under the unit/
+  wall sprites, so a visible enemy occludes its own marker and the cue is left for fog tiles —
+  replacing OXCE's hard-to-see Alt-held bobbing arrow. Detection is unchanged from OXCE — a unit
+  only lights up once actually scanned, so the overlay grants no intel a scanner wouldn't. Toggle:
+  **Motion detector readings on map** (`motionDetectorOverlayEnabled`, default on).
+
+## Fog of War
+
+Base OpenXcom draws every *discovered* tile at full brightness, with no on-map sign of what a
+soldier can actually see right now. DX **dims discovered tiles that no player unit currently has in
+line of sight**, so remembered terrain reads as out of live observation while in-sight terrain stays
+bright (undiscovered tiles remain black). The dim layers on top of the existing light/night-vision
+shading and updates live — tiles re-fog as soon as soldiers move or turn. *(design:
+[plans/Feature-FogOfWar.md](plans/Feature-FogOfWar.md))*
+
+Implemented as a renderer change keyed off the engine's existing per-tile player-LOS count
+(`Tile::getVisible()`); also fixes a pre-existing double-increment in
+`TileEngine::calculateTilesInFOV` that kept that count from returning to zero (so tiles never
+re-fogged). Toggle: **Fog of war (dim unseen tiles)** (`fogOfWarEnabled`, default on).
