@@ -107,11 +107,8 @@ Everything below is DX-specific work confirmed **absent** from the base.
     See [plans/Feature-MaximizeAllScreens.md](plans/Feature-MaximizeAllScreens.md).
 - [x] **Craft stat display** — max speed, acceleration, damage capacity on Craft Info.
   - ✅ **Done.** Crafted a compact 2-column layout in CraftInfoState: damage capacity, max speed, and acceleration on the left; damage, shield, and fuel on the right. Values are populated in init() from RuleCraft getters.
-- [ ] **Debriefing soldier status** — status column, wounded-recovery days, per-soldier
-  gains breakdown.
-  - ◑ **Delta only:** the per-soldier stat-gain table already exists
-    ([DebriefingState.cpp](src/Battlescape/DebriefingState.cpp)); add an alive/wounded/dead **status
-    column** and **recovery-days**.
+- [x] **Debriefing soldier status** — status column, wounded-recovery days, per-soldier
+  gains breakdown. *(design: [plans/Feature-DebriefingSoldierStatus.md](plans/Feature-DebriefingSoldierStatus.md))*
 - [ ] **Inventory UI polish** — mousewheel ground scrolling, tooltip/stat-display mode,
   inventory entry point from the soldier screen.
   - ◑ **Delta only:** button/keyboard ground scroll and hover stat tooltips

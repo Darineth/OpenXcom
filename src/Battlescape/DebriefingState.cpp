@@ -114,18 +114,20 @@ DebriefingState::DebriefingState() :
 	_lstTotal = new TextList(290, 9, 16, 12);
 
 	// Second page (soldier stats)
-	_txtSoldier     = new Text(90, 9,  16, 24); //16..106 = 90
-	_txtTU          = new Text(18, 9, 106, 24); //106
-	_txtStamina     = new Text(18, 9, 124, 24); //124
-	_txtHealth      = new Text(18, 9, 142, 24); //142
-	_txtBravery     = new Text(18, 9, 160, 24); //160
-	_txtReactions   = new Text(18, 9, 178, 24); //178
-	_txtFiring      = new Text(18, 9, 196, 24); //196
-	_txtThrowing    = new Text(18, 9, 214, 24); //214
-	_txtMelee       = new Text(18, 9, 232, 24); //232
-	_txtStrength    = new Text(18, 9, 250, 24); //250
-	_txtPsiStrength = new Text(18, 9, 268, 24); //268
-	_txtPsiSkill    = new Text(18, 9, 286, 24); //286..304 = 18
+	_txtSoldier     = new Text(72, 9,  16, 24); //16..88 = 72
+	_txtStatus      = new Text(20, 9,  88, 24); //88..108 = 20
+	_txtRecoveryDays = new Text(20, 9, 108, 24); //108..128 = 20
+	_txtTU          = new Text(16, 9, 128, 24); //128
+	_txtStamina     = new Text(16, 9, 144, 24); //144
+	_txtHealth      = new Text(16, 9, 160, 24); //160
+	_txtBravery     = new Text(16, 9, 176, 24); //176
+	_txtReactions   = new Text(16, 9, 192, 24); //192
+	_txtFiring      = new Text(16, 9, 208, 24); //208
+	_txtThrowing    = new Text(16, 9, 224, 24); //224
+	_txtMelee       = new Text(16, 9, 240, 24); //240
+	_txtStrength    = new Text(16, 9, 256, 24); //256
+	_txtPsiStrength = new Text(16, 9, 272, 24); //272
+	_txtPsiSkill    = new Text(16, 9, 288, 24); //288..304 = 16
 
 	_lstSoldierStats = new TextList(288, 144, 16, 32); // 18 rows
 
@@ -157,6 +159,8 @@ DebriefingState::DebriefingState() :
 	add(_lstTotal, "totals", "debriefing");
 
 	add(_txtSoldier, "text", "debriefing");
+	add(_txtStatus, "text", "debriefing");
+	add(_txtRecoveryDays, "text", "debriefing");
 	add(_txtTU, "text", "debriefing");
 	add(_txtStamina, "text", "debriefing");
 	add(_txtHealth, "text", "debriefing");
@@ -210,57 +214,61 @@ DebriefingState::DebriefingState() :
 
 	// Second page
 	_txtSoldier->setText(tr("STR_NAME_UC"));
+	_txtStatus->setAlign(ALIGN_CENTER);
+	_txtStatus->setText(tr("STR_STATUS_SHORT"));
+	_txtRecoveryDays->setAlign(ALIGN_CENTER);
+	_txtRecoveryDays->setText(tr("STR_RECOVERY_SHORT"));
 
 	_txtTU->setAlign(ALIGN_CENTER);
-	_txtTU->setText(tr("STR_TIME_UNITS_ABBREVIATION"));
+	_txtTU->setText(tr("STR_STAT_TU"));
 	_txtTU->setTooltip("STR_TIME_UNITS");
 	_txtTU->onMouseIn((ActionHandler)&DebriefingState::txtTooltipIn);
 	_txtTU->onMouseOut((ActionHandler)&DebriefingState::txtTooltipOut);
 
 	_txtStamina->setAlign(ALIGN_CENTER);
-	_txtStamina->setText(tr("STR_STAMINA_ABBREVIATION"));
+	_txtStamina->setText(tr("STR_STAT_EN"));
 	_txtStamina->setTooltip("STR_STAMINA");
 	_txtStamina->onMouseIn((ActionHandler)&DebriefingState::txtTooltipIn);
 	_txtStamina->onMouseOut((ActionHandler)&DebriefingState::txtTooltipOut);
 
 	_txtHealth->setAlign(ALIGN_CENTER);
-	_txtHealth->setText(tr("STR_HEALTH_ABBREVIATION"));
+	_txtHealth->setText(tr("STR_STAT_HP"));
 	_txtHealth->setTooltip("STR_HEALTH");
 	_txtHealth->onMouseIn((ActionHandler)&DebriefingState::txtTooltipIn);
 	_txtHealth->onMouseOut((ActionHandler)&DebriefingState::txtTooltipOut);
 
 	_txtBravery->setAlign(ALIGN_CENTER);
-	_txtBravery->setText(tr("STR_BRAVERY_ABBREVIATION"));
+	_txtBravery->setText(tr("STR_STAT_BR"));
 	_txtBravery->setTooltip("STR_BRAVERY");
 	_txtBravery->onMouseIn((ActionHandler)&DebriefingState::txtTooltipIn);
 	_txtBravery->onMouseOut((ActionHandler)&DebriefingState::txtTooltipOut);
 
 	_txtReactions->setAlign(ALIGN_CENTER);
-	_txtReactions->setText(tr("STR_REACTIONS_ABBREVIATION"));
+	_txtReactions->setText(tr("STR_STAT_RX"));
 	_txtReactions->setTooltip("STR_REACTIONS");
 	_txtReactions->onMouseIn((ActionHandler)&DebriefingState::txtTooltipIn);
 	_txtReactions->onMouseOut((ActionHandler)&DebriefingState::txtTooltipOut);
 
 	_txtFiring->setAlign(ALIGN_CENTER);
-	_txtFiring->setText(tr("STR_FIRING_ACCURACY_ABBREVIATION"));
+	_txtFiring->setText(tr("STR_STAT_FA"));
 	_txtFiring->setTooltip("STR_FIRING_ACCURACY");
 	_txtFiring->onMouseIn((ActionHandler)&DebriefingState::txtTooltipIn);
 	_txtFiring->onMouseOut((ActionHandler)&DebriefingState::txtTooltipOut);
 
 	_txtThrowing->setAlign(ALIGN_CENTER);
-	_txtThrowing->setText(tr("STR_THROWING_ACCURACY_ABBREVIATION"));
+	_txtThrowing->setText(tr("STR_STAT_TH"));
 	_txtThrowing->setTooltip("STR_THROWING_ACCURACY");
 	_txtThrowing->onMouseIn((ActionHandler)&DebriefingState::txtTooltipIn);
 	_txtThrowing->onMouseOut((ActionHandler)&DebriefingState::txtTooltipOut);
 
 	_txtMelee->setAlign(ALIGN_CENTER);
-	_txtMelee->setText(tr("STR_MELEE_ACCURACY_ABBREVIATION"));
+	_txtMelee->setText(tr("STR_STAT_ME"));
 	_txtMelee->setTooltip("STR_MELEE_ACCURACY");
 	_txtMelee->onMouseIn((ActionHandler)&DebriefingState::txtTooltipIn);
 	_txtMelee->onMouseOut((ActionHandler)&DebriefingState::txtTooltipOut);
 
 	_txtStrength->setAlign(ALIGN_CENTER);
-	_txtStrength->setText(tr("STR_STRENGTH_ABBREVIATION"));
+	_txtStrength->setText(tr("STR_STAT_ST"));
 	_txtStrength->setTooltip("STR_STRENGTH");
 	_txtStrength->onMouseIn((ActionHandler)&DebriefingState::txtTooltipIn);
 	_txtStrength->onMouseOut((ActionHandler)&DebriefingState::txtTooltipOut);
@@ -268,24 +276,24 @@ DebriefingState::DebriefingState() :
 	_txtPsiStrength->setAlign(ALIGN_CENTER);
 	if (_game->getMod()->isManaFeatureEnabled())
 	{
-		_txtPsiStrength->setText(tr("STR_MANA_ABBREVIATION"));
+		_txtPsiStrength->setText(tr("STR_STAT_MP"));
 		_txtPsiStrength->setTooltip("STR_MANA_POOL");
 	}
 	else
 	{
-		_txtPsiStrength->setText(tr("STR_PSIONIC_STRENGTH_ABBREVIATION"));
+		_txtPsiStrength->setText(tr("STR_STAT_PS"));
 		_txtPsiStrength->setTooltip("STR_PSIONIC_STRENGTH");
 	}
 	_txtPsiStrength->onMouseIn((ActionHandler)&DebriefingState::txtTooltipIn);
 	_txtPsiStrength->onMouseOut((ActionHandler)&DebriefingState::txtTooltipOut);
 
 	_txtPsiSkill->setAlign(ALIGN_CENTER);
-	_txtPsiSkill->setText(tr("STR_PSIONIC_SKILL_ABBREVIATION"));
+	_txtPsiSkill->setText(tr("STR_STAT_PK"));
 	_txtPsiSkill->setTooltip("STR_PSIONIC_SKILL");
 	_txtPsiSkill->onMouseIn((ActionHandler)&DebriefingState::txtTooltipIn);
 	_txtPsiSkill->onMouseOut((ActionHandler)&DebriefingState::txtTooltipOut);
 
-	_lstSoldierStats->setColumns(13, 90, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 0);
+	_lstSoldierStats->setColumns(15, 72, 20, 20, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 0);
 	_lstSoldierStats->setAlign(ALIGN_CENTER);
 	_lstSoldierStats->setAlign(ALIGN_LEFT, 0);
 	_lstSoldierStats->setDot(true);
@@ -345,6 +353,8 @@ void DebriefingState::applyVisibility()
 
 	// Second page (soldier stats)
 	_txtSoldier->setVisible(showStats);
+	_txtStatus->setVisible(showStats);
+	_txtRecoveryDays->setVisible(showStats);
 	_txtTU->setVisible(showStats);
 	_txtStamina->setVisible(showStats);
 	_txtHealth->setVisible(showStats);
@@ -393,23 +403,32 @@ void DebriefingState::init()
 
 	for (const auto& sse : _soldierStats)
 	{
-		auto tmp = sse.second.psiStrength;
+		auto tmp = sse.gains.psiStrength;
 		if (_game->getMod()->isManaFeatureEnabled())
 		{
-			tmp = sse.second.mana;
+			tmp = sse.gains.mana;
 		}
-		_lstSoldierStats->addRow(13, sse.first.c_str(),
-				makeSoldierString(sse.second.tu).c_str(),
-				makeSoldierString(sse.second.stamina).c_str(),
-				makeSoldierString(sse.second.health).c_str(),
-				makeSoldierString(sse.second.bravery).c_str(),
-				makeSoldierString(sse.second.reactions).c_str(),
-				makeSoldierString(sse.second.firing).c_str(),
-				makeSoldierString(sse.second.throwing).c_str(),
-				makeSoldierString(sse.second.melee).c_str(),
-				makeSoldierString(sse.second.strength).c_str(),
+		std::string recoveryText;
+		if (sse.recoveryDays > 0)
+		{
+			recoveryText = tr("STR_DAY_SHORT").arg(sse.recoveryDays);
+		}
+		else if (sse.recoveryDays < 0)
+		{
+			recoveryText = "INF";
+		}
+		_lstSoldierStats->addRow(15, sse.name.c_str(), sse.status.c_str(), recoveryText.c_str(),
+				makeSoldierString(sse.gains.tu).c_str(),
+				makeSoldierString(sse.gains.stamina).c_str(),
+				makeSoldierString(sse.gains.health).c_str(),
+				makeSoldierString(sse.gains.bravery).c_str(),
+				makeSoldierString(sse.gains.reactions).c_str(),
+				makeSoldierString(sse.gains.firing).c_str(),
+				makeSoldierString(sse.gains.throwing).c_str(),
+				makeSoldierString(sse.gains.melee).c_str(),
+				makeSoldierString(sse.gains.strength).c_str(),
 				makeSoldierString(tmp).c_str(),
-				makeSoldierString(sse.second.psiSkill).c_str(),
+				makeSoldierString(sse.gains.psiSkill).c_str(),
 				"");
 		// note: final dummy element to cause dot filling until the end of the line
 	}
@@ -1483,6 +1502,9 @@ void DebriefingState::prepareDebriefing()
 		UnitFaction oldFaction = bunit->getOriginalFaction();
 		int value = bunit->getValue();
 		Soldier *soldier = save->getSoldier(bunit->getId());
+		SoldierStatsEntry soldierStatsEntry;
+		UnitStats statGrowth;
+		int daysWoundedTmp = 0;
 
 		if (!bunit->getTile())
 		{
@@ -1534,6 +1556,7 @@ void DebriefingState::prepareDebriefing()
 
 					bunit->getStatistics()->KIA = true;
 					save->killSoldier(true, soldier); // in case we missed the soldier death on battlescape
+					soldierStatsEntry.status = "KIA";
 				}
 				else
 				{ // non soldier player = tank
@@ -1570,8 +1593,7 @@ void DebriefingState::prepareDebriefing()
 				{ // so game is not aborted or aborted and unit is on exit area
 					StatAdjustment statIncrease;
 					bunit->postMissionProcedures(_game->getMod(), save, battle, statIncrease);
-					if (bunit->getGeoscapeSoldier())
-						_soldierStats.push_back(std::pair<std::string, UnitStats>(bunit->getGeoscapeSoldier()->getName(), statIncrease.statGrowth));
+					statGrowth = statIncrease.statGrowth;
 					playersInExitArea2++;
 
 					recoverItems(bunit->getInventory(), base, craft);
@@ -1635,6 +1657,7 @@ void DebriefingState::prepareDebriefing()
 
 						bunit->getStatistics()->MIA = true;
 						save->killSoldier(true, soldier);
+						soldierStatsEntry.status = "MIA";
 					}
 				}
 			}
@@ -1654,6 +1677,7 @@ void DebriefingState::prepareDebriefing()
 						recoverAlien(bunit, base, craft);
 					}
 				}
+
 			}
 			else if (oldFaction == FACTION_HOSTILE && !aborted && !_destroyBase
 				// surrendered units may as well count as unconscious too
@@ -1691,6 +1715,19 @@ void DebriefingState::prepareDebriefing()
 					}
 					recoverCivilian(bunit, base, craft);
 				}
+			}
+
+			if (soldier != 0)
+			{
+				daysWoundedTmp = soldier->getWoundRecovery(0.0f, 0.0f);
+				soldierStatsEntry.name = soldier->getName();
+				soldierStatsEntry.recoveryDays = daysWoundedTmp;
+				if (soldierStatsEntry.status.empty())
+				{
+					soldierStatsEntry.status = (daysWoundedTmp != 0 ? "WND" : "OK");
+				}
+				soldierStatsEntry.gains = statGrowth;
+				_soldierStats.push_back(soldierStatsEntry);
 			}
 		}
 	}
@@ -2658,7 +2695,7 @@ void DebriefingState::recoverCivilian(BattleUnit *from, Base *base, Craft* craft
 						}
 					}
 				}
-			}
+		}
 		}
 	}
 }

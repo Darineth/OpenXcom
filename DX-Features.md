@@ -112,3 +112,9 @@ status readouts. The stats are laid out in two compact columns so they fit clean
 damage capacity, maximum speed, and acceleration on the left; current damage, shield, and fuel on
 the right. This mirrors the numbers already shown in the Ufopaedia craft article, but makes them
 available directly from Craft Info where base management happens.
+
+## Debriefing Soldier Results
+
+The Battlescape debriefing now keeps each soldier in the mission-results table and shows a compact
+outcome code for them: `KIA`, `MIA`, `WND`, or `OK`. Wounded soldiers also show recovery time in
+days, while the existing per-soldier stat-gain breakdown remains on the same view.

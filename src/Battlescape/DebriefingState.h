@@ -49,6 +49,16 @@ struct DebriefingStat {
 	DebriefingStat(const std::string &_item, bool _recovery) : item(_item), qty(0), score(0), recovery(_recovery) {};
 	};
 
+struct SoldierStatsEntry
+{
+	std::string name;
+	std::string status;
+	int recoveryDays;
+	UnitStats gains;
+
+	SoldierStatsEntry() : recoveryDays(0), gains() { }
+};
+
 struct ReequipStat { std::string item; int qty; std::string craft; int listOrder; };
 
 struct RecoveryItem { std::string name; int value; };
@@ -60,8 +70,6 @@ struct RecoveryItem { std::string name; int value; };
 class DebriefingState : public State
 {
 private:
-	typedef std::pair<std::string, UnitStats> SoldierStatsEntry;
-
 	RuleEvent *_eventToSpawn;
 	Region *_region;
 	Country *_country;
@@ -71,7 +79,7 @@ private:
 	TextButton *_btnOk, *_btnStats, *_btnSell, *_btnTransfer;
 	Window *_window;
 	Text *_txtTitle, *_txtItem, *_txtQuantity, *_txtScore, *_txtRecovery, *_txtRating;
-	Text *_txtSoldier, *_txtTU, *_txtStamina, *_txtHealth, *_txtBravery, *_txtReactions;
+	Text *_txtSoldier, *_txtStatus, *_txtRecoveryDays, *_txtTU, *_txtStamina, *_txtHealth, *_txtBravery, *_txtReactions;
 	Text *_txtFiring, *_txtThrowing, *_txtMelee, *_txtStrength, *_txtPsiStrength, *_txtPsiSkill;
 	TextList *_lstStats, *_lstRecovery, *_lstTotal, *_lstSoldierStats, *_lstRecoveredItems;
 	std::string _currentTooltip;
