@@ -61,7 +61,24 @@ protected:
 
 	SDL_Color _palette[256];
 	Uint8 _cursorColor;
+	// Base resolution that this state's surfaces are currently centered for.
+	// Used by the central maximizeInfoScreens handling so a state that is
+	// resumed (popped back to) is recentered relative to its own layout, not
+	// whatever resolution another state left in Options::baseXResolution.
+	int _layoutBaseX, _layoutBaseY;
 public:
+	/**
+	 * How a state relates to the global display scale, used by the central
+	 * maximizeInfoScreens handling in Game::run.
+	 * - UI: a menu/detail/dialog screen. Maximizes to 320x200 when
+	 *   maximizeInfoScreens is on, otherwise renders at the geoscape scale.
+	 * - Geoscape: a primary geoscape view (or an overlay that must share its
+	 *   resolution). Always uses the geoscape scale.
+	 * - Battlescape: the primary battlescape view. Always uses the battlescape scale.
+	 * - SelfManaged: the state sets its own resolution (loading/cutscene/intro);
+	 *   the central handling leaves it alone.
+	 */
+	enum class ScaleContext { UI, Geoscape, Battlescape, SelfManaged };
 	/// Creates a new state linked to a game.
 	State();
 	/// Cleans up the state.
@@ -90,6 +107,8 @@ public:
 	bool isScreen() const;
 	/// Toggles whether the state is a full-screen.
 	void toggleScreen();
+	/// Gets the state's display-scale context (for maximizeInfoScreens handling).
+	virtual ScaleContext getScaleContext() const { return ScaleContext::UI; }
 	/// Initializes the state.
 	virtual void init();
 	/// Handles any events.
@@ -144,6 +163,12 @@ public:
 	virtual void resize(int &dX, int &dY);
 	/// Re-orients all the surfaces in the state.
 	virtual void recenter(int dX, int dY);
+	/// Gets the base resolution this state's surfaces are currently centered for.
+	int getLayoutBaseX() const { return _layoutBaseX; }
+	/// Gets the base resolution this state's surfaces are currently centered for.
+	int getLayoutBaseY() const { return _layoutBaseY; }
+	/// Records the base resolution this state's surfaces are now centered for.
+	void setLayoutBase(int x, int y) { _layoutBaseX = x; _layoutBaseY = y; }
 
 	/// Gets cursor X coordinate.
 	int getCursorX() const;

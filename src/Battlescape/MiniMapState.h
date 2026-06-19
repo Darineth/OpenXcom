@@ -46,6 +46,8 @@ public:
 	MiniMapState (Camera * camera, SavedBattleGame * battleGame);
 	/// Cleans up the MiniMapState.
 	~MiniMapState();
+	/// Maximizes (320x200) when enabled, else stays at the battlescape scale.
+	ScaleContext getScaleContext() const override;
 	/// Handler for the OK button.
 	void btnOkClick (Action * action);
 	/// Handler for the one level up button.

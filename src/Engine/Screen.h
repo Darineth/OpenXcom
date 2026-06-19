@@ -82,6 +82,10 @@ public:
 	int getWidth() const;
 	/// Gets the screen's height.
 	int getHeight() const;
+	/// Gets the screen's base (logical) width.
+	int getBaseWidth() const { return _baseWidth; }
+	/// Gets the screen's base (logical) height.
+	int getBaseHeight() const { return _baseHeight; }
 	/// Resets the screen display.
 	void resetDisplay(bool resetVideo = true, bool noShaders = false);
 	/// Gets the screen's X scale.

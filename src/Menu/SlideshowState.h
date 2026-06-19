@@ -45,6 +45,8 @@ public:
 	SlideshowState(const SlideshowHeader &slideshowHeader, const std::vector<SlideshowSlide> *slideshowRule);
 	/// Cleans up the Slideshow state.
 	~SlideshowState();
+	/// Slideshows manage their own (letterboxed) display resolution.
+	ScaleContext getScaleContext() const override { return ScaleContext::SelfManaged; }
 	/// Handle timers.
 	void think() override;
 	/// Handler for waiting the screen.

@@ -85,3 +85,22 @@ Implemented as a renderer change keyed off the engine's existing per-tile player
 (`Tile::getVisible()`); also fixes a pre-existing double-increment in
 `TileEngine::calculateTilesInFOV` that kept that count from returning to zero (so tiles never
 re-fogged). Toggle: **Fog of war (dim unseen tiles)** (`fogOfWarEnabled`, default on).
+
+## Maximize Info Screens (all screens)
+
+OXCE's **Maximize Info Screens** option (`maximizeInfoScreens`) drops a screen to 320×200 so its
+UI fills the window instead of sitting small in a corner at a high base resolution — but stock
+OXCE only honored it for 6 Battlescape popups. DX makes it apply to **every** menu, detail, and
+dialog screen (main menu, options, all of Basescape, Ufopaedia, briefings/debriefings, geoscape
+dialogs, …). The only screens left at the gameplay resolution are the primary views themselves —
+the Geoscape, the Battlescape, and dogfights — plus the self-managing loading/cutscene/intro
+screens.
+
+This is driven centrally rather than per-screen: each `State` declares a `ScaleContext`
+(`UI` / `Geoscape` / `Battlescape` / `SelfManaged`), and `Game` applies the matching base
+resolution once whenever the top of the state stack changes (only resetting the display when the
+resolution actually changes, so the common case is free). When the option is **off**, behavior is
+unchanged from before — info screens that overlay the Battlescape (the unit info / scanner /
+minimap / medikit / inventory popups) keep the battlescape scale, so there's no open/close display
+thrash. No new option; this extends the existing `maximizeInfoScreens` toggle. *(design:
+[plans/Feature-MaximizeAllScreens.md](plans/Feature-MaximizeAllScreens.md))*

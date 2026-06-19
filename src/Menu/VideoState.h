@@ -35,6 +35,8 @@ public:
 	VideoState(const std::vector<std::string> *videos, const std::vector<std::string> *tracks, bool useUfoAudioSequence);
 	/// Cleans up the Intro state.
 	~VideoState();
+	/// Videos manage their own (letterboxed) display resolution.
+	ScaleContext getScaleContext() const override { return ScaleContext::SelfManaged; }
 	/// Plays the video
 	void init() override;
 };

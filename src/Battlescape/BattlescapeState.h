@@ -122,6 +122,8 @@ public:
 	BattlescapeState();
 	/// Cleans up the Battlescape state.
 	~BattlescapeState();
+	/// The battlescape is a primary view that owns the battlescape display scale.
+	ScaleContext getScaleContext() const override { return ScaleContext::Battlescape; }
 	void resetPalettes();
 	/// Initializes the battlescapestate.
 	void init() override;

@@ -94,21 +94,41 @@ Everything below is DX-specific work confirmed **absent** from the base.
 
 *Goal: Strategic-layer and inventory UI polish on the existing systems.*
 
-- [ ] **Maximize info screens** — stack-based 320×200 drop for info/detail screens.
+*(Phase 2 audit, Jun 2026 — much of this is already in OXCE-Plus; only the deltas below are DX work.)*
+
+- [x] **Maximize info screens** — stack-based 320×200 drop for info/detail screens.
+  - ✅ **Done (central rewrite).** Replaced the per-screen save/restore hack with a central
+    `State::ScaleContext` + `Game::applyDisplayScale()` rule applied on every top-of-stack change
+    ([State.h](src/Engine/State.h), [Game.cpp](src/Engine/Game.cpp)). With `maximizeInfoScreens`
+    on, **every** UI/detail/dialog screen now drops to 320×200; only the primary gameplay views
+    (`GeoscapeState`, `BattlescapeState`, `DogfightState`) and self-managed display states
+    (`StartState`, `CutsceneState`/`SlideshowState`/`VideoState`, `TestState`) are exempt. The 6
+    Battlescape popups + inventory keep the battlescape scale when the option is off (no thrash).
+    See [plans/Feature-MaximizeAllScreens.md](plans/Feature-MaximizeAllScreens.md).
 - [ ] **Craft stat display** — max speed, acceleration, damage capacity on Craft Info.
+  - ◑ **Delta only:** the Ufopaedia craft article already shows all three
+    ([ArticleStateCraft.cpp:86-138](src/Ufopaedia/ArticleStateCraft.cpp#L86-L138)); add them to the
+    Basescape **`CraftInfoState`** (which today shows only damage/fuel/shield percentages).
 - [ ] **Debriefing soldier status** — status column, wounded-recovery days, per-soldier
   gains breakdown.
+  - ◑ **Delta only:** the per-soldier stat-gain table already exists
+    ([DebriefingState.cpp](src/Battlescape/DebriefingState.cpp)); add an alive/wounded/dead **status
+    column** and **recovery-days**.
 - [ ] **Inventory UI polish** — mousewheel ground scrolling, tooltip/stat-display mode,
   inventory entry point from the soldier screen.
-- [ ] **Loadout templates** — create/apply clipboard, 20-slot named global library with
-  number-key quick load/save, 10-slot craft loadouts, clear/auto-equip. *(builds on the
-  existing OXCE inventory + `EquipmentLayoutItem`; later reused by Soldier Roles)*
-  - ⚠️ **Audit first:** OXCE already provides create/apply-template (clipboard) and craft
-    equipment save/load. Verify those, then build only the DX delta — likely the **20-slot
-    *named* global library** and **number-key quick load/save** — rather than the whole
-    system.
+  - ◑ **Delta only:** button/keyboard ground scroll and hover stat tooltips
+    (`showMoreStatsInInventoryView`) already exist; add **mousewheel** ground scrolling and an
+    **Equipment button on `SoldierInfoState`** to open the inventory.
+- [x] **Loadout templates** — *already in OXCE-Plus.* Clipboard create/apply
+  (`keyInvCreateTemplate`/`keyInvApplyTemplate`), a **named global equipment library** (50 slots,
+  `InventoryLoadState`/`InventorySaveState`, number-key quick load / Ctrl+number save), and **craft
+  loadouts** (10 slots) all present. No work. *(reused later by Soldier Roles.)*
 - [ ] **Geoscape enhancements** — local/regional funding weighting, linear council
   increases, sidebar score + always-visible funds.
+  - ◑ **Delta only:** funds + score display already exist (`showFundsOnGeoscape`,
+    `oxceGeoShowScoreInsteadOfFunds`). The **local/regional funding weighting** and **linear council
+    increases** are absent — and balance-sensitive (`Country::newMonth` is exponential today); needs
+    a design decision before building.
 
 ---
 

@@ -80,6 +80,8 @@ public:
 	GeoscapeState();
 	/// Cleans up the Geoscape state.
 	~GeoscapeState();
+	/// The geoscape is a primary view that owns the geoscape display scale.
+	ScaleContext getScaleContext() const override { return ScaleContext::Geoscape; }
 	/// Handle keypresses.
 	void handle(Action *action) override;
 	/// Updates the palette and timer.

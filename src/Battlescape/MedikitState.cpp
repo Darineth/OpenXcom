@@ -120,13 +120,6 @@ MedikitButton::MedikitButton(int y) : InteractiveSurface(30, 20, 190, y)
  */
 MedikitState::MedikitState (BattleUnit *targetUnit, BattleAction *action, TileEngine *tile) : _targetUnit(targetUnit), _action(action), _tileEngine(tile)
 {
-	if (Options::maximizeInfoScreens)
-	{
-		Options::baseXResolution = Screen::ORIGINAL_WIDTH;
-		Options::baseYResolution = Screen::ORIGINAL_HEIGHT;
-		_game->getScreen()->resetDisplay(false);
-	}
-
 	_item = action->weapon;
 	_bg = new Surface(320, 200);
 
@@ -206,16 +199,20 @@ void MedikitState::handle(Action *action)
 }
 
 /**
+ * Maximizes to 320x200 when enabled; otherwise keeps the battlescape scale
+ * of the tactical view it overlays.
+ */
+State::ScaleContext MedikitState::getScaleContext() const
+{
+	return Options::maximizeInfoScreens ? ScaleContext::UI : ScaleContext::Battlescape;
+}
+
+/**
  * Returns to the previous screen.
  * @param action Pointer to an action.
  */
 void MedikitState::onEndClick(Action *)
 {
-	if (Options::maximizeInfoScreens)
-	{
-		Screen::updateScale(Options::battlescapeScale, Options::baseXBattlescape, Options::baseYBattlescape, true);
-		_game->getScreen()->resetDisplay(false);
-	}
 	_game->popState();
 	_tileEngine->medikitRemoveIfEmpty(_action);
 }

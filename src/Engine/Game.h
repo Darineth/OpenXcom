@@ -60,6 +60,9 @@ private:
 	int _scrollStep;
 	static const double VOLUME_GRADIENT;
 
+	/// Applies the base resolution for the given top-of-stack state's scale context.
+	void applyDisplayScale(State *state);
+
 public:
 	/// Creates a new game and initializes SDL.
 	Game(const std::string &title);

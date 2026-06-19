@@ -163,6 +163,7 @@ void Game::run()
 		if (!_init)
 		{
 			_init = true;
+			applyDisplayScale(_states.back());
 			_states.back()->init();
 
 			// Unpress buttons
@@ -444,6 +445,94 @@ void Game::setVolume(int sound, int music, int ui)
 double Game::volumeExponent(int volume)
 {
 	return (exp(log(Game::VOLUME_GRADIENT + 1.0) * volume / (double)SDL_MIX_MAXVOLUME) -1.0 ) / Game::VOLUME_GRADIENT;
+}
+
+/**
+ * Applies the base resolution dictated by a state's scale context.
+ * Called once per top-of-stack change, this is the central place that
+ * implements the maximizeInfoScreens behaviour: when the option is on, UI
+ * screens drop to 320x200 while the primary gameplay views keep their own
+ * geoscape/battlescape scale. When the option is off this is a no-op, leaving
+ * the vanilla behaviour (each screen renders at the ambient resolution it was
+ * built at). The display is only reset when the resolution actually changes,
+ * so pushing or popping same-context screens (the common case) costs nothing.
+ * @param state Pointer to the state about to be initialized.
+ */
+void Game::applyDisplayScale(State *state)
+{
+	if (!Options::maximizeInfoScreens)
+	{
+		// Vanilla behaviour: states manage their own scale; don't interfere.
+		return;
+	}
+
+	// The whole visible group of states shares one render resolution, dictated
+	// by the bottom-most full-screen state that will be blitted (the same state
+	// the blit loop in run() stops at). A non-full-screen overlay - e.g. a
+	// dialog drawn on top of the live globe - must therefore follow the scale of
+	// the view behind it, not its own, or that view would render at the wrong
+	// scale. So pick the scale context from that full-screen base, not the top.
+	State *base = state;
+	for (auto i = _states.rbegin(); i != _states.rend(); ++i)
+	{
+		base = *i;
+		if (base->isScreen())
+		{
+			break;
+		}
+	}
+
+	int wantX = Options::baseXResolution;
+	int wantY = Options::baseYResolution;
+	switch (base->getScaleContext())
+	{
+	case State::ScaleContext::SelfManaged:
+		// The state sets its own resolution; don't touch it.
+		return;
+	case State::ScaleContext::Geoscape:
+		Screen::updateScale(Options::geoscapeScale, Options::baseXGeoscape, Options::baseYGeoscape, false);
+		wantX = Options::baseXGeoscape;
+		wantY = Options::baseYGeoscape;
+		break;
+	case State::ScaleContext::Battlescape:
+		Screen::updateScale(Options::battlescapeScale, Options::baseXBattlescape, Options::baseYBattlescape, false);
+		wantX = Options::baseXBattlescape;
+		wantY = Options::baseYBattlescape;
+		break;
+	case State::ScaleContext::UI:
+	default:
+		wantX = Screen::ORIGINAL_WIDTH;
+		wantY = Screen::ORIGINAL_HEIGHT;
+		// Re-center this UI screen's surfaces relative to the resolution they
+		// were last laid out for. This is tracked per-state (not from the
+		// global Options::baseXResolution), because another state can change
+		// the global base while this one sits on the stack (e.g. closing the
+		// Options menu switches to the geoscape scale), and a resumed state's
+		// surfaces are still centered for whatever resolution it was built at.
+		// Only UI screens are recentered here; the primary views manage their
+		// own layout via resize().
+		if (state->getLayoutBaseX() != wantX || state->getLayoutBaseY() != wantY)
+		{
+			int dX = wantX - state->getLayoutBaseX();
+			int dY = wantY - state->getLayoutBaseY();
+			state->recenter(dX, dY);
+			state->setLayoutBase(wantX, wantY);
+		}
+		break;
+	}
+
+	// Apply the resolution to the actual display only when it changes. The
+	// decision is based on the screen's real base size, not Options::baseX/
+	// YResolution, because other code (e.g. OptionsBaseState on close) can set
+	// those globals back to a scale without actually resetting the display - so
+	// the globals can already match 'want' while the physical screen is still at
+	// the maximized 320x200, which would otherwise leave the view mis-scaled.
+	Options::baseXResolution = wantX;
+	Options::baseYResolution = wantY;
+	if (_screen->getBaseWidth() != wantX || _screen->getBaseHeight() != wantY)
+	{
+		_screen->resetDisplay(false);
+	}
 }
 
 /**

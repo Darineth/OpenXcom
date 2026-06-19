@@ -41,13 +41,6 @@ namespace OpenXcom
  */
 MiniMapState::MiniMapState (Camera * camera, SavedBattleGame * battleGame)
 {
-	if (Options::maximizeInfoScreens)
-	{
-		Options::baseXResolution = Screen::ORIGINAL_WIDTH;
-		Options::baseYResolution = Screen::ORIGINAL_HEIGHT;
-		_game->getScreen()->resetDisplay(false);
-	}
-
 	_bg = new Surface(320, 200);
 	_miniMapView = new MiniMapView(221, 148, 48, 16, _game, camera, battleGame);
 	_btnLvlUp = new BattlescapeButton(18, 20, 24, 62);
@@ -97,6 +90,15 @@ MiniMapState::~MiniMapState()
 }
 
 /**
+ * Maximizes to 320x200 when enabled; otherwise keeps the battlescape scale
+ * of the tactical view it overlays.
+ */
+State::ScaleContext MiniMapState::getScaleContext() const
+{
+	return Options::maximizeInfoScreens ? ScaleContext::UI : ScaleContext::Battlescape;
+}
+
+/**
  * Handles mouse-wheeling.
  * @param action Pointer to an action.
  */
@@ -122,11 +124,6 @@ void MiniMapState::handle(Action *action)
  */
 void MiniMapState::btnOkClick(Action *)
 {
-	if (Options::maximizeInfoScreens)
-	{
-		Screen::updateScale(Options::battlescapeScale, Options::baseXBattlescape, Options::baseYBattlescape, true);
-		_game->getScreen()->resetDisplay(false);
-	}
 	_game->popState();
 }
 

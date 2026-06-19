@@ -85,6 +85,8 @@ public:
 	DogfightState(GeoscapeState *state, Craft *craft, Ufo *ufo, bool ufoIsAttacking = false);
 	/// Cleans up the Dogfight state.
 	~DogfightState();
+	/// Dogfights overlay the geoscape and must share its display scale.
+	ScaleContext getScaleContext() const override { return ScaleContext::Geoscape; }
 	/// Returns true if this is a hunter-killer dogfight.
 	bool isUfoAttacking() const;
 	/// Runs the timers.

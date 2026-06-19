@@ -21,6 +21,7 @@
 #include <climits>
 #include "InteractiveSurface.h"
 #include "Game.h"
+#include "Options.h"
 #include "Screen.h"
 #include "Surface.h"
 #include "Language.h"
@@ -51,7 +52,8 @@ Game* State::_game = 0;
  * By default states are full-screen.
  * @param game Pointer to the core game.
  */
-State::State() : _screen(true), _soundPlayed(false), _modal(0), _ruleInterface(0), _ruleInterfaceParent(0), _customSound(nullptr)
+State::State() : _screen(true), _soundPlayed(false), _modal(0), _ruleInterface(0), _ruleInterfaceParent(0), _customSound(nullptr),
+	_layoutBaseX(Options::baseXResolution), _layoutBaseY(Options::baseYResolution)
 {
 	// initialize palette to all black
 	memset(_palette, 0, sizeof(_palette));

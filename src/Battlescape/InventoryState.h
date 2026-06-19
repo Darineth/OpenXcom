@@ -78,6 +78,8 @@ public:
 	InventoryState(bool tu, BattlescapeState *parent, Base *base, bool noCraft = false);
 	/// Cleans up the Inventory state.
 	~InventoryState();
+	/// Maximizes (320x200) when enabled, else stays at the battlescape scale.
+	ScaleContext getScaleContext() const override;
 	/// Updates all soldier info.
 	void setGlobalLayoutIndex(int index, bool armorChanged);
 	void init() override;

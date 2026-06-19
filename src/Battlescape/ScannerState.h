@@ -45,6 +45,8 @@ public:
 	/// Creates the ScannerState.
 	ScannerState(BattleAction *action);
 	~ScannerState();
+	/// Maximizes (320x200) when enabled, else stays at the battlescape scale.
+	ScaleContext getScaleContext() const override;
 	/// Handler for right-clicking anything.
 	void handle(Action *action) override;
 	/// Handles timers.

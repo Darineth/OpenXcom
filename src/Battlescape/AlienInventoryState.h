@@ -49,6 +49,8 @@ public:
 	AlienInventoryState(BattleUnit *unit);
 	/// Cleans up the AlienInventory state.
 	~AlienInventoryState();
+	/// Maximizes (320x200) when enabled, else stays at the battlescape scale.
+	ScaleContext getScaleContext() const override;
 	/// Handler for clicking the OK button.
 	void btnOkClick(Action *action);
 	/// Handler for clicking the [Toggle] button.

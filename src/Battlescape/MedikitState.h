@@ -56,6 +56,8 @@ class MedikitState : public State
 public:
 	/// Creates the MedikitState.
 	MedikitState(BattleUnit *targetUnit, BattleAction *action, TileEngine *tile);
+	/// Maximizes (320x200) when enabled, else stays at the battlescape scale.
+	ScaleContext getScaleContext() const override;
 	/// Handler for right-clicking anything.
 	void handle(Action *action) override;
 };

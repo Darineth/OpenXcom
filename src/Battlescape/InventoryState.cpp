@@ -93,18 +93,6 @@ InventoryState::InventoryState(bool tu, BattlescapeState *parent, Base *base, bo
 		}
 	}
 
-	if (Options::maximizeInfoScreens)
-	{
-		Options::baseXResolution = Screen::ORIGINAL_WIDTH;
-		Options::baseYResolution = Screen::ORIGINAL_HEIGHT;
-		_game->getScreen()->resetDisplay(false);
-	}
-	else if (_battleGame->isBaseCraftInventory())
-	{
-		Screen::updateScale(Options::battlescapeScale, Options::baseXBattlescape, Options::baseYBattlescape, true);
-		_game->getScreen()->resetDisplay(false);
-	}
-
 	// Create objects
 	_bg = new Surface(320, 200, 0, 0);
 	_soldier = new Surface(320, 200, 0, 0);
@@ -361,12 +349,6 @@ InventoryState::~InventoryState()
 
 	if (!_battleGame->isBaseCraftInventory())
 	{
-		if (Options::maximizeInfoScreens)
-		{
-			Screen::updateScale(Options::battlescapeScale, Options::baseXBattlescape, Options::baseYBattlescape, true);
-			_game->getScreen()->resetDisplay(false);
-		}
-
 		//fix case when scripts could kill unit before inventory is closed
 		if (BattleUnit* unit =_battleGame->getSelectedUnit())
 		{
@@ -376,11 +358,15 @@ InventoryState::~InventoryState()
 		_battleGame->getTileEngine()->calculateLighting(LL_ITEMS); // dropping/picking up flares
 		_battleGame->getTileEngine()->recalculateFOV();
 	}
-	else
-	{
-		Screen::updateScale(Options::geoscapeScale, Options::baseXGeoscape, Options::baseYGeoscape, true);
-		_game->getScreen()->resetDisplay(false);
-	}
+}
+
+/**
+ * Maximizes to 320x200 when enabled; otherwise keeps the battlescape scale,
+ * matching both the in-battle inventory and the base/craft equip inventory.
+ */
+State::ScaleContext InventoryState::getScaleContext() const
+{
+	return Options::maximizeInfoScreens ? ScaleContext::UI : ScaleContext::Battlescape;
 }
 
 void InventoryState::setGlobalLayoutIndex(int index, bool armorChanged)

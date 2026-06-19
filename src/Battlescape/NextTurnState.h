@@ -85,6 +85,8 @@ public:
 	/// Closes the window.
 	void close();
 	void resize(int &dX, int &dY) override;
+	/// This is a battlescape turn banner - keep the battlescape scale, never maximize it.
+	ScaleContext getScaleContext() const override { return ScaleContext::Battlescape; }
 	/// Handler for clicking the Reinforcements Briefing button.
 	void btnBriefingReinforcementsClick(Action *action);
 };

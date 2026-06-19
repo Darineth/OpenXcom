@@ -65,6 +65,8 @@ public:
 	UnitInfoState(BattleUnit *unit, BattlescapeState *parent, bool fromInventory, bool mindProbe);
 	/// Cleans up the Unit Info state.
 	~UnitInfoState();
+	/// Maximizes (320x200) when enabled, else stays at the battlescape scale.
+	ScaleContext getScaleContext() const override;
 	/// Updates the unit info.
 	void init() override;
 	/// Handler for clicking the button.

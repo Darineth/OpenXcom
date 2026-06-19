@@ -37,6 +37,8 @@ public:
 	~CutsceneState();
 	/// Replace this state on the stack with the real player state.
 	void init() override;
+	/// Cutscenes manage their own (letterboxed) display resolution.
+	ScaleContext getScaleContext() const override { return ScaleContext::SelfManaged; }
 
 	// shared utility methods for SlideshowState and VideoState
 	/// returns whether the display was letterboxed (for restoration in resetDisplay)

@@ -54,6 +54,8 @@ public:
 	StartState();
 	/// Cleans up the Start state.
 	~StartState();
+	/// The loading screen manages its own display resolution.
+	ScaleContext getScaleContext() const override { return ScaleContext::SelfManaged; }
 	/// Reset everything.
 	void init() override;
 	/// Displays messages.

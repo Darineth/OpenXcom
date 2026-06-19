@@ -82,6 +82,8 @@ public:
 	TestState();
 	/// Cleans up the Test state.
 	~TestState();
+	/// The test screen manages its own display resolution.
+	ScaleContext getScaleContext() const override { return ScaleContext::SelfManaged; }
 	/// Handler for changing the Test Case combobox.
 	void cbxTestCaseChange(Action *action);
 	/// Handler for clicking the Run button.
