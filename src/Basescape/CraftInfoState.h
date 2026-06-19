@@ -48,6 +48,7 @@ private:
 	Window *_window;
 	TextEdit *_edtCraft;
 	Text *_txtDamage, *_txtShield, *_txtFuel, *_txtSkin;
+	Text *_txtMaxSpeed, *_txtAcceleration, *_txtDamageCapacity;
 	Text *_txtWName[RuleCraft::WeaponMax], *_txtWAmmo[RuleCraft::WeaponMax];
 	InteractiveSurface *_sprite, *_weapon[RuleCraft::WeaponMax];
 	Surface *_crew, *_equip;

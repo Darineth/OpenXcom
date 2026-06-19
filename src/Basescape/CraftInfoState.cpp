@@ -101,9 +101,12 @@ CraftInfoState::CraftInfoState(Base *base, size_t craftId) : _base(base), _craft
 	_btnArmor = new TextButton(64, 16, 16, bottom + 2 * bottom_row);
 	_btnPilots = new TextButton(64, 16, 16, bottom + 3 * bottom_row);
 	_edtCraft = new TextEdit(this, 140, 16, 80, 8);
-	_txtDamage = new Text(100, 17, 14, 24);
-	_txtShield = new Text(100, 17, 120, 24);
-	_txtFuel = new Text(82, 17, 228, 24);
+	_txtDamageCapacity = new Text(140, 17, 14, 24);
+	_txtMaxSpeed = new Text(140, 17, 14, 33);
+	_txtAcceleration = new Text(140, 17, 14, 42);
+	_txtDamage = new Text(140, 17, 160, 24);
+	_txtShield = new Text(140, 17, 160, 33);
+	_txtFuel = new Text(140, 17, 160, 42);
 	_txtSkin = new Text(32, 9, 144, 46);
 	for (int i = 0; i < _weaponNum; ++i)
 	{
@@ -142,6 +145,9 @@ CraftInfoState::CraftInfoState(Base *base, size_t craftId) : _base(base), _craft
 	add(_txtShield, "text1", "craftInfo");
 	add(_txtFuel, "text1", "craftInfo");
 	add(_txtSkin, "text1", "craftInfo");
+	add(_txtMaxSpeed, "text1", "craftInfo");
+	add(_txtAcceleration, "text1", "craftInfo");
+	add(_txtDamageCapacity, "text1", "craftInfo");
 	for (int i = 0; i < _weaponNum; ++i)
 	{
 		add(_txtWName[i], "text2", "craftInfo");
@@ -264,6 +270,11 @@ void CraftInfoState::init()
 		thirdLine << "";
 	}
 	_txtShield->setText(thirdLine.str());
+
+	// Display craft stats
+	_txtMaxSpeed->setText(tr("STR_MAXIMUM_SPEED_UC").arg(Unicode::formatNumber(_craft->getRules()->getMaxSpeed())));
+	_txtAcceleration->setText(tr("STR_ACCELERATION").arg(_craft->getRules()->getAcceleration()));
+	_txtDamageCapacity->setText(tr("STR_DAMAGE_CAPACITY_UC").arg(Unicode::formatNumber(_craft->getRules()->getMaxDamage())));
 
 	if (_craft->getRules()->getMaxUnitsLimit() > 0)
 	{

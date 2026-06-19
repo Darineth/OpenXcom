@@ -119,7 +119,7 @@ This document serves as a high-level checklist of features from the original Ope
     - [ ] Implement numeric action hotkeys
     - [ ] Implement action-menu per-action hotkey labels + accuracy/effective-range readouts
     - [ ] Implement maximize info screens
-    - [ ] Implement craft stat display
+    - [x] Implement craft stat display
     - [ ] Implement debriefing soldier status
     - [x] Implement allow tanks/HWPs to click-open doors — *already in OXCE-Plus* (`unitOpensDoor` loops all size tiles, no size gate)
     - [ ] Implement loading rulesets from subdirectories

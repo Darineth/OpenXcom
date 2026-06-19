@@ -105,10 +105,8 @@ Everything below is DX-specific work confirmed **absent** from the base.
     (`StartState`, `CutsceneState`/`SlideshowState`/`VideoState`, `TestState`) are exempt. The 6
     Battlescape popups + inventory keep the battlescape scale when the option is off (no thrash).
     See [plans/Feature-MaximizeAllScreens.md](plans/Feature-MaximizeAllScreens.md).
-- [ ] **Craft stat display** — max speed, acceleration, damage capacity on Craft Info.
-  - ◑ **Delta only:** the Ufopaedia craft article already shows all three
-    ([ArticleStateCraft.cpp:86-138](src/Ufopaedia/ArticleStateCraft.cpp#L86-L138)); add them to the
-    Basescape **`CraftInfoState`** (which today shows only damage/fuel/shield percentages).
+- [x] **Craft stat display** — max speed, acceleration, damage capacity on Craft Info.
+  - ✅ **Done.** Crafted a compact 2-column layout in CraftInfoState: damage capacity, max speed, and acceleration on the left; damage, shield, and fuel on the right. Values are populated in init() from RuleCraft getters.
 - [ ] **Debriefing soldier status** — status column, wounded-recovery days, per-soldier
   gains breakdown.
   - ◑ **Delta only:** the per-soldier stat-gain table already exists

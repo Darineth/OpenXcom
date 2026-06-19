@@ -104,3 +104,11 @@ unchanged from before — info screens that overlay the Battlescape (the unit in
 minimap / medikit / inventory popups) keep the battlescape scale, so there's no open/close display
 thrash. No new option; this extends the existing `maximizeInfoScreens` toggle. *(design:
 [plans/Feature-MaximizeAllScreens.md](plans/Feature-MaximizeAllScreens.md))*
+
+## Craft Stat Display
+
+The Basescape craft info screen now shows the craft's core performance numbers alongside its
+status readouts. The stats are laid out in two compact columns so they fit cleanly at 320×200:
+damage capacity, maximum speed, and acceleration on the left; current damage, shield, and fuel on
+the right. This mirrors the numbers already shown in the Ufopaedia craft article, but makes them
+available directly from Craft Info where base management happens.
