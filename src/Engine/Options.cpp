@@ -601,6 +601,7 @@ void createAdvancedOptionsDX()
 	_info.push_back(OptionInfo(OPTION_DX, "hoveredUnitNameEnabled", &hoveredUnitNameEnabled, true, "STR_HOVERED_UNIT_NAME", "STR_BATTLESCAPE"));
 	_info.push_back(OptionInfo(OPTION_DX, "grenadeIndicatorEnabled", &grenadeIndicatorEnabled, true, "STR_GRENADE_INDICATOR", "STR_BATTLESCAPE"));
 	_info.push_back(OptionInfo(OPTION_DX, "unitStatusIndicatorEnabled", &unitStatusIndicatorEnabled, true, "STR_UNIT_STATUS_INDICATOR", "STR_BATTLESCAPE"));
+	_info.push_back(OptionInfo(OPTION_DX, "motionDetectorOverlayEnabled", &motionDetectorOverlayEnabled, true, "STR_MOTION_DETECTOR_OVERLAY", "STR_BATTLESCAPE"));
 }
 
 void createControlsDX()

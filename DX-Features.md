@@ -64,3 +64,10 @@ own toggle so they can be enabled independently. *(design:
   "Zzz" sleep glyph, palette-safe and shape-distinct), preferred only when no mod art is present — so both the
   living-unit overlay and the long-dormant unconscious-body indicators now work by default. A mod
   can still override any of them with an `extraSprites` `Floor*Indicator` (`singleImage: true`).
+- **Motion-detector readings** — the authentic `DETBLOB` scanner blip painted directly on the
+  tile of each enemy/neutral unit detected this turn by a motion scanner, at an intensity that
+  grows with how far the unit moved (the same near→far reading the scanner popup shows). It shows
+  passively as a tile-level marker (no key held), replacing OXCE's hard-to-see Alt-held bobbing
+  arrow. Detection is unchanged from OXCE — a unit only lights up once actually scanned, so the
+  overlay grants no intel a scanner wouldn't. Toggle: **Motion detector readings on map**
+  (`motionDetectorOverlayEnabled`, default on).

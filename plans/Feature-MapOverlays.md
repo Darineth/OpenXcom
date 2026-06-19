@@ -1,9 +1,8 @@
 # Feature - On-Map Overlays
 
-**Status:** 🚧 In progress. The **hovered unit name**, **primed-grenade indicator**, and
-**unit status indicators** (bleeding + fire/shock/stun) overlays are implemented. The remaining one
-bundled under the checklist item — motion-detector readings — is deferred to a later pass (see
-*Deferred* below).
+**Status:** ✅ All four bundled overlays implemented: **hovered unit name**, **primed-grenade
+indicator**, **unit status indicators** (bleeding + fire/shock/stun), and **motion-detector
+readings**.
 
 ## Overview
 
@@ -204,9 +203,56 @@ A mod can still override any of the four by supplying the matching `Floor*Indica
 
 ---
 
-## Deferred (later passes)
+## 4. Motion-detector readings (this pass)
 
-- **Motion-detector readings in-world** — paint `DETBLOB.DAT` blips for units with
-  `getMotionPoints() > 0`, frame `motionPoints / 5`, mirroring `ScannerView`. The heaviest of the
-  four: needs a design decision on whether/how it gates on the player actually carrying a motion
-  scanner, plus balance review. Tracked but not scoped yet.
+### What it does
+
+Each enemy/neutral unit the player **detected this turn with a motion scanner** gets a **pulsing amber
+target reticle** painted on its floor — a floor decal in the same style as the path-preview markers. It
+pulses (alarm) and is **brighter the more the unit moved** (its motion points, `motionPoints/5`
+clamped 0–5, folded into the blit shade), preserving the scanner's near→far sense. This replaces
+OXCE's hard-to-see, Alt-held bobbing arrow for scanned units with a clear, passive, ground-level
+overlay (the user's request: "displayed more like the path-preview stuff … make it a floor overlay
+like the pathfinding renderer").
+
+### Gating (unchanged from OXCE — no new free intel)
+
+Detection still rides entirely on OXCE's existing mechanism: a unit's `getScannedTurn()` is set to
+the current turn **only when the player actually uses a motion scanner** (`ScannerView::draw`, the
+scanner popup). This overlay just *displays* those already-detected units better — it does **not**
+make detection passive, so it grants no intel the scanner wouldn't. (Making detection itself passive
+— e.g. an always-on field scan, or gating on merely *carrying* a scanner — remains an open balance
+decision, deliberately not taken here.) The blips persist for the rest of the turn after a scan and
+clear at the next turn, since motion points reset then.
+
+### How it works
+
+The decal is drawn **inside the per-tile loop** of `Map::drawTerrain`, right after `tile->getUnit()`
+is resolved and *before* that tile's walls/objects/unit are blitted — so it reads as ground and the
+unit sprite sits over its center while the diamond's edges trace the tile around the unit's feet
+(visible without being disruptive). For a tile whose occupant is a non-player, non-out unit with
+`getScannedTurn() == turn` and `getMotionPoints() > 0` (anchor tile only, for big units), it
+`blitRaw`s the **`Pathfinding` set's frame 10** (the target reticle) at the tile floor
+(`screenPosition.y + terrainLevel`), recolored via the `newBaseColor` path to **amber** (block 1,
+palette-safe in both UFO and TFTD) — exactly how the path preview recolors its markers. The blit
+`shade` is `(5 − intensity) + Pulsate[animFrame%8]`, so it pulses and brightens with motion.
+
+It sits on the unit's **actual tile and floor** (it no longer forces `z = viewLevel` like the old
+arrow), so it appears only on levels currently drawn. Gated behind `motionDetectorOverlayEnabled`
+(default on). The old Alt-gated motion arrow is gone; the custom-marker arrows that shared its block
+stay on Alt. *(Color and pulse are easy knobs; the per-frame `DETBLOB` blip was tried first but read
+poorly behind units — the tile-diamond decal is far more legible.)*
+
+### Key code
+
+| File | Role |
+|------|------|
+| `src/Battlescape/Map.cpp` | DETBLOB floor-blip drawn in the per-tile loop (under unit/wall sprites, so it's occluded in front); replaces the motion half of the old Alt-arrow block; custom-marker arrows split into their own Alt block |
+| `src/Engine/Options.inc.h` / `Options.cpp` | `motionDetectorOverlayEnabled` option (default on), registered in `createAdvancedOptionsDX` |
+| `bin/common/Language/DX/en-US.yml` | `STR_MOTION_DETECTOR_OVERLAY` option label |
+
+### Possible follow-ups
+
+- **Passive detection** — make units accrue/reveal motion without opening the popup (the pinned
+  balance decision); e.g. gate on carrying a `BT_SCANNER` and auto-scan within its range each turn.
+- **Direction tick** — `DETBLOB` frames 7–14 are facing arrows; could add the unit's facing.

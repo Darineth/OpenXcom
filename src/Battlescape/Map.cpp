@@ -1190,6 +1190,33 @@ void Map::drawTerrain(Surface *surface)
 
 					auto* unit = tile->getUnit();
 
+					// DX on-map overlay: motion-detector reading. Highlight the floor of an
+					// enemy/neutral unit detected this turn (getScannedTurn == current turn, set only
+					// when the player uses a motion scanner) with a pulsing amber target reticle, drawn
+					// as a floor decal in the same style as the path-preview markers (the "Pathfinding"
+					// set's frame 10, recolored). It pulses, and is brighter the more the unit moved
+					// (its motion points). Drawn before this tile's walls/unit so it reads as ground.
+					// Detection gating is unchanged - this only displays already-scanned units.
+					if (Options::motionDetectorOverlayEnabled && unit && unit->getFaction() != FACTION_PLAYER
+						&& !unit->isOut() && unit->getMotionPoints() > 0
+						&& unit->getScannedTurn() == _save->getTurn()
+						&& unit->getPosition() == tile->getPosition()) // anchor tile only (big units)
+					{
+						Surface* motionMarker = _game->getMod()->getSurfaceSet("Pathfinding")->getFrame(10); // target reticle
+						if (motionMarker)
+						{
+							const int Pulsate[8] = { 0, 1, 2, 3, 4, 3, 2, 1 };
+							int intensity = unit->getMotionPoints() / 5;
+							if (intensity > 5)
+								intensity = 5;
+							// brighter (lower shade) the more the unit moved, on top of an alarm pulse
+							int shade = (5 - intensity) + Pulsate[_animFrame % 8];
+							Surface::blitRaw(surface, motionMarker,
+								screenPosition.x, screenPosition.y + tile->getTerrainLevel(),
+								shade, false, 2 /* newBaseColor: block 1 = amber, palette-safe in UFO+TFTD */);
+						}
+					}
+
 					// Draw cursor back
 					if (_cursorType != CT_NONE && _selectorX > itX - _cursorSize && _selectorY > itY - _cursorSize && _selectorX < itX+1 && _selectorY < itY+1 && !_save->getBattleState()->getMouseOverIcons())
 					{
@@ -2084,57 +2111,35 @@ void Map::drawTerrain(Surface *surface)
 		}
 	}
 
-	// Draw motion scanner arrows
+	// Draw custom unit markers (Alt-held)
 	if (_isAltPressed && _save->getSide() == FACTION_PLAYER && this->getCursorType() != CT_NONE)
 	{
 		for (auto* myUnit : *_save->getUnits())
 		{
-			bool motionScan = myUnit->getScannedTurn() == _save->getTurn() && myUnit->getFaction() != FACTION_PLAYER && !myUnit->isOut();
-			bool customMarker = myUnit->getCustomMarker() > 0 && myUnit->getFaction() == FACTION_PLAYER && !myUnit->isOut();
-			if (motionScan || customMarker)
+			if (myUnit->getCustomMarker() <= 0 || myUnit->getFaction() != FACTION_PLAYER || myUnit->isOut())
+				continue;
+			Position temp = myUnit->getPosition();
+			temp.z = _camera->getViewLevel();
+			_camera->convertMapToScreen(temp, &screenPosition);
+			screenPosition += _camera->getMapOffset();
+			Position offset;
+			if (myUnit->isBigUnit())
 			{
-				Position temp = myUnit->getPosition();
-				temp.z = _camera->getViewLevel();
-				_camera->convertMapToScreen(temp, &screenPosition);
-				screenPosition += _camera->getMapOffset();
-				Position offset;
-				//calculateWalkingOffset(myUnit, &offset);
-				if (myUnit->isBigUnit())
-				{
-					offset.y += 4;
-				}
-				if (motionScan)
-				{
-					offset.y += Position::TileZ - /*myUnit->getHeight()*/ 21; // no spoilers
-				}
-				else if (customMarker)
-				{
-					offset.y += Position::TileZ - (myUnit->getHeight() + myUnit->getFloatHeight());
-				}
-				if (myUnit->isKneeled())
-				{
-					offset.y -= 2;
-				}
-				if (motionScan)
-				{
-					_arrow->blitNShade(
-						surface,
-						screenPosition.x + offset.x + (_spriteWidth / 2) - (_arrow->getWidth() / 2),
-						screenPosition.y + offset.y - _arrow->getHeight() + getArrowBobForFrame(_animFrame),
-						0);
-				}
-				else if (customMarker)
-				{
-					Surface::blitRaw(
-						surface,
-						_arrow,
-						screenPosition.x + offset.x + (_spriteWidth / 2) - (_arrow->getWidth() / 2),
-						screenPosition.y + offset.y - _arrow->getHeight() + getArrowBobForFrame(_animFrame),
-						0,
-						false,
-						_isTFTD ? ArrowColorsTFTD[myUnit->getCustomMarker() % 4] : ArrowColorsUFO[myUnit->getCustomMarker() % 4]);
-				}
+				offset.y += 4;
 			}
+			offset.y += Position::TileZ - (myUnit->getHeight() + myUnit->getFloatHeight());
+			if (myUnit->isKneeled())
+			{
+				offset.y -= 2;
+			}
+			Surface::blitRaw(
+				surface,
+				_arrow,
+				screenPosition.x + offset.x + (_spriteWidth / 2) - (_arrow->getWidth() / 2),
+				screenPosition.y + offset.y - _arrow->getHeight() + getArrowBobForFrame(_animFrame),
+				0,
+				false,
+				_isTFTD ? ArrowColorsTFTD[myUnit->getCustomMarker() % 4] : ArrowColorsUFO[myUnit->getCustomMarker() % 4]);
 		}
 	}
 	delete _numWaypid;

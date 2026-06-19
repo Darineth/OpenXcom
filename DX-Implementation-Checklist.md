@@ -70,7 +70,9 @@ Everything below is DX-specific work confirmed **absent** from the base.
   - [x] **Unit status indicators** — bleeding / fire / shock / near-knockout glyphs hovering over
     the player's own living units (reuses the engine's `Floor*Indicator` surfaces, with procedural
     fallbacks so they work without mod art).
-  - [ ] **Motion-detector readings** — motion blips painted in-world.
+  - [x] **Motion-detector readings** — authentic `DETBLOB` scanner blips painted on the tiles of
+    units scanned this turn (intensity by motion points); passive, tile-level, replaces OXCE's
+    Alt-held arrow. Detection gating unchanged (still requires using a scanner).
 - [ ] **Fog-of-war view** — per-tile visible-count rendering (currently-seen vs.
   remembered-but-unobserved vs. undiscovered). *(also a prereq for Clairvoyance later)*
 - [ ] **Kneel/stand pathing recalculation** — refresh path preview on kneel/stand toggle.
