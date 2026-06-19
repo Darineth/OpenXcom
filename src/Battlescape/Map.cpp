@@ -1161,6 +1161,13 @@ void Map::drawTerrain(Surface *surface)
 					if (tile->isDiscovered(O_FLOOR))
 					{
 						tileShade = reShade(tile);
+						// DX fog-of-war: dim a discovered tile that no player unit currently sees, so
+						// remembered terrain reads as out of live sight. Tile::getVisible() is the
+						// player-only LOS count maintained by TileEngine::calculateTilesInFOV. Maps
+						// shade [0..16] -> [4..16] (bright tiles dim a little, dark tiles stay dark);
+						// layers on top of the light/night-vision shade reShade already returned.
+						if (Options::fogOfWarEnabled && tile->getVisible() == 0)
+							tileShade = (3 * tileShade) / 4 + 4;
 						obstacleShade = tileShade;
 						if (_showObstacles)
 						{

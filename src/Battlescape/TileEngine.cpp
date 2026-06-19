@@ -1641,7 +1641,10 @@ void TileEngine::calculateTilesInFOV(BattleUnit *unit, const Position eventPos, 
 										if (!unit->hasVisibleTile(_save->getTile(posVisited)))
 										{
 											unit->addToVisibleTiles(_save->getTile(posVisited));
-											_save->getTile(posVisited)->setVisible(+1);
+											// NOTE: addToVisibleTiles() already does setVisible(+1); a second
+											// increment here double-counts against clearVisibleTiles()'s single
+											// decrement, so a tile's visible count never returns to 0 and it
+											// stays lit after leaving LOS. (Required for DX fog-of-war.)
 											_save->getTile(posVisited)->setDiscovered(true, O_FLOOR);
 
 											// walls to the east or south of a visible tile, we see that too

@@ -109,7 +109,7 @@ This document serves as a high-level checklist of features from the original Ope
         - [x] Implement primed-grenade indicator overlay
         - [x] Implement unit status indicators overlay (bleeding / fire / shock / near-knockout)
         - [x] Implement motion-detector readings overlay (DETBLOB tile blips, passive, replaces Alt-arrow)
-    - [ ] Implement fog-of-war view
+    - [x] Implement fog-of-war view
 - [ ] **Night Vision & Lighting**
     - [ ] Implement night-vision modes (full/local), auto/toggle/hold keys, night-vision color
     - [ ] Implement per-armor sight ranges (`visibilityAtDark`/`visibilityAtDay`) + camouflage values

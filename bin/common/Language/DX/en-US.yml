@@ -39,6 +39,9 @@ en-US:
   STR_GRENADE_INDICATOR: "Primed grenade indicator"
   STR_UNIT_STATUS_INDICATOR: "Unit status indicators"
   STR_MOTION_DETECTOR_OVERLAY: "Motion detector readings on map"
+#=================== DX Fog of War ===================
+#Options.cpp
+  STR_FOG_OF_WAR: "Fog of war (dim unseen tiles)"
 #=================== DX Action Menu Revamp ===================
 #OptionsAdvancedState.cpp / OptionsControlsState.cpp - DX options tab
   STR_ENGINE_DX: "DX"

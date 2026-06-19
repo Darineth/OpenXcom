@@ -73,8 +73,11 @@ Everything below is DX-specific work confirmed **absent** from the base.
   - [x] **Motion-detector readings** — authentic `DETBLOB` scanner blips painted on the tiles of
     units scanned this turn (intensity by motion points); passive, tile-level, replaces OXCE's
     Alt-held arrow. Detection gating unchanged (still requires using a scanner).
-- [ ] **Fog-of-war view** — per-tile visible-count rendering (currently-seen vs.
+- [x] **Fog-of-war view** — per-tile visible-count rendering (currently-seen vs.
   remembered-but-unobserved vs. undiscovered). *(also a prereq for Clairvoyance later)*
+  *(design: [plans/Feature-FogOfWar.md](plans/Feature-FogOfWar.md))* — renderer dims discovered tiles
+  with `getVisible() == 0`; also fixed a double-count bug in `calculateTilesInFOV` so tiles re-fog on
+  move/turn.
 - [x] **Kneel/stand pathing recalculation** — *already in OXCE-Plus.* `btnKneelClick` calls
   `Pathfinding::refreshPath()` on toggle ([BattlescapeState.cpp:1257](src/Battlescape/BattlescapeState.cpp#L1257)). No work needed.
 - [x] **Tanks/HWPs open doors** — *already in OXCE-Plus.* `TileEngine::unitOpensDoor` loops over all

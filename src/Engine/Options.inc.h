@@ -153,6 +153,7 @@ OPT bool hoveredUnitNameEnabled;
 OPT bool grenadeIndicatorEnabled;
 OPT bool unitStatusIndicatorEnabled;
 OPT bool motionDetectorOverlayEnabled;
+OPT bool fogOfWarEnabled;
 OPT bool oxceDisableAlienInventory;
 OPT bool oxceDisableHitLog;
 OPT bool oxceDisableInventoryTuCost;
