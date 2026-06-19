@@ -179,3 +179,13 @@ heavily template/macro-based.
 When preparing to build a feature, start by writing a design doc in `plans/` describing the feature, the motivation, and the implementation approach. Link to it from `DX-Implementation-Checklist.md` near its checklist item. This helps coordinate development and provides a reference for future maintainers.
 
 If the feature is entirely new and is not in the checklist, add it to the checklist at the bottom in a "New Feature" section with a link to the design doc.
+
+## Updating docs before committing
+
+**Update the documentation in the same commit as the code — do not commit a feature with stale docs.** Before committing, make sure these are in sync with what actually shipped:
+
+- **`DX-Features.md`** — add or refresh the feature's entry (including any option names/defaults), matching the final behavior, not the original intent.
+- **The design doc in `plans/`** — update its status line and any details that changed during implementation (approaches tried, bugs fixed, final tuning).
+- **`DX-Implementation-Checklist.md`** and **`DX-Implementation-Plan.md`** — tick the relevant checkbox(es) and note anything discovered (e.g. "already provided by OXCE-Plus").
+
+Keep the docs honest: describe the behavior that shipped (final colors, formulas, option names), and revise earlier wording if the implementation diverged from the plan.
