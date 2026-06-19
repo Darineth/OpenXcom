@@ -82,7 +82,10 @@ void Slider::setX(int x)
 
 	_minX = _frame->getX();
 	_maxX = _frame->getX() + _frame->getWidth() - _button->getWidth();
-	setValue(_pos);
+	// re-place the button at its current normalized position; _pos is a [0,1] double,
+	// NOT a value, so it must go through setPosition (passing it to setValue(int) would
+	// truncate it to 0 and, for inverted ranges, snap the slider to max)
+	setPosition(_pos);
 }
 
 /**

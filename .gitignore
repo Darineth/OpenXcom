@@ -85,3 +85,4 @@ bin/user
 /*.kdev4
 bin/Win32/*
 .vscode/*
+OpenXcom-oxce-plus/
