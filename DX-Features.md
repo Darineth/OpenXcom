@@ -135,3 +135,15 @@ The Battlescape debriefing now keeps each soldier in the mission-results table a
 outcome code for them: `KIA`, `MIA`, `WND`, or `OK`. Wounded soldiers also show recovery time in
 days, while the existing per-soldier stat-gain breakdown remains on the same view. Bad outcomes and
 the recovery-day value are highlighted in the list's secondary color.
+
+## Geoscape Activity Display
+
+A persistent text panel on the left side of the Geoscape showing real-time activity across all
+bases: research projects with translated names and progress (spent/cost), manufacturing items
+with progress, craft maintenance status (repairs/refueling/rearming), idle scientist and engineer
+counts, and alien resource storage. Updates every game hour matching the research tick frequency.
+Base names are shown as headers when multiple bases exist; single-base games skip the header to
+save space.
+
+- Toggle: advanced option **Activity display** (`activityDisplayEnabled`, default on), under DX.
+- **TODO**: Add base facility building progress (construction of new labs, barracks, etc.).

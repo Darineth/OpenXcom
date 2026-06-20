@@ -198,6 +198,11 @@ GeoscapeState::GeoscapeState() : _pause(false), _zoomInEffectDone(false), _zoomO
 	int trainingIndicatorOffset = _game->getMod()->getInterface("geoscape")->getElement("trainingIndicator")->custom;
 	_txtTraining = new Text(59, 17, screenWidth - 61, screenHeight / 2 + 100 + trainingIndicatorOffset);
 
+	// Activity Display widget (left side overlay)
+	int activityWidth = Options::baseXGeoscape - 130;
+	int activityHeight = screenHeight - 40;
+	_txtActivity = new Text(activityWidth, activityHeight, 10, 20);
+
 	_timeSpeed = _btn5Secs;
 	_gameTimer = new Timer(Options::geoClockSpeed);
 
@@ -256,6 +261,9 @@ GeoscapeState::GeoscapeState() : _pause(false), _zoomInEffectDone(false), _zoomO
 	add(_txtYear, "text", "geoscape");
 	add(_txtSlacking, "slackingIndicator", "geoscape");
 	add(_txtTraining, "trainingIndicator", "geoscape");
+
+	// Activity Display (DX)
+	add(_txtActivity, "activityDisplay", "geoscape");
 
 	add(_txtDebug, "text", "geoscape");
 	add(_cbxRegion, "button", "geoscape");
@@ -1490,6 +1498,9 @@ void GeoscapeState::time5Seconds()
 			return way->getFollowers()->empty();
 		}
 	);
+
+	// Refresh activity display (DX)
+	buildActivityDisplay();
 }
 
 /**
@@ -1617,6 +1628,9 @@ void GeoscapeState::time10Minutes()
 
 	// Handle UFO re-targeting (i.e. hunting and escorting) logic
 	ufoHuntingAndEscorting();
+
+	// Refresh activity display (DX)
+	buildActivityDisplay();
 }
 
 void GeoscapeState::ufoHuntingAndEscorting()
@@ -2137,6 +2151,9 @@ void GeoscapeState::ufoDetection(Ufo* ufo, const std::vector<Craft*>* activeCraf
 			}
 		}
 	}
+
+	// Refresh activity display (DX)
+	buildActivityDisplay();
 }
 
 /**
@@ -2292,6 +2309,9 @@ void GeoscapeState::time1Hour()
 	}
 
 	updateSlackingIndicator();
+
+	// Refresh activity display (DX)
+	buildActivityDisplay();
 }
 
 /**
@@ -2851,6 +2871,9 @@ void GeoscapeState::time1Day()
 			popup(new CraftErrorState(this, msg, false));
 		}
 	}
+
+	// Refresh activity display (DX)
+	buildActivityDisplay();
 }
 
 /**
@@ -2914,6 +2937,250 @@ void GeoscapeState::timerReset()
 	ev.button.button = SDL_BUTTON_LEFT;
 	Action act(&ev, _game->getScreen()->getXScale(), _game->getScreen()->getYScale(), _game->getScreen()->getCursorTopBlackBand(), _game->getScreen()->getCursorLeftBlackBand());
 	_btn5Secs->mousePress(&act, this);
+}
+
+/**
+ * Builds the activity display text overlay showing research, manufacturing, and craft status.
+ */
+void GeoscapeState::buildActivityDisplay()
+{
+	if (!Options::activityDisplayEnabled)
+	{
+		return;
+	}
+
+	const auto &bases = *_game->getSavedGame()->getBases();
+	if (bases.empty())
+	{
+		_txtActivity->setText("");
+		return;
+	}
+
+	std::string text;
+	int baseIndex = 0;
+
+	for (auto *base : bases)
+	{
+		baseIndex++;
+		bool hasContent = false;
+
+		// Base header (always shown)
+		std::string baseName = base->getName();
+		text += baseName + "\n";
+
+		// --- Resources: alien fuel storage ---
+		const ItemContainer *items = base->getStorageItems();
+		if (items != nullptr && items->getContents() != nullptr)
+		{
+			int totalFuel = 0;
+			for (const auto &itemPair : *(items->getContents()))
+			{
+				const RuleItem *rule = itemPair.first;
+				if (rule != nullptr && rule->isAlien())
+				{
+					totalFuel += itemPair.second;
+				}
+			}
+			if (totalFuel > 0)
+			{
+				text += "  Resources: " + std::to_string(totalFuel) + "\n";
+				hasContent = true;
+			}
+		}
+
+		// --- Research ---
+		const auto &research = base->getResearch();
+		// getScientists() returns idle scientists (unassigned); getAllocatedScientists() sums assigned across projects
+		int idleScientists = base->getScientists();
+
+		if (!research.empty())
+		{
+			for (auto *proj : research)
+			{
+				if (proj != nullptr)
+				{
+					const RuleResearch *rules = proj->getRules();
+					std::string projectName;
+					if (rules != nullptr)
+					{
+						projectName = tr(rules->getName());
+					}
+					else
+					{
+						projectName = "???";
+					}
+					int spent = proj->getSpent();
+					int cost = proj->getCost();
+					text += "  Research: " + projectName + " (" + std::to_string(spent) + "/" + std::to_string(cost) + ")\n";
+				}
+			}
+			hasContent = true;
+		}
+		if (idleScientists > 0)
+		{
+			text += std::string("  ") + Unicode::TOK_COLOR_FLIP + "Idle Scientists: " + std::to_string(idleScientists) + Unicode::TOK_COLOR_FLIP + "\n";
+			hasContent = true;
+		}
+
+		// --- Manufacturing ---
+		const auto &productions = base->getProductions();
+		// getEngineers() returns idle engineers (unassigned); getAllocatedEngineers() sums assigned across productions
+		int idleEngineers = base->getEngineers();
+
+		if (!productions.empty())
+		{
+			for (auto *prod : productions)
+			{
+				if (prod != nullptr)
+				{
+					const RuleManufacture *rules = prod->getRules();
+					std::string productName = rules != nullptr ? std::string(tr(rules->getName())) : "???";
+					int produced = prod->getAmountProduced();
+					int total = prod->getAmountTotal();
+					if (prod->getInfiniteAmount())
+					{
+						text += "  Manufacturing: " + productName + " (inf)\n";
+					}
+					else
+					{
+						text += "  Manufacturing: " + productName + " (" + std::to_string(produced) + "/" + std::to_string(total) + ")\n";
+					}
+					if (prod->getSellItems())
+					{
+						text += "    $\n";
+					}
+				}
+			}
+			hasContent = true;
+		}
+		if (idleEngineers > 0)
+		{
+			text += std::string("  ") + Unicode::TOK_COLOR_FLIP + "Idle Engineers: " + std::to_string(idleEngineers) + Unicode::TOK_COLOR_FLIP + "\n";
+			hasContent = true;
+		}
+
+		// --- Training ---
+		{
+			int martialTraining = 0;
+			int martialQueued = 0;
+			int psiTraining = 0;
+
+			for (auto* soldier : *base->getSoldiers())
+			{
+				if (soldier->isInTraining())
+				{
+					martialTraining++;
+				}
+				else if (soldier->getReturnToTrainingWhenHealed())
+				{
+					martialQueued++;
+				}
+				if (soldier->isInPsiTraining())
+				{
+					psiTraining++;
+				}
+			}
+
+			int availableTraining = base->getFreeTrainingSpace();
+			int availablePsi = base->getFreePsiLabs();
+
+			if (martialTraining > 0 || martialQueued > 0)
+			{
+				text += "  Martial Training: " + std::to_string(martialTraining);
+				if (availableTraining > 0)
+				{
+					text += "/" + std::to_string(martialTraining + availableTraining);
+				}
+				if (martialQueued > 0)
+				{
+					text += " (" + std::to_string(martialQueued) + " queued)";
+				}
+				text += "\n";
+				hasContent = true;
+			}
+
+			if (psiTraining > 0)
+			{
+				text += "  Psi Training: " + std::to_string(psiTraining);
+				if (availablePsi > 0)
+				{
+					text += "/" + std::to_string(psiTraining + availablePsi);
+				}
+				text += "\n";
+				hasContent = true;
+			}
+		}
+
+		// --- Base building construction ---
+		const std::vector<BaseFacility*> *facilities = base->getFacilities();
+		for (auto *facility : *facilities)
+		{
+			if (facility == nullptr)
+				continue;
+
+			int buildDays = facility->getBuildTime();
+			if (buildDays > 0)
+			{
+				std::string facilityName = facility->getRules() != nullptr ? std::string(tr(facility->getRules()->getType())) : "???";
+				text += "  Base Building: " + facilityName + " (" + std::string(tr("STR_DAY_SHORT").arg(buildDays)) + ")\n";
+				hasContent = true;
+			}
+		}
+
+		// --- Craft maintenance ---
+		const std::vector<Craft*> *crafts = base->getCrafts();
+		for (auto *craft : *crafts)
+		{
+			if (craft == nullptr)
+				continue;
+
+			std::string craftName = craft->getRules() != nullptr ? std::string(tr(craft->getRules()->getType())) : "???";
+			std::string status = craft->getStatus();
+
+			unsigned int repairHours = craft->calcRepairTime();
+			if (repairHours > 0 && status == "STR_REPAIRS")
+			{
+				int days = repairHours / 24;
+				int hours = repairHours % 24;
+				std::string repairEta;
+
+				if (days > 0)
+				{
+					repairEta += tr("STR_DAY_SHORT").arg(days);
+				}
+				if (hours > 0)
+				{
+					if (!repairEta.empty())
+					{
+						repairEta += " ";
+					}
+					repairEta += tr("STR_HOUR_SHORT").arg(hours);
+				}
+
+				text += std::string("  ") + Unicode::TOK_COLOR_FLIP + craftName + " - " + std::string(tr(status)) + " (" + repairEta + ")" + Unicode::TOK_COLOR_FLIP + "\n";
+				hasContent = true;
+				continue;
+			}
+
+			// Only show crafts that are undergoing maintenance at the base
+			if (status == "STR_REPAIRS" || status == "STR_REFUELLING" || status == "STR_REARMING")
+			{
+				text += "  " + craftName + " - " + std::string(tr(status)) + "\n";
+				hasContent = true;
+			}
+		}
+
+		if (hasContent)
+		{
+			text += "\n"; // separator between bases
+		}
+		else
+		{
+			text += "  (no activity)\n\n";
+		}
+	}
+
+	_txtActivity->setText(text);
 }
 
 /**
@@ -4798,7 +5065,15 @@ bool GeoscapeState::buttonsDisabled()
 
 void GeoscapeState::updateSlackingIndicator()
 {
-	if (Options::oxceGeoEnableTrainingIndicator)
+	// If activity display is enabled, it already shows idle staff and training counts.
+	// Hide OXCE indicators to avoid duplicate information.
+	if (Options::activityDisplayEnabled)
+	{
+		_txtTraining->setText("");
+		_txtSlacking->setText("");
+		return;
+	}
+	else if (Options::oxceGeoEnableTrainingIndicator)
 	{
 		int freeGym = 0;
 		int freePsi = 0;

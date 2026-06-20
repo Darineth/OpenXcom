@@ -317,6 +317,148 @@ greyscale (it is not in any palette file). Light → dark, index 240 → 255. Im
 
 ---
 
+# `setHighContrast` — font shade-step multiplier (palette-index based)
+
+`Text::setHighContrast(bool)` is **not RGB post-processing**. It changes how font shade
+pixels are mapped into palette indices when text is drawn.
+
+## How it works
+
+- `Text::setHighContrast(true)` sets `_contrast = true` and triggers a redraw.
+- In `Text::draw()`, `_contrast` selects `mul = 3` (default is `mul = 1`).
+- `PaletteShift::func` computes destination palette index as:
+  `dest = off + src * mul + inverseOffset`
+  where `off` is the chosen text color index (`setColor`/`interfaces.rul`), and `src` is the
+  font shade sample (font glyph pixels, effectively shade steps).
+- So high contrast makes shade spacing steeper (`+3,+6,+9,+12,+15` from `off`) instead of
+  normal spacing (`+1,+2,+3,+4,+5`).
+- This is palette-index math (8-bit), so overflow can wrap to another block/hue if indices are
+  poorly chosen.
+
+## When to use it
+
+| Scenario | `setHighContrast` |
+|---|---|
+| Text on a plain / solid background | Usually **No** — default contrast is often cleaner |
+| Overlay text on the geoscape globe, terrain, or any complex background | Often **Yes** — larger shade spread can improve edge readability |
+| Small text that needs extra legibility | Often **Yes** — stronger light/dark separation |
+| Window borders, buttons, static UI | **No** — these use `interfaces.rul` element colors |
+
+## Color definition: ruleset-driven, not C++ `setColor()`
+
+**Never use `setColor()` in C++ to define a widget's color.** Colors belong in
+`interfaces.rul` — this keeps them data-driven, moddable, and consistent with the rest
+of the engine.
+
+### Named elements for color variants within a group
+
+When a screen has a group of widgets that share a base style but one needs a different
+color, define a **specific named element** in the ruleset. The canonical example is
+`slackingIndicator` vs `text` in the geoscape screen:
+
+```yaml
+# bin/standard/xcom1/interfaces.rul (geoscape screen)
+- type: geoscape
+  elements:
+    - id: text
+      color: 244          # default text color (lighter blue)
+    - id: slackingIndicator
+      color: 244          # same base color
+      color2: 133         # but different color2 (minty green)
+    - id: trainingIndicator
+      color: 244
+      color2: 133
+      custom: 4           # positioned below standard visible area
+```
+
+```cpp
+// GeoscapeState.cpp
+_txtSlacking = new Text(...);
+add(_txtSlacking, "slackingIndicator", "geoscape");
+// No setColor() call — the ruleset defines the color
+```
+
+This pattern is clean, explicit, and follows the engine convention: each visual variant
+gets its own `id` in the ruleset, and C++ simply references it by name.
+
+### For overlay text (e.g., activity display)
+
+Define a dedicated element like `activityDisplay` in the geoscape screen's elements:
+
+```yaml
+- type: geoscape
+  elements:
+    - id: text
+      color: 244
+    - id: activityDisplay
+      color: 80           # pale teal (block 5) — chosen for globe readability
+```
+
+```cpp
+// GeoscapeState.cpp
+_txtActivity = new Text(...);
+_txtActivity->setHighContrast(true);   // enable steeper shade steps (visual effect, not color)
+add(_txtActivity, "activityDisplay", "geoscape");
+// No setColor() — the ruleset element provides the color
+```
+
+### Why this matters
+
+| Approach | Pros | Cons |
+|---|---|---|
+| `setColor()` in C++ | Quick to prototype | Hardcoded, not moddable, overridden by `interfaces.rul` |
+| Named element in `interfaces.rul` | Data-driven, moddable, consistent | Requires ruleset edit |
+| Generic `"text"` element + `setColor()` override | — | Fragile, order-dependent, easy to break |
+
+The `interfaces.rul` color is applied **after** the constructor `setColor()` call, so any
+C++ `setColor()` is silently overridden unless you re-call it **after** `add()`. Using
+named elements avoids this entirely.
+
+## Choosing a color with `setHighContrast(true)`
+
+With high contrast, the **base palette index matters more, not less**. Since the shade steps
+advance by up to `+15` from the base index, choose a base that keeps the entire used range in
+the intended hue block.
+
+Practical rule:
+- Normal text (`mul=1`) uses roughly `off+1..off+5`.
+- High contrast (`mul=3`) uses roughly `off+3..off+15`.
+- Pick `off` so `off+15` still lands in a sensible shade/hue range for that palette.
+- Avoid base indices near block ends if that would push high shades into a different block.
+
+## Example (correct pattern)
+
+```yaml
+# interfaces.rul
+- id: activityDisplay
+  color: 80           # pale teal — data-driven, moddable
+```
+
+```cpp
+// GeoscapeState.cpp
+_txtActivity = new Text(...);
+_txtActivity->setHighContrast(true);      // steeper shade steps (visual effect)
+add(_txtActivity, "activityDisplay", "geoscape");
+// Color comes from ruleset — no setColor() call
+```
+
+## Caveats
+
+- **`setHighContrast` here is for `Text`** — each `Text` instance has its own `_contrast` flag,
+  and it does not change other widgets on the same screen.
+- Other widget types (for example `Window`, `TextList`) have their own high-contrast behavior;
+  do not assume `Text` rules apply 1:1 to them.
+- **Performance** — the multiplier is a single shader uniform; there is no measurable
+  performance cost.
+- **Invert flag** — `_invert` controls the font palette index (0 = normal, 3 = font palette).
+  It is independent of `_contrast` and can be combined with it.
+- **`color2`** — some elements define both `color` and `color2` (e.g., `slackingIndicator`
+  uses `color: 244` + `color2: 133`). The meaning of `color2` depends on the widget type;
+  for `Text` it is typically used for secondary text or highlights. Check the widget's
+  `add()` implementation to see how it interprets `color2`.
+
+---
+
 # See also
 
 - [ui-palette-colors](../ui-palette-colors/SKILL.md) — how to *pick* a color for an

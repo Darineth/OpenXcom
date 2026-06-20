@@ -1045,6 +1045,9 @@ interfaces: #done
         TFTDMode: true
       - id: text
         color: 1   # even lighter blue
+      - id: activityDisplay
+        color: 80    # bright green — light end of block 5, darker greens follow for the outline
+        color2: 144  # pale yellow — for highlighted entries
       - id: slackingIndicator
         color: 1     # white
         color2: 239  # light blue

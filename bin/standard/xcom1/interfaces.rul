@@ -1015,6 +1015,9 @@ interfaces:
         color2: 245  # slightly lighter blue
       - id: text
         color: 244   # even lighter blue
+      - id: activityDisplay
+        color: 133   # minty/aqua green — bright, with a dark neighbor for the text outline
+        color2: 90   # lime / yellow-green — for highlighted entries
       - id: slackingIndicator
         color: 244   # even lighter blue
         color2: 133  # minty green

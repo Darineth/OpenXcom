@@ -118,6 +118,11 @@ item links to its detailed section below.
 24. **[Utility equipment slots](#23-utility-equipment-slots)** — A new
     armor-defined `INV_UTILITY` inventory slot type giving a unit a dedicated
     quick-access equipment slot distinct from hands.
+25. **[Geoscape Activity Display](#24-geoscape-activity-display)** — An at-a-glance
+    overlay on the left side of the Geoscape showing all ongoing base operations:
+    research progress, manufacturing queues, craft maintenance status, and stored
+    alien fuel. Idle personnel and crafts needing attention are highlighted with
+    reversed colors to draw the player's eye.
 
 ---
 
@@ -1359,3 +1364,86 @@ These commits come after the milestone `53af17e8` and are the source of §§21�
 > this doc as a *map*. For any feature you port, `git log -p --follow` the relevant
 > file (e.g. `BattleUnit.cpp`, `ProjectileFlyBState.cpp`, `RuleItem.cpp`) to read
 > the actual implementation rather than the commit prose.
+
+---
+
+## 24. Geoscape Activity Display
+
+An at-a-glance overlay on the left side of the Geoscape screen showing all ongoing
+operations across the player's bases, eliminating the need to enter individual base
+screens just to check progress.
+
+### Purpose
+
+The Activity Display consolidates research, manufacturing, craft maintenance, and
+fuel storage status into a single always-visible panel on the Geoscape. Idle
+personnel and crafts requiring attention are highlighted with reversed colors so
+the player's eye is drawn to issues that need resolution.
+
+### Location
+
+Displayed on the left side of the Geoscape screen, overlaying the globe view.
+
+### Sections
+
+The display is divided into four sections:
+
+#### Resources
+
+Shows alien fuel quantities stored at each base. Only bases containing fuel are listed.
+
+**Format:** `[Base Number] Amount FuelType`
+
+#### Research
+
+Lists active research projects at each base with their current progress values.
+Bases with idle scientists (no research assigned) show a "No Research" alert in
+reversed colors.
+
+**Format:** `[Base Number] ProjectName: ProgressValue`
+
+#### Manufacturing
+
+Displays items currently being produced at each base, including production count and
+estimated time remaining. Items marked for sale are indicated with a `$` symbol.
+Bases with idle engineers show a "No Manufacturing" alert in reversed colors.
+
+**Format:** `[Base Number] ItemName: Produced/Total (TimeRemaining)`
+
+#### Craft
+
+Shows crafts that require maintenance (repairs, refueling, or rearming) with
+estimated completion time. Only crafts stationed at bases (not flying) are included.
+This section only appears when there are crafts needing attention — highlighted in
+reversed colors.
+
+**Format:** `[Base Number] CraftName: Status (TimeRemaining)`
+
+### Visual Indicators
+
+- **Normal text:** Active tasks making progress
+- **Reversed colors:** Idle personnel or crafts requiring attention — draws the player's eye to issues that need resolution
+
+### Time Format
+
+Estimated times are shown as:
+- Hours (`h`) for durations under one day
+- Days (`d`) for longer durations
+
+### Update Behavior
+
+The display refreshes automatically whenever game time advances. Update frequency
+varies with the selected time speed setting (ranging from every 5 game seconds to
+every game day).
+
+### Base Numbering
+
+Bases are referenced by sequential number (`[1]`, `[2]`, etc.) rather than name to
+keep entries concise and readable.
+
+> **Re-implementation tip:** This feature reads data already tracked by the engine
+> (`Base` research/manufacturing progress, `Craft` maintenance timers, fuel stores).
+> The implementation challenge is UI layout — fitting a multi-section text overlay on
+> the Geoscape without obscuring the globe or existing sidebar. Check how
+> `GeoscapeState` composes its widgets and whether the left side has sufficient
+> clear space across zoom levels.

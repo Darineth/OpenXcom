@@ -68,3 +68,12 @@ en-US:
   STR_STAT_PS: "PS"
   STR_STAT_PK: "PK"
   STR_STAT_MP: "MP"
+#=================== DX Geoscape Activity Display ===================
+#GeoscapeState.cpp / Options.cpp
+  STR_ACTIVITY_DISPLAY: "Geoscape activity display"
+  STR_ACTIVITY_RESOURCES: "Resources"
+  STR_ACTIVITY_RESEARCH: "Research"
+  STR_ACTIVITY_MANUFACTURING: "Manufacturing"
+  STR_ACTIVITY_CRAFT: "Craft"
+  STR_ACTIVITY_NO_SCIENTISTS: "No scientists assigned"
+  STR_ACTIVITY_NO_ENGINEERS: "No engineers assigned"

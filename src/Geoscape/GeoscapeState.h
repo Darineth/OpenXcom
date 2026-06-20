@@ -60,6 +60,8 @@ private:
 	ComboBox *_cbxRegion, *_cbxZone, *_cbxArea, *_cbxCountry;
 	Text *_txtSlacking;
 	Text *_txtTraining;
+	Text *_txtActivity;
+	bool _activityDirty;
 	std::list<State*> _popups;
 	std::list<DogfightState*> _dogfights, _dogfightsToBeStarted;
 	std::vector<Craft*> _activeCrafts;
@@ -68,6 +70,9 @@ private:
 
 	/// Update list of active crafts.
 	const std::vector<Craft*>* updateActiveCrafts();
+
+	/// Build the activity display text overlay.
+	void buildActivityDisplay();
 
 	void cbxRegionChange(Action *action);
 	void cbxZoneChange(Action *action);
