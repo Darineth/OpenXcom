@@ -178,6 +178,8 @@ heavily template/macro-based.
 
 When preparing to build a feature, start by writing a design doc in `plans/` describing the feature, the motivation, and the implementation approach. Link to it from `DX-Implementation-Checklist.md` near its checklist item. This helps coordinate development and provides a reference for future maintainers.
 
+Before planning or implementing any feature, review current OXCE/OXCE-Plus behavior first (engine code plus `Extended.txt`) to confirm whether the feature already exists fully or partially. Capture that audit result in the design doc so DX only plans true deltas.
+
 If the feature is entirely new and is not in the checklist, add it to the checklist at the bottom in a "New Feature" section with a link to the design doc.
 
 ## Updating docs before committing
