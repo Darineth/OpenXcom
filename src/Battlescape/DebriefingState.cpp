@@ -417,7 +417,17 @@ void DebriefingState::init()
 		{
 			recoveryText = "INF";
 		}
-		_lstSoldierStats->addRow(15, sse.name.c_str(), sse.status.c_str(), recoveryText.c_str(),
+		if (!recoveryText.empty())
+		{
+			recoveryText = Unicode::TOK_COLOR_FLIP + recoveryText + Unicode::TOK_COLOR_FLIP;
+		}
+		// Highlight bad outcomes by flipping the status to the list's secondary color (OK stays normal).
+		std::string statusText = sse.status;
+		if (sse.status == "KIA" || sse.status == "MIA" || sse.status == "WND")
+		{
+			statusText = Unicode::TOK_COLOR_FLIP + statusText + Unicode::TOK_COLOR_FLIP;
+		}
+		_lstSoldierStats->addRow(15, sse.name.c_str(), statusText.c_str(), recoveryText.c_str(),
 				makeSoldierString(sse.gains.tu).c_str(),
 				makeSoldierString(sse.gains.stamina).c_str(),
 				makeSoldierString(sse.gains.health).c_str(),

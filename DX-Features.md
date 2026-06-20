@@ -117,4 +117,5 @@ available directly from Craft Info where base management happens.
 
 The Battlescape debriefing now keeps each soldier in the mission-results table and shows a compact
 outcome code for them: `KIA`, `MIA`, `WND`, or `OK`. Wounded soldiers also show recovery time in
-days, while the existing per-soldier stat-gain breakdown remains on the same view.
+days, while the existing per-soldier stat-gain breakdown remains on the same view. Bad outcomes and
+the recovery-day value are highlighted in the list's secondary color.

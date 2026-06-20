@@ -86,9 +86,6 @@ Everything below is DX-specific work confirmed **absent** from the base.
   - [x] **Instant-fuse option** — *already in OXCE-Plus.* `Options::battleInstantGrenade`
     ([BattleItem.cpp:344](src/Savegame/BattleItem.cpp#L344)) makes thrown grenades detonate without the prime dialog; per-item
     `fuseType: -2` (`BFT_INSTANT`) does the same per grenade. No work needed.
-  - [ ] **Reduced grenade LOS accuracy penalty** — N/A on the current base: OXCE applies no throw
-    accuracy penalty (`accuracyThrow` default 100; `_noLOSAccuracyPenalty` is aimed-shot-only).
-    Revisit only if the **aim-cone firing model (Phase 5)** introduces a throw penalty to soften.
 
 ## Phase 2: Base / Geoscape / Inventory UX
 
@@ -163,6 +160,9 @@ Everything below is DX-specific work confirmed **absent** from the base.
 
 - [ ] **Aim-Cone Trajectory Model** — soldier + weapon deflection cones, stacking error.
 - [ ] **Accuracy Modifiers** — kneel/two-handed/exhaustion/smoke; shot-mode accuracy.
+- [ ] **Throw-accuracy tuning (if needed)** — OXCE currently applies no throw LOS penalty
+  (`accuracyThrow` default 100; `_noLOSAccuracyPenalty` is aimed-shot-only). Only add a
+  reduced throw penalty if the aim-cone firing model introduces one that needs softening.
 - [ ] **Burst Fire Mode** — `BA_BURSTSHOT`. *(needs aim-cone)*
 - [ ] **Shotgun & Multi-Projectile** — simultaneous pellets, spread, dual-fire. *(needs
   async projectile + aim-cone)*
