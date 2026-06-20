@@ -109,7 +109,7 @@ Map::Map(Game *game, int width, int height, int x, int y, int visibleMapHeight) 
 	_stunIndicatorFallback(0), _woundIndicatorFallback(0), _burnIndicatorFallback(0), _shockIndicatorFallback(0),
 	_anyIndicator(false), _isAltPressed(false), _isCtrlPressed(false),
 	_selectorX(0), _selectorY(0), _mouseX(0), _mouseY(0), _cursorType(CT_NORMAL), _cursorSize(1), _animFrame(0),
-	_projectile(0), _followProjectile(true), _projectileInFOV(false), _explosionInFOV(false), _launch(false), _visibleMapHeight(visibleMapHeight),
+	_followProjectile(true), _projectileInFOV(false), _explosionInFOV(false), _launch(false), _visibleMapHeight(visibleMapHeight),
 	_unitDying(false), _smoothingEngaged(false), _flashScreen(false), _bgColor(15), _projectileSet(0), _showObstacles(false), _showInfoOnCursor(false)
 {
 	// TODO: extract to a better place later
@@ -523,7 +523,8 @@ void Map::init()
 		_stunIndicatorFallback = buildIcon(stun, 14, 14, stunColors);
 	}
 
-	_projectile = 0;
+	for (Projectile* p : _projectiles) delete p;
+	_projectiles.clear();
 	if (_save->getDepth() == 0)
 	{
 		_projectileSet = _game->getMod()->getSurfaceSet("Projectiles");
@@ -572,12 +573,13 @@ void Map::draw()
 	Tile *t;
 
 	_projectileInFOV = _save->getDebugMode();
-	if (_projectile)
+	for (Projectile* proj : _projectiles)
 	{
-		t = _save->getTile(_projectile->getPosition(0).toTile());
+		t = _save->getTile(proj->getPosition(0).toTile());
 		if (_save->getSide() == FACTION_PLAYER || (t && t->getVisible()))
 		{
 			_projectileInFOV = true;
+			break;
 		}
 	}
 	_explosionInFOV = _save->getDebugMode();
@@ -1001,25 +1003,40 @@ void Map::drawTerrain(Surface *surface)
 
 	NumberText *_numWaypid = 0;
 
-	// if we got bullet, get the highest x and y tiles to draw it on
-	if (_projectile && _explosions.empty())
+	// if we got bullets, get the highest x and y tiles to draw them on.
+	// NOTE: this runs even while an explosion is resolving - otherwise the bullet
+	// bounding box below would stay at its default and any still-airborne projectiles
+	// would stop being drawn until the explosion finished.
+	if (!_projectiles.empty())
 	{
-		int part = _projectile->getItem() ? 0 : BULLET_SPRITES-1;
-		for (int i = 0; i <= part; ++i)
+		Position avgProjectileVoxel(0, 0, 0);
+		for (Projectile* proj : _projectiles)
 		{
-			if (_projectile->getPosition(1-i).x < bulletLowX)
-				bulletLowX = _projectile->getPosition(1-i).x;
-			if (_projectile->getPosition(1-i).y < bulletLowY)
-				bulletLowY = _projectile->getPosition(1-i).y;
-			if (_projectile->getPosition(1-i).z < bulletLowZ)
-				bulletLowZ = _projectile->getPosition(1-i).z;
-			if (_projectile->getPosition(1-i).x > bulletHighX)
-				bulletHighX = _projectile->getPosition(1-i).x;
-			if (_projectile->getPosition(1-i).y > bulletHighY)
-				bulletHighY = _projectile->getPosition(1-i).y;
-			if (_projectile->getPosition(1-i).z > bulletHighZ)
-				bulletHighZ = _projectile->getPosition(1-i).z;
+			Position pos = proj->getPosition();
+			avgProjectileVoxel.x += pos.x;
+			avgProjectileVoxel.y += pos.y;
+			avgProjectileVoxel.z += pos.z;
+			int part = proj->getItem() ? 0 : BULLET_SPRITES-1;
+			for (int i = 0; i <= part; ++i)
+			{
+				if (proj->getPosition(1-i).x < bulletLowX)
+					bulletLowX = proj->getPosition(1-i).x;
+				if (proj->getPosition(1-i).y < bulletLowY)
+					bulletLowY = proj->getPosition(1-i).y;
+				if (proj->getPosition(1-i).z < bulletLowZ)
+					bulletLowZ = proj->getPosition(1-i).z;
+				if (proj->getPosition(1-i).x > bulletHighX)
+					bulletHighX = proj->getPosition(1-i).x;
+				if (proj->getPosition(1-i).y > bulletHighY)
+					bulletHighY = proj->getPosition(1-i).y;
+				if (proj->getPosition(1-i).z > bulletHighZ)
+					bulletHighZ = proj->getPosition(1-i).z;
+			}
 		}
+		int projCount = (int)_projectiles.size();
+		avgProjectileVoxel.x /= projCount;
+		avgProjectileVoxel.y /= projCount;
+		avgProjectileVoxel.z /= projCount;
 		// divide by 16 to go from voxel to tile position
 		bulletLowX = bulletLowX / 16;
 		bulletLowY = bulletLowY / 16;
@@ -1029,9 +1046,11 @@ void Map::drawTerrain(Surface *surface)
 		bulletHighZ = bulletHighZ / 24;
 
 		// if the projectile is outside the viewport - center it back on it
-		_camera->convertVoxelToScreen(_projectile->getPosition(), &bulletPositionScreen);
+		_camera->convertVoxelToScreen(avgProjectileVoxel, &bulletPositionScreen);
 
-		if (_projectileInFOV && _followProjectile)
+		// Only actively chase the bullets when nothing is exploding, so the camera
+		// doesn't fight the explosion's own framing.
+		if (_explosions.empty() && _projectileInFOV && _followProjectile)
 		{
 			Position newCam = _camera->getMapOffset();
 			if (newCam.z != bulletHighZ) //switch level
@@ -1040,7 +1059,7 @@ void Map::drawTerrain(Surface *surface)
 				if (_projectileInFOV)
 				{
 					_camera->setMapOffset(newCam);
-					_camera->convertVoxelToScreen(_projectile->getPosition(), &bulletPositionScreen);
+					_camera->convertVoxelToScreen(avgProjectileVoxel, &bulletPositionScreen);
 				}
 			}
 			if (_smoothCamera)
@@ -1051,8 +1070,8 @@ void Map::drawTerrain(Surface *surface)
 					if ((bulletPositionScreen.x < 1 || bulletPositionScreen.x > surface->getWidth() - 1 ||
 						bulletPositionScreen.y < 1 || bulletPositionScreen.y > _visibleMapHeight - 1))
 					{
-						_camera->centerOnPosition(Position(bulletLowX, bulletLowY, bulletHighZ), false);
-						_camera->convertVoxelToScreen(_projectile->getPosition(), &bulletPositionScreen);
+						_camera->centerOnPosition(Position(avgProjectileVoxel.x / 16, avgProjectileVoxel.y / 16, bulletHighZ), false);
+						_camera->convertVoxelToScreen(avgProjectileVoxel, &bulletPositionScreen);
 					}
 				}
 				if (!_smoothingEngaged)
@@ -1094,7 +1113,7 @@ void Map::drawTerrain(Surface *surface)
 						_camera->jumpXY(0, -_visibleMapHeight);
 						enough = false;
 					}
-					_camera->convertVoxelToScreen(_projectile->getPosition(), &bulletPositionScreen);
+					_camera->convertVoxelToScreen(avgProjectileVoxel, &bulletPositionScreen);
 				}
 				while (!enough);
 			}
@@ -1386,13 +1405,15 @@ void Map::drawTerrain(Surface *surface)
 					}
 
 					// check if we got bullet && it is in Field Of View
-					if (_projectile && _projectileInFOV)
+					if (_projectileInFOV)
 					{
+						for (Projectile* proj : _projectiles)
+						{
 						tmpSurface = nullptr;
-						BattleItem* item = _projectile->getItem();
+						BattleItem* item = proj->getItem();
 						if (item)
 						{
-							Position voxelPos = _projectile->getPosition();
+							Position voxelPos = proj->getPosition();
 							// draw shadow on the floor
 							voxelPos.z = _save->getTileEngine()->castedShade(voxelPos);
 							if (voxelPos.x / 16 >= itX &&
@@ -1410,7 +1431,7 @@ void Map::drawTerrain(Surface *surface)
 								);
 							}
 
-							voxelPos = _projectile->getPosition();
+							voxelPos = proj->getPosition();
 							// draw thrown object
 							if (voxelPos.x / 16 >= itX &&
 								voxelPos.y / 16 >= itY &&
@@ -1436,7 +1457,7 @@ void Map::drawTerrain(Surface *surface)
 								int begin = 0;
 								int end = BULLET_SPRITES;
 								int direction = 1;
-								if (_projectile->isReversed())
+								if (proj->isReversed())
 								{
 									begin = BULLET_SPRITES - 1;
 									end = -1;
@@ -1445,10 +1466,10 @@ void Map::drawTerrain(Surface *surface)
 
 								for (int i = begin; i != end; i += direction)
 								{
-									tmpSurface = _projectileSet->getFrame(_projectile->getParticle(i));
+									tmpSurface = _projectileSet->getFrame(proj->getParticle(i));
 									if (tmpSurface)
 									{
-										Position voxelPos = _projectile->getPosition(1-i);
+										Position voxelPos = proj->getPosition(1-i);
 										// draw shadow on the floor
 										voxelPos.z = _save->getTileEngine()->castedShade(voxelPos);
 										if (voxelPos.x / 16 == itX &&
@@ -1463,7 +1484,7 @@ void Map::drawTerrain(Surface *surface)
 										}
 
 										// draw bullet itself
-										voxelPos = _projectile->getPosition(1-i);
+										voxelPos = proj->getPosition(1-i);
 										if (voxelPos.x / 16 == itX &&
 											voxelPos.y / 16 == itY &&
 											voxelPos.z / 24 == itZ &&
@@ -1478,6 +1499,7 @@ void Map::drawTerrain(Surface *surface)
 								}
 							}
 						}
+						} // end for proj
 					}
 
 					//draw particle clouds
@@ -2686,25 +2708,46 @@ CursorType Map::getCursorType() const
 }
 
 /**
- * Puts a projectile sprite on the map.
- * @param projectile Projectile to place.
+ * Adds a projectile to the in-flight collection.
+ * @param p Projectile to add.
  */
-void Map::setProjectile(Projectile *projectile)
+void Map::addProjectile(Projectile *p)
 {
-	_projectile = projectile;
-	if (projectile && Options::battleSmoothCamera)
+	_projectiles.push_back(p);
+	if (Options::battleSmoothCamera)
 	{
 		_launch = true;
 	}
 }
 
 /**
- * Gets the current projectile sprite on the map.
- * @return Projectile or 0 if there is no projectile sprite on the map.
+ * Removes a projectile from the in-flight collection and deletes it.
+ * @param p Projectile to remove.
  */
-Projectile *Map::getProjectile() const
+void Map::removeProjectile(Projectile *p)
 {
-	return _projectile;
+	auto it = std::find(_projectiles.begin(), _projectiles.end(), p);
+	if (it != _projectiles.end())
+	{
+		_projectiles.erase(it);
+	}
+	delete p;
+}
+
+/**
+ * Returns true if any projectiles are currently in flight.
+ */
+bool Map::hasProjectiles() const
+{
+	return !_projectiles.empty();
+}
+
+/**
+ * Gets all in-flight projectiles.
+ */
+const std::vector<Projectile*>& Map::getProjectiles() const
+{
+	return _projectiles;
 }
 
 /**

@@ -205,6 +205,49 @@ int Projectile::calculateTrajectory(double accuracy, const Position& originVoxel
 }
 
 /**
+ * Re-traces an already-fired straight trajectory against the current terrain.
+ *
+ * The path and its impact point are computed once at fire time. When multiple projectiles
+ * are airborne at once, an earlier impact can destroy the obstacle a later round was going
+ * to hit. This re-runs the voxel line trace from the original origin toward the (already
+ * accuracy-deviated) target using the present state of the map. The line is deterministic,
+ * so the portion already travelled is identical; only the far end can change.
+ *
+ * @return True if the obstacle ahead was removed and the path now extends past the old impact
+ *         point (the projectile should keep flying); false if the impact still stands.
+ */
+bool Projectile::recalculateImpact()
+{
+	if (_trajectory.empty())
+	{
+		return false;
+	}
+
+	const Position originVoxel = _trajectory.front();
+	const std::size_t travelled = _position;
+	std::vector<Position> newTrajectory;
+	int test = _save->getTileEngine()->calculateLineVoxel(originVoxel, _targetVoxel, true, &newTrajectory, _action.actor);
+
+	// If the fresh trace doesn't reach any further than we already are, the obstruction
+	// ahead is unchanged - keep the impact we already computed.
+	if (newTrajectory.size() <= travelled + 1)
+	{
+		return false;
+	}
+
+	// The path now extends past the old impact point (an obstacle was removed): adopt it.
+	// The line prefix is identical, so our current position index still aligns.
+	_trajectory = std::move(newTrajectory);
+	_impact = test;
+	_distanceMax = 0;
+	for (std::size_t i = 0; i < _trajectory.size(); ++i)
+	{
+		_distanceMax += TileEngine::trajectoryStepSize(_trajectory, i);
+	}
+	return true;
+}
+
+/**
  * Calculates the trajectory for a curved path.
  * @param accuracy The unit's accuracy.
  * @return True when a trajectory is possible.

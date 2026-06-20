@@ -459,6 +459,7 @@ private:
 	int _loadOrder;
 	int _listOrder, _maxRange, _minRange, _dropoff, _bulletSpeed, _explosionSpeed, _shotgunPellets;
 	int _shotgunBehaviorType, _shotgunSpread, _shotgunChoke;
+	int _fireInterval;
 
 	std::map<std::string, std::string> _zombieUnitByArmorMale, _zombieUnitByArmorFemale, _zombieUnitByType;
 	std::string _zombieUnit, _spawnUnitName, _spawnItemName;
@@ -919,6 +920,8 @@ public:
 	int getListOrder() const;
 	/// How fast does a projectile fired from this weapon travel?
 	int getBulletSpeed() const;
+	/// How long (in ms) to wait between consecutive shots of a burst/spray (cosmetic firing cadence).
+	int getFireInterval() const { return _fireInterval; }
 	/// How fast does the explosion animation play?
 	int getExplosionSpeed() const;
 	/// Get name of medikit pain killer action for medikit view.

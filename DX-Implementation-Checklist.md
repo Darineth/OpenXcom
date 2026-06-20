@@ -127,10 +127,12 @@ Everything below is DX-specific work confirmed **absent** from the base.
 *Goal: The async core all multi-projectile/explosion combat relies on.*
 *(index: [plans/Phase-3-CombatInfrastructure.md](plans/Phase-3-CombatInfrastructure.md))*
 
-- [ ] **Async Projectile System** — `Map` projectile collection, per-projectile impact
-  tracking, async resolution. *(design: [plans/Feature-AsyncProjectileSystem.md](plans/Feature-AsyncProjectileSystem.md))*
-- [ ] **Async Explosion System** — concurrent `ExplosionBState` explosion grouping with
-  batched visuals/sound/camera.
+- [x] **Async Projectile System** — `Map` projectile collection, per-projectile impact
+  tracking, centroid camera follow, timer-based firing (`fireInterval`), async resolution.
+  *(design: [plans/Feature-AsyncProjectileSystem.md](plans/Feature-AsyncProjectileSystem.md))*
+- [x] **Async Explosion System** — impact explosions animate concurrently (non-blocking)
+  alongside the still-flying volley; per-state sprite ownership + wall-clock pacing.
+  *(design: [plans/Feature-AsyncProjectileSystem.md](plans/Feature-AsyncProjectileSystem.md))*
 - [ ] **Advanced Damage Models** — armor degradation, `blastDropoff` falloff,
   visual/sound scaling by blast radius.
 
@@ -162,7 +164,9 @@ Everything below is DX-specific work confirmed **absent** from the base.
   reduced throw penalty if the aim-cone firing model introduces one that needs softening.
 - [ ] **Burst Fire Mode** — `BA_BURSTSHOT`. *(needs aim-cone)*
 - [ ] **Shotgun & Multi-Projectile** — simultaneous pellets, spread, dual-fire. *(needs
-  async projectile + aim-cone)*
+  async projectile + aim-cone)* — **pellets now fly as individual concurrent projectiles with
+  spread** (each resolves its own impact via the async projectile system); **dual-fire still
+  pending**.
 - [ ] **Targeting feedback** — live tracer preview, hover accuracy readout, throw-reach
   scaling. *(coupled UI — needs aim-cone)*
 - [ ] **Action-menu effective-range readout** — the deferred Phase 1 piece. *(needs

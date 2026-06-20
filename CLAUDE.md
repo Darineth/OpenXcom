@@ -41,11 +41,9 @@ Two supported paths:
 
   **On this dev machine**, the configured way to build is the VS Code task in
   `.vscode/tasks.json` ("Build (Release)" / "Build (Debug)"), which shells out to MSBuild
-  directly. `cmake`/`msbuild` are **not** on the shell PATH, so invoke MSBuild by its full path:
-  ```
-  & "C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\msbuild.exe" `
-      src/OpenXcom.2010.sln /p:Configuration=Release /p:Platform=Win32 /m /v:minimal /nologo
-  ```
+  directly. **Always use the `run_task` tool to invoke these tasks — do not run MSBuild
+  manually in a terminal.** The task IDs are `"shell: Build (Release)"` and
+  `"shell: Build (Debug)"` in workspace folder `d:\Code\Projects\OpenXcom-DX`.
   Output lands in `bin/Win32/Release/OpenXcom.exe` (or `...\Debug\...`), with the SDL DLLs from
   `deps/` auto-copied next to it. A harmless `LNK4099: PDB 'SDLmain.pdb' not found` warning is
   expected.
@@ -162,6 +160,8 @@ heavily template/macro-based.
   `save(...)` pair — keep them in sync when adding a field, and remember new persisted fields
   affect save compatibility.
 - The codebase is GPLv3; preserve the license header block at the top of source files.
+- **Never commit without explicit user permission.** Do not run `git commit` (or any push/reset/force
+  operations) unless the user explicitly asks. Stage and show status freely, but stop there.
 - **Git commits: do not list AI/Claude as an author or co-author.** Omit any
   `Co-Authored-By: Claude ...` trailer (and similar AI attribution) from commit messages.
 - Adding a new source file requires registering it in **`src/CMakeLists.txt`** (the `*_src`

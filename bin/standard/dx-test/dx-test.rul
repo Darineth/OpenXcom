@@ -1,0 +1,36 @@
+# =====================================================================
+#  DX Test Content
+# =====================================================================
+#  A scratch ruleset for testing OpenXcom DX combat features against
+#  stock UFO. Everything here only tweaks existing xcom1 items, so it is
+#  fully reversible: disable the mod to get the vanilla weapons back.
+#
+#  Add new throwaway test content below as DX features land.
+# =====================================================================
+
+items:
+  # -------------------------------------------------------------------
+  #  Pistol -> auto-firing shotgun
+  #  Tests: async shotgun pellets flying as individual projectiles,
+  #         shotgun spread, and timer-based burst cadence all at once.
+  #  Fire the auto shot and watch the pellet fan fly out per round.
+  # -------------------------------------------------------------------
+  - type: STR_PISTOL
+    shotgunChoke: 100      # DX: tightness of the pellet cone (with shotgunBehavior 1)
+    fireInterval: 80       # DX: ms between burst shots (lower = more rounds airborne)
+    autoShots: 3
+    accuracyAuto: 50
+    tuAuto: 33
+
+  - type: STR_PISTOL_CLIP
+    shotgunPellets: 6      # DX: launches 6 real projectiles per shot
+    shotgunBehavior: 0     # 0 = diminishing-accuracy spread (vanilla-like), 1 = spread+choke
+    shotgunSpread: 100     # spread width (100 = vanilla baseline)
+
+  # -------------------------------------------------------------------
+  #  Rifle -> long fast-cadence auto fire (non-shotgun)
+  #  Tests: many normal bullets overlapping in flight via fireInterval.
+  # -------------------------------------------------------------------
+  - type: STR_RIFLE
+    autoShots: 6           # 6-round auto burst
+    fireInterval: 60       # DX: very fast cadence to keep several rounds visible at once

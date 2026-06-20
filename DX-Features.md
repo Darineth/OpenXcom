@@ -167,3 +167,61 @@ bases. Updates on every game-time tick (5 s, 10 min, 30 min, 1 h, 1 day).
 - Wounded soldiers: total count, severe-wound subset (reversed), and longest recovery time in days.
 
 - Toggle: advanced option **Activity display** (`activityDisplayEnabled`, default on), under DX.
+
+## Concurrent Projectile Flight
+
+The engine can now render multiple projectiles in flight simultaneously. This is the
+foundation for shotgun pellets flying as individual visible trajectories, burst-fire rounds
+overlapping in the air, and dual-fire weapons firing both barrels at once. Each projectile
+travels and renders independently, carries its own impact result so overlapping shots resolve
+correctly, and the camera follows the centroid (average position) of all visible bullets.
+
+### Timer-based firing cadence
+
+Multi-shot actions (auto/spray bursts) no longer wait for the previous round to impact before
+launching the next. Instead, follow-up shots fire on a timer, so several rounds can be airborne
+at once. The cadence is controlled by a new per-item ruleset attribute:
+
+- **`fireInterval`** (RuleItem, milliseconds, default `150`) — how long to wait between
+  consecutive shots of a burst/spray. This is a largely cosmetic pacing knob; lower values make
+  a weapon "spray" faster with more rounds visible simultaneously, higher values space the shots
+  out. The interval is converted internally into think-cycles (the state ticks at ~60 Hz) with a
+  minimum of one cycle between shots.
+
+### Shotgun pellets as real projectiles
+
+Shotgun spreads no longer "teleport" their extra pellets to instantly-traced impact points.
+When a shotgun shot is fired, the full pellet count is launched as individual, concurrently
+flying projectiles (using the concurrent projectile system above). Each pellet:
+
+- spreads from the muzzle using the existing `shotgunSpread` / `shotgunChoke` /
+  `shotgunBehaviorType` ruleset values (the spread math is unchanged from before),
+- flies along its own visible trajectory, and
+- resolves its own impact independently — applying damage and range-based power falloff over its
+  own travelled distance through the normal projectile/explosion path.
+
+Because each pellet is now a regular projectile, a pellet that lands on an enemy awards firing
+experience like any other hit; the previous artificial per-shot experience cap (which existed
+only because the old extra pellets were resolved instantly in a single synchronous burst) no
+longer applies.
+
+### Live impact recalculation
+
+Because a projectile's trajectory and impact point are computed once when it is fired, an early
+hit in a volley can destroy the wall or object that a later, still-flying round was going to hit.
+Those later rounds now re-trace their path against the current map when they reach their old
+impact point: if the obstacle is gone, the round keeps flying to the next real obstruction (or the
+map edge) instead of detonating in mid-air on a wall that no longer exists. This also covers a
+target killed by an earlier round — its corpse no longer blocks the tile. (Thrown and arcing shots
+are unaffected; only straight shots recalculate.)
+
+### Non-blocking impact explosions
+
+Previously the entire battle froze for the duration of every impact's explosion/hit animation,
+which made overlapping volleys stutter on each hit. Impact explosions from gunfire now animate
+**concurrently** with the rest of the volley: the remaining rounds keep flying and the weapon
+keeps firing while each hit's explosion plays out. Explosion **damage** is still applied the
+instant the round lands (so the live-recalculation above sees destroyed terrain immediately); only
+the animation and its end-of-animation casualty resolution run alongside continued fire. Thrown
+grenades and blaster-launcher waypoint shots remain single, blocking actions.
+

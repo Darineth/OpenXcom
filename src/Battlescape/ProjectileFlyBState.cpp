@@ -451,7 +451,7 @@ bool ProjectileFlyBState::createNewProjectile()
 	Projectile *projectile = new Projectile(_parent->getMod(), _parent->getSave(), _action, _origin, _targetVoxel, _ammo);
 
 	// add the projectile on the map
-	_parent->getMap()->setProjectile(projectile);
+	_parent->getMap()->addProjectile(projectile);
 
 	// set the speed of the state think cycle to 16 ms (roughly one think cycle per frame)
 	_parent->setStateInterval(1000/60);
@@ -493,8 +493,7 @@ bool ProjectileFlyBState::createNewProjectile()
 		else
 		{
 			// unable to throw here
-			delete projectile;
-			_parent->getMap()->setProjectile(0);
+			_parent->getMap()->removeProjectile(projectile);
 			_action.result = "STR_UNABLE_TO_THROW_HERE";
 			_action.clearTU();
 			_parent->popState();
@@ -525,8 +524,7 @@ bool ProjectileFlyBState::createNewProjectile()
 		else
 		{
 			// no line of fire
-			delete projectile;
-			_parent->getMap()->setProjectile(0);
+			_parent->getMap()->removeProjectile(projectile);
 			if (_parent->getPanicHandled())
 			{
 				_action.result = "STR_NO_TRAJECTORY";
@@ -567,8 +565,7 @@ bool ProjectileFlyBState::createNewProjectile()
 		else
 		{
 			// no line of fire
-			delete projectile;
-			_parent->getMap()->setProjectile(0);
+			_parent->getMap()->removeProjectile(projectile);
 			if (_parent->getPanicHandled())
 			{
 				_action.result = "STR_NO_LINE_OF_FIRE";
@@ -617,6 +614,64 @@ bool ProjectileFlyBState::createNewProjectile()
 		_parent->getSave()->logOutOfAmmoEvent(_action.actor, _action.weapon);
 	}
 
+	// remember this projectile's own impact type, so overlapping shots each resolve correctly
+	projectile->setImpact(_projectileImpact);
+
+	// Shotgun: launch the remaining pellets as real, concurrently-flying projectiles
+	// (instead of instantly tracing them at impact). Each pellet then spreads, flies, and
+	// resolves its own impact via the normal projectile path in think().
+	if (_action.type != BA_THROW && _action.type != BA_LAUNCH &&
+		_ammo && _ammo->getRules()->getShotgunPellets() != 0 && _ammo->getRules()->getDamageType()->isDirect())
+	{
+		const int pelletCount = _ammo->getRules()->getShotgunPellets();
+		const int behaviorType = _ammo->getRules()->getShotgunBehaviorType();
+		const int spread = _ammo->getRules()->getShotgunSpread();
+		const int choke = _action.weapon->getRules()->getShotgunChoke();
+		const Position originalTarget = _targetVoxel;
+		// the lead pellet's actual landing voxel (from its just-computed trajectory),
+		// used to re-center the spread for behaviorType 1
+		const Position leadImpact = projectile->getImpactPosition(-2);
+		const Position firingOriginVoxel = _parent->getSave()->getTileEngine()->getOriginVoxel(_action, _parent->getSave()->getTile(_origin));
+
+		for (int i = 1; i < pelletCount; ++i)
+		{
+			Position pelletTarget = originalTarget;
+			if (behaviorType == 1)
+			{
+				// spread around the lead pellet's impact (unless it landed on the firing voxel)
+				pelletTarget = (leadImpact != firingOriginVoxel) ? leadImpact : originalTarget;
+			}
+
+			Projectile *pellet = new Projectile(_parent->getMod(), _parent->getSave(), _action, _origin, pelletTarget, _ammo);
+			int pelletImpact;
+			if (behaviorType == 1)
+			{
+				// pellet spread based on spread and choke values
+				pelletImpact = pellet->calculateTrajectory(std::max(0.0, (1.0 - spread / 100.0) * choke / 100.0));
+			}
+			else
+			{
+				// pellet spread based on firing accuracy with a diminishing per-pellet formula
+				// (identical to the vanilla formula when spread = 100)
+				pelletImpact = pellet->calculateTrajectory(std::max(0.0, (BattleUnit::getFiringAccuracy(attack, _parent->getMod()) / 100.0) - i * 5.0 * spread / 100.0));
+			}
+
+			if (pelletImpact == V_EMPTY)
+			{
+				// no line of fire for this pellet; drop it
+				delete pellet;
+				continue;
+			}
+			pellet->setImpact(pelletImpact);
+			_parent->getMap()->addProjectile(pellet);
+		}
+	}
+
+	// schedule the next burst/spray shot on a timer (cosmetic cadence, tunable per weapon).
+	// think() runs at ~1000/60 ms per cycle, so convert the millisecond interval into think-cycles.
+	_shotCooldown = (_action.weapon->getRules()->getFireInterval() * 60 + 500) / 1000;
+	if (_shotCooldown < 1) _shotCooldown = 1;
+
 	return true;
 }
 
@@ -638,17 +693,185 @@ void ProjectileFlyBState::think()
 	/// checks if a weapon has any more shots to fire.
 	auto noMoreShotsToShoot = [this]() { return !_action.weapon->haveNextShotsForAction(_action.type, _action.autoShotCounter) || !_action.weapon->getAmmoForAction(_action.type); };
 
-	_parent->getSave()->getBattleState()->clearMouseScrollingState();
-	/* TODO refactoring : store the projectile in this state, instead of getting it from the map each time? */
-	if (_parent->getMap()->getProjectile() == 0)
-	{
-		bool hasFloor = _action.actor->haveNoFloorBelow() == false;
-		bool unitCanFly = _action.actor->getMovementType() == MT_FLY;
+	// Re-assert our think cadence every pass. A resolved impact runs an ExplosionBState
+	// (which sets its own, slower state interval); when it pops and we resume to advance
+	// any still-airborne projectiles, the interval would otherwise be left at the
+	// explosion's speed, making the remaining bullets fly at the wrong rate.
+	_parent->setStateInterval(1000/60);
 
-		if (_action.weapon->haveNextShotsForAction(_action.type, _action.autoShotCounter)
-			&& !_action.actor->isOut()
-			&& _ammo->getAmmoQuantity() != 0
-			&& (hasFloor || unitCanFly))
+	_parent->getSave()->getBattleState()->clearMouseScrollingState();
+
+	// Set true if any projectile impacts this pass. An impact resolves by pushing an
+	// ExplosionBState (or, for BA_LAUNCH, the next waypoint state) to the FRONT of the
+	// queue, which makes that state - not this one - the queue front. We must therefore
+	// not create another projectile or run the finish-up logic in the same pass, because
+	// _parent->popState() (called directly here on finish, or indirectly by
+	// createNewProjectile() on a failed shot) would pop the freshly-pushed state instead
+	// of this one, leaving explosions unfinished and firing erratic. We bail out and
+	// resume on a later think() once the pushed state has run.
+	bool impactResolvedThisPass = false;
+
+	// First, advance and resolve every projectile already in flight.
+	if (_parent->getMap()->hasProjectiles())
+	{
+		BattleActionAttack attack = BattleActionAttack::GetAferShoot(_action, _ammo);
+		// snapshot the list: removeProjectile() modifies the live vector, so iterate a copy
+		const std::vector<Projectile*> inFlight(_parent->getMap()->getProjectiles());
+		for (Projectile* flyingProj : inFlight)
+		{
+			if (!flyingProj->move())
+			{
+				// The trajectory (and its impact point) is precomputed at fire time. With
+				// several rounds airborne at once, an earlier impact may have destroyed the
+				// obstacle this round was going to hit. Re-trace straight shots against the
+				// current terrain before committing: if the path now extends past the old
+				// impact point (the obstacle is gone), keep the round flying and let it
+				// resolve on a later pass instead of detonating on a wall that no longer exists.
+				if (_action.type != BA_THROW && !_action.weapon->getArcingShot(_action.type)
+					&& flyingProj->recalculateImpact())
+				{
+					continue;
+				}
+				// impact !
+				int impact = flyingProj->getImpact();
+				if (_action.type == BA_THROW)
+				{
+					// A throw is a single action that ends after it lands; pushing the
+					// resulting drop/explosion to the front means we must yield this pass.
+					impactResolvedThisPass = true;
+					_parent->getMap()->resetCameraSmoothing();
+					Position pos = flyingProj->getPosition(Projectile::ItemDropVoxelOffset).toTile();
+					if (pos.y > _parent->getSave()->getMapSizeY())
+					{
+						pos.y--;
+					}
+					if (pos.x > _parent->getSave()->getMapSizeX())
+					{
+						pos.x--;
+					}
+
+					_parent->getMod()->getSoundByDepth(_parent->getDepth(), Mod::ITEM_DROP)->play(-1, _parent->getMap()->getSoundAngle(pos));
+					const RuleItem *ruleItem = _action.weapon->getRules();
+					if (_action.weapon->fuseThrowEvent())
+					{
+						if (ruleItem->getBattleType() == BT_GRENADE || ruleItem->getBattleType() == BT_PROXIMITYGRENADE)
+						{
+							// it's a hot grenade to explode immediately
+							_parent->statePushFront(new ExplosionBState(_parent, flyingProj->getLastPositions(Projectile::ItemDropVoxelOffset), attack));
+						}
+						else
+						{
+							_parent->getSave()->removeItem(_action.weapon);
+						}
+					}
+					else
+					{
+						_parent->dropItem(pos, _action.weapon);
+						if (_unit->getFaction() != FACTION_PLAYER && ruleItem->isGrenadeOrProxy())
+						{
+							_parent->getTileEngine()->setDangerZone(pos, ruleItem->getExplosionRadius(attack), _action.actor);
+						}
+					}
+				}
+				else if (_action.type == BA_LAUNCH && _action.waypoints.size() > 1 && impact == V_EMPTY)
+				{
+					// The waypoint cascade hands off to a fresh fly state; yield this pass.
+					impactResolvedThisPass = true;
+					_origin = _action.waypoints.front();
+					_action.waypoints.pop_front();
+					_action.target = _action.waypoints.front();
+					// launch the next projectile in the waypoint cascade
+					ProjectileFlyBState *nextWaypoint = new ProjectileFlyBState(_parent, _action, _origin, _range + flyingProj->getDistance());
+					nextWaypoint->setOriginVoxel(flyingProj->getPosition(-1));
+					if (_origin == _action.target)
+					{
+						nextWaypoint->targetFloor();
+					}
+					_parent->statePushNext(nextWaypoint);
+				}
+				else
+				{
+					auto* tmpUnit = _parent->getSave()->getTile(_action.target)->getUnit();
+					if (tmpUnit && tmpUnit != _unit)
+					{
+						tmpUnit->getStatistics()->shotAtCounter++; // Only counts for guns, not throws or launches
+					}
+
+					_parent->getMap()->resetCameraSmoothing();
+					if (_action.type == BA_LAUNCH)
+					{
+						_action.weapon->spendAmmoForAction(_action.type, _parent->getSave());
+						// combat log - launch ammo is spent here (not in createNewProjectile); report if it ran dry
+						if (!_action.weapon->getAmmoForAction(_action.type))
+						{
+							_parent->getSave()->logOutOfAmmoEvent(_action.actor, _action.weapon);
+						}
+					}
+
+					if (impact != V_OUTOFBOUNDS)
+					{
+						int offset = 0;
+						// explosions impact not inside the voxel but two steps back (projectiles generally move 2 voxels at a time)
+						if (_ammo && _ammo->getRules()->getExplosionRadius(attack) != 0 && impact != V_UNIT)
+						{
+							offset = -2;
+						}
+
+						// Every projectile - including shotgun pellets, which are now real
+						// concurrently-flying projectiles - resolves its own impact using its
+						// own travelled distance for range-based power falloff.
+						// Push the explosion as a CONCURRENT state so it animates alongside
+						// the rest of the volley instead of freezing every round in flight.
+						// statePushConcurrent() marks the state concurrent itself.
+						_parent->statePushConcurrent(new ExplosionBState(
+							_parent, flyingProj->getLastPositions(offset),
+							attack, 0,
+							noMoreShotsToShoot(),
+							_range + flyingProj->getDistance()
+						));
+
+						if (impact == V_UNIT)
+						{
+							projectileHitUnit(flyingProj->getPosition(offset));
+						}
+					}
+					else if (noMoreShotsToShoot())
+					{
+						_unit->aim(false);
+					}
+				}
+
+				_parent->getMap()->removeProjectile(flyingProj);
+			}
+		} // end for (flyingProj)
+	}
+
+	// A throw or a launch-waypoint handoff pushed a state to the queue FRONT this pass;
+	// yield so it can run. Firearm/AoE impacts now spawn CONCURRENT explosions (which do
+	// not take the front), so they fall through and the volley keeps firing/finishing.
+	if (impactResolvedThisPass)
+	{
+		return;
+	}
+
+	// Tick down the inter-shot cooldown, then fire the next shot on a timer -
+	// independently of whether earlier shots are still airborne.
+	if (_shotCooldown > 0)
+	{
+		--_shotCooldown;
+	}
+
+	bool hasFloor = _action.actor->haveNoFloorBelow() == false;
+	bool unitCanFly = _action.actor->getMovementType() == MT_FLY;
+	bool canFireMore =
+		_action.weapon->haveNextShotsForAction(_action.type, _action.autoShotCounter)
+		&& !_action.actor->isOut()
+		&& _ammo->getAmmoQuantity() != 0
+		&& (hasFloor || unitCanFly);
+
+	if (canFireMore)
+	{
+		if (_shotCooldown <= 0)
 		{
 			createNewProjectile();
 			if (_action.cameraPosition.z != -1)
@@ -657,228 +880,32 @@ void ProjectileFlyBState::think()
 				_parent->getMap()->invalidate();
 			}
 		}
-		else
-		{
-			if (_action.cameraPosition.z != -1 && _action.waypoints.size() <= 1)
-			{
-				_parent->getMap()->getCamera()->setMapOffset(_action.cameraPosition);
-				_parent->getMap()->invalidate();
-			}
-			if (!_parent->getSave()->getUnitsFalling() && _parent->getPanicHandled())
-			{
-				_parent->getTileEngine()->checkReactionFire(_unit, _action);
-			}
-			if (!_unit->isOut())
-			{
-				_unit->abortTurn();
-			}
-			if (_parent->getSave()->getSide() == FACTION_PLAYER || _parent->getSave()->getDebugMode())
-			{
-				_parent->setupCursor();
-			}
-			_parent->convertInfected();
-			_parent->popState();
-		}
+		// still shooting (or waiting for the cadence timer) - don't wrap up yet
+		return;
 	}
-	else
+
+	// No more shots queued: finish up once every projectile has left the field.
+	if (!_parent->getMap()->hasProjectiles())
 	{
-		BattleActionAttack attack = BattleActionAttack::GetAferShoot(_action, _ammo);
-		if (_action.type != BA_THROW && _ammo && _ammo->getRules()->getShotgunPellets() != 0)
+		if (_action.cameraPosition.z != -1 && _action.waypoints.size() <= 1)
 		{
-			// shotgun pellets move to their terminal location instantly as fast as possible
-			_parent->getMap()->getProjectile()->skipTrajectory();
+			_parent->getMap()->getCamera()->setMapOffset(_action.cameraPosition);
+			_parent->getMap()->invalidate();
 		}
-		if (!_parent->getMap()->getProjectile()->move())
+		if (!_parent->getSave()->getUnitsFalling() && _parent->getPanicHandled())
 		{
-			// impact !
-			if (_action.type == BA_THROW)
-			{
-				_parent->getMap()->resetCameraSmoothing();
-				Position pos = _parent->getMap()->getProjectile()->getPosition(Projectile::ItemDropVoxelOffset).toTile();
-				if (pos.y > _parent->getSave()->getMapSizeY())
-				{
-					pos.y--;
-				}
-				if (pos.x > _parent->getSave()->getMapSizeX())
-				{
-					pos.x--;
-				}
-
-				_parent->getMod()->getSoundByDepth(_parent->getDepth(), Mod::ITEM_DROP)->play(-1, _parent->getMap()->getSoundAngle(pos));
-				const RuleItem *ruleItem = _action.weapon->getRules();
-				if (_action.weapon->fuseThrowEvent())
-				{
-					if (ruleItem->getBattleType() == BT_GRENADE || ruleItem->getBattleType() == BT_PROXIMITYGRENADE)
-					{
-						// it's a hot grenade to explode immediately
-						_parent->statePushFront(new ExplosionBState(_parent, _parent->getMap()->getProjectile()->getLastPositions(Projectile::ItemDropVoxelOffset), attack));
-					}
-					else
-					{
-						_parent->getSave()->removeItem(_action.weapon);
-					}
-				}
-				else
-				{
-					_parent->dropItem(pos, _action.weapon);
-					if (_unit->getFaction() != FACTION_PLAYER && ruleItem->isGrenadeOrProxy())
-					{
-						_parent->getTileEngine()->setDangerZone(pos, ruleItem->getExplosionRadius(attack), _action.actor);
-					}
-				}
-			}
-			else if (_action.type == BA_LAUNCH && _action.waypoints.size() > 1 && _projectileImpact == V_EMPTY)
-			{
-				_origin = _action.waypoints.front();
-				_action.waypoints.pop_front();
-				_action.target = _action.waypoints.front();
-				// launch the next projectile in the waypoint cascade
-				ProjectileFlyBState *nextWaypoint = new ProjectileFlyBState(_parent, _action, _origin, _range + _parent->getMap()->getProjectile()->getDistance());
-				nextWaypoint->setOriginVoxel(_parent->getMap()->getProjectile()->getPosition(-1));
-				if (_origin == _action.target)
-				{
-					nextWaypoint->targetFloor();
-				}
-				_parent->statePushNext(nextWaypoint);
-			}
-			else
-			{
-				auto* tmpUnit = _parent->getSave()->getTile(_action.target)->getUnit();
-				if (tmpUnit && tmpUnit != _unit)
-				{
-					tmpUnit->getStatistics()->shotAtCounter++; // Only counts for guns, not throws or launches
-				}
-
-				_parent->getMap()->resetCameraSmoothing();
-				if (_action.type == BA_LAUNCH)
-				{
-					_action.weapon->spendAmmoForAction(_action.type, _parent->getSave());
-					// combat log - launch ammo is spent here (not in createNewProjectile); report if it ran dry
-					if (!_action.weapon->getAmmoForAction(_action.type))
-					{
-						_parent->getSave()->logOutOfAmmoEvent(_action.actor, _action.weapon);
-					}
-				}
-
-				if (_projectileImpact != V_OUTOFBOUNDS)
-				{
-					bool shotgun = _ammo && _ammo->getRules()->getShotgunPellets() != 0 && _ammo->getRules()->getDamageType()->isDirect();
-					int offset = 0;
-					// explosions impact not inside the voxel but two steps back (projectiles generally move 2 voxels at a time)
-					if (_ammo && _ammo->getRules()->getExplosionRadius(attack) != 0 && _projectileImpact != V_UNIT)
-					{
-						offset = -2;
-					}
-
-					_parent->statePushFront(new ExplosionBState(
-						_parent, _parent->getMap()->getProjectile()->getLastPositions(offset),
-						attack, 0,
-						noMoreShotsToShoot(),
-						shotgun ? 0 : _range + _parent->getMap()->getProjectile()->getDistance()
-					));
-
-					if (_projectileImpact == V_UNIT)
-					{
-						projectileHitUnit(_parent->getMap()->getProjectile()->getPosition(offset));
-					}
-
-					// remember unit's original XP values, used for nerfing below
-					_unit->rememberXP();
-
-					// special shotgun behaviour: trace extra projectile paths, and add bullet hits at their termination points.
-					if (shotgun)
-					{
-						int behaviorType = _ammo->getRules()->getShotgunBehaviorType();
-						int spread = _ammo->getRules()->getShotgunSpread();
-						int choke = _action.weapon->getRules()->getShotgunChoke();
-						Position firstPelletImpact = _parent->getMap()->getProjectile()->getPosition(-2);
-						Position originalTarget = _targetVoxel;
-
-						int i = 1;
-						while (i != _ammo->getRules()->getShotgunPellets())
-						{
-							if (behaviorType == 1)
-							{
-								// use impact location to determine spread (instead of originally targeted voxel), as long as it's not the same as the origin
-								if (firstPelletImpact != _parent->getSave()->getTileEngine()->getOriginVoxel(_action, _parent->getSave()->getTile(_origin)))
-								{
-									_targetVoxel = firstPelletImpact;
-								}
-								else
-								{
-									_targetVoxel = originalTarget;
-								}
-							}
-
-
-							Projectile *proj = new Projectile(_parent->getMod(), _parent->getSave(), _action, _origin, _targetVoxel, _ammo);
-
-							// let it trace to the point where it hits
-							int secondaryImpact = V_EMPTY;
-							if (behaviorType == 1)
-							{
-								// pellet spread based on spread and choke values
-								secondaryImpact = proj->calculateTrajectory(std::max(0.0, (1.0 - spread / 100.0) * choke / 100.0));
-
-							}
-							else
-							{
-								// pellet spread based on spread and firing accuracy with diminishing formula
-								// identical with vanilla formula when spread = 100 (default)
-								secondaryImpact = proj->calculateTrajectory(std::max(0.0, (BattleUnit::getFiringAccuracy(attack, _parent->getMod()) / 100.0) - i * 5.0 * spread / 100.0));
-							}
-
-							if (secondaryImpact != V_EMPTY)
-							{
-								// as above: skip the shot to the end of it's path
-								proj->skipTrajectory();
-								// insert an explosion and hit
-								if (secondaryImpact != V_OUTOFBOUNDS)
-								{
-									if (secondaryImpact == V_UNIT)
-									{
-										projectileHitUnit(proj->getPosition(offset));
-									}
-									Explosion *explosion = new Explosion(proj->getPosition(offset), _ammo->getRules()->getHitAnimation(), 0, false, false, _ammo->getRules()->getHitAnimationFrames());
-									int power = 0;
-									if (_action.weapon->getRules()->getIgnoreAmmoPower())
-									{
-										power = _action.weapon->getRules()->getPowerBonus(attack) - _action.weapon->getRules()->getPowerRangeReduction(proj->getDistance());
-									}
-									else
-									{
-										power = _ammo->getRules()->getPowerBonus(attack) - _ammo->getRules()->getPowerRangeReduction(proj->getDistance());
-									}
-									_parent->getMap()->getExplosions()->push_back(explosion);
-									_parent->getSave()->getTileEngine()->hit(attack, proj->getPosition(offset), power, _ammo->getRules()->getDamageType());
-
-									//do not work yet
-//									if (_ammo->getRules()->getExplosionRadius(_unit) != 0)
-//									{
-//										_parent->getTileEngine()->explode({ _action, _ammo }, proj->getPosition(offset), _ammo->getRules()->getPower(), _ammo->getRules()->getDamageType(), _ammo->getRules()->getExplosionRadius(), _unit);
-//									}
-								}
-							}
-							++i;
-							delete proj;
-						}
-
-						// reset back for the next shot in the (potential) autoshot sequence
-						_targetVoxel = originalTarget;
-					}
-
-					// nerf unit's XP values (gained via extra shotgun bullets)
-					_unit->nerfXP();
-				}
-				else if (noMoreShotsToShoot())
-				{
-					_unit->aim(false);
-				}
-			}
-
-			delete _parent->getMap()->getProjectile();
-			_parent->getMap()->setProjectile(0);
+			_parent->getTileEngine()->checkReactionFire(_unit, _action);
 		}
+		if (!_unit->isOut())
+		{
+			_unit->abortTurn();
+		}
+		if (_parent->getSave()->getSide() == FACTION_PLAYER || _parent->getSave()->getDebugMode())
+		{
+			_parent->setupCursor();
+		}
+		_parent->convertInfected();
+		_parent->popState();
 	}
 }
 
@@ -888,10 +915,12 @@ void ProjectileFlyBState::think()
  */
 void ProjectileFlyBState::cancel()
 {
-	if (_parent->getMap()->getProjectile())
+	const auto& projectiles = _parent->getMap()->getProjectiles();
+	for (Projectile* proj : projectiles)
+		proj->skipTrajectory();
+	if (!projectiles.empty())
 	{
-		_parent->getMap()->getProjectile()->skipTrajectory();
-		Position p = _parent->getMap()->getProjectile()->getPosition().toTile();
+		Position p = projectiles[0]->getPosition().toTile();
 		if (!_parent->getMap()->getCamera()->isOnScreen(p, false, 0, false))
 			_parent->getMap()->getCamera()->centerOnPosition(p);
 	}

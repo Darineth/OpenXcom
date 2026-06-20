@@ -206,6 +206,10 @@ BattlescapeGame::~BattlescapeGame()
 	{
 		delete bs;
 	}
+	for (auto* bs : _concurrentStates)
+	{
+		delete bs;
+	}
 	cleanupDeleted();
 }
 
@@ -218,6 +222,12 @@ int BattlescapeGame::think()
 	// nothing is happening - see if we need some alien AI or units panicking or what have you
 	if (_states.empty())
 	{
+		// Concurrent states (explosions animating alongside a just-finished volley) still
+		// count as "something happening" - don't start AI / end the turn until they finish.
+		if (!_concurrentStates.empty())
+		{
+			return ret;
+		}
 		if (_save->getUnitsFalling())
 		{
 			statePushFront(new UnitFallBState(this));
@@ -1163,6 +1173,20 @@ void BattlescapeGame::handleState()
 		}
 		getMap()->invalidate(); // redraw map
 	}
+
+	// Tick any concurrent states (explosions) so they keep animating while the main
+	// queue front (a projectile volley) advances - or even after it has finished.
+	// Snapshot first: a concurrent state's think() may remove itself, push more
+	// concurrent states, or enqueue follow-ups (deaths, chain explosions).
+	if (!_concurrentStates.empty())
+	{
+		const std::vector<BattleState*> running(_concurrentStates.begin(), _concurrentStates.end());
+		for (BattleState* bs : running)
+		{
+			bs->think();
+		}
+		getMap()->invalidate(); // redraw map
+	}
 }
 
 /**
@@ -1173,6 +1197,29 @@ void BattlescapeGame::statePushFront(BattleState *bs)
 {
 	_states.push_front(bs);
 	bs->init();
+}
+
+/**
+ * Pushes a state that animates concurrently with the main queue front, instead of
+ * blocking it. Used for impact explosions so the rest of a volley keeps flying.
+ * @param bs Battlestate.
+ */
+void BattlescapeGame::statePushConcurrent(BattleState *bs)
+{
+	bs->setConcurrent(true);
+	_concurrentStates.push_back(bs);
+	bs->init();
+}
+
+/**
+ * Removes a finished concurrent state from the concurrent list (deferred-delete).
+ * @param bs Battlestate that has completed.
+ */
+void BattlescapeGame::popConcurrentState(BattleState *bs)
+{
+	bs->deinit();
+	_concurrentStates.remove(bs);
+	_deleted.push_back(bs);
 }
 
 /**
@@ -1726,7 +1773,7 @@ BattleAction *BattlescapeGame::getCurrentAction()
  */
 bool BattlescapeGame::isBusy() const
 {
-	return !_states.empty();
+	return !_states.empty() || !_concurrentStates.empty();
 }
 
 /**

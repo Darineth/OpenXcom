@@ -49,6 +49,10 @@ This document serves as a high-level checklist of features from the original Ope
 - [ ] **Sneak Mode**
     - [ ] Implement Sneak (low speed, high alertness, maintains evasion)
     - [ ] Implement Sneak visual indicator (purple path)
+- [ ] **Movement feel/polish**
+    - [ ] Change the color of the path preview when sprinting or sneaking
+    - [ ] Accelerate unit motion when sprinting
+    - [ ] Prevent cancelling movement while sprinting
 
 ## 5. Reloading & Ammo Mechanics
 - [ ] **Advanced Reloading**

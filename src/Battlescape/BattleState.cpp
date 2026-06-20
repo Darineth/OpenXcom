@@ -68,6 +68,22 @@ void BattleState::deinit()
 }
 
 /**
+ * Ends this state through the correct queue: a concurrent (non-blocking) state removes
+ * itself from the concurrent list, a normal one pops the main state queue front.
+ */
+void BattleState::finishState()
+{
+	if (_concurrent)
+	{
+		_parent->popConcurrentState(this);
+	}
+	else
+	{
+		_parent->popState();
+	}
+}
+
+/**
  * Cancels the current BattleState.
  */
 void BattleState::cancel()

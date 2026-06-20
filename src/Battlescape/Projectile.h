@@ -59,6 +59,7 @@ private:
 	int _bulletSprite;
 	bool _reversed;
 	int _vaporColor, _vaporDensity, _vaporProbability;
+	int _impact = 0;
 	void applyAccuracy(Position origin, Position *target, double accuracy, bool keepRange, bool extendLine);
 public:
 	/// Creates a new Projectile.
@@ -70,12 +71,16 @@ public:
 	int calculateTrajectory(double accuracy, const Position& originVoxel, bool excludeUnit = true);
 	/// Calculates the trajectory for a curved path.
 	int calculateThrow(double accuracy);
+	/// Re-traces a straight trajectory against the current terrain (e.g. after a prior impact destroyed an obstacle); returns true if the path now extends further.
+	bool recalculateImpact();
 	/// Moves the projectile one step in its trajectory.
 	bool move();
 	/// Gets the current position in voxel space.
 	Position getPosition(int offset = 0) const;
 	/// Gets the two last position in voxel space.
 	LastPositions getLastPositions(int offset = 0) const { return LastPositions(getPosition(offset), getPosition(offset + ItemDropVoxelOffset)); }
+	/// Gets the impact position from the precomputed trajectory (valid right after calculateTrajectory/Throw).
+	Position getImpactPosition(int offset = 0) const { return getPositionFromEnd(_trajectory, offset); }
 	/// Gets a particle from the particle array.
 	int getParticle(int i) const;
 	/// Gets the item.
@@ -88,6 +93,10 @@ public:
 	Position getTarget() const;
 	/// Gets the distance that projectile traveled.
 	float getDistance() const;
+	/// Stores the voxel-type this projectile is going to impact (computed at fire time).
+	void setImpact(int impact) { _impact = impact; }
+	/// Gets the voxel-type this projectile impacts.
+	int getImpact() const { return _impact; }
 	/// Is this projectile being drawn back-to-front or front-to-back?
 	bool isReversed() const;
 	/// adds a cloud of particles at the projectile's location

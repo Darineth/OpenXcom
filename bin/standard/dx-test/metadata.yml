@@ -1,0 +1,12 @@
+#
+# metadata.yml for the DX test mod
+#
+# Scratch mod for exercising OpenXcom DX features on top of stock UFO (xcom1).
+# Enable it from the Mods menu when you want quick in-game test content.
+
+name: "DX Test Content"
+version: 0.1
+description: "Test content for OpenXcom DX features (shotgun pellet flight, fireInterval cadence, concurrent projectiles)."
+author: OpenXcom DX
+
+master: xcom1

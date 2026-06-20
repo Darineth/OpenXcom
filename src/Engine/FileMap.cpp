@@ -1040,6 +1040,7 @@ void scanModDir(const std::string& dirname, const std::string& basename, bool pr
 		"Aliens_Pick_Up_Weapons_TFTD",
 		"Demigod_Difficulty",
 		"Demigod_Difficulty_TFTD",
+		"dx-test",
 		"Limit_Craft_Item_Capacities",
 		"Limit_Craft_Item_Capacities_TFTD",
 		"OpenXCom_Unlimited_Waypoints",

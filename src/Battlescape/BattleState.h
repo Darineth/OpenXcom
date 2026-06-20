@@ -31,6 +31,9 @@ class BattleState
 protected:
 	BattlescapeGame *_parent;
 	BattleAction _action;
+	/// Whether this state runs concurrently (non-blocking) alongside the main queue.
+	/// Set by BattlescapeGame::statePushConcurrent(), not by the state's creator.
+	bool _concurrent = false;
 public:
 	/// Creates a new BattleState linked to the game.
 	BattleState(BattlescapeGame *parent, BattleAction action);
@@ -48,6 +51,12 @@ public:
 	virtual void think();
 	/// Gets the action.
 	const BattleAction& getAction() const;
+	/// Marks whether this state runs concurrently (called by statePushConcurrent()).
+	void setConcurrent(bool concurrent) { _concurrent = concurrent; }
+	/// Is this state running concurrently (non-blocking)?
+	bool isConcurrent() const { return _concurrent; }
+	/// Ends this state through the correct queue (main vs concurrent).
+	void finishState();
 };
 
 }

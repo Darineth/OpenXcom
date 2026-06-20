@@ -93,7 +93,7 @@ private:
 	Position _cacheCursorPosition;
 	int _cacheHasLOS; // -1 = unknown, 0 = no LOS, 1 = has LOS
 	int _animFrame;
-	Projectile *_projectile;
+	std::vector<Projectile*> _projectiles;
 	bool _followProjectile;
 	bool _projectileInFOV;
 	std::list<Explosion *> _explosions;
@@ -158,10 +158,14 @@ public:
 	/// Gets the 3D cursor type.
 	CursorType getCursorType() const;
 
-	/// Sets projectile.
-	void setProjectile(Projectile *projectile);
-	/// Gets projectile.
-	Projectile *getProjectile() const;
+	/// Adds a projectile to the in-flight collection.
+	void addProjectile(Projectile *p);
+	/// Removes a projectile from the collection and deletes it.
+	void removeProjectile(Projectile *p);
+	/// Returns true if any projectiles are currently in flight.
+	bool hasProjectiles() const;
+	/// Gets all in-flight projectiles.
+	const std::vector<Projectile*>& getProjectiles() const;
 	/// Sets follow projectile flag.
 	void setFollowProjectile(bool followProjectile) { _followProjectile = followProjectile; }
 	/// Gets follow projectile flag.

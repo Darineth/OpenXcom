@@ -2575,7 +2575,7 @@ void BattlescapeState::animate()
 	blinkVisibleUnitButtons();
 	blinkHealthBar();
 
-	if (!_map->getProjectile())
+	if (!_map->hasProjectiles())
 	{
 		drawHandsItems();
 	}
@@ -3760,7 +3760,7 @@ bool BattlescapeState::allowButtons(bool allowSaving) const
 	return ((allowSaving || _save->getSide() == FACTION_PLAYER || _save->getDebugMode())
 		&& (_battleGame->getPanicHandled() || _firstInit )
 		&& (allowSaving || !_battleGame->isBusy() || _firstInit)
-		&& (_map->getProjectile() == 0));
+		&& !_map->hasProjectiles());
 }
 
 /**

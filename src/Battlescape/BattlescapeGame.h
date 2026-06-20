@@ -137,6 +137,9 @@ private:
 	SavedBattleGame *_save;
 	BattlescapeState *_parentState;
 	std::list<BattleState*> _states, _deleted;
+	/// Concurrent states (currently only explosions) that animate alongside the main
+	/// queue front instead of blocking it, so projectiles keep flying through impacts.
+	std::list<BattleState*> _concurrentStates;
 	bool _playerPanicHandled;
 	int _AIActionCounter;
 	BattleAction _currentAction;
@@ -181,6 +184,12 @@ public:
 	void statePushNext(BattleState *bs);
 	/// Pushes a state to the back of the list.
 	void statePushBack(BattleState *bs);
+	/// Pushes a state that animates concurrently with the main queue front (non-blocking).
+	void statePushConcurrent(BattleState *bs);
+	/// Removes a finished concurrent state.
+	void popConcurrentState(BattleState *bs);
+	/// Are any concurrent (non-blocking) states still running?
+	bool hasConcurrentStates() const { return !_concurrentStates.empty(); }
 	/// Handles the result of non target actions, like priming a grenade.
 	void handleNonTargetAction();
 	/// Removes current state.

@@ -27,6 +27,7 @@ class BattlescapeGame;
 class BattleUnit;
 class BattleItem;
 class Tile;
+class Explosion;
 struct RuleDamageType;
 
 /**
@@ -47,11 +48,17 @@ private:
 	int _radius;
 	int _range;
 	bool _areaOfEffect, _lowerWeapon, _hit, _psi;
+	/// The explosion sprites this state owns (so concurrent explosions don't disturb each other).
+	std::vector<Explosion*> _myExplosions;
+	/// Wall-clock pacing for concurrent animation (ms per frame / last advance time).
+	Uint32 _animInterval, _lastAnimTime;
 
 	/// Calculates the effects of the explosion.
 	void explode();
 	/// Set new value to reference if new value is not equal -1.
 	void optValue(int &oldValue, int newValue) const;
+	/// Spawns an explosion sprite (tracked for this state) onto the map.
+	void addExplosion(Explosion *explosion);
 public:
 	/// Creates a new ExplosionBState class.
 	ExplosionBState(BattlescapeGame *parent, LastPositions center, BattleActionAttack attack, Tile *tile = 0, bool lowerWeapon = false, int range = 0, int explosionCounter = 0, int terrainMeleeTilePart = 0);

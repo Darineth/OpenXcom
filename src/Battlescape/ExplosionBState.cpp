@@ -49,7 +49,8 @@ namespace OpenXcom
  */
 ExplosionBState::ExplosionBState(BattlescapeGame *parent, LastPositions center, BattleActionAttack attack, Tile *tile, bool lowerWeapon, int range, int explosionCounter, int terrainMeleeTilePart) : BattleState(parent),
 	_explosionCounter(explosionCounter), _terrainMeleeTilePart(terrainMeleeTilePart), _attack(attack), _center(center.last), _before(center.before), _damageType(), _tile(tile), _targetPsiOrHit(nullptr),
-	_power(0), _radius(6), _range(range), _areaOfEffect(false), _lowerWeapon(lowerWeapon), _hit(false), _psi(false)
+	_power(0), _radius(6), _range(range), _areaOfEffect(false), _lowerWeapon(lowerWeapon), _hit(false), _psi(false),
+	_animInterval(1), _lastAnimTime(0)
 {
 
 }
@@ -73,6 +74,18 @@ void ExplosionBState::optValue(int& oldValue, int newValue) const
 	{
 		oldValue = newValue;
 	}
+}
+
+/**
+ * Spawns an explosion sprite onto the map and remembers it as owned by this state, so
+ * several concurrent explosions can animate on the shared map list without disturbing
+ * each other's sprites.
+ * @param explosion The explosion sprite to add.
+ */
+void ExplosionBState::addExplosion(Explosion *explosion)
+{
+	_parent->getMap()->getExplosions()->push_back(explosion);
+	_myExplosions.push_back(explosion);
 }
 
 /**
@@ -240,7 +253,7 @@ void ExplosionBState::init()
 				p.x += X; p.y += Y;
 				Explosion *explosion = new Explosion(p, frame, frameDelay, true, false, frameCount);
 				// add the explosion on the map
-				_parent->getMap()->getExplosions()->push_back(explosion);
+				addExplosion(explosion);
 				if (i > 0 && i % counter == 0)
 				{
 					frameDelay++;
@@ -255,7 +268,18 @@ void ExplosionBState::init()
 			{
 				explosionSpeed = 1; // maximum animation speed for long chain terrain explosions
 			}
-			_parent->setStateInterval(std::max(1, explosionSpeed));
+			_animInterval = std::max(1, explosionSpeed);
+			if (_concurrent)
+			{
+				// Animate on the fast projectile cadence (so the volley keeps flowing) but
+				// pace our own frames by wall clock to the intended explosion speed.
+				_lastAnimTime = SDL_GetTicks();
+				_parent->setStateInterval(1000/60);
+			}
+			else
+			{
+				_parent->setStateInterval(_animInterval);
+			}
 			// explosion sound
 			_parent->playSound(sound);
 			if (_parent->getMap()->getFollowProjectile() || _explosionCounter > 0)
@@ -265,7 +289,7 @@ void ExplosionBState::init()
 		}
 		else
 		{
-			_parent->popState();
+			finishState();
 		}
 	}
 	else
@@ -273,7 +297,16 @@ void ExplosionBState::init()
 	{
 		_parent->getSave()->getTileEngine()->hit(_attack, _center, _power, _damageType, range, _terrainMeleeTilePart);
 
-		_parent->setStateInterval(std::max(1, ((BattlescapeState::DEFAULT_ANIM_SPEED/2) - (10 * itemRule->getExplosionSpeed()))));
+		_animInterval = std::max(1, ((BattlescapeState::DEFAULT_ANIM_SPEED/2) - (10 * itemRule->getExplosionSpeed())));
+		if (_concurrent)
+		{
+			_lastAnimTime = SDL_GetTicks();
+			_parent->setStateInterval(1000/60);
+		}
+		else
+		{
+			_parent->setStateInterval(_animInterval);
+		}
 		int anim = -1;
 		int animFrames = -1;
 		int sound = -1;
@@ -349,7 +382,7 @@ void ExplosionBState::init()
 		if (anim != -1)
 		{
 			Explosion *explosion = new Explosion(_center, anim, 0, false, (_hit || _psi), animFrames); // Don't burn the tile
-			_parent->getMap()->getExplosions()->push_back(explosion);
+			addExplosion(explosion);
 		}
 		if (_parent->getMap()->getFollowProjectile())
 		{
@@ -381,17 +414,33 @@ void ExplosionBState::think()
 {
 	if (!_parent->getMap()->getBlastFlash())
 	{
-		if (_parent->getMap()->getExplosions()->empty())
+		if (_myExplosions.empty())
+		{
 			explode();
+			return;
+		}
 
-		for (auto iter = _parent->getMap()->getExplosions()->begin(); iter != _parent->getMap()->getExplosions()->end();)
+		// A concurrent explosion is ticked on the fast projectile cadence so the rest of
+		// the volley keeps moving; pace its own frames by wall clock to the intended speed.
+		if (_concurrent)
+		{
+			Uint32 now = SDL_GetTicks();
+			if (now - _lastAnimTime < _animInterval)
+			{
+				return;
+			}
+			_lastAnimTime = now;
+		}
+
+		for (auto iter = _myExplosions.begin(); iter != _myExplosions.end();)
 		{
 			Explosion* explosion = (*iter);
 			if (!explosion->animate())
 			{
+				_parent->getMap()->getExplosions()->remove(explosion);
 				delete explosion;
-				iter = _parent->getMap()->getExplosions()->erase(iter);
-				if (_parent->getMap()->getExplosions()->empty())
+				iter = _myExplosions.erase(iter);
+				if (_myExplosions.empty())
 				{
 					explode();
 					return;
@@ -429,7 +478,7 @@ void ExplosionBState::explode()
 
 		if (_power <= 0)
 		{
-			_parent->popState();
+			finishState();
 			return;
 		}
 
@@ -469,7 +518,7 @@ void ExplosionBState::explode()
 		_parent->getSave()->removeItem(_attack.damage_item);
 	}
 
-	_parent->popState();
+	finishState();
 
 	// check for terrain explosions
 	Tile *t = save->getTileEngine()->checkForTerrainExplosions();
@@ -477,7 +526,16 @@ void ExplosionBState::explode()
 	{
 		Position p = t->getPosition().toVoxel();
 		p += Position(8,8,0);
-		_parent->statePushFront(new ExplosionBState(_parent, p, BattleActionAttack{ BA_NONE, _attack.attacker, }, t, false, 0, _explosionCounter + 1));
+		ExplosionBState *chain = new ExplosionBState(_parent, p, BattleActionAttack{ BA_NONE, _attack.attacker, }, t, false, 0, _explosionCounter + 1);
+		// keep chained terrain explosions non-blocking too if we were
+		if (_concurrent)
+		{
+			_parent->statePushConcurrent(chain);
+		}
+		else
+		{
+			_parent->statePushFront(chain);
+		}
 	}
 
 	// Spawn a unit if the item does that

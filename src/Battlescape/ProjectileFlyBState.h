@@ -43,6 +43,8 @@ private:
 	/// Tries to create a projectile sprite.
 	bool createNewProjectile();
 	bool _initialized, _targetFloor;
+	/// Think-cycles remaining before the next burst/spray shot may be fired (timer-based cadence).
+	int _shotCooldown = 0;
 
 public:
 	/// Creates a new ProjectileFly class

@@ -177,6 +177,7 @@ RuleItem::RuleItem(const std::string &type, int listOrder) :
 	_liveAlienPrisonType(0), _attraction(0), _flatUse(0, 1), _flatThrow(0, 1), _flatPrime(0, 1), _flatUnprime(0, 1), _arcingShot(false),
 	_experienceTrainingMode(ETM_DEFAULT), _manaExperience(0), _loadOrder(0), _listOrder(listOrder),
 	_maxRange(200), _minRange(0), _dropoff(2), _bulletSpeed(0), _explosionSpeed(0), _shotgunPellets(0), _shotgunBehaviorType(0), _shotgunSpread(100), _shotgunChoke(100),
+	_fireInterval(150),
 	_spawnUnitFaction(FACTION_NONE), _zombieUnitFaction(FACTION_HOSTILE),
 	_targetMatrix(7), _convertToCivilian(false),
 	_LOSRequired(false), _underwaterOnly(false), _landOnly(false), _psiReqiured(false), _manaRequired(false),
@@ -619,6 +620,7 @@ void RuleItem::load(const YAML::YamlNodeReader& node, Mod *mod, const ModScript&
 	reader.tryRead("dropoff", _dropoff);
 	reader.tryRead("bulletSpeed", _bulletSpeed);
 	reader.tryRead("explosionSpeed", _explosionSpeed);
+	reader.tryRead("fireInterval", _fireInterval);
 	reader.tryRead("autoShots", _confAuto.shots);
 	reader.tryRead("shotgunPellets", _shotgunPellets);
 	reader.tryRead("shotgunBehavior", _shotgunBehaviorType);

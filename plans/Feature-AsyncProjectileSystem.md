@@ -1,6 +1,8 @@
 # Feature - Async Projectile System
 
-**Status:** Planning — not started. Jun 2026.
+**Status:** Done — Jun 2026. See **Implementation updates (post-plan)** below for changes that
+diverged from the original infrastructure plan (shim removal, camera centroid, per-projectile
+impact, timer-based firing, shotgun pellets flying as real projectiles).
 
 ---
 
@@ -336,3 +338,133 @@ impact resolution goes through the new `resolveImpact()` helper rather than inli
 | 2 | `setProjectile(nullptr)` clearing behavior changes | Implement shim to clear + delete existing; tested by all single-shot paths |
 | 3 | Camera follow jitter with multiple simultaneous projectiles (future) | Follow `_projectiles[0]`; revisit in Phase 5 when pellet flight is enabled |
 | 4 | `_projectileImpact` is per-state, not per-projectile | Documented limitation; Phase 5 will add per-projectile map |
+
+---
+
+## Implementation updates (post-plan)
+
+The infrastructure shipped as planned, then evolved further during the same work. The final
+state differs from the plan above in these ways:
+
+### Shims removed
+
+The `getProjectile()`/`setProjectile()` backward-compat shims were deleted once all call sites
+were migrated. The live API is `addProjectile`, `removeProjectile` (removes + deletes),
+`hasProjectiles()`, and `getProjectiles()`. `BattlescapeState.cpp`'s two former
+`getProjectile()` null-checks now use `!_map->hasProjectiles()`.
+
+### Camera follows the centroid
+
+Instead of following `_projectiles[0]`, `Map::drawTerrain()` now accumulates every projectile's
+voxel position and follows the average (centroid) of all visible bullets, so the view stays
+centered on the swarm rather than snapping to whichever round happened to register first.
+
+### Per-projectile impact type
+
+`_projectileImpact` on the state was insufficient once multiple rounds can be airborne at once
+(each resolves at a different time against different geometry). `Projectile` now stores its own
+`int _impact` (`setImpact()`/`getImpact()`), set at fire time in `createNewProjectile()` and read
+back per-projectile in the `think()` advance loop. This replaces the "Phase 5 will add a
+per-projectile map" mitigation for Risk #4.
+
+### Timer-based firing (replaces impact-gated firing)
+
+The original `think()` only fired the next shot once the map had **no** projectiles. Multi-shot
+actions now fire on a timer instead, so several rounds can overlap in flight:
+
+- New RuleItem attribute **`fireInterval`** (milliseconds, default `150`) controls the cadence
+  between consecutive burst/spray shots. It is converted to think-cycles via
+  `(fireInterval * 60 + 500) / 1000` (the state ticks at ~60 Hz), clamped to a minimum of 1.
+- `ProjectileFlyBState` gained an `int _shotCooldown` counter. `createNewProjectile()` resets it
+  to the per-weapon interval; `think()` decrements it each cycle and only launches the next shot
+  when it reaches zero (and the action still has shots/ammo and the firer has footing).
+- `think()` advances **all** in-flight projectiles each cycle (iterating a snapshot copy because
+  `removeProjectile()` mutates the live vector), resolving each impact with that projectile's own
+  `getImpact()`.
+- BA_LAUNCH (blaster waypoint cascade) and BA_THROW still yield a single shot, so the timer only
+  affects genuine multi-shot actions (auto/spray); the blaster cascade continues to chain via
+  `statePushNext` in the impact block.
+
+### Shotgun pellets fly as real projectiles
+
+The old shotgun handling fired one projectile, then at impact synchronously **traced** the
+remaining pellets (`skipTrajectory()` to their endpoints) and applied their hits in a single
+burst inside `think()`. That whole block is gone. Now:
+
+- `createNewProjectile()` launches the lead pellet as before, then immediately spawns the
+  remaining `shotgunPellets - 1` pellets as real `Projectile` objects, each with its own spread
+  trajectory, and `addProjectile()`s them so they fly concurrently. The spread math is unchanged:
+  `shotgunBehaviorType == 1` uses `(1 - spread/100) * choke/100` and re-centers the spread on the
+  lead pellet's actual impact voxel; otherwise it uses the diminishing
+  `firingAccuracy/100 - i*5*spread/100` formula. Pellets whose trajectory returns `V_EMPTY` (no
+  line of fire) are discarded.
+- To re-center behaviorType-1 spread at fire time, `Projectile` gained
+  `getImpactPosition(int offset)` which reads the endpoint of the just-computed trajectory
+  (`getPositionFromEnd(_trajectory, offset)`), replacing the old impact-time `getPosition(-2)`.
+- The `think()` advance loop no longer special-cases shotguns with `skipTrajectory()`; every
+  pellet flies and resolves its own impact through the normal explosion/hit path using its own
+  travelled distance for range-based power falloff (the former `shotgun ? 0 : ...` range special
+  case is removed).
+- The `rememberXP()`/`nerfXP()` per-shot experience cap was removed. It only existed to bound the
+  experience from the old synchronous extra-pellet burst; with each pellet now a regular
+  projectile resolving asynchronously, a landed pellet awards firing experience like any other
+  hit.
+
+### Lazy impact recalculation against live terrain
+
+Each projectile's full trajectory **and** impact voxel are computed once at fire time. With
+several rounds airborne at once, an earlier impact can destroy the obstacle a later round was
+going to hit, so that later round would wrongly detonate on a wall that no longer exists. To fix
+this:
+
+- `Projectile::recalculateImpact()` re-runs the deterministic voxel line trace from the original
+  origin toward the (already accuracy-deviated) `_targetVoxel` against the **current** map. Because
+  the trace is deterministic, the already-travelled prefix is identical; only the far end can
+  change. If the fresh path reaches no further than the round already is, the obstruction still
+  stands and the precomputed impact is kept. If the path now extends past the old impact point
+  (the obstacle was removed), it adopts the longer trajectory, updates `_impact`/`_distanceMax`,
+  and reports that the round should keep flying.
+- In `ProjectileFlyBState::think()`, when a round reaches the end of its path it calls
+  `recalculateImpact()` first (straight shots only — skipped for `BA_THROW` and arcing/parabola
+  shots, which don't use the straight-line tracer). If the path extended, it `continue`s and the
+  round resolves on a later pass instead of exploding on a now-gone wall. This also naturally
+  handles a target unit killed by an earlier round in the same volley (the corpse no longer
+  blocks the tile).
+
+### Concurrent (non-blocking) impact explosions
+
+Previously every impact pushed an `ExplosionBState` to the **front** of the BattlescapeGame state
+queue, so the whole battle (including every other round still in flight) froze for the duration of
+that explosion's animation. With overlapping rounds this made the volley stutter on every hit. Now
+firearm/AoE impacts run their explosions **concurrently** alongside the still-firing volley:
+
+- `BattlescapeGame` gained a second list, `_concurrentStates`, ticked every `handleState()` cycle
+  *in addition to* the main queue front (over a snapshot, since a concurrent state may remove
+  itself or enqueue follow-ups). New API: `statePushConcurrent()` (push + `init()` now),
+  `popConcurrentState()` (deinit + remove + deferred-delete), and `hasConcurrentStates()`.
+  `isBusy()` and the `think()` idle/turn-end guard now also account for concurrent states so the
+  AI/turn end waits for explosions to finish, and the destructor frees them.
+- Concurrency is a property of *how* a state is enqueued, so it lives on the `BattleState` base
+  (`_concurrent` + `setConcurrent()`/`isConcurrent()`) and is set by `statePushConcurrent()` itself
+  — callers never toggle it separately. The base also provides `finishState()`, which routes a
+  state's completion to `popConcurrentState(this)` when concurrent and `popState()` otherwise, so
+  any future BState can opt into concurrent execution without bespoke wiring.
+- `ExplosionBState` reads that base flag. A concurrent explosion:
+  - owns its sprites (`_myExplosions`) instead of iterating the shared `Map` explosion list, so
+    several explosions can animate at once without disturbing each other (the non-concurrent path
+    uses the same per-state ownership, identical behavior when only one explosion exists);
+  - paces its own frames by **wall clock** (`SDL_GetTicks()` vs `_animInterval`, the intended
+    explosion speed) while the game timer runs at the fast projectile cadence (1000/60), so it
+    animates at the correct speed without slowing the bullets;
+  - self-terminates through the base `finishState()` (which picks `popConcurrentState(this)` vs
+    `popState()`), and routes any chained terrain explosion through `statePushConcurrent` too.
+    Explosion **damage** is still applied immediately in `init()` (preserving the
+    lazy-recalculation behavior above); only the animation and end-of-animation casualty
+    resolution run concurrently.
+- `ProjectileFlyBState::think()` now pushes the normal firearm/AoE impact explosion via
+  `statePushConcurrent` and does **not** set `impactResolvedThisPass`, so the state keeps advancing
+  other rounds and firing/finishing in the same pass. `BA_THROW` (single throw / hot grenade) and
+  the `BA_LAUNCH` waypoint cascade still push to the front and yield the pass, since those are
+  single-shot handoffs rather than part of an overlapping volley.
+
+
