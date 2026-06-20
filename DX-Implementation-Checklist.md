@@ -125,13 +125,14 @@ Everything below is DX-specific work confirmed **absent** from the base.
 ## Phase 3: Combat Infrastructure (the foundation)
 
 *Goal: The async core all multi-projectile/explosion combat relies on.*
+*(index: [plans/Phase-3-CombatInfrastructure.md](plans/Phase-3-CombatInfrastructure.md))*
 
 - [ ] **Async Projectile System** — `Map` projectile collection, per-projectile impact
-  tracking, async resolution.
-- [ ] **Async Explosion System** — concurrent `ExplosionBState` with private timers.
+  tracking, async resolution. *(design: [plans/Feature-AsyncProjectileSystem.md](plans/Feature-AsyncProjectileSystem.md))*
+- [ ] **Async Explosion System** — concurrent `ExplosionBState` explosion grouping with
+  batched visuals/sound/camera.
 - [ ] **Advanced Damage Models** — armor degradation, `blastDropoff` falloff,
   visual/sound scaling by blast radius.
-- [ ] **Engine plumbing** — `Game::getGame()` accessor (prereq for Effects).
 
 ## Phase 4: Items / Armor / Inventory Backbone (the data spine)
 
