@@ -1,6 +1,6 @@
 # Feature - Geoscape Activity Display
 
-**Status:** In progress — core display implemented; wounded soldier and active craft summaries complete.
+**Status:** Done — fully implemented. Global section shows economy warnings (negative balance, monthly deficit, maintenance spike). Per-base sections cover research, manufacturing, training, construction, craft maintenance/missions, stores, defense readiness, transfers, and wounded soldiers. Jun 2026.
 
 ## Overview
 

@@ -114,10 +114,9 @@ Everything below is DX-specific work confirmed **absent** from the base.
   (`keyInvCreateTemplate`/`keyInvApplyTemplate`), a **named global equipment library** (50 slots,
   `InventoryLoadState`/`InventorySaveState`, number-key quick load / Ctrl+number save), and **craft
   loadouts** (10 slots) all present. No work. *(reused later by Soldier Roles.)*
-- [ ] **Geoscape interface enhancements** — sidebar score + always-visible funds display.
-   - ◑ **Delta only:** funds + score display options already exist (`showFundsOnGeoscape`,
-     `oxceGeoShowScoreInsteadOfFunds`). Wire them into a persistent sidebar panel that is always
-     visible during geoscape navigation (not just toggled on/off). Low risk, pure UI polish.
+- [x] **Geoscape interface enhancements** — *already in OXCE-Plus.* `showFundsOnGeoscape` and
+  `oxceGeoShowScoreInsteadOfFunds` options cover both use cases. Score display is intentionally
+  not forced (it's a cheat in OXCE's own framing). → No DX work needed.
 
 ---
 
