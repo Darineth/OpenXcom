@@ -173,8 +173,8 @@ void Inventory::setSelectedUnit(BattleUnit *unit, bool resetGroundOffset)
 	_selUnit = unit;
 	if (resetGroundOffset)
 	{
-		_groundOffset = 9999;
-		arrangeGround(1);
+		_groundOffset = 0;
+		arrangeGround();
 	}
 }
 
@@ -381,12 +381,19 @@ void Inventory::drawItems()
 			if (groundItem == _selItem || groundItem->getRules()->getInventoryHeight() == 0 || groundItem->getRules()->getInventoryWidth() == 0 || !frame)
 				continue;
 
-			// check if item is in visible range
-			if (groundItem->getSlotX() < _groundOffset || groundItem->getSlotX() >= _groundOffset + _groundSlotsX)
+			// check if item is in visible range (account for multi-slot items)
+			int itemEnd = groundItem->getSlotX() + groundItem->getRules()->getInventoryWidth();
+			if (itemEnd <= _groundOffset || groundItem->getSlotX() >= _groundOffset + _groundSlotsX)
 				continue;
 
-			// check if something was draw here before
-			auto& pos = occupiedSlots[groundItem->getSlotY()][groundItem->getSlotX() - _groundOffset];
+			// relative slot position (can be negative for items partially off the left edge)
+			int relSlotX = groundItem->getSlotX() - _groundOffset;
+
+			// clamp to valid range for occupied slots cache — prevents negative index access
+			int cacheSlotX = std::max(relSlotX, 0);
+
+			// check if something was drawn here before (use clamped index)
+			auto& pos = occupiedSlots[groundItem->getSlotY()][cacheSlotX];
 			if (pos)
 			{
 				continue;
@@ -397,7 +404,7 @@ void Inventory::drawItems()
 			}
 
 			int x, y;
-			x = (groundItem->getSlot()->getX() + (groundItem->getSlotX() - _groundOffset) * RuleInventory::SLOT_W);
+			x = (groundItem->getSlot()->getX() + relSlotX * RuleInventory::SLOT_W);
 			y = (groundItem->getSlot()->getY() + groundItem->getSlotY() * RuleInventory::SLOT_H);
 			BattleItem::ScriptFill(&work, groundItem, save, BODYPART_ITEM_INVENTORY, _animFrame, 0);
 			work.executeBlit(frame, _items, x, y, 0);
@@ -1188,6 +1195,20 @@ void Inventory::mouseClick(Action *action, State *state)
 			}
 		}
 	}
+	else if (action->getDetails()->type == SDL_MOUSEBUTTONUP
+		&& (action->getDetails()->button.button == SDL_BUTTON_WHEELUP || action->getDetails()->button.button == SDL_BUTTON_WHEELDOWN))
+	{
+		if (_selUnit == 0)
+			return;
+
+		int x = (int)floor(action->getAbsoluteXMouse()) - getX(),
+			y = (int)floor(action->getAbsoluteYMouse()) - getY();
+		RuleInventory *slot = getSlotInPosition(&x, &y);
+		if (slot != 0 && slot->getType() == INV_GROUND)
+		{
+			arrangeGround(action->getDetails()->button.button == SDL_BUTTON_WHEELUP ? -1 : 1);
+		}
+	}
 	InteractiveSurface::mouseClick(action, state);
 }
 
@@ -1674,27 +1695,20 @@ void Inventory::arrangeGround(int alterOffset)
 	}
 	if (alterOffset > 0)
 	{
-		if (_xMax >= _groundOffset + slotsX)
+		_groundOffset += alterOffset;
+		int maxOffset = _xMax - slotsX;
+		if (_groundOffset > maxOffset)
 		{
-			_groundOffset += slotsX;
-		}
-		else
-		{
-			_groundOffset = 0;
+			_groundOffset = maxOffset < 0 ? 0 : maxOffset;
 		}
 	}
 	else if (alterOffset < 0)
 	{
-		// one step back
-		_groundOffset -= slotsX;
+		_groundOffset += alterOffset;
 
-		// if too much, as many steps forward as possible
 		if (_groundOffset < 0)
 		{
-			while (_xMax >= _groundOffset + slotsX)
-			{
-				_groundOffset += slotsX;
-			}
+			_groundOffset = 0;
 		}
 	}
 	drawItems();

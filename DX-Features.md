@@ -113,6 +113,14 @@ damage capacity, maximum speed, and acceleration on the left; current damage, sh
 the right. This mirrors the numbers already shown in the Ufopaedia craft article, but makes them
 available directly from Craft Info where base management happens.
 
+## Inventory UI Improvements
+
+The inventory ground area now supports mouse-wheel scrolling anywhere over the ground slots
+(`WHEEL UP` for backward, `WHEEL DOWN` for forward), alongside the existing ground-scroll button
+and keyboard controls. Scrolling moves one column at a time (not page-by-page), and the view
+starts fully scrolled left when a unit is selected. Multi-slot items that extend past the left
+edge of the viewport are rendered with their visible portion showing.
+
 ## Debriefing Soldier Results
 
 The Battlescape debriefing now keeps each soldier in the mission-results table and shows a compact

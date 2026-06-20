@@ -106,11 +106,10 @@ Everything below is DX-specific work confirmed **absent** from the base.
   - ✅ **Done.** Crafted a compact 2-column layout in CraftInfoState: damage capacity, max speed, and acceleration on the left; damage, shield, and fuel on the right. Values are populated in init() from RuleCraft getters.
 - [x] **Debriefing soldier status** — status column, wounded-recovery days, per-soldier
   gains breakdown. *(design: [plans/Feature-DebriefingSoldierStatus.md](plans/Feature-DebriefingSoldierStatus.md))*
-- [ ] **Inventory UI polish** — mousewheel ground scrolling, tooltip/stat-display mode,
-  inventory entry point from the soldier screen.
-  - ◑ **Delta only:** button/keyboard ground scroll and hover stat tooltips
-    (`showMoreStatsInInventoryView`) already exist; add **mousewheel** ground scrolling and an
-    **Equipment button on `SoldierInfoState`** to open the inventory.
+- [x] **Inventory UI polish** — mousewheel ground scrolling, one-column-at-a-time step, partial item visibility at edges.
+  - ✅ **Done.** Mousewheel ground scrolling anywhere over the ground inventory area (`SDL_BUTTON_WHEELUP`/`SDL_BUTTON_WHEELDOWN`), scrolled by one column per notch (not page-by-page). Ground starts fully scrolled left on unit select. Multi-slot items partially visible at the left edge render correctly. Button/keyboard ground scroll and hover stat tooltips (`showMoreStatsInInventoryView`) already existed in OXCE-Plus.
+- [ ] **Soldier Info Equipment button** — Inventory entry point from `SoldierInfoState`, full screen layout rearrangement to match Legacy DX reference.
+  - ◐ **Deferred:** requires broader SoldierInfoState rework (craft-as-button, LEVEL/EXP display, rank position, two-row button layout). See `reference/Legacy-DX-Screenshots/SoldierInfoButtons.png`.
 - [x] **Loadout templates** — *already in OXCE-Plus.* Clipboard create/apply
   (`keyInvCreateTemplate`/`keyInvApplyTemplate`), a **named global equipment library** (50 slots,
   `InventoryLoadState`/`InventorySaveState`, number-key quick load / Ctrl+number save), and **craft
