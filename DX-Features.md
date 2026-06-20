@@ -139,11 +139,31 @@ the recovery-day value are highlighted in the list's secondary color.
 ## Geoscape Activity Display
 
 A persistent text panel on the left side of the Geoscape showing real-time activity across all
-bases: research projects with translated names and progress (spent/cost), manufacturing items
-with progress, craft maintenance status (repairs/refueling/rearming), idle scientist and engineer
-counts, and alien resource storage. Updates every game hour matching the research tick frequency.
-Base names are shown as headers when multiple bases exist; single-base games skip the header to
-save space.
+bases. Updates on every game-time tick (5 s, 10 min, 30 min, 1 h, 1 day).
+
+**Global section (top, shown before per-base data):**
+- Economy warnings (reversed-color alert text): negative current balance ("In the red"), negative
+  monthly net (income − maintenance = "Monthly deficit"), and a maintenance spike flag when the
+  live maintenance exceeds last month's committed value by ≥ §100 k and ≥ 20%.
+
+**Per-base sections (each base shown with its name as header):**
+- Alien resource storage count.
+- Research projects: translated name with (spent/cost) progress.
+- Idle scientist alert (reversed color).
+- Manufacturing queue: item name with (produced/total) or (inf), plus a `[sell]` tag when
+  auto-sell is active.
+- Idle engineer alert (reversed color).
+- Training capacity: Martial Training (in-training/slots, plus queued count) and Psi Lab
+  Training (in-training/slots) — shown only when training facilities exist.
+- Facilities under construction: translated name and remaining days.
+- Craft maintenance: repairs with ETA highlighted (reversed color), or refuelling/rearming.
+- Active crafts (STR_OUT): craft name and detailed mission status (patrolling, intercepting UFO,
+  returning, low fuel, mission complete, tailing, or destination name).
+- Store warnings (reversed color): "Stores full" when items exceed capacity, "Stores near full"
+  when craft/transfer items would push stores over.
+- Base defense readiness (reversed color): count of disabled defense facilities, count of
+  defense facilities lacking required ammo.
+- Incoming transfers: count with nearest-arriving item name and ETA.
+- Wounded soldiers: total count, severe-wound subset (reversed), and longest recovery time in days.
 
 - Toggle: advanced option **Activity display** (`activityDisplayEnabled`, default on), under DX.
-- **TODO**: Add base facility building progress (construction of new labs, barracks, etc.).

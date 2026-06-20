@@ -173,6 +173,8 @@ heavily template/macro-based.
   `Game::loadLanguages` (`src/Engine/Game.cpp`). Group keys by source file with the existing
   `#=== Section ===` / `#FileName.cpp` comment convention. New `STR_*` keys referenced from C++
   via `tr(...)` must be defined here or they render as the raw token.
+- **All player-facing display text must be localized**: do not hard-code UI/output strings in C++.
+  Add/extend `STR_*` keys and render them through `tr(...)` (with `.arg(...)` where needed).
 
 # Planning Features
 

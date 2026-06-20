@@ -2957,11 +2957,50 @@ void GeoscapeState::buildActivityDisplay()
 	}
 
 	std::string text;
-	int baseIndex = 0;
+
+	// --- XCOM economy warnings (global section, shown first so never cut off) ---
+	{
+		SavedGame *save = _game->getSavedGame();
+		int64_t funds = save->getFunds();
+		int64_t income = save->getCountryFunding();
+		int64_t maintenance = save->getBaseMaintenance();
+		int64_t netMonthly = income - maintenance;
+
+		std::vector<std::string> warnings;
+
+		if (funds < 0)
+		{
+			warnings.push_back("  " + Unicode::TOK_COLOR_FLIP + std::string(tr("STR_ACTIVITY_ECONOMY_NEGATIVE_BALANCE").arg(Unicode::formatFunding(-funds))) + Unicode::TOK_COLOR_FLIP);
+		}
+
+		if (netMonthly < 0)
+		{
+			warnings.push_back("  " + Unicode::TOK_COLOR_FLIP + std::string(tr("STR_ACTIVITY_ECONOMY_DEFICIT").arg(Unicode::formatFunding(-netMonthly))) + Unicode::TOK_COLOR_FLIP);
+		}
+
+		int64_t previousMaintenance = 0;
+		auto &maintenanceHistory = save->getMaintenances();
+		if (maintenanceHistory.size() >= 2)
+			previousMaintenance = maintenanceHistory[maintenanceHistory.size() - 2];
+
+		if (previousMaintenance > 0 && maintenance > previousMaintenance
+			&& (maintenance - previousMaintenance) >= 100000
+			&& maintenance * 100 >= previousMaintenance * 120)
+		{
+			warnings.push_back("  " + Unicode::TOK_COLOR_FLIP + std::string(tr("STR_ACTIVITY_ECONOMY_MAINTENANCE_SPIKE").arg(Unicode::formatFunding(maintenance - previousMaintenance))) + Unicode::TOK_COLOR_FLIP);
+		}
+
+		if (!warnings.empty())
+		{
+			text += std::string(tr("STR_ACTIVITY_XCOM_HEADER")) + "\n";
+			for (const auto &line : warnings)
+				text += line + "\n";
+			text += "\n";
+		}
+	}
 
 	for (auto *base : bases)
 	{
-		baseIndex++;
 		bool hasContent = false;
 
 		// Base header (always shown)
@@ -2983,7 +3022,7 @@ void GeoscapeState::buildActivityDisplay()
 			}
 			if (totalFuel > 0)
 			{
-				text += "  Resources: " + std::to_string(totalFuel) + "\n";
+				text += "  " + std::string(tr("STR_ACTIVITY_RESOURCES")) + ": " + std::to_string(totalFuel) + "\n";
 				hasContent = true;
 			}
 		}
@@ -3011,14 +3050,14 @@ void GeoscapeState::buildActivityDisplay()
 					}
 					int spent = proj->getSpent();
 					int cost = proj->getCost();
-					text += "  Research: " + projectName + " (" + std::to_string(spent) + "/" + std::to_string(cost) + ")\n";
+					text += "  " + std::string(tr("STR_ACTIVITY_RESEARCH")) + ": " + projectName + " (" + std::to_string(spent) + "/" + std::to_string(cost) + ")\n";
 				}
 			}
 			hasContent = true;
 		}
 		if (idleScientists > 0)
 		{
-			text += std::string("  ") + Unicode::TOK_COLOR_FLIP + "Idle Scientists: " + std::to_string(idleScientists) + Unicode::TOK_COLOR_FLIP + "\n";
+			text += std::string("  ") + Unicode::TOK_COLOR_FLIP + std::string(tr("STR_ACTIVITY_IDLE_SCIENTISTS")) + ": " + std::to_string(idleScientists) + Unicode::TOK_COLOR_FLIP + "\n";
 			hasContent = true;
 		}
 
@@ -3039,15 +3078,15 @@ void GeoscapeState::buildActivityDisplay()
 					int total = prod->getAmountTotal();
 					if (prod->getInfiniteAmount())
 					{
-						text += "  Manufacturing: " + productName + " (inf)\n";
+						text += "  " + std::string(tr("STR_ACTIVITY_MANUFACTURING")) + ": " + productName + " (" + std::string(tr("STR_ACTIVITY_INFINITE")) + ")\n";
 					}
 					else
 					{
-						text += "  Manufacturing: " + productName + " (" + std::to_string(produced) + "/" + std::to_string(total) + ")\n";
+						text += "  " + std::string(tr("STR_ACTIVITY_MANUFACTURING")) + ": " + productName + " (" + std::to_string(produced) + "/" + std::to_string(total) + ")\n";
 					}
 					if (prod->getSellItems())
 					{
-						text += "    $\n";
+						text += "    [" + std::string(tr("STR_ACTIVITY_SELL_ITEMS")) + "]\n";
 					}
 				}
 			}
@@ -3055,7 +3094,7 @@ void GeoscapeState::buildActivityDisplay()
 		}
 		if (idleEngineers > 0)
 		{
-			text += std::string("  ") + Unicode::TOK_COLOR_FLIP + "Idle Engineers: " + std::to_string(idleEngineers) + Unicode::TOK_COLOR_FLIP + "\n";
+			text += std::string("  ") + Unicode::TOK_COLOR_FLIP + std::string(tr("STR_ACTIVITY_IDLE_ENGINEERS")) + ": " + std::to_string(idleEngineers) + Unicode::TOK_COLOR_FLIP + "\n";
 			hasContent = true;
 		}
 
@@ -3081,31 +3120,26 @@ void GeoscapeState::buildActivityDisplay()
 				}
 			}
 
-			int availableTraining = base->getFreeTrainingSpace();
-			int availablePsi = base->getFreePsiLabs();
+			int martialTotal = base->getAvailableTraining();
+			int psiTotal = base->getAvailablePsiLabs();
 
-			if (martialTraining > 0 || martialQueued > 0)
+			if (martialTotal > 0 || martialQueued > 0)
 			{
-				text += "  Martial Training: " + std::to_string(martialTraining);
-				if (availableTraining > 0)
-				{
-					text += "/" + std::to_string(martialTraining + availableTraining);
-				}
+				text += "  " + std::string(tr("STR_ACTIVITY_MARTIAL_TRAINING")) + ": " + std::to_string(martialTraining);
+				if (martialTotal > 0)
+					text += "/" + std::to_string(martialTotal);
 				if (martialQueued > 0)
 				{
-					text += " (" + std::to_string(martialQueued) + " queued)";
+					text += " (" + std::string(tr("STR_ACTIVITY_QUEUED").arg(martialQueued)) + ")";
 				}
 				text += "\n";
 				hasContent = true;
 			}
 
-			if (psiTraining > 0)
+			if (psiTotal > 0)
 			{
-				text += "  Psi Training: " + std::to_string(psiTraining);
-				if (availablePsi > 0)
-				{
-					text += "/" + std::to_string(psiTraining + availablePsi);
-				}
+				text += "  " + std::string(tr("STR_ACTIVITY_PSI_LAB")) + ": " + std::to_string(psiTraining);
+				text += "/" + std::to_string(psiTotal);
 				text += "\n";
 				hasContent = true;
 			}
@@ -3122,7 +3156,7 @@ void GeoscapeState::buildActivityDisplay()
 			if (buildDays > 0)
 			{
 				std::string facilityName = facility->getRules() != nullptr ? std::string(tr(facility->getRules()->getType())) : "???";
-				text += "  Base Building: " + facilityName + " (" + std::string(tr("STR_DAY_SHORT").arg(buildDays)) + ")\n";
+				text += "  " + std::string(tr("STR_ACTIVITY_BASE_BUILDING")) + ": " + facilityName + " (" + std::string(tr("STR_DAY_SHORT").arg(buildDays)) + ")\n";
 				hasContent = true;
 			}
 		}
@@ -3170,13 +3204,227 @@ void GeoscapeState::buildActivityDisplay()
 			}
 		}
 
+		// --- Active crafts (out on missions/patrol) ---
+		for (auto *craft : *crafts)
+		{
+			if (craft == nullptr)
+				continue;
+
+			std::string craftName = craft->getRules() != nullptr ? std::string(tr(craft->getRules()->getType())) : "???";
+			std::string status;
+
+			// Show crafts that are out on operations
+			if (craft->getStatus() == "STR_OUT")
+			{
+				// Determine detailed status (same logic as GeoscapeCraftState)
+				if (craft->getLowFuel())
+				{
+					status = std::string(tr("STR_LOW_FUEL_RETURNING_TO_BASE"));
+				}
+				else if (craft->getMissionComplete())
+				{
+					status = std::string(tr("STR_MISSION_COMPLETE_RETURNING_TO_BASE"));
+				}
+				else if (craft->getDestination() == 0)
+				{
+					status = std::string(tr("STR_PATROLLING"));
+				}
+				else if (craft->getDestination() == (Target*)craft->getBase())
+				{
+					status = std::string(tr("STR_RETURNING_TO_BASE"));
+				}
+				else
+				{
+					Ufo *u = dynamic_cast<Ufo*>(craft->getDestination());
+					if (u != 0)
+					{
+						if (craft->isInDogfight())
+						{
+							status = std::string(tr("STR_TAILING_UFO"));
+						}
+						else if (u->getStatus() == Ufo::FLYING)
+						{
+							status = std::string(tr("STR_INTERCEPTING_UFO").arg(u->getId()));
+						}
+						else
+						{
+							status = std::string(tr("STR_DESTINATION_UC_").arg(u->getName(_game->getLanguage())));
+						}
+					}
+					else
+					{
+						status = std::string(tr("STR_DESTINATION_UC_").arg(craft->getDestination()->getName(_game->getLanguage())));
+					}
+				}
+				text += "  " + craftName + " - " + status + "\n";
+				hasContent = true;
+			}
+		}
+
+		// --- Store capacity warnings ---
+		{
+			if (base->storesOverfull())
+			{
+				text += "  " + Unicode::TOK_COLOR_FLIP + std::string(tr("STR_ACTIVITY_STORES_FULL")) + Unicode::TOK_COLOR_FLIP + "\n";
+				hasContent = true;
+			}
+			else if (base->storesOverfullCritical())
+			{
+				// near-full warning: stores so full that incoming transfers can't fit
+				text += "  " + Unicode::TOK_COLOR_FLIP + std::string(tr("STR_ACTIVITY_STORES_NEAR_FULL")) + Unicode::TOK_COLOR_FLIP + "\n";
+				hasContent = true;
+			}
+		}
+
+		// --- Base defense readiness warnings ---
+		{
+			int disabledDefenses = 0;
+			int unarmedDefenses = 0;
+
+			for (auto *facility : *facilities)
+			{
+				if (facility == nullptr || facility->getBuildTime() > 0)
+					continue;
+
+				const RuleBaseFacility *rules = facility->getRules();
+				if (rules == nullptr || rules->getDefenseValue() <= 0)
+					continue;
+
+				if (facility->getDisabled())
+				{
+					disabledDefenses++;
+					continue;
+				}
+
+				int ammoNeeded = rules->getAmmoNeeded();
+				if (ammoNeeded <= 0)
+					continue;
+
+				if (rules->getAmmoMax() > 0)
+				{
+					if (facility->getAmmo() < ammoNeeded)
+						unarmedDefenses++;
+				}
+				else if (rules->getAmmoItem() != nullptr)
+				{
+					if (base->getStorageItems()->getItem(rules->getAmmoItem()) < ammoNeeded)
+						unarmedDefenses++;
+				}
+			}
+
+			if (disabledDefenses > 0)
+			{
+				text += "  " + Unicode::TOK_COLOR_FLIP + std::string(tr("STR_ACTIVITY_DEFENSE_DISABLED")) + ": " + std::to_string(disabledDefenses) + Unicode::TOK_COLOR_FLIP + "\n";
+				hasContent = true;
+			}
+
+			if (unarmedDefenses > 0)
+			{
+				text += "  " + Unicode::TOK_COLOR_FLIP + std::string(tr("STR_ACTIVITY_DEFENSE_UNARMED")) + ": " + std::to_string(unarmedDefenses) + Unicode::TOK_COLOR_FLIP + "\n";
+				hasContent = true;
+			}
+		}
+
+		// --- Incoming transfers summary ---
+		{
+			const auto *transfers = base->getTransfers();
+			if (transfers != nullptr && !transfers->empty())
+			{
+				int transferCount = 0;
+				unsigned int nearestEta = UINT_MAX;
+				std::string nearestName;
+
+				for (auto *t : *transfers)
+				{
+					if (t == nullptr || t->getHours() <= 0)
+						continue;
+
+					transferCount++;
+					int hoursLeft = t->getHours();
+					if (hoursLeft < 0)
+						hoursLeft = 0;
+					if ((unsigned int)hoursLeft < nearestEta)
+					{
+						nearestEta = (unsigned int)hoursLeft;
+						nearestName = t->getName(_game->getLanguage());
+					}
+				}
+
+				if (transferCount > 0)
+				{
+					std::string line = std::string(tr("STR_ACTIVITY_INCOMING_TRANSFERS")) + ": " + std::to_string(transferCount);
+					if (nearestEta < UINT_MAX)
+					{
+						int days = nearestEta / 24;
+						int hours = nearestEta % 24;
+						std::string eta;
+						if (days > 0)
+						{
+							eta += tr("STR_DAY_SHORT").arg(days);
+							if (hours > 0)
+							{
+								eta += " ";
+							}
+						}
+						if (hours > 0)
+						{
+							eta += tr("STR_HOUR_SHORT").arg(hours);
+						}
+						if (!eta.empty())
+						{
+							line += " (" + nearestName + " - " + eta + ")";
+						}
+					}
+					text += "  " + line + "\n";
+					hasContent = true;
+				}
+			}
+		}
+
+		// --- Wounded soldier summary ---
+		{
+			int totalWounded = 0;
+			int severeWounded = 0;
+			int maxRecovery = 0;
+
+			for (auto *soldier : *base->getSoldiers())
+			{
+				if (soldier == nullptr || !soldier->isWounded())
+					continue;
+
+				totalWounded++;
+				int recovery = soldier->getNeededRecoveryTime(base->getSumRecoveryPerDay());
+				if (recovery > 0)
+				{
+					maxRecovery = std::max(maxRecovery, recovery);
+				}
+				// Severe: missing > 50% of max health or mana
+				if (soldier->getHealthMissing() > soldier->getRules()->getHealthWoundThreshold()
+					|| soldier->getManaMissing() > soldier->getRules()->getManaWoundThreshold())
+				{
+					severeWounded++;
+				}
+			}
+
+			if (totalWounded > 0)
+			{
+				std::string line = std::string(tr("STR_ACTIVITY_WOUNDED")) + ": " + std::to_string(totalWounded);
+				if (severeWounded > 0)
+				{
+					line += " (" + std::to_string(severeWounded) + " " + std::string(tr("STR_ACTIVITY_SEVERE_WOUNDED")) + ")";
+				}
+				if (maxRecovery > 0)
+				{
+					line += " - " + std::string(tr("STR_DAY_SHORT").arg(maxRecovery));
+				}
+				text += "  " + line + "\n";
+				hasContent = true;
+			}
+		}
+
 		if (hasContent)
 		{
 			text += "\n"; // separator between bases
-		}
-		else
-		{
-			text += "  (no activity)\n\n";
 		}
 	}
 

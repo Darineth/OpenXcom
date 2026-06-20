@@ -1,6 +1,6 @@
 # Feature - Geoscape Activity Display
 
-**Status:** Not started.
+**Status:** In progress — core display implemented; wounded soldier and active craft summaries complete.
 
 ## Overview
 
@@ -294,10 +294,10 @@ If there are many bases (e.g., 10+), the display could exceed available vertical
 
 Per follow-up scope discussion, the activity display can be extended with the items below.
 
-- [ ] **Incoming transfers summary** per base (count + nearest ETA).
-- [ ] **Facility bottleneck warnings** (stores near/full, quarters full, no free hangars/labs/workshops).
-- [ ] **Wounded soldier summary** (total wounded; optional severe subset).
-- [ ] **Active craft operations summary** (craft currently out / interception-active count).
-- [ ] **Training capacity snapshot** (free martial training slots + free psi lab slots).
-- [ ] **Base defense readiness warnings** (disabled defenses and/or unarmed defense facilities).
-- [ ] **Economy warning line(s)** only for actionable alerts (e.g., projected negative cashflow, maintenance spike).
+- [x] **Incoming transfers summary** per base (count + nearest ETA).
+- [x] **Facility bottleneck warnings** (stores near/full only).
+- [x] **Wounded soldier summary** (total wounded; severe subset with recovery time).
+- [x] **Active craft operations summary** (craft currently out with detailed status: RETURNING TO BASE, INTERCEPTING UFO, PATROLLING, etc.).
+- [x] **Training capacity snapshot** (training/total for martial and psi).
+- [x] **Base defense readiness warnings** (disabled defenses and/or unarmed defense facilities).
+- [x] **Economy warning line(s)** only for actionable alerts (e.g., projected negative cashflow, maintenance spike).
