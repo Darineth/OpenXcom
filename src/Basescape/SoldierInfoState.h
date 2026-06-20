@@ -49,7 +49,7 @@ private:
 	Surface *_bg;
 	InteractiveSurface *_rank;
 	InteractiveSurface *_flag;
-	TextButton *_btnOk, *_btnPrev, *_btnNext, *_btnArmor, *_btnSack, *_btnDiary, *_btnBonuses, *_btnTransformations;
+	TextButton *_btnOk, *_btnPrev, *_btnNext, *_btnDiary, *_btnArmor, *_btnSack, *_btnCraft, *_btnInventory, *_btnBonuses, *_btnTransformations;
 	Text *_txtRank, *_txtMissions, *_txtKills, *_txtCraft, *_txtRecovery, *_txtPsionic, *_txtDead;
 	Text *_txtStuns;
 	TextEdit *_edtSoldier;
@@ -79,6 +79,10 @@ public:
 	void btnPrevClick(Action *action);
 	/// Handler for clicking the Next button.
 	void btnNextClick(Action *action);
+	/// Handler for clicking the Craft button.
+	void btnCraftClick(Action *action);
+	/// Handler for clicking the Inventory button.
+	void btnInventoryClick(Action *action);
 	/// Handler for clicking the Armor button.
 	void btnArmorClick(Action *action);
 	/// Handler for clicking the Bonuses button.

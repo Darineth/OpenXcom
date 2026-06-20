@@ -108,8 +108,8 @@ Everything below is DX-specific work confirmed **absent** from the base.
   gains breakdown. *(design: [plans/Feature-DebriefingSoldierStatus.md](plans/Feature-DebriefingSoldierStatus.md))*
 - [x] **Inventory UI polish** — mousewheel ground scrolling, one-column-at-a-time step, partial item visibility at edges.
   - ✅ **Done.** Mousewheel ground scrolling anywhere over the ground inventory area (`SDL_BUTTON_WHEELUP`/`SDL_BUTTON_WHEELDOWN`), scrolled by one column per notch (not page-by-page). Ground starts fully scrolled left on unit select. Multi-slot items partially visible at the left edge render correctly. Button/keyboard ground scroll and hover stat tooltips (`showMoreStatsInInventoryView`) already existed in OXCE-Plus.
-- [ ] **Soldier Info Equipment button** — Inventory entry point from `SoldierInfoState`, full screen layout rearrangement to match Legacy DX reference.
-  - ◐ **Deferred:** requires broader SoldierInfoState rework (craft-as-button, LEVEL/EXP display, rank position, two-row button layout). See `reference/Legacy-DX-Screenshots/SoldierInfoButtons.png`.
+- [x] **Soldier Info Equipment button** — Inventory entry point from `SoldierInfoState`, full screen layout rearrangement to match Legacy DX reference.
+  - ✅ **Done (without Level/EXP):** SoldierInfoState now uses a two-row button layout matching the Legacy DX direction: top row `<< / OK / >> / DIARY / ARMOR / SACK`, second row with craft-as-button and `INVENTORY`. Craft is now a clickable **assign/unassign toggle** for the base's first craft slot (and shows standard craft-capacity/group errors). `INVENTORY` opens base inventory setup with the current soldier preselected. **Level/EXP remains deferred** to a future feature.
 - [x] **Loadout templates** — *already in OXCE-Plus.* Clipboard create/apply
   (`keyInvCreateTemplate`/`keyInvApplyTemplate`), a **named global equipment library** (50 slots,
   `InventoryLoadState`/`InventorySaveState`, number-key quick load / Ctrl+number save), and **craft

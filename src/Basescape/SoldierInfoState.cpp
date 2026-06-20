@@ -46,6 +46,11 @@
 #include "../Mod/RuleInterface.h"
 #include "../Mod/RuleSoldier.h"
 #include "../Savegame/SoldierDeath.h"
+#include "../Battlescape/BattlescapeGenerator.h"
+#include "../Battlescape/InventoryState.h"
+#include "../Savegame/SavedBattleGame.h"
+#include "../Savegame/BattleUnit.h"
+#include "../Engine/Screen.h"
 
 namespace OpenXcom
 {
@@ -83,20 +88,22 @@ SoldierInfoState::SoldierInfoState(Base *base, size_t soldierId, bool forceLimit
 	_btnPrev = new TextButton(28, 14, 0, 33);
 	_btnOk = new TextButton(48, 14, 30, 33);
 	_btnNext = new TextButton(28, 14, 80, 33);
-	_btnArmor = new TextButton(110, 14, 130, 33);
-	_btnBonuses = new TextButton(16, 14, 242, 33);
-	_btnTransformations = new TextButton(18, 14, 110, 33);
-	_edtSoldier = new TextEdit(this, 210, 16, 40, 9);
+	_btnDiary = new TextButton(68, 14, 110, 33);
+	_btnArmor = new TextButton(80, 14, 180, 33);
 	_btnSack = new TextButton(60, 14, 260, 33);
-	_btnDiary = new TextButton(60, 14, 260, 48);
-	_txtRank = new Text(130, 9, 0, 48);
-	_txtMissions = new Text(100, 9, 130, 48);
-	_txtKills = new Text(100, 9, 200, 48);
-	_txtStuns = new Text(60, 9, 260, 48);
-	_txtCraft = new Text(130, 9, 0, 56);
-	_txtRecovery = new Text(180, 9, 130, 56);
+	_btnCraft = new TextButton(108, 14, 0, 48);
+	_btnInventory = new TextButton(68, 14, 110, 48);
+	_btnBonuses = new TextButton(16, 14, 242, 48);
+	_btnTransformations = new TextButton(18, 14, 260, 48);
+	_txtRank = new Text(130, 9, 35, 4);
+	_edtSoldier = new TextEdit(this, 210, 16, 35, 12);
+	_txtMissions = new Text(100, 9, 130, 64);
+	_txtKills = new Text(100, 9, 200, 64);
+	_txtStuns = new Text(60, 9, 260, 64);
+	_txtCraft = new Text(130, 9, 0, 72);
+	_txtRecovery = new Text(180, 9, 130, 72);
 	_txtPsionic = new Text(150, 9, 0, 66);
-	_txtDead = new Text(150, 9, 130, 33);
+	_txtDead = new Text(150, 9, 130, 64);
 
 	int yPos = 80;
 	int step = 11;
@@ -177,12 +184,14 @@ SoldierInfoState::SoldierInfoState(Base *base, size_t soldierId, bool forceLimit
 	add(_btnOk, "button", "soldierInfo");
 	add(_btnPrev, "button", "soldierInfo");
 	add(_btnNext, "button", "soldierInfo");
+	add(_btnDiary, "button", "soldierInfo");
 	add(_btnArmor, "button", "soldierInfo");
+	add(_btnSack, "button", "soldierInfo");
+	add(_btnCraft, "button", "soldierInfo");
+	add(_btnInventory, "button", "soldierInfo");
 	add(_btnBonuses, "button", "soldierInfo");
 	add(_btnTransformations, "button", "soldierInfo");
 	add(_edtSoldier, "text1", "soldierInfo");
-	add(_btnSack, "button", "soldierInfo");
-	add(_btnDiary, "button", "soldierInfo");
 	add(_txtRank, "text1", "soldierInfo");
 	add(_txtMissions, "text1", "soldierInfo");
 	add(_txtKills, "text1", "soldierInfo");
@@ -282,6 +291,13 @@ SoldierInfoState::SoldierInfoState(Base *base, size_t soldierId, bool forceLimit
 	{
 		_btnArmor->setVisible(false);
 	}
+
+	_btnCraft->setText(tr("STR_NONE_UC"));
+	_btnCraft->onMouseClick((ActionHandler)&SoldierInfoState::btnCraftClick);
+
+	_btnInventory->setText(tr("STR_INVENTORY"));
+	_btnInventory->onMouseClick((ActionHandler)&SoldierInfoState::btnInventoryClick);
+	_btnInventory->onKeyboardPress((ActionHandler)&SoldierInfoState::btnInventoryClick, Options::keyBattleInventory);
 
 	_btnBonuses->setText(tr("STR_BONUSES_BUTTON")); // tiny button, default translation is " "
 	_btnBonuses->onMouseClick((ActionHandler)&SoldierInfoState::btnBonusesClick);
@@ -485,7 +501,9 @@ void SoldierInfoState::init()
 	bool showNastyButtons = !_readOnly && _game->getSavedGame()->getMonthsPassed() > -1 && !(_soldier->getCraft() && _soldier->getCraft()->getStatus() == "STR_OUT");
 
 	_btnSack->setVisible(showNastyButtons);
+	_btnCraft->setVisible(showNastyButtons);
 	_btnTransformations->setVisible(showNastyButtons && !_noTransformations);
+	_btnInventory->setVisible(showNastyButtons && _base->getAvailableSoldiers(true, true) > 0);
 
 	_txtRank->setText(tr("STR_RANK_").arg(tr(_soldier->getRankString())));
 
@@ -505,7 +523,10 @@ void SoldierInfoState::init()
 	{
 		craft = _soldier->getCraft()->getName(_game->getLanguage());
 	}
+	_btnCraft->setText(craft);
+	_btnCraft->setVisible(true);
 	_txtCraft->setText(tr("STR_CRAFT_").arg(craft));
+	_txtCraft->setVisible(false);
 
 	BaseSumDailyRecovery recovery = _base ? _base->getSumRecoveryPerDay() : BaseSumDailyRecovery();
 	auto getDaysOrInfinity = [&](int days)
@@ -594,6 +615,8 @@ void SoldierInfoState::init()
 	{
 		_btnArmor->setVisible(false);
 		_btnSack->setVisible(false);
+		_btnCraft->setVisible(false);
+		_btnInventory->setVisible(false);
 		_txtCraft->setVisible(false);
 		_txtDead->setVisible(true);
 		std::string status = "STR_MISSING_IN_ACTION";
@@ -701,6 +724,113 @@ void SoldierInfoState::btnNextClick(Action *)
 	if (_soldierId >= _list->size())
 		_soldierId = 0;
 	init();
+}
+
+/**
+ * Toggles craft assignment for this soldier.
+ * @param action Pointer to an action.
+ */
+void SoldierInfoState::btnCraftClick(Action *)
+{
+	if (_base == 0 || _soldier == 0)
+	{
+		return;
+	}
+
+	if (_soldier->getCraft())
+	{
+		if (_soldier->getCraft()->getStatus() != "STR_OUT")
+		{
+			_soldier->setCraftAndMoveEquipment(0, _base, _game->getSavedGame()->getMonthsPassed() == -1);
+			init();
+		}
+		return;
+	}
+
+	if (!_soldier->hasFullHealth())
+	{
+		return;
+	}
+
+	Craft *targetCraft = 0;
+	for (auto* c : *_base->getCrafts())
+	{
+		if (c->getStatus() == "STR_OUT")
+		{
+			continue;
+		}
+		if (!c->getRules()->getAllowLanding())
+		{
+			continue;
+		}
+		if (c->getRules()->getMaxSoldiers() == 0)
+		{
+			continue;
+		}
+		targetCraft = c;
+		break;
+	}
+
+	if (!targetCraft)
+	{
+		return;
+	}
+
+	int space = targetCraft->getSpaceAvailable();
+	CraftPlacementErrors err = targetCraft->validateAddingSoldier(space, _soldier);
+	if (err == CPE_None)
+	{
+		_soldier->setCraftAndMoveEquipment(targetCraft, _base, _game->getSavedGame()->getMonthsPassed() == -1, true);
+		init();
+	}
+	else if (err == CPE_SoldierGroupNotAllowed)
+	{
+		_game->pushState(new ErrorMessageState(tr("STR_SOLDIER_GROUP_NOT_ALLOWED"), _palette, _game->getMod()->getInterface("soldierInfo")->getElement("errorMessage")->color, "BACK01.SCR", _game->getMod()->getInterface("soldierInfo")->getElement("errorPalette")->color));
+	}
+	else if (err == CPE_SoldierGroupNotSame)
+	{
+		_game->pushState(new ErrorMessageState(tr("STR_SOLDIER_GROUP_NOT_SAME"), _palette, _game->getMod()->getInterface("soldierInfo")->getElement("errorMessage")->color, "BACK01.SCR", _game->getMod()->getInterface("soldierInfo")->getElement("errorPalette")->color));
+	}
+	else if (err == CPE_ArmorGroupNotAllowed)
+	{
+		_game->pushState(new ErrorMessageState(tr("STR_ARMOR_GROUP_NOT_ALLOWED"), _palette, _game->getMod()->getInterface("soldierInfo")->getElement("errorMessage")->color, "BACK01.SCR", _game->getMod()->getInterface("soldierInfo")->getElement("errorPalette")->color));
+	}
+	else
+	{
+		_game->pushState(new ErrorMessageState(tr("STR_NOT_ENOUGH_CRAFT_SPACE"), _palette, _game->getMod()->getInterface("soldierInfo")->getElement("errorMessage")->color, "BACK01.SCR", _game->getMod()->getInterface("soldierInfo")->getElement("errorPalette")->color));
+	}
+}
+
+/**
+ * Opens inventory setup with the current soldier selected.
+ * @param action Pointer to an action.
+ */
+void SoldierInfoState::btnInventoryClick(Action *)
+{
+	if (_base == 0 || _soldier == 0 || _base->getAvailableSoldiers(true, true) == 0)
+	{
+		return;
+	}
+
+	SavedBattleGame *bgame = new SavedBattleGame(_game->getMod(), _game->getLanguage());
+	_game->getSavedGame()->setBattleGame(bgame);
+	bgame->setMissionType("STR_BASE_DEFENSE");
+
+	BattlescapeGenerator bgen = BattlescapeGenerator(_game);
+	bgen.setBase(_base);
+	bgen.runInventory(0);
+
+	for (auto* unit : *bgame->getUnits())
+	{
+		if (unit->getId() == _soldier->getId())
+		{
+			bgame->setSelectedUnit(unit);
+			break;
+		}
+	}
+
+	_game->getScreen()->clear();
+	_game->pushState(new InventoryState(false, 0, _base, true));
 }
 
 /**

@@ -121,6 +121,14 @@ and keyboard controls. Scrolling moves one column at a time (not page-by-page), 
 starts fully scrolled left when a unit is selected. Multi-slot items that extend past the left
 edge of the viewport are rendered with their visible portion showing.
 
+## Soldier Info Layout Rework
+
+The Soldier Info screen now follows the Legacy DX-style two-row action layout (excluding Level/EXP):
+top row `<<`, `OK`, `>>`, `DIARY`, `ARMOR`, `SACK`; second row with a craft button and
+`INVENTORY`. The craft line is now a clickable assign/unassign toggle for the base's first craft
+slot (using the same placement validation rules as craft soldier assignment), and `INVENTORY`
+opens base inventory setup with the current soldier pre-selected.
+
 ## Debriefing Soldier Results
 
 The Battlescape debriefing now keeps each soldier in the mission-results table and shows a compact
