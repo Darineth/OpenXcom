@@ -114,12 +114,10 @@ Everything below is DX-specific work confirmed **absent** from the base.
   (`keyInvCreateTemplate`/`keyInvApplyTemplate`), a **named global equipment library** (50 slots,
   `InventoryLoadState`/`InventorySaveState`, number-key quick load / Ctrl+number save), and **craft
   loadouts** (10 slots) all present. No work. *(reused later by Soldier Roles.)*
-- [ ] **Geoscape enhancements** — local/regional funding weighting, linear council
-  increases, sidebar score + always-visible funds.
-  - ◑ **Delta only:** funds + score display already exist (`showFundsOnGeoscape`,
-    `oxceGeoShowScoreInsteadOfFunds`). The **local/regional funding weighting** and **linear council
-    increases** are absent — and balance-sensitive (`Country::newMonth` is exponential today); needs
-    a design decision before building.
+- [ ] **Geoscape interface enhancements** — sidebar score + always-visible funds display.
+   - ◑ **Delta only:** funds + score display options already exist (`showFundsOnGeoscape`,
+     `oxceGeoShowScoreInsteadOfFunds`). Wire them into a persistent sidebar panel that is always
+     visible during geoscape navigation (not just toggled on/off). Low risk, pure UI polish.
 
 ---
 
@@ -213,6 +211,22 @@ Everything below is DX-specific work confirmed **absent** from the base.
   tree. *(needs inventory layouts, directional armor/sided slots, item stats)*
 - [ ] **Air-Combat Minigame** — turn-based pursuit, enemy AI, armed UFOs/escorts; gated
   behind `enableNewAirCombat` (off by default). *(largely independent)*
+
+## Phase 11: Strategic Balance & Economy (new mechanic)
+
+*Goal: Introduce new strategic-layer mechanics that change how the game's economy and
+council scoring work. This is not a UX polish — it adds a new resource-management dimension
+and changes core progression curves.*
+
+- [ ] **Funding weighting** — replace flat monthly income with local/regional performance
+  scoring: countries weight contributions based on nearby craft coverage, alien threats
+  neutralized, and base reputation. *(new mechanic — changes `Country::newMonth` from a
+  flat lookup to a performance-weighted formula; balance-sensitive)*
+- [ ] **Linear council increases** — replace the exponential council score growth with
+  linear (or configurable) per-month increases. *(new mechanic — `Country::newMonth` is
+  exponential today; changing the curve affects mission pacing and difficulty scaling)*
+- [ ] **Economy tuning hooks** — ruleset-exposed parameters for funding weights, council
+  curves, and regional performance factors so mods can tune without code changes.
 
 ---
 

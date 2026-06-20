@@ -124,16 +124,17 @@ This document serves as a high-level checklist of features from the original Ope
     - [x] Implement allow tanks/HWPs to click-open doors — *already in OXCE-Plus* (`unitOpensDoor` loops all size tiles, no size gate)
     - [ ] Implement loading rulesets from subdirectories
 
-## 11. Strategic & Geoscape Features
-- [ ] **Geoscape Enhancements**
-    - [ ] Implement funding weighting (local/regional performance)
-    - [ ] Implement linear council increases
-    - [ ] Implement sidebar score/funds visibility
-- [ ] **Modular Vehicles (HWPs)**
+## 11. Geoscape Interface Enhancements
+- [ ] **Geoscape UI Polish**
+    - [ ] Implement sidebar score + always-visible funds display
+    - [ ] Implement persistent geoscape info panel (not toggle-based)
+
+## 12. Modular Vehicles (HWPs)
+- [ ] **Vehicle Customization**
     - [ ] Implement customizable HWP chassis/engines/armor/weapons
     - [ ] Implement vehicle weapon trees
 
-## 12. Miscellaneous Battlescape Features
+## 13. Miscellaneous Battlescape Features
 - [ ] **Air-Combat Minigame**
     - [ ] Implement turn-based pursuit replacement
     - [ ] Implement positional movement and TU/fuel costs
@@ -146,14 +147,14 @@ This document serves as a high-level checklist of features from the original Ope
     - [ ] Implement reduced grenade accuracy penalty — N/A on current base (OXCE has no throw penalty); revisit with aim-cone firing (§5)
     - [x] Implement kneel/stand pathing recalculation (path preview refresh on toggle) — *already in OXCE-Plus* (`btnKneelClick` → `refreshPath`)
 
-## 13. Effects Framework
+## 14. Effects Framework
 - [ ] **Effects System**
     - [ ] Implement `RuleEffect` / `BattleEffect` / `EffectComponent` (initial/ongoing/final, duration, maxStack)
     - [ ] Implement item effect hooks (`hitEffect` / `equippedEffect`)
     - [ ] Implement light-emitting effect components (`EC_CIRCULAR_LIGHT` / `EC_DIRECTIONAL_LIGHT`)
     - [ ] Implement stealth / visibility effect components (`EC_STEALTH`, `EC_NIGHT_VISION`)
 
-## 14. AI Enhancements
+## 15. AI Enhancements
 - [ ] **Per-Weapon AI Targeting**
     - [ ] Implement AI engagement range bands (`aiRangeClose`/`Mid`/`Long`/`Max`)
     - [ ] Implement AI target priorities per band (`aiAttackPriority*`)
@@ -161,7 +162,7 @@ This document serves as a high-level checklist of features from the original Ope
     - [ ] Implement normal TU-reserve logic for AI (drop custom percentages)
     - [ ] Implement reaction-fire fixes and counter-mind-control behavior
 
-## 15. Base / Manufacture / Purchase / Transfer UI
+## 16. Base / Manufacture / Purchase / Transfer UI
 - [ ] **Manufacture Enhancements**
     - [ ] Implement sell-per-unit and current-stores readouts
     - [ ] Implement vehicle-category production gating (free living-quarters slot)
@@ -174,7 +175,7 @@ This document serves as a high-level checklist of features from the original Ope
     - [ ] Implement stores/quarters + sell-price info panels
     - [ ] Implement space-used display at both source and destination base on transfers
 
-## 16. OXCE+ Integration
+## 17. OXCE+ Integration
 - [ ] **Martial / Basic Training**
     - [ ] Implement training facilities (`trainingRooms`, `customTrainingFactor`)
     - [ ] Implement training UI (assign/allocate/finished states)
@@ -197,3 +198,16 @@ This document serves as a high-level checklist of features from the original Ope
     - [ ] Implement craft equipment templates
     - [ ] Implement tech-tree viewer
     - [ ] Implement `RuleDamageType` / `ModScript` hooks
+
+## 18. Strategic Balance & Economy (new mechanic)
+
+*Not a UX polish — introduces new strategic-layer mechanics that change core progression.*
+
+- [ ] **Funding Weighting**
+    - [ ] Implement local/regional performance-based funding (countries weight contributions by nearby craft coverage, alien threats neutralized, base reputation)
+    - [ ] Replace flat monthly income with performance-weighted formula (balance-sensitive — `Country::newMonth` is exponential today)
+- [ ] **Linear Council Increases**
+    - [ ] Replace exponential council score growth with linear (or configurable) per-month increases
+    - [ ] Configurable curve affects mission pacing and difficulty scaling
+- [ ] **Economy Tuning Hooks**
+    - [ ] Expose ruleset parameters for funding weights, council curves, and regional performance factors so mods can tune without code changes
