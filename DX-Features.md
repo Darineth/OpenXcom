@@ -257,3 +257,12 @@ in via `tuAuto`; weapons without it behave exactly as before.
   from center to edge inside the AoE radius. `0.0` keeps vanilla flat behavior, while higher
   values increasingly weight damage toward ground zero.
 
+## Explosion VFX/Sound Radius Scaling
+
+- Explosion presentation for area-of-effect blasts now scales from blast radius rather than
+  damage power.
+- Explosion sprite density/spread are driven by the resolved blast radius, so wide-radius effects
+  no longer look underpowered just because their damage value is low.
+- Big vs small explosion sound selection is now keyed to radius as well, keeping audio behavior
+  aligned with visual blast size.
+

@@ -140,8 +140,10 @@ Everything below is DX-specific work confirmed **absent** from the base.
 - [x] **Blast Radius Dropoff** — `RuleItem.blastDropoff` falloff inside AoE radius.
   - ✅ **Done.** Center-weighted explosion power scaling is implemented; `0.0` preserves flat
     vanilla behavior.
-- [ ] **Explosion VFX/Sound Radius Scaling** — presentation controls by blast radius.
-  - Proposed rule change note: explosion visuals are sized by blast radius rather than power, and the visual size/sound are synchronized to that radius.
+- [x] **Explosion VFX/Sound Radius Scaling** — presentation controls by blast radius.
+  - ✅ **Done.** Explosion presentation now scales from blast radius (not damage power):
+    sprite density/spread are radius-driven, and the small/large explosion sound threshold is
+    keyed off radius as well.
 - [ ] **Armor Degradation** — sustained side-armor wear from penetrating hits.
   - Deferred for a follow-up design.
   - Proposed rule change note: a portion of incoming damage will be applied to armor, e.g. 10% when damage exceeds 50% of armor, rising to 20% when damage is actually dealt.
