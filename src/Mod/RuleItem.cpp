@@ -204,6 +204,7 @@ RuleItem::RuleItem(const std::string &type, int listOrder) :
 	_confAimed.range = 200;
 	_confSnap.range = 15;
 	_confAuto.range = 7;
+	_confBurst.range = 10; // DX: burst sits between snap (15) and auto (7)
 
 	_confAimed.cost = { 0 };
 	_confSnap.cost = { 0, {} };
@@ -218,8 +219,10 @@ RuleItem::RuleItem(const std::string &type, int listOrder) :
 	_confAimed.name = "STR_AIMED_SHOT";
 	_confSnap.name = "STR_SNAP_SHOT";
 	_confAuto.name = "STR_AUTO_SHOT";
+	_confBurst.name = "STR_BURST_SHOT";
 
 	_confAuto.shots = 3;
+	_confBurst.shots = 2; // DX: burst defaults to a 2-round volley
 
 	_customItemPreviewIndex.push_back(Mod::NO_SURFACE);
 }
@@ -496,6 +499,7 @@ void RuleItem::load(const YAML::YamlNodeReader& node, Mod *mod, const ModScript&
 	reader.tryRead("accuracyAuto", _confAuto.accuracy);
 	reader.tryRead("accuracySnap", _confSnap.accuracy);
 	reader.tryRead("accuracyMelee", _confMelee.accuracy);
+	reader.tryRead("accuracyBurst", _confBurst.accuracy);
 	reader.tryRead("accuracyUse", _accuracyUse);
 	reader.tryRead("accuracyMindControl", _accuracyMind);
 	reader.tryRead("accuracyPanic", _accuracyPanic);
@@ -515,6 +519,7 @@ void RuleItem::load(const YAML::YamlNodeReader& node, Mod *mod, const ModScript&
 	_confAuto.cost.loadCost(reader, "Auto");
 	_confSnap.cost.loadCost(reader, "Snap");
 	_confMelee.cost.loadCost(reader, "Melee");
+	_confBurst.cost.loadCost(reader, "Burst");
 	_costUse.loadCost(reader, "Use");
 	_costMind.loadCost(reader, "MindControl");
 	_costPanic.loadCost(reader, "Panic");
@@ -528,6 +533,7 @@ void RuleItem::load(const YAML::YamlNodeReader& node, Mod *mod, const ModScript&
 	_confAuto.flat.loadFlat(reader, "Auto");
 	_confSnap.flat.loadFlat(reader, "Snap");
 	_confMelee.flat.loadFlat(reader, "Melee");
+	_confBurst.flat.loadFlat(reader, "Burst");
 	_flatUse.loadFlat(reader, "Use");
 	_flatThrow.loadFlat(reader, "Throw");
 	_flatPrime.loadFlat(reader, "Prime");
@@ -537,6 +543,7 @@ void RuleItem::load(const YAML::YamlNodeReader& node, Mod *mod, const ModScript&
 	loadConfAction(_confAuto, reader, "Auto");
 	loadConfAction(_confSnap, reader, "Snap");
 	loadConfAction(_confMelee, reader, "Melee");
+	loadConfAction(_confBurst, reader, "Burst");
 
 	auto loadAmmoConf = [&](int offset, const YAML::YamlNodeReader& n)
 	{
@@ -616,12 +623,14 @@ void RuleItem::load(const YAML::YamlNodeReader& node, Mod *mod, const ModScript&
 	reader.tryRead("aimRange", _confAimed.range);
 	reader.tryRead("autoRange", _confAuto.range);
 	reader.tryRead("snapRange", _confSnap.range);
+	reader.tryRead("burstRange", _confBurst.range);
 	reader.tryRead("minRange", _minRange);
 	reader.tryRead("dropoff", _dropoff);
 	reader.tryRead("bulletSpeed", _bulletSpeed);
 	reader.tryRead("explosionSpeed", _explosionSpeed);
 	reader.tryRead("fireInterval", _fireInterval);
 	reader.tryRead("autoShots", _confAuto.shots);
+	reader.tryRead("burstShots", _confBurst.shots);
 	reader.tryRead("shotgunPellets", _shotgunPellets);
 	reader.tryRead("shotgunBehavior", _shotgunBehaviorType);
 	reader.tryRead("shotgunSpread", _shotgunSpread);
@@ -689,7 +698,7 @@ void RuleItem::afterLoad(const Mod* mod)
 {
 	if ((_battleType == BT_MELEE || _battleType == BT_FIREARM) && _clipSize == 0)
 	{
-		for (RuleItemAction* conf : { &_confAimed, &_confAuto, &_confSnap, &_confMelee, })
+		for (RuleItemAction* conf : { &_confAimed, &_confAuto, &_confSnap, &_confMelee, &_confBurst, })
 		{
 			if (conf->ammoSlot != RuleItem::AmmoSlotSelfUse && _compatibleAmmoNames[conf->ammoSlot].empty())
 			{
@@ -1372,6 +1381,14 @@ const RuleItemAction *RuleItem::getConfigMelee() const
 	return &_confMelee;
 }
 
+/**
+ * Get configuration of burst shot action.
+ */
+const RuleItemAction *RuleItem::getConfigBurst() const
+{
+	return &_confBurst;
+}
+
 
 /**
  * Gets the item's accuracy for snapshots.
@@ -1407,6 +1424,15 @@ int RuleItem::getAccuracyAimed() const
 int RuleItem::getAccuracyMelee() const
 {
 	return _confMelee.accuracy;
+}
+
+/**
+ * Gets the item's accuracy for burst shots.
+ * @return The burst shot accuracy.
+ */
+int RuleItem::getAccuracyBurst() const
+{
+	return _confBurst.accuracy;
 }
 
 /**
@@ -1506,6 +1532,15 @@ RuleItemUseCost RuleItem::getCostSnap() const
 RuleItemUseCost RuleItem::getCostMelee() const
 {
 	return getDefault(_confMelee.cost);
+}
+
+/**
+ * Gets the item's time unit percentage for burst shots.
+ * @return The burst shot TU percentage (falls back to aimed).
+ */
+RuleItemUseCost RuleItem::getCostBurst() const
+{
+	return getDefault(_confBurst.cost, _confAimed.cost);
 }
 
 /**
@@ -2201,6 +2236,15 @@ RuleItemUseFlat RuleItem::getFlatSnap() const
 RuleItemUseFlat RuleItem::getFlatMelee() const
 {
 	return getDefault(_confMelee.flat, _flatUse);
+}
+
+/**
+ * Returns whether this item charges a flat rate for costBurst.
+ * @return True if this item charges a flat rate for costBurst.
+ */
+RuleItemUseFlat RuleItem::getFlatBurst() const
+{
+	return getDefault(_confBurst.flat, _confAimed.flat, _flatUse);
 }
 
 /**

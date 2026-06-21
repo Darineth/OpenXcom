@@ -34,6 +34,8 @@ class ActionMenuState : public State
 protected:
 	BattleAction *_action;
 	ActionMenuItem *_actionMenu[6];
+	/// Guards against firing more than one action (e.g. two menu items sharing a hotkey).
+	bool _actionChosen = false;
 	/// Adds a new menu item for an action.
 	void addItem(BattleActionType ba, const std::string &name, int *id, SDLKey key);
 	/// Acts on the action instance that has been chosen and set.

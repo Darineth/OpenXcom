@@ -133,6 +133,9 @@ Everything below is DX-specific work confirmed **absent** from the base.
 - [x] **Async Explosion System** — impact explosions animate concurrently (non-blocking)
   alongside the still-flying volley; per-state sprite ownership + wall-clock pacing.
   *(design: [plans/Feature-AsyncProjectileSystem.md](plans/Feature-AsyncProjectileSystem.md))*
+- [x] **Burst Fire Mode** — `BA_BURSTSHOT`, a fourth firing mode (own accuracy/TU/shots/range,
+  opt-in via `accuracyBurst`), sequential rounds reusing the async auto-shot path.
+  *(design: [plans/Feature-BurstFire.md](plans/Feature-BurstFire.md))*
 - [ ] **Advanced Damage Models** — armor degradation, `blastDropoff` falloff,
   visual/sound scaling by blast radius.
 
@@ -162,7 +165,6 @@ Everything below is DX-specific work confirmed **absent** from the base.
 - [ ] **Throw-accuracy tuning (if needed)** — OXCE currently applies no throw LOS penalty
   (`accuracyThrow` default 100; `_noLOSAccuracyPenalty` is aimed-shot-only). Only add a
   reduced throw penalty if the aim-cone firing model introduces one that needs softening.
-- [ ] **Burst Fire Mode** — `BA_BURSTSHOT`. *(needs aim-cone)*
 - [ ] **Shotgun & Multi-Projectile** — simultaneous pellets, spread, dual-fire. *(needs
   async projectile + aim-cone)* — **pellets now fly as individual concurrent projectiles with
   spread** (each resolves its own impact via the async projectile system); **dual-fire still

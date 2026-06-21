@@ -64,6 +64,7 @@ private:
 	const RuleItemAction *_confSnap = nullptr;
 	const RuleItemAction *_confAuto = nullptr;
 	const RuleItemAction *_confMelee = nullptr;
+	const RuleItemAction *_confBurst = nullptr;
 	ScriptValues<BattleItem> _scriptValues;
 
 public:

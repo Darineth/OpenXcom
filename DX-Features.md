@@ -225,3 +225,27 @@ instant the round lands (so the live-recalculation above sees destroyed terrain 
 the animation and its end-of-animation casualty resolution run alongside continued fire. Thrown
 grenades and blaster-launcher waypoint shots remain single, blocking actions.
 
+### Burst fire mode
+
+Adds **Burst** as a fourth firing mode alongside Snap, Auto, and Aimed (`BA_BURSTSHOT`). It is a
+short, controlled volley designed to sit between snap and auto: its own accuracy, TU/energy cost,
+shot count, and effective range, all loaded from dedicated ruleset keys on the weapon. Burst is
+**opt-in** — a weapon only offers it when `tuBurst` (its TU cost) is set, exactly like Auto opts
+in via `tuAuto`; weapons without it behave exactly as before.
+
+- **Ruleset keys** (per weapon, parallel to the snap/auto/aimed keys):
+  - `tuBurst` / `costBurst:` — TU/energy cost; **setting the TU cost enables the mode**.
+  - `accuracyBurst` — burst accuracy.
+  - `burstShots` — rounds per burst (default `2`).
+  - `burstRange` — effective range band (default `10` tiles, between snap's 15 and auto's 7).
+  - `flatBurst:` — flat-cost flag (falls back to aimed).
+  - `confBurst:` — the generic action block (custom `name`/`shortName`, `ammoSlot`,
+    `spendPerShot`, etc.). The mode's default display name is `STR_BURST_SHOT` ("Burst Shot").
+- **Fires like auto.** Burst reuses the existing async multi-shot path: it launches its rounds
+  sequentially on the shared `fireInterval` cadence (so several burst rounds can be airborne at
+  once), rather than as a simultaneous shotgun-style volley.
+- **Own action-menu entry & hotkey** — labeled from `confBurst.name`, bound to
+  `keyBattleActionItem6` (the DX-added 6th key; `keyBattleActionItem5` is taken by Throw on
+  throwable firearms); the menu shows its shot count and flags an ammo warning when the loaded
+  clip holds fewer rounds than the burst needs.
+

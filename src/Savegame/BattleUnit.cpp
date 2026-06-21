@@ -2176,6 +2176,10 @@ RuleItemUseCost BattleUnit::getActionTUs(BattleActionType actionType, const Rule
 				flat = item->getFlatAuto();
 				cost = item->getCostAuto();
 				break;
+			case BA_BURSTSHOT:
+				flat = item->getFlatBurst();
+				cost = item->getCostBurst();
+				break;
 			case BA_SNAPSHOT:
 				flat = item->getFlatSnap();
 				cost = item->getCostSnap();
@@ -2489,6 +2493,10 @@ int BattleUnit::getFiringAccuracy(BattleActionAttack::ReadOnly attack, const Mod
 	else if (actionType == BA_AUTOSHOT)
 	{
 		result = item->getRules()->getAccuracyMultiplier(attack) * item->getRules()->getAccuracyAuto() / 100;
+	}
+	else if (actionType == BA_BURSTSHOT)
+	{
+		result = item->getRules()->getAccuracyMultiplier(attack) * item->getRules()->getAccuracyBurst() / 100;
 	}
 	else if (actionType == BA_HIT)
 	{

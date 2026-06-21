@@ -46,12 +46,15 @@ en-US:
 #OptionsAdvancedState.cpp / OptionsControlsState.cpp - DX options tab
   STR_ENGINE_DX: "DX"
 #Options.cpp
-  STR_ACTION_ITEM_6: "Item Action 6"
+  STR_ACTION_ITEM_6: "Item Action 6 (Burst)"
 #ActionMenuState.cpp
   STR_ACTION_SHOTS_SHORT: "x{0}"
   STR_ACTION_PELLETS_SHORT: "({0} pellets)"
   STR_ACTION_NO_TU: "No TU"
   STR_ACTION_NO_AMMO: "No Ammo"
+#=================== DX Burst Fire ===================
+#RuleItem.cpp - burst shot mode name
+  STR_BURST_SHOT: "Burst Shot"
 #DebriefingState.cpp
   STR_RECOVERY: "Recovery"
   STR_STATUS_SHORT: "ST"

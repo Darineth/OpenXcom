@@ -64,6 +64,7 @@ BattleItem::BattleItem(const RuleItem *rules, int *id) : _id(*id), _rules(rules)
 			_confAimedOrLaunch = _rules->getConfigAimed();
 			_confAuto = _rules->getConfigAuto();
 			_confSnap = _rules->getConfigSnap();
+			_confBurst = _rules->getConfigBurst();
 			bool showSelfAmmo = _rules->getClipSize() > 0;
 			for (int slot = 0; slot < RuleItem::AmmoSlotMax; ++slot)
 			{
@@ -72,6 +73,7 @@ BattleItem::BattleItem(const RuleItem *rules, int *id) : _id(*id), _rules(rules)
 				used |= (_confAuto && _confAuto->ammoSlot == slot);
 				used |= (_confSnap && _confSnap->ammoSlot == slot);
 				used |= (_confMelee && _confMelee->ammoSlot == slot);
+				used |= (_confBurst && _confBurst->ammoSlot == slot);
 				if (_rules->getCompatibleAmmoForSlot(slot)->empty())
 				{
 					if (used && showSelfAmmo)
@@ -814,6 +816,7 @@ const RuleItemAction *BattleItem::getActionConf(BattleActionType action) const
 	case BA_LAUNCH:
 	case BA_AIMEDSHOT: return _confAimedOrLaunch;
 	case BA_AUTOSHOT: return _confAuto;
+	case BA_BURSTSHOT: return _confBurst;
 	case BA_SNAPSHOT: return _confSnap;
 	case BA_HIT: return _confMelee;
 	default: return nullptr;

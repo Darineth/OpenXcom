@@ -120,10 +120,18 @@ ActionMenuState::ActionMenuState(BattleAction *action, int x, int y) : _action(a
 		int slotLauncher = _action->weapon->getActionConf(BA_LAUNCH)->ammoSlot;
 		int slotSnap = _action->weapon->getActionConf(BA_SNAPSHOT)->ammoSlot;
 		int slotAuto = _action->weapon->getActionConf(BA_AUTOSHOT)->ammoSlot;
+		int slotBurst = _action->weapon->getActionConf(BA_BURSTSHOT)->ammoSlot;
 
 		if ((!isLauncher || slotLauncher != slotAuto) && weapon->getCostAuto().Time > 0)
 		{
 			addItem(BA_AUTOSHOT, weapon->getConfigAuto()->name, &id, Options::keyBattleActionItem3);
+		}
+
+		// DX: burst is a fourth fire mode between snap and auto; opt-in via tuBurst (like auto's tuAuto).
+		// Uses the DX-added 6th hotkey (item5 is taken by Throw on throwable firearms).
+		if ((!isLauncher || slotLauncher != slotBurst) && weapon->getCostBurst().Time > 0)
+		{
+			addItem(BA_BURSTSHOT, weapon->getConfigBurst()->name, &id, Options::keyBattleActionItem6);
 		}
 
 		if ((!isLauncher || slotLauncher != slotSnap) && weapon->getCostSnap().Time > 0)
@@ -223,7 +231,7 @@ void ActionMenuState::addItem(BattleActionType ba, const std::string &name, int 
 	int acc = BattleUnit::getFiringAccuracy(BattleActionAttack::GetBeforeShoot(ba, _action->actor, _action->weapon), _game->getMod());
 	int tu = _action->actor->getActionTUs(ba, _action->weapon).Time;
 
-	if (ba == BA_THROW || ba == BA_AIMEDSHOT || ba == BA_SNAPSHOT || ba == BA_AUTOSHOT || ba == BA_LAUNCH || ba == BA_HIT)
+	if (ba == BA_THROW || ba == BA_AIMEDSHOT || ba == BA_SNAPSHOT || ba == BA_AUTOSHOT || ba == BA_BURSTSHOT || ba == BA_LAUNCH || ba == BA_HIT)
 		s1 = tr("STR_ACCURACY_SHORT").arg(Unicode::formatPercentage(acc));
 	s2 = tr("STR_TIME_UNITS_SHORT").arg(tu);
 	_actionMenu[*id]->setAction(ba, tr(name), s1, s2, tu);
@@ -239,7 +247,7 @@ void ActionMenuState::addItem(BattleActionType ba, const std::string &name, int 
 	// action config + loaded ammo for this mode (conf/ammo are null for non-shot actions)
 	const RuleItemAction *conf = _action->weapon->getActionConf(ba);
 	const BattleItem *ammo = nullptr;
-	if (ba == BA_SNAPSHOT || ba == BA_AIMEDSHOT || ba == BA_AUTOSHOT || ba == BA_LAUNCH || ba == BA_HIT)
+	if (ba == BA_SNAPSHOT || ba == BA_AIMEDSHOT || ba == BA_AUTOSHOT || ba == BA_BURSTSHOT || ba == BA_LAUNCH || ba == BA_HIT)
 	{
 		ammo = _action->weapon->getAmmoForAction(ba);
 	}
@@ -271,7 +279,7 @@ void ActionMenuState::addItem(BattleActionType ba, const std::string &name, int 
 	{
 		reason = tr("STR_ACTION_NO_TU");
 	}
-	else if (ba == BA_SNAPSHOT || ba == BA_AIMEDSHOT || ba == BA_AUTOSHOT || ba == BA_LAUNCH || ba == BA_HIT)
+	else if (ba == BA_SNAPSHOT || ba == BA_AIMEDSHOT || ba == BA_AUTOSHOT || ba == BA_BURSTSHOT || ba == BA_LAUNCH || ba == BA_HIT)
 	{
 		const int perShot = (conf && conf->spendPerShot > 0) ? conf->spendPerShot : 1;
 		// self-powered weapons return themselves from getAmmoForAction - not clip-limited
@@ -318,7 +326,8 @@ void ActionMenuState::handle(Action *action)
 				key != Options::keyBattleActionItem2 &&
 				key != Options::keyBattleActionItem3 &&
 				key != Options::keyBattleActionItem4 &&
-				key != Options::keyBattleActionItem5)
+				key != Options::keyBattleActionItem5 &&
+				key != Options::keyBattleActionItem6)
 			{
 				_game->popState();
 			}
@@ -332,12 +341,21 @@ void ActionMenuState::handle(Action *action)
  */
 void ActionMenuState::btnActionMenuItemClick(Action *action)
 {
+	// Two menu items can share a hotkey (e.g. Throw and Burst), so a single keypress
+	// may invoke this handler more than once in the same event dispatch. Only ever act
+	// on the first one - a second action (and its extra popState) must not slip through.
+	if (_actionChosen)
+	{
+		return;
+	}
+
 	_game->getSavedGame()->getSavedBattle()->getPathfinding()->removePreview();
 
 	int btnID = -1;
 
 	if (_game->getSavedGame()->getSavedBattle()->isPreview())
 	{
+		_actionChosen = true;
 		_action->result = "STR_UNABLE_TO_USE_ALIEN_ARTIFACT_UNTIL_RESEARCHED";
 		_game->popState();
 		return;
@@ -354,6 +372,7 @@ void ActionMenuState::btnActionMenuItemClick(Action *action)
 
 	if (btnID != -1)
 	{
+		_actionChosen = true;
 		_action->type = _actionMenu[btnID]->getAction();
 		_action->skillRules = nullptr;
 		_action->updateTU();

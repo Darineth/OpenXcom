@@ -138,6 +138,7 @@ void ProjectileFlyBState::init()
 	case BA_SNAPSHOT:
 	case BA_AIMEDSHOT:
 	case BA_AUTOSHOT:
+	case BA_BURSTSHOT:
 	case BA_LAUNCH:
 		if (weapon->getRules()->isOutOfRange(distanceSq))
 		{
@@ -601,6 +602,7 @@ bool ProjectileFlyBState::createNewProjectile()
 			case BA_SNAPSHOT:  shotType = _action.weapon->getRules()->getConfigSnap()->name; break;
 			case BA_AIMEDSHOT: shotType = _action.weapon->getRules()->getConfigAimed()->name; break;
 			case BA_AUTOSHOT:  shotType = _action.weapon->getRules()->getConfigAuto()->name; break;
+			case BA_BURSTSHOT: shotType = _action.weapon->getRules()->getConfigBurst()->name; break;
 			case BA_LAUNCH:    shotType = "STR_LAUNCH_MISSILE"; break;
 			default: break;
 			}

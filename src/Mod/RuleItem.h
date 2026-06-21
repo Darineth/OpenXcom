@@ -83,6 +83,10 @@ enum BattleActionType : Uint8
 	BA_TRIGGER_PROXY_GRENADE = 18,
 
 	BA_SELF_DESTRUCT = 19,
+
+	// DX: Burst fire — a fourth firing mode (snap/auto/aimed/burst). Appended to keep
+	// existing serialized BattleActionType values stable.
+	BA_BURSTSHOT = 20,
 };
 
 enum class BattleActionOrigin { CENTRE = 0, LEFT, RIGHT }; // Used for off-centre shooting.
@@ -412,7 +416,7 @@ private:
 	std::unordered_map<const RuleItem*, int> _compatibleAmmoSlots;
 	RuleDamageType _damageType, _meleeType;
 	bool _damageTypeSet, _meleeTypeSet;
-	RuleItemAction _confAimed, _confAuto, _confSnap, _confMelee;
+	RuleItemAction _confAimed, _confAuto, _confSnap, _confMelee, _confBurst;
 	int _accuracyUse, _accuracyMind, _accuracyPanic, _accuracyThrow, _accuracyCloseQuarters;
 	int _noLOSAccuracyPenalty;
 	int _explodeInventory;
@@ -718,6 +722,8 @@ public:
 	const RuleItemAction *getConfigSnap() const;
 	/// Get configuration of melee action.
 	const RuleItemAction *getConfigMelee() const;
+	/// Get configuration of burst shot action.
+	const RuleItemAction *getConfigBurst() const;
 
 
 	/// Gets the item's aimed shot accuracy.
@@ -728,6 +734,8 @@ public:
 	int getAccuracySnap() const;
 	/// Gets the item's melee accuracy.
 	int getAccuracyMelee() const;
+	/// Gets the item's burst shot accuracy.
+	int getAccuracyBurst() const;
 	/// Gets the item's use accuracy.
 	int getAccuracyUse() const;
 	/// Gets the item's mind control accuracy.
@@ -751,6 +759,8 @@ public:
 	RuleItemUseCost getCostSnap() const;
 	/// Gets the item's melee cost.
 	RuleItemUseCost getCostMelee() const;
+	/// Gets the item's burst shot cost.
+	RuleItemUseCost getCostBurst() const;
 	/// Gets the item's use cost.
 	RuleItemUseCost getCostUse() const;
 	/// Gets the item's mind control cost.
@@ -772,6 +782,8 @@ public:
 	RuleItemUseFlat getFlatSnap() const;
 	/// Should we charge a flat rate of costMelee?
 	RuleItemUseFlat getFlatMelee() const;
+	/// Should we charge a flat rate of costBurst?
+	RuleItemUseFlat getFlatBurst() const;
 	/// Should we charge a flat rate?
 	RuleItemUseFlat getFlatUse() const;
 	/// Should we charge a flat rate of costThrow?

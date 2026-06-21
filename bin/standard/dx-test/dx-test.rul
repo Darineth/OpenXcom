@@ -30,7 +30,27 @@ items:
   # -------------------------------------------------------------------
   #  Rifle -> long fast-cadence auto fire (non-shotgun)
   #  Tests: many normal bullets overlapping in flight via fireInterval.
+  #  Also adds Burst: a fourth fire mode (3-round controlled volley)
+  #  sitting between snap and auto. Opt-in via accuracyBurst.
   # -------------------------------------------------------------------
   - type: STR_RIFLE
-    autoShots: 6           # 6-round auto burst
     fireInterval: 60       # DX: very fast cadence to keep several rounds visible at once
+    # --- Aimed ---
+    accuracyAimed: 110
+    tuAimed: 80
+    aimRange: 200
+    # --- Snap ---
+    accuracySnap: 60
+    tuSnap: 25
+    snapRange: 15
+    # --- Burst (DX): controlled 3-round volley between snap and auto ---
+    accuracyBurst: 45      # DX: enables the Burst fire mode (per-shot, above auto, below snap)
+    tuBurst: 33            # DX: TU cost (percentage of unit TUs) - between snap and auto
+    burstShots: 3          # DX: 3-round controlled volley
+    burstRange: 12         # DX: effective range band
+    # --- Auto: high-volume suppression spray ---
+    # vanilla STR_RIFLE Auto: accuracyAuto 35, tuAuto 35, autoShots 3 (autoRange 7)
+    accuracyAuto: 30       # was 35 - low per-shot accuracy to offset the round count
+    tuAuto: 50             # was 35 - pricier than burst for the longer volley
+    autoShots: 6           # was 3  - now a 6-round auto burst
+    autoRange: 7           # unchanged (engine default)
