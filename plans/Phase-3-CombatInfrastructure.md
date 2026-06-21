@@ -19,7 +19,7 @@ Individual feature docs (created as each item is designed/started):
 | Async Explosion System | [Feature-AsyncProjectileSystem.md](Feature-AsyncProjectileSystem.md) | Done |
 | Blast Radius Dropoff | — | Done |
 | Explosion VFX/Sound Radius Scaling | — | Done |
-| Armor Degradation | — | Deferred (follow-up design) |
+| Armor Degradation | [Feature-ArmorDegradation.md](Feature-ArmorDegradation.md) | Deferred (follow-up design) |
 
 | Area | Present in OXCE-Plus | Notes |
 |------|----------------------|-------|
@@ -29,7 +29,7 @@ Individual feature docs (created as each item is designed/started):
 | Shotgun extra pellets (rendering) | ✗ | Pellets call `skipTrajectory()` immediately — never rendered in flight; only impact VFX shown |
 | Range-based power reduction | ✓ | `RuleItem::getPowerRangeReduction(range)` — linear range penalty on the item rule |
 | Blast-radius-internal falloff | ✗ | `TileEngine::explode()` applies no distance weighting within the radius; all tiles hit at full blast-center power minus range reduction |
-| Armor degradation | ✗ | Armor values are fixed per unit (`currentArmor[]` initialised from `Armor` rule and never written back after hits) |
+| Armor degradation | ✗ | Upstream has `ToArmorPre` / `ToArmor`, but no thresholded blocked-hit wear; see `Feature-ArmorDegradation.md` |
 | Game singleton accessor | ✗ | `Game*` is passed down the call stack; no `Game::getGame()` static accessor exists |
 
 Conclusion: OXCE-Plus has useful building blocks (the `_explosions` list, pre-computed
@@ -245,31 +245,12 @@ need per-group private timers because all sprites are in the same list and anima
 
 ### 3a. Armor Degradation
 
-**Motivation:** Sustained fire wears down armor over a battle, rewarding focus fire and making
-late-battle units more vulnerable.
+This item now has a dedicated design doc: [Feature-ArmorDegradation.md](Feature-ArmorDegradation.md).
 
-**Ruleset field** (`Armor` YAML):
-```yaml
-degradationRate: 0.05   # fraction of net damage applied to armor value; 0 = off (default)
-```
-`Armor` gains `float _degradationRate` (default 0.0, load/save).
-
-**Mechanic:** After `TileEngine::hit()` calculates net damage (post-armor), reduce the
-unit's `currentArmor` on the hit side by `netDamage * degradationRate` (floored at 0, never
-below 0). This is already stored per-side as `int _currentArmor[SIDE_MAX]`.
-
-```cpp
-// In TileEngine::hit(), after net damage is calculated:
-int degradation = (int)(netDamage * itemRule->getArmorDegradationRate());
-// or from weapon rule / armor rule depending on which degrades
-unit->reduceArmor(side, degradation);
-```
-
-`BattleUnit::reduceArmor(UnitSide side, int amount)` is a new helper (clamp to 0).
-
-**Save compatibility:** `_currentArmor` is already serialized in `BattleUnit::save()`. The
-degradation happens to these existing values, so old saves load cleanly (full armor until
-first hit).
+The original note in this phase index assumed penetrating-hit-only wear and an `Armor`-rule field.
+That is no longer the preferred direction. The newer design keeps the fork's inherited
+`ToArmorPre` / `ToArmor` model intact and adds a separate DX-only blocked-hit wear stage on
+`RuleDamageType`.
 
 ### 3b. `blastDropoff` Falloff Within AoE Radius
 
