@@ -244,6 +244,8 @@ in via `tuAuto`; weapons without it behave exactly as before.
 - **Fires like auto.** Burst reuses the existing async multi-shot path: it launches its rounds
   sequentially on the shared `fireInterval` cadence (so several burst rounds can be airborne at
   once), rather than as a simultaneous shotgun-style volley.
+- **AI support.** Battlescape AI now includes Burst in both its vanilla and extended fire-mode
+  selection logic, scoring it by the same accuracy/TU heuristic as the other firearm modes.
 - **Own action-menu entry & hotkey** — labeled from `confBurst.name`, bound to
   `keyBattleActionItem6` (the DX-added 6th key; `keyBattleActionItem5` is taken by Throw on
   throwable firearms); the menu shows its shot count and flags an ammo warning when the loaded

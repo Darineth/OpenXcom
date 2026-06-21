@@ -68,6 +68,14 @@ flat / shots / range, opt-in via `tuBurst` (its TU cost).
 - `src/Battlescape/BattlescapeGame.cpp`: added `BA_BURSTSHOT` to the `primaryAction` dispatch
   condition so the action pushes a `ProjectileFlyBState` like the other fire modes.
 
+### AI (`src/Battlescape/AIModule.cpp`)
+- Added burst to both AI fire-mode choosers: the vanilla distance-based fallback and the extended
+  accuracy-per-TU scoring path.
+- `scoreFiringMode()` now counts `getConfigBurst()->shots` so burst is evaluated like the other
+  multi-shot firearm modes.
+- Added `BA_BURSTSHOT` to the committed-shot kneel behavior and the nearby weapon-power comparison
+  list so the AI treats burst as a normal firearm action once selected.
+
 ### Action menu (`src/Battlescape/ActionMenuState.cpp`)
 - Added a burst entry in the firearm block, gated on `getCostBurst().Time > 0` (opt-in via
   `tuBurst`, exactly like auto's `tuAuto` gate), bound to `keyBattleActionItem6` (the DX-added

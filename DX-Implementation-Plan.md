@@ -8,10 +8,11 @@ This document serves as a high-level checklist of features from the original Ope
     - [ ] Implement Soldier deflection cone (Gaussian/Normal distribution)
     - [ ] Implement Weapon deflection cone (independent of soldier)
     - [ ] Implement stacking of soldier and weapon error
-- [ ] **Burst Fire Mode**
-    - [ ] Implement `BA_BURSTSHOT` action type
-    - [ ] Implement configurable burst settings (shots, range, accuracy, cost)
-    - [ ] Implement sequential firing logic for burst volleys
+- [x] **Burst Fire Mode**
+    - [x] Implement `BA_BURSTSHOT` action type
+    - [x] Implement configurable burst settings (shots, range, accuracy, cost)
+    - [x] Implement sequential firing logic for burst volleys
+    - [x] Add AI support for burst fire selection/use
 - [ ] **Shotgun & Multi-Projectile Logic**
     - [ ] Implement simultaneous pellet flight (multiple projectiles in flight)
     - [ ] Implement shotgun pellet spread (normal distribution)

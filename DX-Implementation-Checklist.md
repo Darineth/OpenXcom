@@ -134,7 +134,8 @@ Everything below is DX-specific work confirmed **absent** from the base.
   alongside the still-flying volley; per-state sprite ownership + wall-clock pacing.
   *(design: [plans/Feature-AsyncProjectileSystem.md](plans/Feature-AsyncProjectileSystem.md))*
 - [x] **Burst Fire Mode** — `BA_BURSTSHOT`, a fourth firing mode (own accuracy/TU/shots/range,
-  opt-in via `accuracyBurst`), sequential rounds reusing the async auto-shot path.
+  opt-in via `tuBurst`), sequential rounds reusing the async auto-shot path, now also wired into
+  Battlescape AI fire-mode selection.
   *(design: [plans/Feature-BurstFire.md](plans/Feature-BurstFire.md))*
 - [ ] **Advanced Damage Models** — armor degradation, `blastDropoff` falloff,
   visual/sound scaling by blast radius.

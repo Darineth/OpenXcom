@@ -668,6 +668,10 @@ void AIModule::think(BattleAction *action)
 		{
 			action->kneel = _unit->getArmor()->allowsKneeling(false);
 		}
+		else if (action->type == BA_BURSTSHOT)
+		{
+			action->kneel = _unit->getArmor()->allowsKneeling(false);
+		}
 		break;
 	case AI_AMBUSH:
 		_unit->setCharging(0);
@@ -1623,6 +1627,7 @@ bool AIModule::selectSpottedUnitForSniper()
 
 	// Get the TU costs for each available attack type
 	BattleActionCost costAuto(BA_AUTOSHOT, _attackAction.actor, _attackAction.weapon);
+	BattleActionCost costBurst(BA_BURSTSHOT, _attackAction.actor, _attackAction.weapon);
 	BattleActionCost costSnap(BA_SNAPSHOT, _attackAction.actor, _attackAction.weapon);
 	BattleActionCost costAimed(BA_AIMEDSHOT, _attackAction.actor, _attackAction.weapon);
 
@@ -1647,7 +1652,7 @@ bool AIModule::selectSpottedUnitForSniper()
 			_aggroTarget = bu;
 			_attackAction.type = BA_RETHINK;
 			_attackAction.target = bu->getPosition();
-			extendedFireModeChoice(costAuto, costSnap, costAimed, costThrow, true);
+			extendedFireModeChoice(costAuto, costBurst, costSnap, costAimed, costThrow, true);
 
 			BattleAction chosenAction = _attackAction;
 			if (chosenAction.type == BA_THROW)
@@ -1739,6 +1744,10 @@ int AIModule::scoreFiringMode(BattleAction *action, BattleUnit *target, bool che
 	else if (action->type == BA_AUTOSHOT)
 	{
 		numberOfShots = weapon->getConfigAuto()->shots;
+	}
+	else if (action->type == BA_BURSTSHOT)
+	{
+		numberOfShots = weapon->getConfigBurst()->shots;
 	}
 
 	int tuCost = _unit->getActionTUs(action->type, action->weapon).Time;
@@ -2483,10 +2492,12 @@ void AIModule::projectileAction()
 	_attackAction.type = BA_RETHINK;
 
 	BattleActionCost costAuto(BA_AUTOSHOT, _attackAction.actor, _attackAction.weapon);
+	BattleActionCost costBurst(BA_BURSTSHOT, _attackAction.actor, _attackAction.weapon);
 	BattleActionCost costSnap(BA_SNAPSHOT, _attackAction.actor, _attackAction.weapon);
 	BattleActionCost costAimed(BA_AIMEDSHOT, _attackAction.actor, _attackAction.weapon);
 
 	testEffect(costAuto);
+	testEffect(costBurst);
 	testEffect(costSnap);
 	testEffect(costAimed);
 
@@ -2499,7 +2510,7 @@ void AIModule::projectileAction()
 	{
 		// Note: this will also check for the weapon's max range
 		BattleActionCost costThrow; // Not actually checked here, just passed to extendedFireModeChoice as a necessary argument
-		extendedFireModeChoice(costAuto, costSnap, costAimed, costThrow, false);
+		extendedFireModeChoice(costAuto, costBurst, costSnap, costAimed, costThrow, false);
 		return;
 	}
 
@@ -2521,6 +2532,11 @@ void AIModule::projectileAction()
 		if (costAuto.haveTU())
 		{
 			_attackAction.type = BA_AUTOSHOT;
+			return;
+		}
+		if (costBurst.haveTU())
+		{
+			_attackAction.type = BA_BURSTSHOT;
 			return;
 		}
 		if (!costSnap.haveTU())
@@ -2555,6 +2571,11 @@ void AIModule::projectileAction()
 		_attackAction.type = BA_SNAPSHOT;
 		return;
 	}
+	if (costBurst.haveTU())
+	{
+		_attackAction.type = BA_BURSTSHOT;
+		return;
+	}
 	if (costAimed.haveTU())
 	{
 		_attackAction.type = BA_AIMEDSHOT;
@@ -2566,7 +2587,7 @@ void AIModule::projectileAction()
 	}
 }
 
-void AIModule::extendedFireModeChoice(BattleActionCost& costAuto, BattleActionCost& costSnap, BattleActionCost& costAimed, BattleActionCost& costThrow, bool checkLOF)
+void AIModule::extendedFireModeChoice(BattleActionCost& costAuto, BattleActionCost& costBurst, BattleActionCost& costSnap, BattleActionCost& costAimed, BattleActionCost& costThrow, bool checkLOF)
 {
 	std::vector<BattleActionType> attackOptions = { };
 	if (costAimed.haveTU())
@@ -2576,6 +2597,10 @@ void AIModule::extendedFireModeChoice(BattleActionCost& costAuto, BattleActionCo
 	if (costAuto.haveTU())
 	{
 		attackOptions.push_back(BA_AUTOSHOT);
+	}
+	if (costBurst.haveTU())
+	{
+		attackOptions.push_back(BA_BURSTSHOT);
 	}
 	if (costSnap.haveTU())
 	{
@@ -2864,6 +2889,7 @@ bool AIModule::psiAction()
 			BattleActionType actions[] = {
 				BA_AIMEDSHOT,
 				BA_AUTOSHOT,
+				BA_BURSTSHOT,
 				BA_SNAPSHOT,
 				BA_HIT,
 			};
