@@ -13,27 +13,28 @@ This document serves as a high-level checklist of features from the original Ope
     - [x] Implement configurable burst settings (shots, range, accuracy, cost)
     - [x] Implement sequential firing logic for burst volleys
     - [x] Add AI support for burst fire selection/use
-- [ ] **Shotgun & Multi-Projectile Logic**
-    - [ ] Implement simultaneous pellet flight (multiple projectiles in flight)
-    - [ ] Implement shotgun pellet spread (normal distribution)
-    - [ ] Implement dual-fire (simultaneous projectile spawning)
-- [ ] **Trajectory & Targeting Feedback**
+- [x] **Shotgun Pellet Flight & Spread**
+    - [x] Implement simultaneous pellet flight (multiple projectiles in flight)
+    - [x] Implement shotgun pellet spread (normal distribution)
+- [ ] **Dual-Fire**
+    - [ ] Implement simultaneous projectile spawning
+- [ ] **Live Trajectory Preview**
     - [ ] Implement live trajectory preview (tracer sprites)
+- [ ] **Hover Accuracy Readout**
     - [ ] Implement on-hover accuracy readout (color-graded percentage + distance)
+- [ ] **Throw Reach Scaling**
     - [ ] Implement throw reach scaling (strength vs weight)
 - [ ] **Accuracy Modifiers**
     - [ ] Implement kneel/two-handed/exhaustion/smoke accuracy factors
     - [ ] Implement shot-mode accuracy application (Snap/Aim/Auto/Burst)
 
 ## 2. Projectile & Explosion Management
-- [ ] **Asynchronous Projectile System**
-    - [ ] Implement `Map` collection for multiple in-flight projectiles
-    - [ ] Implement per-projectile impact/outcome tracking
-    - [ ] Implement asynchronous resolution of projectile impacts
-- [ ] **Asynchronous Explosion System**
-    - [ ] Implement concurrent explosion states (`ExplosionBState`)
-    - [ ] Implement explosion damage falloff curves
-    - [ ] Implement visual/sound scaling by blast radius
+- [x] **Asynchronous Projectile System**
+    - [x] Implement `Map` collection for multiple in-flight projectiles
+    - [x] Implement per-projectile impact/outcome tracking
+    - [x] Implement asynchronous resolution of projectile impacts
+- [x] **Asynchronous Explosion System**
+    - [x] Implement concurrent explosion states (`ExplosionBState`)
 
 ## 3. Overwatch & Reaction Fire
 - [ ] **Overwatch System**
@@ -56,26 +57,34 @@ This document serves as a high-level checklist of features from the original Ope
     - [ ] Prevent cancelling movement while sprinting
 
 ## 5. Reloading & Ammo Mechanics
-- [ ] **Advanced Reloading**
+- [ ] **Quick Reload**
     - [ ] Implement Quick Reload action
+- [ ] **Weight/slot-based Reload Costs**
     - [ ] Implement weight/slot-based reload costs
+- [ ] **`battleClipSize` (decoupling stock vs load)**
     - [ ] Implement `battleClipSize` (decoupling stock vs load)
-- [ ] **Ammo Item Overhaul**
+- [ ] **Ammo Item Tracking Overhaul**
     - [ ] Implement individual round tracking for ammo items
+- [ ] **Grenades-as-Ammo**
     - [ ] Implement grenades as ammo items
+- [ ] **Base-Screen Ammo Counts**
     - [ ] Implement ammo count display on base screens
 
 ## 6. Soldier Roles System
-- [ ] **Combat Archetypes**
+- [ ] **Role Definitions & Templates**
     - [ ] Implement Role definitions (Sniper, Medic, etc.)
     - [ ] Implement Role equipment templates
+- [ ] **Role UI & Markers**
     - [ ] Implement Role UI icons (Soldier, Craft, Inventory, Battlescape marker)
+- [ ] **Per-Role Armor Colors**
     - [ ] Implement per-Role armor colors
 
 ## 7. Psionics Overhaul
-- [ ] **Advanced Psionic Powers**
+- [ ] **Channeled Mind Control**
     - [ ] Implement Channeled Mind Control (with backlash/counter-control)
+- [ ] **Clairvoyance**
     - [ ] Implement Clairvoyance (area reveal power)
+- [ ] **Mind Blast**
     - [ ] Implement Mind Blast (direct psychic damage)
 - [ ] **Psi-Amp Mechanics**
     - [ ] Implement Psi-amp ammo consumption (per-use round cost)
@@ -90,9 +99,15 @@ This document serves as a high-level checklist of features from the original Ope
     - [ ] Implement reworked medikit/stabilization/wound recovery logic
 
 ## 9. Damage & Armor Rules
-- [ ] **Advanced Damage Models**
+- [x] **Blast Radius Dropoff**
+    - [x] Implement explosion damage falloff inside AoE radius
+- [ ] **Explosion VFX/Sound Radius Scaling**
+    - [ ] Implement visual/sound scaling by blast radius
+- [ ] **Armor Degradation**
     - [ ] Implement armor degradation on hits
+- [ ] **Directional Armor Values**
     - [ ] Implement directional armor values
+- [ ] **Item-based Stat Modification Rules**
     - [ ] Implement item-based stat modification rules
 
 ## 10. Inventory & UI Improvements
@@ -116,23 +131,23 @@ This document serves as a high-level checklist of features from the original Ope
         - [x] Implement motion-detector readings overlay (DETBLOB tile blips, passive, replaces Alt-arrow)
     - [x] Implement fog-of-war view
 - [ ] **Night Vision & Lighting**
-    - [ ] Implement night-vision modes (full/local), auto/toggle/hold keys, night-vision color
-    - [ ] Implement per-armor sight ranges (`visibilityAtDark`/`visibilityAtDay`) + camouflage values
+    - [x] Implement night-vision modes (full/local), auto/toggle/hold keys, night-vision color
+    - [x] Implement per-armor sight ranges (`visibilityAtDark`/`visibilityAtDay`) + camouflage values
     - [ ] Implement light/illumination equipment (carried light sources, layered lighting)
     - [ ] Implement stealth/cloaking armor (`Armor.equippedEffects` → `EC_STEALTH` scales enemy spot range, ≥100 = invisible; `RecolorStealth` render) — inverse of light equipment, needs Effects (§13)
 - [ ] **General UI/QoL**
-    - [ ] Implement numeric action hotkeys
+    - [x] Implement numeric action hotkeys
     - [ ] Implement action-menu per-action hotkey labels + accuracy/effective-range readouts
-    - [ ] Implement maximize info screens
+    - [x] Implement maximize info screens
     - [x] Implement craft stat display
     - [x] Implement debriefing soldier status
     - [x] Implement allow tanks/HWPs to click-open doors — *already in OXCE-Plus* (`unitOpensDoor` loops all size tiles, no size gate)
-    - [ ] Implement loading rulesets from subdirectories
+    - [x] Implement loading rulesets from subdirectories
 
 ## 11. Geoscape Interface Enhancements
-- [ ] **Geoscape UI Polish**
-    - [ ] Implement sidebar score + always-visible funds display
-    - [ ] Implement persistent geoscape info panel (not toggle-based)
+- [x] **Geoscape UI Polish**
+    - [x] Implement sidebar score + always-visible funds display
+    - [x] Implement persistent geoscape info panel (not toggle-based)
 
 ## 12. Modular Vehicles (HWPs)
 - [ ] **Vehicle Customization**
@@ -181,27 +196,27 @@ This document serves as a high-level checklist of features from the original Ope
     - [ ] Implement space-used display at both source and destination base on transfers
 
 ## 17. OXCE+ Integration
-- [ ] **Martial / Basic Training**
-    - [ ] Implement training facilities (`trainingRooms`, `customTrainingFactor`)
-    - [ ] Implement training UI (assign/allocate/finished states)
-- [ ] **Ruleset Inheritance**
-    - [ ] Implement `refNode` inheritance across rule types (cycle-guarded)
-- [ ] **In-Inventory Armor & Avatar Management**
-    - [ ] Implement armor change from inventory screen
-    - [ ] Implement avatar (gender/look/variant) management + armor recolor
-- [ ] **Sortable Soldier Lists**
-    - [ ] Implement clickable sortable columns + full stat columns
-    - [ ] Implement Stats ↔ Roles view toggle on crew-selection screen
-- [ ] **Item Categories**
-    - [ ] Implement `RuleItemCategory` + category-filtered base screens
-- [ ] **Alien Inventories**
-    - [ ] Implement alien inventory display with custom layouts
+- [x] **Martial / Basic Training**
+    - [x] Implement training facilities (`trainingRooms`, `customTrainingFactor`)
+    - [x] Implement training UI (assign/allocate/finished states)
+- [x] **Ruleset Inheritance**
+    - [x] Implement `refNode` inheritance across rule types (cycle-guarded)
+- [x] **In-Inventory Armor & Avatar Management**
+    - [x] Implement armor change from inventory screen
+    - [x] Implement avatar (gender/look/variant) management + armor recolor
+- [x] **Sortable Soldier Lists**
+    - [x] Implement clickable sortable columns + full stat columns
+    - [x] Implement Stats ↔ Roles view toggle on crew-selection screen
+- [x] **Item Categories**
+    - [x] Implement `RuleItemCategory` + category-filtered base screens
+- [x] **Alien Inventories**
+    - [x] Implement alien inventory display with custom layouts
 - [ ] **UFO Mission Retreat**
     - [ ] Implement UFO abandon/retreat based on damage taken
 - [ ] **Other OXCE+ Surface**
-    - [ ] Implement craft pilots
+    - [x] Implement craft pilots
     - [ ] Implement craft equipment templates
-    - [ ] Implement tech-tree viewer
+    - [x] Implement tech-tree viewer
     - [ ] Implement `RuleDamageType` / `ModScript` hooks
 
 ## 18. Strategic Balance & Economy (new mechanic)

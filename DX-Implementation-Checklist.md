@@ -172,45 +172,52 @@ Everything below is DX-specific work confirmed **absent** from the base.
 - [ ] **Throw-accuracy tuning (if needed)** — OXCE currently applies no throw LOS penalty
   (`accuracyThrow` default 100; `_noLOSAccuracyPenalty` is aimed-shot-only). Only add a
   reduced throw penalty if the aim-cone firing model introduces one that needs softening.
-- [ ] **Shotgun & Multi-Projectile** — simultaneous pellets, spread, dual-fire. *(needs
-  async projectile + aim-cone)* — **pellets now fly as individual concurrent projectiles with
-  spread** (each resolves its own impact via the async projectile system); **dual-fire still
-  pending**.
-- [ ] **Targeting feedback** — live tracer preview, hover accuracy readout, throw-reach
-  scaling. *(coupled UI — needs aim-cone)*
+- [x] **Shotgun Pellet Flight & Spread** — pellets now fly as individual concurrent projectiles
+  with spread, each resolving its own impact via the async projectile system.
+- [ ] **Dual-Fire** — simultaneous projectile spawning from both hands. *(needs
+  async projectile + aim-cone; shotgun pellet flight/spread already implemented)*
+- [ ] **Live Trajectory Preview** — tracer sprites. *(coupled UI — needs aim-cone)*
+- [ ] **Hover Accuracy Readout** — color-graded percentage + distance. *(coupled UI — needs aim-cone)*
+- [ ] **Throw Reach Scaling** — strength vs weight readout/scaling. *(coupled UI — needs aim-cone)*
 - [ ] **Action-menu effective-range readout** — the deferred Phase 1 piece. *(needs
   aim-cone)*
 
 ## Phase 6: Ammo & Reloading
 
-- [ ] **Advanced Reloading** — Quick Reload, weight/slot reload costs.
+- [ ] **Quick Reload**.
+- [ ] **Weight/slot-based Reload Costs**.
 - [ ] **`battleClipSize`** — individual round tracking, magazine packing at battle gen.
-- [ ] **Ammo overhaul** — grenades-as-ammo, ammo count on base screens.
+- [ ] **Grenades-as-Ammo**.
+- [ ] **Base-Screen Ammo Counts**.
 
 ## Phase 7: Tactical Unit Systems
 
-- [ ] **Movement Modes** — Sprint / Sneak (paths blue/purple). *(Sneak's
-  "no creeping while glowing" gate finalizes in Phase 8 with lighting)*
-- [ ] **Overwatch & Reaction split** — `BA_OVERWATCH`, held-fire + indicators;
-  `getReactionScore`/`getEvasionScore`.
-- [ ] **Health & Medical** — bleedout + indicators, medikit/stabilization rework,
-  proportional wound recovery, Field Surgery research.
-- [ ] **Soldier Roles** — `RuleRole`/`Role`, role-as-template, UI icons, battlescape
-  marker, per-role armor colors. *(reuses the Phase 2 loadout-template plumbing + Phase 4 inventory layouts)*
+- [ ] **Sprint Mode** — fast movement mode with blue pathing.
+- [ ] **Sneak Mode** — low-profile movement mode with purple pathing. *(final
+  "no creeping while glowing" gate lands in Phase 8 with lighting)*
+- [ ] **Overwatch System** — `BA_OVERWATCH`, held-fire behavior + indicators.
+- [ ] **Reaction Scoring Split** — `getReactionScore` / `getEvasionScore`.
+- [ ] **Bleedout & Indicators** — negative-health/bleedout state plus battlefield UI cues.
+- [ ] **Medikit/Stabilization Rework** — revised field treatment flow.
+- [ ] **Proportional Wound Recovery + Field Surgery** — recovery scaling and research gate.
+- [ ] **Role Definitions & Templates** — `RuleRole`/`Role` + template loadouts.
+- [ ] **Role UI & Markers** — soldier/craft UI icons and battlescape marker.
+- [ ] **Per-Role Armor Colors**. *(reuses Phase 2 loadout-template plumbing + Phase 4 inventory layouts)*
 
 ## Phase 8: Effects, Lighting & Psionics
 
-- [ ] **Effects Framework** — `RuleEffect`/`BattleEffect`/`EffectComponent`,
-  item `hitEffect`/`equippedEffect`. *(needs `Game::getGame()`)*
+- [ ] **Effects Core Framework** — `RuleEffect` / `BattleEffect` / `EffectComponent`.
+- [ ] **Item Effect Hooks** — `hitEffect` / `equippedEffect`.
 - [ ] **Light / illumination equipment** — `EC_CIRCULAR_LIGHT`/`EC_DIRECTIONAL_LIGHT`;
   finalizes Sneak's light gate. *(needs Effects)*
 - [ ] **Stealth / cloaking armor** — `Armor.equippedEffects` → `EC_STEALTH` magnitude scales
   down enemy spot range (≥100 = effectively invisible); translucent `RecolorStealth` render
   (inventory paperdoll wired, `UnitSprite::drawRecolored` still TODO). *(needs Effects; the
   inverse of light equipment)* *(legacy: [Legacy-DX-Features.md](Legacy-DX-Features.md) §15)*
-- [ ] **Psionics Overhaul** — channeled Mind Control + backlash/counter-control; Mind
-  Blast *(needs damage model)*; Clairvoyance *(needs Phase 1 fog-of-war)*; psi-amp ammo
-  *(needs Phase 6 `battleClipSize`)*.
+- [ ] **Channeled Mind Control** — with backlash/counter-control.
+- [ ] **Mind Blast** *(needs damage-model pieces).* 
+- [ ] **Clairvoyance** *(needs Phase 1 fog-of-war).* 
+- [ ] **Psi-Amp Ammo Mechanics** *(needs Phase 6 `battleClipSize`).*
 
 ## Phase 9: AI
 
