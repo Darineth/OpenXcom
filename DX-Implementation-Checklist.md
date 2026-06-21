@@ -141,10 +141,10 @@ Everything below is DX-specific work confirmed **absent** from the base.
   - ✅ **Done.** Center-weighted explosion power scaling is implemented; `0.0` preserves flat
     vanilla behavior.
 - [ ] **Explosion VFX/Sound Radius Scaling** — presentation controls by blast radius.
-  - ⏸️ Deferred for a follow-up design (`radiusForAnimation`, `explosionSound`,
-    `explosionSoundBig`).
+  - Proposed rule change note: explosion visuals are sized by blast radius rather than power, and the visual size/sound are synchronized to that radius.
 - [ ] **Armor Degradation** — sustained side-armor wear from penetrating hits.
   - Deferred for a follow-up design.
+  - Proposed rule change note: a portion of incoming damage will be applied to armor, e.g. 10% when damage exceeds 50% of armor, rising to 20% when damage is actually dealt.
 
 ## Phase 4: Items / Armor / Inventory Backbone (the data spine)
 
