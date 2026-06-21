@@ -3377,6 +3377,10 @@ void TileEngine::explode(BattleActionAttack attack, Position center, int power, 
 			hitSide = (center.x % 16 + center.y % 16 - 15) > 0 ? 1 : -1;
 	}
 
+	// blastDropoff: linear falloff within AoE radius (0 = flat/vanilla, >0 = center-weighted)
+	const float blastDropoff = (attack.damage_item && attack.damage_item->getRules())
+		? attack.damage_item->getRules()->getBlastDropoff() : 0.0f;
+
 	for (int fi = -90; fi <= 90; fi += 5)
 	{
 		// raytrace every 3 degrees makes sure we cover all tiles in a circle.
@@ -3398,14 +3402,22 @@ void TileEngine::explode(BattleActionAttack attack, Position center, int power, 
 				{
 					ret = tilesAffected.insert(std::make_pair(dest, 0)); // check if we had this tile already affected
 
-					const int tileDmg = type->getTileFinalDamage(power_);
+					// apply blastDropoff scaling: center is full power, edge tapers to zero
+					int effectivePower = power_;
+					if (blastDropoff > 0.0f && maxRadius > 0)
+					{
+						const float scale = 1.0f - blastDropoff * (float(l) / float(maxRadius));
+						effectivePower = int(power_ * std::max(0.0f, scale));
+					}
+
+					const int tileDmg = type->getTileFinalDamage(effectivePower);
 					if (tileDmg > ret.first->second)
 					{
 						ret.first->second = tileDmg;
 					}
 					if (ret.second)
 					{
-						const int damage = type->getRandomDamage(power_);
+						const int damage = type->getRandomDamage(effectivePower);
 						BattleUnit *bu = dest->getOverlappingUnit(_save);
 
 						toRemove.clear();

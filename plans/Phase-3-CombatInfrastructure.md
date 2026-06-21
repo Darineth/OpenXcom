@@ -1,6 +1,6 @@
 # Phase 3: Combat Infrastructure — Index
 
-**Status:** Planning — not started. Jun 2026.
+**Status:** In progress. Updated Jun 2026.
 
 ---
 
@@ -15,9 +15,11 @@ Individual feature docs (created as each item is designed/started):
 
 | Item | Design doc | Status |
 |------|------------|--------|
-| Async Projectile System | [Feature-AsyncProjectileSystem.md](Feature-AsyncProjectileSystem.md) | Planning |
-| Async Explosion System | — | Not started |
-| Advanced Damage Models | — | Not started |
+| Async Projectile System | [Feature-AsyncProjectileSystem.md](Feature-AsyncProjectileSystem.md) | Done |
+| Async Explosion System | [Feature-AsyncProjectileSystem.md](Feature-AsyncProjectileSystem.md) | Done |
+| Blast Radius Dropoff | — | Done |
+| Explosion VFX/Sound Radius Scaling | — | Deferred (follow-up design) |
+| Armor Degradation | — | Deferred (follow-up design) |
 
 | Area | Present in OXCE-Plus | Notes |
 |------|----------------------|-------|

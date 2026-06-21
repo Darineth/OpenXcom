@@ -137,8 +137,14 @@ Everything below is DX-specific work confirmed **absent** from the base.
   opt-in via `tuBurst`), sequential rounds reusing the async auto-shot path, now also wired into
   Battlescape AI fire-mode selection.
   *(design: [plans/Feature-BurstFire.md](plans/Feature-BurstFire.md))*
-- [ ] **Advanced Damage Models** — armor degradation, `blastDropoff` falloff,
-  visual/sound scaling by blast radius.
+- [x] **Blast Radius Dropoff** — `RuleItem.blastDropoff` falloff inside AoE radius.
+  - ✅ **Done.** Center-weighted explosion power scaling is implemented; `0.0` preserves flat
+    vanilla behavior.
+- [ ] **Explosion VFX/Sound Radius Scaling** — presentation controls by blast radius.
+  - ⏸️ Deferred for a follow-up design (`radiusForAnimation`, `explosionSound`,
+    `explosionSoundBig`).
+- [ ] **Armor Degradation** — sustained side-armor wear from penetrating hits.
+  - Deferred for a follow-up design.
 
 ## Phase 4: Items / Armor / Inventory Backbone (the data spine)
 
@@ -245,7 +251,7 @@ and changes core progression curves.*
 | Combat log (P1) | event reporting for all later mechanics |
 | Loadout templates (P2) | Soldier Roles (P7) |
 | Async projectile/explosion (P3) | shotgun, dual-fire, burst, concurrent explosions |
-| Damage model (P3) | armor degradation, Mind Blast |
+| Blast dropoff + armor degradation (P3) | Mind Blast balancing hooks |
 | Inventory layouts + typed slots (P4) | utility slots, roles, modular vehicles |
 | Directional armor + item stats (P4) | damage model, sided slots, modular vehicles |
 | Aim-cone (P5) | accuracy mods, burst, targeting feedback, AI ranges |

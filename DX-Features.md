@@ -251,3 +251,9 @@ in via `tuAuto`; weapons without it behave exactly as before.
   throwable firearms); the menu shows its shot count and flags an ammo warning when the loaded
   clip holds fewer rounds than the burst needs.
 
+## Blast Radius Dropoff
+
+- **Blast radius dropoff** (`RuleItem.blastDropoff`, default `0.0`): explosion power can now taper
+  from center to edge inside the AoE radius. `0.0` keeps vanilla flat behavior, while higher
+  values increasingly weight damage toward ground zero.
+

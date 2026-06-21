@@ -54,3 +54,10 @@ items:
     tuAuto: 50             # was 35 - pricier than burst for the longer volley
     autoShots: 6           # was 3  - now a 6-round auto burst
     autoRange: 7           # unchanged (engine default)
+
+  # -------------------------------------------------------------------
+  #  Basic grenade -> full radius falloff
+  #  Tests: blastDropoff at 100% (center strong, edge minimal/zero)
+  # -------------------------------------------------------------------
+  - type: STR_GRENADE
+    blastDropoff: 1.0

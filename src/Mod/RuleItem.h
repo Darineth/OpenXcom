@@ -411,6 +411,7 @@ private:
 	bool _ignoreAmmoPower;
 	float _powerRangeReduction;
 	float _powerRangeThreshold;
+	float _blastDropoff;
 	std::vector<std::vector<std::string>> _compatibleAmmoNames = std::vector<std::vector<std::string>>(AmmoSlotMax);
 	std::vector<const RuleItem*> _compatibleAmmo[AmmoSlotMax];
 	std::unordered_map<const RuleItem*, int> _compatibleAmmoSlots;
@@ -674,6 +675,8 @@ public:
 	int getPower() const;
 	/// Gets the item's power used for AoE explosion animation.
 	int getPowerForAnimation() const { return _powerForAnimation; }
+	/// Gets the blast falloff factor within AoE radius (0 = flat/vanilla, 1 = full linear dropoff).
+	float getBlastDropoff() const { return _blastDropoff; }
 	/// Should the item's power be displayed in Ufopedia or not?
 	bool getHidePower() const { return _hidePower; }
 	/// Ok, so this isn't a melee type weapon but we're using it for melee... how much damage should it do?

@@ -1790,7 +1790,6 @@ int BattleUnit::damage(Position relative, int damage, const RuleDamageType *type
 
 		setValueMax(_currentArmor[side], - std::get<toArmor>(args.data), 0, _maxArmor[side]);
 
-
 		setFatalShotInfo(side, bodypart);
 
 
