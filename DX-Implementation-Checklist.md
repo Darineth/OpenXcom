@@ -155,6 +155,7 @@ Everything below is DX-specific work confirmed **absent** from the base.
 - [x] **Item stats & stat-modifiers** — `stats` / `statModifiers` on items & armor.
   *(design: [plans/Feature-ItemStatsModifiers.md](plans/Feature-ItemStatsModifiers.md))*
   - ✅ **Done.** Added `RuleItem.stats`, `RuleItem.statModifiers`, and `Armor.statModifiers` ruleset support, then wired effective stat recomputation in `Soldier::prepareStatsWithBonuses` and `BattleUnit::getBaseStats` so equipped items and armor modifiers contribute at runtime.
+- [ ] **Inventory stat display revamp** — display all unit stats (TU, reactions, firing, throwing, melee, psi, strength) from the inventory view.
 - [ ] **Directional armor** — `frontArmor`/`sideArmor`/`rearArmor`/`underArmor`,
   `armorSide`. *(feeds the Phase 3 damage model)*
 - [ ] **Inventory layouts** — `RuleInventoryLayout`, `RuleSoldier.inventoryLayout`.

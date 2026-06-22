@@ -921,7 +921,7 @@ void Map::drawUnit(UnitSprite &unitSprite, Tile *unitTile, Tile *currTile, Posit
 	}
 
 	Position tileScreenPosition;
-	_camera->convertMapToScreen(unitTile->getPosition() + Position(0,0, (-unitFromBelow) + (+unitFromAbove)), &tileScreenPosition);
+	_camera->convertMapToScreen(unitTile->getPosition() + Position(0, 0, static_cast<int>(unitFromAbove) - static_cast<int>(unitFromBelow)), &tileScreenPosition);
 	tileScreenPosition += _camera->getMapOffset();
 
 	//get shade helpers

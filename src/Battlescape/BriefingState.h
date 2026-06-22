@@ -47,6 +47,8 @@ public:
 	BriefingState(Craft *craft = 0, Base *base = 0, bool infoOnly = false, BriefingData *customBriefing = nullptr);
 	/// Cleans up the Briefing state.
 	~BriefingState();
+	/// Gets the scale context for this state (self-managed).
+	ScaleContext getScaleContext() const override { return ScaleContext::SelfManaged; }
 	/// Initialization
 	void init() override;
 	/// Handler for clicking the Ok button.

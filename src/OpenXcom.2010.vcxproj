@@ -151,6 +151,7 @@
       <GenerateMapFile>false</GenerateMapFile>
       <MapExports>false</MapExports>
       <IgnoreSpecificDefaultLibraries>MSVCRT</IgnoreSpecificDefaultLibraries>
+      <AdditionalOptions>/ignore:4099</AdditionalOptions>
     </Link>
     <PostBuildEvent>
       <Command>copy /y "$(ProjectDir)..\deps\lib\$(Platform)\*.dll" "$(ProjectDir)..\bin\$(Platform)\"</Command>
@@ -183,6 +184,7 @@
       </DataExecutionPrevention>
       <GenerateMapFile>false</GenerateMapFile>
       <MapExports>false</MapExports>
+      <AdditionalOptions>/ignore:4099</AdditionalOptions>
     </Link>
     <PostBuildEvent>
       <Command>copy /y "$(ProjectDir)..\deps\lib\$(Platform)\*.dll" "$(ProjectDir)..\bin\$(Platform)\"</Command>
@@ -218,6 +220,7 @@
       </DataExecutionPrevention>
       <TargetMachine>MachineX86</TargetMachine>
       <Profile>false</Profile>
+      <AdditionalOptions>/ignore:4099</AdditionalOptions>
     </Link>
     <PostBuildEvent>
       <Command>copy /y "$(ProjectDir)..\deps\lib\$(Platform)\*.dll" "$(ProjectDir)..\bin\$(Platform)\"</Command>
@@ -253,6 +256,7 @@
       </DataExecutionPrevention>
       <TargetMachine>MachineX86</TargetMachine>
       <Profile>false</Profile>
+      <AdditionalOptions>/ignore:4099</AdditionalOptions>
     </Link>
     <PostBuildEvent>
       <Command>copy /y "$(ProjectDir)..\deps\lib\$(Platform)\*.dll" "$(ProjectDir)..\bin\$(Platform)\"</Command>
@@ -287,6 +291,7 @@
       <DataExecutionPrevention>
       </DataExecutionPrevention>
       <Profile>false</Profile>
+      <AdditionalOptions>/ignore:4099</AdditionalOptions>
     </Link>
     <PostBuildEvent>
       <Command>copy /y "$(ProjectDir)..\deps\lib\$(Platform)\*.dll" "$(ProjectDir)..\bin\$(Platform)\"</Command>
@@ -321,6 +326,7 @@
       <DataExecutionPrevention>
       </DataExecutionPrevention>
       <Profile>false</Profile>
+      <AdditionalOptions>/ignore:4099</AdditionalOptions>
     </Link>
     <PostBuildEvent>
       <Command>copy /y "$(ProjectDir)..\deps\lib\$(Platform)\*.dll" "$(ProjectDir)..\bin\$(Platform)\"</Command>
