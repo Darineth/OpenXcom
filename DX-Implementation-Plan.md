@@ -103,8 +103,8 @@ This document serves as a high-level checklist of features from the original Ope
     - [x] Implement explosion damage falloff inside AoE radius
 - [ ] **Explosion VFX/Sound Radius Scaling**
     - [ ] Implement visual/sound scaling by blast radius
-- [ ] **Armor Degradation**
-    - [ ] Implement armor degradation on hits
+- [x] **Armor Degradation**
+    - [x] Implement thresholded blocked-hit and penetrating-hit armor degradation via `RuleDamageType`
 - [ ] **Directional Armor Values**
     - [ ] Implement directional armor values
 - [ ] **Item-based Stat Modification Rules**

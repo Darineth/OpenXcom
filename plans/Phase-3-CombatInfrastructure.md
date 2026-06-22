@@ -19,7 +19,7 @@ Individual feature docs (created as each item is designed/started):
 | Async Explosion System | [Feature-AsyncProjectileSystem.md](Feature-AsyncProjectileSystem.md) | Done |
 | Blast Radius Dropoff | — | Done |
 | Explosion VFX/Sound Radius Scaling | — | Done |
-| Armor Degradation | [Feature-ArmorDegradation.md](Feature-ArmorDegradation.md) | Deferred (follow-up design) |
+| Armor Degradation | [Feature-ArmorDegradation.md](Feature-ArmorDegradation.md) | Done |
 
 | Area | Present in OXCE-Plus | Notes |
 |------|----------------------|-------|

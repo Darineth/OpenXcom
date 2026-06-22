@@ -144,10 +144,9 @@ Everything below is DX-specific work confirmed **absent** from the base.
   - ✅ **Done.** Explosion presentation now scales from blast radius (not damage power):
     sprite density/spread are radius-driven, and the small/large explosion sound threshold is
     keyed off radius as well.
-- [ ] **Armor Degradation** — sustained side-armor wear from heavy blocked or penetrating hits.
+- [x] **Armor Degradation** — sustained side-armor wear from heavy blocked or penetrating hits.
   *(design: [plans/Feature-ArmorDegradation.md](plans/Feature-ArmorDegradation.md))*
-  - Deferred for a follow-up design.
-  - Proposed rule change note: let strong blocked hits dent armor once they reach at least 50% of the side's effective armor block, while preserving the fork's existing `ToArmorPre` / `ToArmor` semantics.
+  - ✅ **Done.** `RuleDamageType` now supports `ToArmorBlocked` and `ToArmorBlockedThreshold`, adding thresholded blocked-hit armor wear without changing the inherited `ToArmorPre` / `ToArmor` stages.
 
 ## Phase 4: Items / Armor / Inventory Backbone (the data spine)
 

@@ -3,6 +3,21 @@
 This document tracks features added in OpenXcom DX on top of OXCE-Plus. Entries will be added
 here as features are implemented.
 
+## Armor Degradation
+
+Battlescape damage types can now wear armor even on a hit that fails to penetrate, as long as the
+hit was strong enough to meaningfully challenge that side's armor. This is controlled per
+`damageAlter` / `RuleDamageType` via two new knobs:
+
+- `ToArmorBlocked` — the blocked-hit armor wear multiplier, applied only to fully blocked hits.
+- `ToArmorBlockedThreshold` — the minimum fraction of the struck side's effective armor block the
+  rolled damage must reach before blocked-hit wear begins.
+
+The existing fork behavior is preserved around it: `ToArmorPre` still applies unconditional
+pre-armor wear, and `ToArmor` still applies only from post-armor penetrating damage. DX adds a
+third stage specifically for "nearly penetrated but was stopped" hits, with defaults of `0.0`
+and `0.5` so existing mods keep their prior behavior until they opt in.
+
 ## Combat Log
 
 A floating, centered event log across the top of the Battlescape that reports combat events
