@@ -113,6 +113,7 @@ This document serves as a high-level checklist of features from the original Ope
 ## 10. Inventory & UI Improvements
 - [ ] **Inventory System**
     - [ ] Implement per-unit-type inventory layouts
+    - [ ] Implement configurable weapon slots and unload destination policies
     - [ ] Implement slot filtering and move-cost rules
     - [ ] Implement inventory entry point from soldier screen
     - [ ] Implement mousewheel ground scrolling (one column at a time)

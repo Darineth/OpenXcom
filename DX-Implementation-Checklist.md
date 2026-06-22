@@ -156,11 +156,10 @@ Everything below is DX-specific work confirmed **absent** from the base.
 - [ ] **Directional armor** — `frontArmor`/`sideArmor`/`rearArmor`/`underArmor`,
   `armorSide`. *(feeds the Phase 3 damage model)*
 - [ ] **Inventory layouts** — `RuleInventoryLayout`, `RuleSoldier.inventoryLayout`.
-  - ⚠️ **Fix:** `Inventory::unload` (and the Unload button / shift-unload path) hardcodes
-    `_inventorySlotRightHand`/`_inventorySlotLeftHand` ([src/Battlescape/Inventory.cpp:1354-1381](src/Battlescape/Inventory.cpp#L1354-L1381))
-    and forces the weapon/ammo into hand slots. On layouts that lack those hand slots this
-    fails (or would dereference missing slots). Make the unload destination layout-aware
-    (e.g. any free slot the item fits, falling back to ground) instead of assuming hands exist.
+  - [ ] **Configurable weapon slots / unload config** — replace hand-slot assumptions in
+    `Inventory::unload` with layout-aware destination policies (handling slots, ammo destination,
+    fallbacks, and battle shift-unload gating) so custom layouts without hand slots behave safely.
+    *(design: [plans/Feature-ConfigurableWeaponSlotsUnload.md](plans/Feature-ConfigurableWeaponSlotsUnload.md))*
 - [ ] **Typed slots / filtering / move-cost** — `battleType`, `allowCombatSwap`, `costs`,
   `countStats`, `armorSide`.
 - [ ] **Utility equipment slots** — `INV_UTILITY`. *(needs typed slots)*
