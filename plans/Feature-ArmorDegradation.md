@@ -1,6 +1,6 @@
 # Feature: Armor Degradation
 
-**Status:** Proposed (Phase 3 follow-up).
+**Status:** Implemented (Phase 3 follow-up).
 
 ## Motivation
 
@@ -8,7 +8,7 @@ DX wants armor wear to matter even when a strong hit fails to penetrate. The des
 
 - weak glancing hits do nothing;
 - a heavy hit that nearly breaks through can still dent the struck side's armor;
-- a hit that actually penetrates keeps using the fork's existing post-armor damage flow.
+- a hit that strongly penetrates can also smash armor extra hard.
 
 That creates sustained side-armor erosion under focused fire without making every low-power hit chip armor.
 
@@ -51,16 +51,18 @@ how close it came to punching through.
 
 That is the exact gap this DX feature should fill.
 
-## Proposed DX Design
+## Shipped DX Design
 
 ### Ruleset fields
 
-Add two optional `damageAlter` / `RuleDamageType` fields:
+Add four optional `damageAlter` / `RuleDamageType` fields:
 
 ```yaml
 damageAlter:
   ToArmorBlocked: 0.0
   ToArmorBlockedThreshold: 0.5
+  ToArmorOverPen: 0.0
+  ToArmorOverPenThreshold: 2.0
 ```
 
 - `ToArmorBlocked`: maximum fraction of rolled damage converted to armor wear on a hit that was fully
@@ -68,10 +70,14 @@ damageAlter:
 - `ToArmorBlockedThreshold`: minimum fraction of the target side's effective armor block that the rolled
   damage must reach before a blocked hit can wear armor. `0.5` matches the desired "at least 50% of the
   armor's ability to block it" rule.
+- `ToArmorOverPen`: extra armor damage multiplier for strongly penetrating hits.
+- `ToArmorOverPenThreshold`: minimum multiple of effective armor the rolled damage must exceed before
+  `ToArmorOverPen` applies. `2.0` matches the "past armor*2" behavior.
 
 ### Mechanics
 
-This new step only runs when the hit does **not** penetrate.
+Blocked-hit wear only runs when the hit does **not** penetrate. Over-penetration wear only runs when the
+hit **does** penetrate.
 
 Definitions:
 
@@ -85,26 +91,36 @@ Flow:
 2. Keep upstream armor blocking exactly as-is.
 3. If `postArmorDamage > 0`, keep upstream `ToArmor` behavior exactly as-is and do **not** run the new
    blocked-hit wear step.
-4. If `postArmorDamage <= 0`, evaluate the new blocked-hit wear step:
+4. If `postArmorDamage <= 0`, evaluate blocked-hit wear:
    - If `rawDamage < effectiveArmorBlock * ToArmorBlockedThreshold`, blocked-hit armor wear is zero.
-   - Otherwise, convert part of `rawDamage` into armor damage using a thresholded ramp.
+  - Otherwise, convert overflow above that threshold into armor damage.
+5. If `postArmorDamage > 0`, keep upstream `ToArmor` behavior and also evaluate over-penetration wear:
+  - If `rawDamage <= effectiveArmorBlock * ToArmorOverPenThreshold`, no over-penetration wear.
+  - Otherwise, convert overflow above that threshold into extra armor damage.
 
-Recommended ramp:
+Implemented blocked-hit wear:
 
 ```cpp
-float blockRatio = rawDamage / effectiveArmorBlock;
-float progress = Clamp((blockRatio - threshold) / (1.0f - threshold), 0.0f, 1.0f);
-float blockedMultiplier = ToArmorBlocked * (0.5f + 0.5f * progress);
-int blockedArmorDamage = round(rawDamage * blockedMultiplier);
+float thresholdDamage = effectiveArmorBlock * ToArmorBlockedThreshold;
+float overflowDamage = rawDamage - thresholdDamage;
+int blockedArmorDamage = round(overflowDamage * ToArmorBlocked) + 1;
+```
+
+Implemented over-penetration wear:
+
+```cpp
+float thresholdDamage = effectiveArmorBlock * ToArmorOverPenThreshold;
+float overflowDamage = rawDamage - thresholdDamage;
+int overPenArmorDamage = round(overflowDamage * ToArmorOverPen);
 ```
 
 Why this shape:
 
-- it preserves the requested 50% entry threshold;
-- it lets one knob (`ToArmorBlocked`) cover the earlier balance target of roughly 10% wear at the threshold
-  and 20% wear near the penetration boundary when `ToArmorBlocked = 0.2`;
+- it preserves the requested 50% blocked-hit entry threshold and guarantees at least 1 armor damage once
+  blocked wear is eligible;
+- it adds the requested "smashed through" behavior for strong penetration past `armor*2`;
 - it avoids low-power chip damage;
-- it leaves penetrating-hit behavior under the fork's existing `ToArmor` rules.
+- it keeps existing `ToArmorPre` and `ToArmor` semantics intact.
 
 ### Balance examples
 
@@ -114,17 +130,20 @@ Assume:
 - `ArmorEffectiveness = 1.0`
 - `ToArmorBlockedThreshold = 0.5`
 - `ToArmorBlocked = 0.2`
+- `ToArmorOverPenThreshold = 2.0`
+- `ToArmorOverPen = 0.2`
 - `ToArmorPre = 0.0`
 - `ToArmor = 0.25`
 
 Results:
 
-- `rawDamage = 15`: below the `20` threshold, so armor wear = `0`.
-- `rawDamage = 20`: blocked, but eligible; multiplier starts at `0.1`, so armor wear = `2`.
-- `rawDamage = 30`: blocked and close to penetrating; multiplier rises to `0.15`, so armor wear = `5`.
-- `rawDamage = 39`: still blocked; multiplier is almost `0.2`, so armor wear = `8`.
-- `rawDamage = 45`: penetrates; blocked-hit wear does not run, and normal upstream `ToArmor` applies from
-  the post-armor remainder instead.
+- `rawDamage = 15`: below the `20` blocked threshold, so blocked wear = `0`.
+- `rawDamage = 21`: blocked and eligible; overflow is `1`, so blocked wear = `1` (guaranteed).
+- `rawDamage = 39`: blocked and near penetration; overflow is `19`, so blocked wear = `5`.
+- `rawDamage = 45`: penetrates; normal `ToArmor` applies from post-armor damage, over-pen still `0` because
+  `45 <= 80`.
+- `rawDamage = 100`: strong penetration; normal `ToArmor` applies plus over-pen overflow (`100 - 80 = 20`)
+  adds extra armor wear.
 
 ## Why This Should Be a DX Layer, Not a `ToArmorPre` Rewrite
 
@@ -139,33 +158,37 @@ The clean approach is:
 - keep `ToArmor` for penetration-driven wear;
 - add a new DX-only blocked-hit wear stage for the "nearly penetrated" case.
 
-## Implementation Sketch
+## Implementation
 
 ### Data model
 
 - `src/Mod/RuleDamageType.h` / `.cpp`
-  - add `float ToArmorBlocked`;
-  - add `float ToArmorBlockedThreshold`;
-  - load them from YAML;
-  - default to `0.0f` and `0.5f` respectively.
+  - added `float ToArmorBlocked`;
+  - added `float ToArmorBlockedThreshold`;
+  - added `float ToArmorOverPen`;
+  - added `float ToArmorOverPenThreshold`;
+  - both load from YAML;
+  - defaults are `0.0f` / `0.5f` for blocked wear and `0.0f` / `2.0f` for over-penetration wear.
 
 ### Hit resolution
 
 - `src/Savegame/BattleUnit.cpp`
-  - keep the existing `ToArmorPre` accumulation before armor reduction;
-  - compute the blocked-hit wear candidate from `rawDamage`, the struck side's current armor, and
-    `ArmorEffectiveness`;
-  - only add that blocked-hit wear when `postArmorDamage <= 0`;
-  - keep the existing post-penetration `ToArmor` path unchanged.
+  - keeps the existing `ToArmorPre` accumulation before armor reduction;
+  - computes blocked-hit wear from `rawDamage`, the struck side's effective armor block, and the
+    blocked-hit ruleset fields;
+  - only applies that blocked-hit wear when the hit was fully stopped by armor;
+  - adds over-penetration armor wear on penetrating hits based on raw damage past `armor*threshold`;
+  - keeps existing post-penetration `ToArmor` behavior.
 
-### Optional visibility / tooling follow-up
+### Visibility / tooling
 
 - `src/Ufopaedia/StatsForNerdsState.cpp`
-  - expose the two new fields in the technical dump.
+  - now exposes the two new fields in the technical dump.
 - technical language files under `bin/common/Language/Technical/`
-  - add labels for the new damage-type properties.
+  - now include labels for the new damage-type properties.
 
-Those are not required for the gameplay mechanic itself, but they make the rules discoverable.
+`Extended.txt` is also updated so the new `damageAlter` properties are documented alongside the
+existing `ToArmorPre` / `ToArmor` fields.
 
 ## Save / Mod Compatibility
 

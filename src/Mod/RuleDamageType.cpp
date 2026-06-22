@@ -32,7 +32,7 @@ RuleDamageType::RuleDamageType() :
 	IgnoreDirection(false), IgnoreSelfDestruct(false), IgnorePainImmunity(false), IgnoreNormalMoraleLose(false), IgnoreOverKill(false),
 	ArmorEffectiveness(1.0f), RadiusEffectiveness(0.0f), RadiusReduction(10.0f),
 	FireThreshold(1000), SmokeThreshold(1000),
-	ToHealth(1.0f), ToMana(0.0f), ToArmor(0.1f), ToArmorPre(0.0f), ToWound(1.0f), ToItem(0.0f), ToTile(0.5f), ToStun(0.25f), ToEnergy(0.0f), ToTime(0.0f), ToMorale(0.0f),
+	ToHealth(1.0f), ToMana(0.0f), ToArmor(0.1f), ToArmorPre(0.0f), ToArmorBlocked(0.0f), ToArmorBlockedThreshold(0.5f), ToArmorOverPen(0.0f), ToArmorOverPenThreshold(2.0f), ToWound(1.0f), ToItem(0.0f), ToTile(0.5f), ToStun(0.25f), ToEnergy(0.0f), ToTime(0.0f), ToMorale(0.0f),
 	RandomHealth(false), RandomMana(false), RandomArmor(false), RandomArmorPre(false), RandomWound(true), RandomItem(false), RandomTile(false), RandomStun(true), RandomEnergy(false), RandomTime(false), RandomMorale(false),
 	TileDamageMethod(1), TileDamageLimit(-1)
 {
@@ -177,6 +177,10 @@ void RuleDamageType::load(const YAML::YamlNodeReader& node)
 	reader.tryRead("ToMana", ToMana);
 	reader.tryRead("ToArmor", ToArmor);
 	reader.tryRead("ToArmorPre", ToArmorPre);
+	reader.tryRead("ToArmorBlocked", ToArmorBlocked);
+	reader.tryRead("ToArmorBlockedThreshold", ToArmorBlockedThreshold);
+	reader.tryRead("ToArmorOverPen", ToArmorOverPen);
+	reader.tryRead("ToArmorOverPenThreshold", ToArmorOverPenThreshold);
 	reader.tryRead("ToWound", ToWound);
 	reader.tryRead("ToItem", ToItem);
 	reader.tryRead("ToTile", ToTile);
@@ -258,6 +262,52 @@ int RuleDamageType::getArmorFinalDamage(int damage) const
 int RuleDamageType::getArmorPreFinalDamage(int damage) const
 {
 	return getDamageHelper(RandomArmorPre, ToArmorPre, damage);
+}
+
+/**
+ * Get final damage value to armor for a fully blocked hit.
+ */
+int RuleDamageType::getArmorBlockedFinalDamage(int damage, int armor) const
+{
+	if (damage <= 0 || armor <= 0 || ToArmorBlocked <= 0.0f)
+	{
+		return 0;
+	}
+
+	const float threshold = std::clamp(ToArmorBlockedThreshold, 0.0f, 1.0f);
+	const float thresholdDamage = armor * threshold;
+	if (damage <= thresholdDamage)
+	{
+		return 0;
+	}
+
+	// Damage was prevented, but armor is still reduced slightly
+	// for every point of original damage past the threshold.
+	const float overflowDamage = damage - thresholdDamage;
+	return (int)std::round(overflowDamage * ToArmorBlocked) + 1;
+}
+
+/**
+ * Get final extra armor damage for a strongly over-penetrating hit.
+ */
+int RuleDamageType::getArmorOverPenFinalDamage(int damage, int armor) const
+{
+	if (damage <= 0 || armor <= 0 || ToArmorOverPen <= 0.0f)
+	{
+		return 0;
+	}
+
+	const float threshold = std::max(0.0f, ToArmorOverPenThreshold);
+	const float thresholdDamage = armor * threshold;
+	if (damage <= thresholdDamage)
+	{
+		return 0;
+	}
+
+	// Armor was smashed through. Armor takes extra damage for
+	// every point of original damage past armor * threshold.
+	const float overflowDamage = damage - thresholdDamage;
+	return (int)std::round(overflowDamage * ToArmorOverPen);
 }
 
 /**

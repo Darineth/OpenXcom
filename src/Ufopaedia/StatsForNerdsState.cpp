@@ -2075,6 +2075,10 @@ void StatsForNerdsState::initItemList()
 
 		addFloatAsPercentage(ss, rule->ToArmorPre, "ToArmorPre", ruleByResistType->ToArmorPre);
 		addBoolean(ss, rule->RandomArmorPre, "RandomArmorPre", ruleByResistType->RandomArmorPre);
+		addFloatAsPercentage(ss, rule->ToArmorBlocked, "ToArmorBlocked", ruleByResistType->ToArmorBlocked);
+		addFloatAsPercentage(ss, rule->ToArmorBlockedThreshold, "ToArmorBlockedThreshold", ruleByResistType->ToArmorBlockedThreshold);
+		addFloatAsPercentage(ss, rule->ToArmorOverPen, "ToArmorOverPen", ruleByResistType->ToArmorOverPen);
+		addFloat(ss, rule->ToArmorOverPenThreshold, "ToArmorOverPenThreshold", ruleByResistType->ToArmorOverPenThreshold);
 
 		addFloatAsPercentage(ss, rule->ToArmor, "ToArmor", ruleByResistType->ToArmor);
 		addBoolean(ss, rule->RandomArmor, "RandomArmor", ruleByResistType->RandomArmor);

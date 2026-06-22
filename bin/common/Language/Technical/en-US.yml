@@ -197,6 +197,10 @@ en-US:
 #
   ToArmorPre: "Armor pre-dmg mult."
   RandomArmorPre: "Armor pre-dmg RNG?"
+  ToArmorBlocked: "Blocked armor mult."
+  ToArmorBlockedThreshold: "Blocked armor threshold"
+  ToArmorOverPen: "Over-pen armor mult."
+  ToArmorOverPenThreshold: "Over-pen threshold"
   ToArmor: "Armor damage multiplier"
   RandomArmor: "Armor damage RNG?"
   ToHealth: "HP damage multiplier"

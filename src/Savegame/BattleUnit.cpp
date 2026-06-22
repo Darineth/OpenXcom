@@ -1725,10 +1725,22 @@ int BattleUnit::damage(Position relative, int damage, const RuleDamageType *type
 
 		std::get<toTransform>(args.data) += specialDamageTransformChance;
 		std::get<toArmor>(args.data) += type->getArmorPreFinalDamage(damage);
+		const int rawDamage = damage;
+		int blockedArmorDamage = 0;
+		int overPenArmorDamage = 0;
 
 		if (type->ArmorEffectiveness > 0.0f)
 		{
-			damage -= getArmor(side) * type->ArmorEffectiveness;
+			const int effectiveArmor = (int)std::round(getArmor(side) * type->ArmorEffectiveness);
+			damage -= effectiveArmor;
+			if (damage <= 0)
+			{
+				blockedArmorDamage = type->getArmorBlockedFinalDamage(rawDamage, effectiveArmor);
+			}
+			else
+			{
+				overPenArmorDamage = type->getArmorOverPenFinalDamage(rawDamage, effectiveArmor);
+			}
 		}
 
 		if (damage > 0)
@@ -1756,6 +1768,11 @@ int BattleUnit::damage(Position relative, int damage, const RuleDamageType *type
 
 			// armor value change
 			std::get<toArmor>(args.data) += type->getArmorFinalDamage(damage);
+			std::get<toArmor>(args.data) += overPenArmorDamage;
+		}
+		else
+		{
+			std::get<toArmor>(args.data) += blockedArmorDamage;
 		}
 
 		ModScript::DamageUnit::Worker work { this, attack.damage_item, attack.weapon_item, attack.attacker, save, attack.skill_rules, damage, orgDamage, bodypart, side, type->ResistType, attack.type, };

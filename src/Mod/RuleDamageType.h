@@ -82,6 +82,14 @@ struct RuleDamageType
 	float ToArmor;
 	/// Conversion from power to unit armor damage before applying armor protection.
 	float ToArmorPre;
+	/// Conversion from power to armor damage for fully blocked hits after thresholding.
+	float ToArmorBlocked;
+	/// Minimum blocked-hit share of effective armor needed before blocked armor wear applies.
+	float ToArmorBlockedThreshold;
+	/// Conversion from over-penetration overflow to extra armor damage.
+	float ToArmorOverPen;
+	/// Minimum multiple of effective armor that rolled damage must exceed for over-penetration armor damage.
+	float ToArmorOverPenThreshold;
 	/// Conversion from power to wound chance.
 	float ToWound;
 	/// Conversion from power to item damage.
@@ -155,6 +163,10 @@ struct RuleDamageType
 	int getArmorFinalDamage(int damage) const;
 	/// Get final damage value to armor based on damage before armor reduction.
 	int getArmorPreFinalDamage(int damage) const;
+	/// Get final damage value to armor for a fully blocked hit.
+	int getArmorBlockedFinalDamage(int damage, int armor) const;
+	/// Get final extra armor damage for a strongly over-penetrating hit.
+	int getArmorOverPenFinalDamage(int damage, int armor) const;
 	/// Get numbers of wound based on damage.
 	int getWoundFinalDamage(int damage) const;
 	/// Get final damage value to item based on damage.
