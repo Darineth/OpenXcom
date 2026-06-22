@@ -45,7 +45,7 @@ class InventoryState : public State
 {
 private:
 	Surface *_bg, *_soldier;
-	Text *_txtItem, *_txtAmmo, *_txtWeight, *_txtTus, *_txtStatLine1, *_txtStatLine2, *_txtStatLine3, *_txtStatLine4, *_txtPosition;
+	Text *_txtItem, *_txtAmmo, *_txtWeight, *_txtTus, *_txtStatLine1, *_txtStatLine2, *_txtStatLine3, *_txtStatLine4, *_txtStatLine5, *_txtStatLine6, *_txtStatLine7, *_txtArmorFront, *_txtArmorLeft, *_txtArmorRight, *_txtArmorBack, *_txtArmorUnder, *_txtPosition;
 	Text *_txtNameStatic;
 	TextEdit *_txtName;
 	TextEdit *_btnQuickSearch;

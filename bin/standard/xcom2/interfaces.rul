@@ -2287,10 +2287,22 @@ interfaces: #done
         color: 48
         color2: 16
       - id: textStatLine3
-        custom: 3
+        custom: 5
         color: 48
         color2: 16
       - id: textStatLine4
+        custom: 6
+        color: 48
+        color2: 16
+      - id: textStatLine5
+        custom: 7
+        color: 48
+        color2: 16
+      - id: textStatLine6
+        custom: 3
+        color: 48
+        color2: 16
+      - id: textStatLine7
         custom: 4
         color: 48
         color2: 16

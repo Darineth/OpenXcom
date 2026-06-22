@@ -76,6 +76,36 @@ extraSprites: #done
     singleImage: true
     files:
       0: Resources/UI/invpaste_empty_TFTD.png
+  - type: InvOk
+    width: 35
+    height: 22
+    singleImage: true
+    files:
+      0: Resources/UI/invok_TFTD.png
+  - type: InvPrev
+    width: 23
+    height: 22
+    singleImage: true
+    files:
+      0: Resources/UI/invprev_TFTD.png
+  - type: InvNext
+    width: 23
+    height: 22
+    singleImage: true
+    files:
+      0: Resources/UI/invnext_TFTD.png
+  - type: InvUnload
+    width: 33
+    height: 25
+    singleImage: true
+    files:
+      0: Resources/UI/invunload_TFTD.png
+  - type: InvGround
+    width: 31
+    height: 15
+    singleImage: true
+    files:
+      0: Resources/UI/invground_TFTD.png
   - type: GlobeMarkers
     width: 27
     height: 3

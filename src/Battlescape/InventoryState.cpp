@@ -99,18 +99,26 @@ InventoryState::InventoryState(bool tu, BattlescapeState *parent, Base *base, bo
 	_txtPosition = new Text(70, 9, 65, 95);
 	_txtNameStatic = new Text(210, 17, 28, 6);
 	_txtName = new TextEdit(this, 210, 17, 28, 6);
-	_txtTus = new Text(40, 9, 245, 24);
 	_txtWeight = new Text(70, 9, 245, 24);
 	_txtStatLine1 = new Text(70, 9, 245, 32);
-	_txtStatLine2 = new Text(70, 9, 245, 40);
-	_txtStatLine3 = new Text(70, 9, 245, 48);
-	_txtStatLine4 = new Text(70, 9, 245, 56);
+	_txtTus = new Text(70, 9, 245, 40);
+	_txtStatLine2 = new Text(70, 9, 245, 48);
+	_txtStatLine3 = new Text(70, 9, 245, 56);
+	_txtStatLine4 = new Text(70, 9, 245, 64);
+	_txtStatLine5 = new Text(70, 9, 245, 72);
+	_txtStatLine6 = new Text(70, 9, 245, 80);
+	_txtStatLine7 = new Text(70, 9, 245, 88);
+	_txtArmorFront = new Text(70, 9, 260, 96);
+	_txtArmorLeft = new Text(70, 9, 260, 104);
+	_txtArmorRight = new Text(70, 9, 260, 112);
+	_txtArmorBack = new Text(70, 9, 260, 120);
+	_txtArmorUnder = new Text(70, 9, 260, 128);
 	_txtItem = new Text(160, 9, 128, 140);
 	_txtAmmo = new Text(66, 24, 254, 64);
 	_btnOk = new BattlescapeButton(35, 22, 237, 1);
 	_btnPrev = new BattlescapeButton(23, 22, 273, 1);
 	_btnNext = new BattlescapeButton(23, 22, 297, 1);
-	_btnUnload = new BattlescapeButton(32, 25, 288, 32);
+	_btnUnload = new BattlescapeButton(32, 25, 288, 64);
 	_btnGround = new BattlescapeButton(32, 15, 289, 137);
 	_btnRank = new BattlescapeButton(26, 23, 0, 0);
 	_btnArmor = new BattlescapeButton(RuleInventory::PAPERDOLL_W, RuleInventory::PAPERDOLL_H, RuleInventory::PAPERDOLL_X, RuleInventory::PAPERDOLL_Y);
@@ -135,7 +143,7 @@ InventoryState::InventoryState(bool tu, BattlescapeState *parent, Base *base, bo
 	add(_bg);
 
 	// Set up objects
-	_game->getMod()->getSurface("TAC01.SCR")->blitNShade(_bg, 0, 0);
+	//_game->getMod()->getSurface("TAC01.SCR")->blitNShade(_bg, 0, 0); // Removed in favor of loading individual element backgrounds.
 	add(_btnArmor, "buttonArmor", "inventory", _bg);
 
 	add(_soldier);
@@ -148,6 +156,14 @@ InventoryState::InventoryState(bool tu, BattlescapeState *parent, Base *base, bo
 	add(_txtStatLine2, "textStatLine2", "inventory", _bg);
 	add(_txtStatLine3, "textStatLine3", "inventory", _bg);
 	add(_txtStatLine4, "textStatLine4", "inventory", _bg);
+	add(_txtStatLine5, "textStatLine5", "inventory", _bg);
+	add(_txtStatLine6, "textStatLine6", "inventory", _bg);
+	add(_txtStatLine7, "textStatLine7", "inventory", _bg);
+	add(_txtArmorFront, "textStatLine1", "inventory", _bg);
+	add(_txtArmorLeft, "textStatLine1", "inventory", _bg);
+	add(_txtArmorRight, "textStatLine1", "inventory", _bg);
+	add(_txtArmorBack, "textStatLine1", "inventory", _bg);
+	add(_txtArmorUnder, "textStatLine1", "inventory", _bg);
 	add(_txtItem, "textItem", "inventory", _bg);
 	add(_txtAmmo, "textAmmo", "inventory", _bg);
 	add(_btnOk, "buttonOK", "inventory", _bg);
@@ -162,12 +178,6 @@ InventoryState::InventoryState(bool tu, BattlescapeState *parent, Base *base, bo
 	add(_selAmmo);
 	add(_inv);
 	add(_txtPosition, "textSlot", "inventory", _bg);
-
-	// move the TU display down to make room for the weight display
-	if (Options::showMoreStatsInInventoryView)
-	{
-		_txtTus->setY(_txtTus->getY() + 8);
-	}
 
 	centerAllSurfaces();
 
@@ -202,6 +212,22 @@ InventoryState::InventoryState(bool tu, BattlescapeState *parent, Base *base, bo
 	_txtStatLine3->setHighContrast(true);
 
 	_txtStatLine4->setHighContrast(true);
+
+	_txtStatLine5->setHighContrast(true);
+
+	_txtStatLine6->setHighContrast(true);
+
+	_txtStatLine7->setHighContrast(true);
+
+	_txtArmorFront->setHighContrast(true);
+
+	_txtArmorLeft->setHighContrast(true);
+
+	_txtArmorRight->setHighContrast(true);
+
+	_txtArmorBack->setHighContrast(true);
+
+	_txtArmorUnder->setHighContrast(true);
 
 	_txtItem->setHighContrast(true);
 
@@ -293,6 +319,18 @@ InventoryState::InventoryState(bool tu, BattlescapeState *parent, Base *base, bo
 
 	_btnOk->onKeyboardRelease((ActionHandler)&InventoryState::btnQuickSearchToggle, Options::keyToggleQuickSearch);
 
+	// Draw the per-button graphics directly onto each button (TAC01.SCR background blit is disabled)
+	_game->getMod()->getSurface("InvOk")->blitNShade(_btnOk, 0, 0);
+	_btnOk->initSurfaces();
+	_game->getMod()->getSurface("InvPrev")->blitNShade(_btnPrev, 0, 0);
+	_btnPrev->initSurfaces();
+	_game->getMod()->getSurface("InvNext")->blitNShade(_btnNext, 0, 0);
+	_btnNext->initSurfaces();
+	_game->getMod()->getSurface("InvUnload")->blitNShade(_btnUnload, 0, 0);
+	_btnUnload->initSurfaces();
+	_game->getMod()->getSurface("InvGround")->blitNShade(_btnGround, 0, 0);
+	_btnGround->initSurfaces();
+
 	_game->getMod()->getSurface("oxceLinksInv")->blitNShade(_btnLinks, 0, 0);
 	_btnLinks->initSurfaces();
 	_btnLinks->setVisible(Options::oxceLinks);
@@ -326,12 +364,40 @@ InventoryState::InventoryState(bool tu, BattlescapeState *parent, Base *base, bo
 		}
 	}
 
-	_txtTus->setVisible(_tu);
-	_txtWeight->setVisible(Options::showMoreStatsInInventoryView);
-	_txtStatLine1->setVisible(Options::showMoreStatsInInventoryView && !_tu);
-	_txtStatLine2->setVisible(Options::showMoreStatsInInventoryView && !_tu);
-	_txtStatLine3->setVisible(Options::showMoreStatsInInventoryView && !_tu);
-	_txtStatLine4->setVisible(Options::showMoreStatsInInventoryView && !_tu);
+	if (Options::showMoreStatsInInventoryView)
+	{
+		_txtTus->setVisible(true);
+		_txtWeight->setVisible(true);
+		_txtStatLine1->setVisible(true);
+		_txtStatLine2->setVisible(true);
+		_txtStatLine3->setVisible(true);
+		_txtStatLine4->setVisible(true);
+		_txtStatLine5->setVisible(true);
+		_txtStatLine6->setVisible(true);
+		_txtStatLine7->setVisible(true);
+		_txtArmorFront->setVisible(true);
+		_txtArmorLeft->setVisible(true);
+		_txtArmorRight->setVisible(true);
+		_txtArmorBack->setVisible(true);
+		_txtArmorUnder->setVisible(true);
+	}
+	else
+	{
+		_txtTus->setVisible(_tu);
+		_txtWeight->setVisible(false);
+		_txtStatLine1->setVisible(false);
+		_txtStatLine2->setVisible(false);
+		_txtStatLine3->setVisible(false);
+		_txtStatLine4->setVisible(false);
+		_txtStatLine5->setVisible(false);
+		_txtStatLine6->setVisible(false);
+		_txtStatLine7->setVisible(false);
+		_txtArmorFront->setVisible(false);
+		_txtArmorLeft->setVisible(false);
+		_txtArmorRight->setVisible(false);
+		_txtArmorBack->setVisible(false);
+		_txtArmorUnder->setVisible(false);
+	}
 }
 
 static void _clearInventoryTemplate(std::vector<EquipmentLayoutItem*> &inventoryTemplate)
@@ -639,8 +705,12 @@ void InventoryState::updateStats()
 
 	const BattleItem* excludedItem = (heldItem && heldItem->getOwner() == unit && heldItem->getSlot() != nullptr) ? heldItem : nullptr;
 	const UnitStats displayStats = unit->getBaseStatsPreview(excludedItem);
-
-	_txtTus->setText(tr("STR_TIME_UNITS_SHORT").arg(unit->getTimeUnits()));
+	const RuleInterface *statsInterface = _game->getMod()->getInterface("stats");
+	auto getBarColor = [&](const std::string &elementId, Uint8 fallback)
+	{
+		const Element *element = statsInterface ? statsInterface->getElementOptional(elementId) : nullptr;
+		return element ? static_cast<Uint8>(element->color) : fallback;
+	};
 
 	int weight = unit->getCarriedWeight(heldItem);
 	_txtWeight->setText(tr("STR_WEIGHT").arg(weight).arg(displayStats.strength));
@@ -653,70 +723,33 @@ void InventoryState::updateStats()
 		_txtWeight->setSecondaryColor(_game->getMod()->getInterface("inventory")->getElement("weight")->color);
 	}
 
-	auto psiSkillWithoutAnyBonuses = displayStats.psiSkill;
-	if (unit->getGeoscapeSoldier())
-	{
-		psiSkillWithoutAnyBonuses = unit->getGeoscapeSoldier()->getCurrentStats()->psiSkill;
-	}
-	bool showPsiStrength = (psiSkillWithoutAnyBonuses > 0 || (Options::psiStrengthEval && _game->getSavedGame()->isResearched(_game->getMod()->getPsiRequirements())));
+	_txtStatLine1->setText(tr("STR_DX_INVENTORY_HP_SHORT").arg(unit->getHealth()).arg(displayStats.health));
+	_txtTus->setText(tr("STR_DX_INVENTORY_TU_SHORT").arg(unit->getTimeUnits()).arg(displayStats.tu));
+	_txtStatLine2->setText(tr("STR_DX_INVENTORY_RE_SHORT").arg(displayStats.reactions));
+	_txtStatLine3->setText(tr("STR_DX_INVENTORY_FA_SHORT").arg(displayStats.firing));
+	_txtStatLine4->setText(tr("STR_DX_INVENTORY_TA_SHORT").arg(displayStats.throwing));
+	_txtStatLine5->setText(tr("STR_DX_INVENTORY_PSK_SHORT").arg(displayStats.psiSkill));
+	_txtStatLine6->setText(tr("STR_DX_INVENTORY_PST_SHORT").arg(displayStats.psiStrength));
+	_txtStatLine7->setText(tr("STR_DX_INVENTORY_ARMOR_HEADER"));
 
-	auto updateStatLine = [&](Text* txtField, const std::string& elementId)
-	{
-		const Element *element = _game->getMod()->getInterface("inventory")->getElementOptional(elementId);
-		if (element)
-		{
-			switch (element->custom)
-			{
-				case 1:
-					txtField->setText(tr("STR_ACCURACY_SHORT").arg(displayStats.firing));
-					break;
-				case 2:
-					txtField->setText(tr("STR_REACTIONS_SHORT").arg(displayStats.reactions));
-					break;
-				case 3:
-					if (psiSkillWithoutAnyBonuses > 0)
-						txtField->setText(tr("STR_PSIONIC_SKILL_SHORT").arg(displayStats.psiSkill));
-					else
-						txtField->setText("");
-					break;
-				case 4:
-					if (showPsiStrength)
-						txtField->setText(tr("STR_PSIONIC_STRENGTH_SHORT").arg(displayStats.psiStrength));
-					else
-						txtField->setText("");
-					break;
-				case 11:
-					txtField->setText(tr("STR_FIRING_SHORT").arg(displayStats.firing));
-					break;
-				case 12:
-					txtField->setText(tr("STR_THROWING_SHORT").arg(displayStats.throwing));
-					break;
-				case 13:
-					txtField->setText(tr("STR_MELEE_SHORT").arg(displayStats.melee));
-					break;
-				case 14:
-					if (showPsiStrength)
-					{
-						txtField->setText(tr("STR_PSI_SHORT")
-							.arg(displayStats.psiStrength)
-							.arg(displayStats.psiSkill > 0 ? displayStats.psiSkill : 0));
-					}
-					else
-					{
-						txtField->setText("");
-					}
-					break;
-				default:
-					txtField->setText("");
-					break;
-			}
-		}
-	};
+	_txtArmorFront->setText(tr("STR_DX_INVENTORY_ARMOR_F_SHORT").arg(unit->getArmor(SIDE_FRONT)));
+	_txtArmorLeft->setText(tr("STR_DX_INVENTORY_ARMOR_L_SHORT").arg(unit->getArmor(SIDE_LEFT)));
+	_txtArmorRight->setText(tr("STR_DX_INVENTORY_ARMOR_R_SHORT").arg(unit->getArmor(SIDE_RIGHT)));
+	_txtArmorBack->setText(tr("STR_DX_INVENTORY_ARMOR_B_SHORT").arg(unit->getArmor(SIDE_REAR)));
+	_txtArmorUnder->setText(tr("STR_DX_INVENTORY_ARMOR_U_SHORT").arg(unit->getArmor(SIDE_UNDER)));
 
-	updateStatLine(_txtStatLine1, "textStatLine1");
-	updateStatLine(_txtStatLine2, "textStatLine2");
-	updateStatLine(_txtStatLine3, "textStatLine3");
-	updateStatLine(_txtStatLine4, "textStatLine4");
+	_txtStatLine1->setSecondaryColor(getBarColor("barHealth", _txtStatLine1->getColor()));
+	_txtTus->setSecondaryColor(getBarColor("barTUs", _txtTus->getColor()));
+	_txtStatLine2->setSecondaryColor(getBarColor("barReactions", _txtStatLine2->getColor()));
+	_txtStatLine3->setSecondaryColor(getBarColor("barFiring", _txtStatLine3->getColor()));
+	_txtStatLine4->setSecondaryColor(getBarColor("barThrowing", _txtStatLine4->getColor()));
+	_txtStatLine5->setSecondaryColor(getBarColor("barPsiSkill", _txtStatLine5->getColor()));
+	_txtStatLine6->setSecondaryColor(getBarColor("barPsiStrength", _txtStatLine6->getColor()));
+	_txtArmorFront->setSecondaryColor(getBarColor("barFrontArmor", _txtArmorFront->getColor()));
+	_txtArmorLeft->setSecondaryColor(getBarColor("barLeftArmor", _txtArmorLeft->getColor()));
+	_txtArmorRight->setSecondaryColor(getBarColor("barRightArmor", _txtArmorRight->getColor()));
+	_txtArmorBack->setSecondaryColor(getBarColor("barRearArmor", _txtArmorBack->getColor()));
+	_txtArmorUnder->setSecondaryColor(getBarColor("barUnderArmor", _txtArmorUnder->getColor()));
 }
 
 /**
