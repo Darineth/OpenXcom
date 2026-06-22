@@ -214,6 +214,8 @@ private:
 	void prepareUnitResponseSounds(const Mod *mod);
 	/// Helper function preparing the banned flag.
 	void prepareBannedFlag(const RuleStartingCondition* sc);
+	/// Computes effective base stats, optionally excluding one equipped inventory item.
+	UnitStats computeEffectiveBaseStats(const BattleItem* excludedItem) const;
 	/// Applies percentual and/or flat adjustments to the use costs.
 	void applyPercentages(RuleItemUseCost &cost, const RuleItemUseFlat &flat) const;
 public:
@@ -575,6 +577,10 @@ public:
 	std::string getName(Language *lang, bool debugAppendId = false) const;
 	/// Gets the unit's gained experience points.
 	const UnitStats* getExpStats() const { return &_exp; }
+	/// Recomputes cached effective base stats from unit/soldier, armor, and equipped items.
+	void refreshBaseStats();
+	/// Computes effective base stats for preview, optionally excluding one inventory item.
+	UnitStats getBaseStatsPreview(const BattleItem* excludedItem = nullptr) const;
 	/// Gets the unit's stats.
 	UnitStats *getBaseStats();
 	/// Gets the unit's stats.
@@ -684,7 +690,7 @@ public:
 	/// Get the units we are charging towards.
 	BattleUnit *getCharging();
 	/// Get the carried weight in strength units.
-	int getCarriedWeight(BattleItem *draggingItem = 0) const;
+	int getCarriedWeight(const BattleItem *draggingItem = 0) const;
 
 	/// Set default state on unit.
 	void resetTurnsSince();

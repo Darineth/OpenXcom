@@ -171,7 +171,7 @@ RuleItem::RuleItem(const std::string &type, int listOrder) :
 	_defaultInvSlotX(0), _defaultInvSlotY(0), _waypoints(0), _invWidth(1), _invHeight(1),
 	_painKiller(0), _heal(0), _stimulant(0), _medikitType(BMT_NORMAL), _medikitTargetSelf(false), _medikitTargetImmune(false), _medikitTargetMatrix(63),
 	_woundRecovery(0), _healthRecovery(0), _stunRecovery(0), _energyRecovery(0), _manaRecovery(0), _moraleRecovery(0), _painKillerRecovery(1.0f),
-	_recoveryPoints(0), _armor(20), _turretType(-1),
+	_recoveryPoints(0), _stats(), _statModifiers(UnitStats::scalar(0)), _hasStats(false), _hasStatModifiers(false), _armor(20), _turretType(-1),
 	_aiUseDelay(-1), _aiMeleeHitCount(25),
 	_recover(true), _recoverCorpse(true), _ignoreInBaseDefense(false), _ignoreInCraftEquip(true), _liveAlien(false),
 	_liveAlienPrisonType(0), _attraction(0), _flatUse(0, 1), _flatThrow(0, 1), _flatPrime(0, 1), _flatUnprime(0, 1), _arcingShot(false),
@@ -598,6 +598,10 @@ void RuleItem::load(const YAML::YamlNodeReader& node, Mod *mod, const ModScript&
 	reader.tryRead("medikitTargetImmune", _medikitTargetImmune);
 	reader.tryRead("medikitTargetMatrix", _medikitTargetMatrix);
 	reader.tryRead("medikitBackground", _medikitBackground);
+	_stats.merge(reader["stats"].readVal(_stats));
+	_statModifiers.merge(reader["statModifiers"].readVal(_statModifiers));
+	_hasStats = !_stats.isZero();
+	_hasStatModifiers = !_statModifiers.isZero();
 
 	reader.tryRead("recoveryPoints", _recoveryPoints);
 	reader.tryRead("armor", _armor);

@@ -351,6 +351,12 @@ void SavedBattleGame::load(const YAML::YamlNodeReader& node, Mod *mod, SavedGame
 	}
 	_itemId++;
 
+	// Rebuild cached effective stats after inventory ownership/slots are restored from save.
+	for (auto* unit : _units)
+	{
+		unit->refreshBaseStats();
+	}
+
 	// units 2nd pass
 	for (const auto& unitReader : reader["units"].children())
 	{

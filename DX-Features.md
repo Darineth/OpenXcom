@@ -18,6 +18,26 @@ pre-armor wear, and `ToArmor` still applies only from post-armor penetrating dam
 third stage specifically for "nearly penetrated but was stopped" hits, with defaults of `0.0`
 and `0.5` so existing mods keep their prior behavior until they opt in.
 
+## Item Stats & Stat Modifiers
+
+Items and armors can now apply generic stat effects using ruleset fields:
+
+- `stats` (flat additive bonuses) on both `RuleItem` and `Armor`.
+- `statModifiers` (percent deltas, where `0` means unchanged) on both `RuleItem` and `Armor`.
+
+Runtime behavior:
+
+- Soldier bonus preparation now applies armor `statModifiers` in addition to existing flat armor
+  stat bonuses.
+- Battle-unit effective stats now include equipped inventory item `stats` and `statModifiers`
+  (for items in actual inventory slots), stacked with the existing soldier+armor stat baseline.
+- Item `statModifiers` stack additively as percentage deltas around `0` before application.
+
+Compatibility:
+
+- Existing mods keep prior behavior by default; missing keys are no-op.
+- Slot-level filtering (`countStats`) is intentionally deferred to the later typed-slot feature.
+
 ## Combat Log
 
 A floating, centered event log across the top of the Battlescape that reports combat events

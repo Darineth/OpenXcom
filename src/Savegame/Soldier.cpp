@@ -2150,6 +2150,10 @@ bool Soldier::prepareStatsWithBonuses(const Mod *mod)
 
 	// 5. apply armor bonus
 	tmp += *_armor->getStats();
+	if (_armor->hasStatModifiers())
+	{
+		tmp += UnitStats::percent(tmp, *_armor->getStatModifiers());
+	}
 
 	// 6. stats with all bonuses
 	_tmpStatsWithAllBonuses = UnitStats::obeyFixedMinimum(tmp);

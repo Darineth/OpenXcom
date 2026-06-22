@@ -21,6 +21,8 @@ items:
     autoShots: 3
     accuracyAuto: 50
     tuAuto: 33
+    statModifiers:
+      reactions: 25        # DX: +25% reactions (0 baseline)
 
   - type: STR_PISTOL_CLIP
     shotgunPellets: 6      # DX: launches 6 real projectiles per shot
@@ -61,3 +63,11 @@ items:
   # -------------------------------------------------------------------
   - type: STR_GRENADE
     blastDropoff: 1.0
+
+  # -------------------------------------------------------------------
+  #  Rocket launcher -> TU penalty test item
+  #  Tests: flat TU penalty using item stats
+  # -------------------------------------------------------------------
+  - type: STR_ROCKET_LAUNCHER
+    stats:
+      tu: -10

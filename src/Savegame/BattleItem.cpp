@@ -545,6 +545,9 @@ void BattleItem::moveToOwner(BattleUnit *owner)
 	{
 		setOwner(owner);
 
+		BattleUnit* oldOwner = _previousOwner;
+		BattleUnit* newOwner = _owner;
+
 		if (_previousOwner)
 		{
 			for (auto iter = _previousOwner->getInventory()->begin(); iter != _previousOwner->getInventory()->end(); ++iter)
@@ -559,6 +562,15 @@ void BattleItem::moveToOwner(BattleUnit *owner)
 		if (_owner)
 		{
 			_owner->getInventory()->push_back(this);
+		}
+
+		if (oldOwner)
+		{
+			oldOwner->refreshBaseStats();
+		}
+		if (newOwner)
+		{
+			newOwner->refreshBaseStats();
 		}
 	}
 }
@@ -603,6 +615,10 @@ int BattleItem::getMoveToCost(const RuleInventory *slot) const
 void BattleItem::setSlot(const RuleInventory *slot)
 {
 	_inventorySlot = slot;
+	if (_owner)
+	{
+		_owner->refreshBaseStats();
+	}
 }
 
 /**

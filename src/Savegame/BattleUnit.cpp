@@ -160,7 +160,7 @@ void BattleUnit::updateArmorFromSoldier(const Mod *mod, Soldier *soldier, const 
 	// armor and soldier bonuses may modify effective stats
 	{
 		soldier->prepareStatsWithBonuses(mod); // refresh needed, because of armor stats
-		_stats = *soldier->getStatsWithAllBonuses();
+		refreshBaseStats();
 	}
 
 	int visibilityDarkBonus = 0;
@@ -520,9 +520,7 @@ void BattleUnit::updateArmorFromNonSoldier(const Mod* mod, const Armor* newArmor
 	_moveCostBaseNormal = _armor->getMoveCostBaseNormal();
 
 
-	_stats = *_unitRules->getStats();
-	_stats += *_armor->getStats();	// armors may modify effective stats
-	_stats = UnitStats::obeyFixedMinimum(_stats); // don't allow to go into minus!
+	refreshBaseStats(); // armors and equipment may modify effective stats
 
 
 	_maxViewDistanceAtDark = _armor->getVisibilityAtDark() ? _armor->getVisibilityAtDark() : _originalFaction == FACTION_HOSTILE ? mod->getMaxViewDistance() : 9;
@@ -4390,6 +4388,76 @@ std::string BattleUnit::getName(Language *lang, bool debugAppendId) const
 }
 
 /**
+ * Computes effective base stats, with optional exclusion of one equipped inventory item.
+ */
+UnitStats BattleUnit::computeEffectiveBaseStats(const BattleItem* excludedItem) const
+{
+	UnitStats stats;
+	if (_geoscapeSoldier)
+	{
+		// Soldiers get their base and armor-derived stats from the geoscape data.
+		stats = *_geoscapeSoldier->getStatsWithAllBonuses();
+	}
+	else
+	{
+		// Other units are calculated from the unit rules and armor stats.
+		stats = *_unitRules->getStats();
+		stats += *_armor->getStats();
+		if (_armor->hasStatModifiers())
+		{
+			stats += UnitStats::percent(stats, *_armor->getStatModifiers());
+		}
+	}
+
+	UnitStats itemStats;
+	UnitStats itemModifierDelta;
+	for (auto* item : _inventory)
+	{
+		if (item == excludedItem)
+		{
+			continue;
+		}
+
+		const RuleItem* itemRules = item ? item->getRules() : nullptr;
+		if (!itemRules)
+		{
+			continue;
+		}
+		if (item->getSlot() == nullptr)
+		{
+			continue;
+		}
+		if (itemRules->hasStats())
+		{
+			itemStats += *itemRules->getStats();
+		}
+		if (itemRules->hasStatModifiers())
+		{
+			itemModifierDelta += *itemRules->getStatModifiers();
+		}
+	}
+	stats += itemStats;
+	stats += UnitStats::percent(stats, itemModifierDelta);
+	return UnitStats::obeyFixedMinimum(stats);
+}
+
+/**
+ * Recomputes cached effective base stats.
+ */
+void BattleUnit::refreshBaseStats()
+{
+	_stats = computeEffectiveBaseStats(nullptr);
+}
+
+/**
+ * Computes effective base stats for preview.
+ */
+UnitStats BattleUnit::getBaseStatsPreview(const BattleItem* excludedItem) const
+{
+	return computeEffectiveBaseStats(excludedItem);
+}
+
+/**
   * Gets pointer to the unit's stats.
   * @return stats Pointer to the unit's stats.
   */
@@ -4799,7 +4867,7 @@ BattleUnit *BattleUnit::getCharging()
  * @param draggingItem item to ignore
  * @return weight
  */
-int BattleUnit::getCarriedWeight(BattleItem *draggingItem) const
+int BattleUnit::getCarriedWeight(const BattleItem *draggingItem) const
 {
 	int weight = _armor->getWeight();
 	for (const auto* bi : _inventory)

@@ -634,13 +634,17 @@ void InventoryState::edtSoldierChange(Action *)
  */
 void InventoryState::updateStats()
 {
-	BattleUnit *unit = _battleGame->getSelectedUnit();
+	const BattleUnit *unit = _battleGame->getSelectedUnit();
+	const BattleItem *heldItem = _inv->getSelectedItem();
+
+	const BattleItem* excludedItem = (heldItem && heldItem->getOwner() == unit && heldItem->getSlot() != nullptr) ? heldItem : nullptr;
+	const UnitStats displayStats = unit->getBaseStatsPreview(excludedItem);
 
 	_txtTus->setText(tr("STR_TIME_UNITS_SHORT").arg(unit->getTimeUnits()));
 
-	int weight = unit->getCarriedWeight(_inv->getSelectedItem());
-	_txtWeight->setText(tr("STR_WEIGHT").arg(weight).arg(unit->getBaseStats()->strength));
-	if (weight > unit->getBaseStats()->strength)
+	int weight = unit->getCarriedWeight(heldItem);
+	_txtWeight->setText(tr("STR_WEIGHT").arg(weight).arg(displayStats.strength));
+	if (weight > displayStats.strength)
 	{
 		_txtWeight->setSecondaryColor(_game->getMod()->getInterface("inventory")->getElement("weight")->color2);
 	}
@@ -649,7 +653,7 @@ void InventoryState::updateStats()
 		_txtWeight->setSecondaryColor(_game->getMod()->getInterface("inventory")->getElement("weight")->color);
 	}
 
-	auto psiSkillWithoutAnyBonuses = unit->getBaseStats()->psiSkill;
+	auto psiSkillWithoutAnyBonuses = displayStats.psiSkill;
 	if (unit->getGeoscapeSoldier())
 	{
 		psiSkillWithoutAnyBonuses = unit->getGeoscapeSoldier()->getCurrentStats()->psiSkill;
@@ -664,38 +668,38 @@ void InventoryState::updateStats()
 			switch (element->custom)
 			{
 				case 1:
-					txtField->setText(tr("STR_ACCURACY_SHORT").arg(unit->getBaseStats()->firing));
+					txtField->setText(tr("STR_ACCURACY_SHORT").arg(displayStats.firing));
 					break;
 				case 2:
-					txtField->setText(tr("STR_REACTIONS_SHORT").arg(unit->getBaseStats()->reactions));
+					txtField->setText(tr("STR_REACTIONS_SHORT").arg(displayStats.reactions));
 					break;
 				case 3:
 					if (psiSkillWithoutAnyBonuses > 0)
-						txtField->setText(tr("STR_PSIONIC_SKILL_SHORT").arg(unit->getBaseStats()->psiSkill));
+						txtField->setText(tr("STR_PSIONIC_SKILL_SHORT").arg(displayStats.psiSkill));
 					else
 						txtField->setText("");
 					break;
 				case 4:
 					if (showPsiStrength)
-						txtField->setText(tr("STR_PSIONIC_STRENGTH_SHORT").arg(unit->getBaseStats()->psiStrength));
+						txtField->setText(tr("STR_PSIONIC_STRENGTH_SHORT").arg(displayStats.psiStrength));
 					else
 						txtField->setText("");
 					break;
 				case 11:
-					txtField->setText(tr("STR_FIRING_SHORT").arg(unit->getBaseStats()->firing));
+					txtField->setText(tr("STR_FIRING_SHORT").arg(displayStats.firing));
 					break;
 				case 12:
-					txtField->setText(tr("STR_THROWING_SHORT").arg(unit->getBaseStats()->throwing));
+					txtField->setText(tr("STR_THROWING_SHORT").arg(displayStats.throwing));
 					break;
 				case 13:
-					txtField->setText(tr("STR_MELEE_SHORT").arg(unit->getBaseStats()->melee));
+					txtField->setText(tr("STR_MELEE_SHORT").arg(displayStats.melee));
 					break;
 				case 14:
 					if (showPsiStrength)
 					{
 						txtField->setText(tr("STR_PSI_SHORT")
-							.arg(unit->getBaseStats()->psiStrength)
-							.arg(unit->getBaseStats()->psiSkill > 0 ? unit->getBaseStats()->psiSkill : 0));
+							.arg(displayStats.psiStrength)
+							.arg(displayStats.psiSkill > 0 ? displayStats.psiSkill : 0));
 					}
 					else
 					{

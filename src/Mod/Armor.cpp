@@ -41,6 +41,7 @@ Armor::Armor(const std::string &type, int listOrder) :
 	_camouflageAtDay(0), _camouflageAtDark(0), _antiCamouflageAtDay(0), _antiCamouflageAtDark(0),
 	_visibilityThroughSmoke(0), _visibilityThroughFire(100),
 	_psiVision(0), _psiCamouflage(0),
+	_statModifiers(UnitStats::scalar(0)), _hasStatModifiers(false),
 	_deathFrames(3), _constantAnimation(false), _hasInventory(true), _forcedTorso(TORSO_USE_GENDER),
 	_faceColorGroup(0), _hairColorGroup(0), _utileColorGroup(0), _rankColorGroup(0),
 	_fearImmune(defBoolNullable), _bleedImmune(defBoolNullable), _painImmune(defBoolNullable), _zombiImmune(defBoolNullable),
@@ -184,6 +185,8 @@ void Armor::load(const YAML::YamlNodeReader& node, Mod *mod, const ModScript &pa
 	reader.tryRead("alwaysVisible", _isAlwaysVisible);
 
 	_stats.merge(reader["stats"].readVal(_stats));
+	_statModifiers.merge(reader["statModifiers"].readVal(_statModifiers));
+	_hasStatModifiers = !_statModifiers.isZero();
 	if (const YAML::YamlNodeReader& dmg = reader["damageModifier"])
 	{
 		size_t end = std::min(dmg.childrenCount(), (size_t)DAMAGE_TYPES);

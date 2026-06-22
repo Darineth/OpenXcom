@@ -173,6 +173,8 @@ private:
 	float _damageModifier[DAMAGE_TYPES];
 	std::vector<int> _loftempsSet;
 	UnitStats _stats;
+	UnitStats _statModifiers;
+	bool _hasStatModifiers;
 	int _deathFrames;
 	bool _constantAnimation, _hasInventory;
 	ForcedTorso _forcedTorso;
@@ -348,6 +350,10 @@ public:
 	const std::vector<int> &getLoftempsSet() const;
 	/// Gets the armor's stats.
 	const UnitStats *getStats() const;
+	/// Gets percent-based armor stat modifiers (100 = no change).
+	const UnitStats *getStatModifiers() const { return &_statModifiers; }
+	/// Does this armor define any percent stat modifiers?
+	bool hasStatModifiers() const { return _hasStatModifiers; }
 	/// Gets unit psi defense.
 	int getPsiDefence(const BattleUnit* unit) const;
 	const RuleStatBonus *getPsiDefenceRaw() const { return &_psiDefence; }

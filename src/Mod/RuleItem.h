@@ -25,6 +25,7 @@
 #include "RuleStatBonus.h"
 #include "RuleDamageType.h"
 #include "ModScript.h"
+#include "Unit.h"
 #include "RuleResearch.h"
 #include "RuleBaseFacilityFunctions.h"
 
@@ -451,6 +452,10 @@ private:
 	float _painKillerRecovery;
 
 	int _recoveryPoints;
+	UnitStats _stats;
+	UnitStats _statModifiers;
+	bool _hasStats;
+	bool _hasStatModifiers;
 	int _armor;
 	int _turretType;
 	int _aiUseDelay, _aiMeleeHitCount;
@@ -691,6 +696,14 @@ public:
 	float getPowerRangeThresholdRaw() const { return _powerRangeThreshold; }
 	/// Gets amount of psi accuracy dropped for range in voxels.
 	float getPsiAccuracyRangeReduction(float range) const;
+	/// Get flat stat bonuses granted by this equipped item.
+	const UnitStats *getStats() const { return &_stats; }
+	/// Get percent-based stat modifiers granted by this equipped item (100 = no change).
+	const UnitStats *getStatModifiers() const { return &_statModifiers; }
+	/// Does this item define any flat stat bonuses?
+	bool hasStats() const { return _hasStats; }
+	/// Does this item define any percent stat modifiers?
+	bool hasStatModifiers() const { return _hasStatModifiers; }
 
 	/// Get additional power from unit statistics
 	int getPowerBonus(BattleActionAttack::ReadOnly attack) const;

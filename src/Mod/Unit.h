@@ -255,6 +255,21 @@ struct UnitStats
 		return r;
 	}
 
+	bool isZero() const
+	{
+		bool result = true;
+		fieldLoop(
+			[&](Ptr p)
+			{
+				if ((this->*p) != 0)
+				{
+					result = false;
+				}
+			}
+		);
+		return result;
+	}
+
 	static UnitStats obeyFixedMinimum(const UnitStats &a)
 	{
 		// minimum 1 for health, minimum 0 for other stats (note to self: it might be worth considering minimum 10 for bravery in the future)
