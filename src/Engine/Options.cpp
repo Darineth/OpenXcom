@@ -370,73 +370,125 @@ void createControlsOXC()
 void createOptionsOXCE()
 {
 	// OXCE hidden
+	// Severity level at/above which mod validation issues are logged.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceModValidationLevel", &oxceModValidationLevel, (int)LOG_WARNING));
+	// Saves screenshots in raw 8-bit indexed-palette format instead of converted RGB.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceRawScreenShots", &oxceRawScreenShots, false));
+	// Applies a fisheye lens distortion to the first-person battlescape view.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceFirstPersonViewFisheyeProjection", &oxceFirstPersonViewFisheyeProjection, false));
+	// Enables handling of mouse thumb (extra side) buttons.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceThumbButtons", &oxceThumbButtons, true));
+	// Throttles mouse-move events to at most one per this many milliseconds (0 = no throttling).
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceThrottleMouseMoveEvent", &oxceThrottleMouseMoveEvent, 0));
+	// Hides the progress bar shown while the enemy AI is thinking.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceDisableThinkingProgressBar", &oxceDisableThinkingProgressBar, false));
 
+	// When true, loads only embedded resources and ignores mods on the filesystem.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceEmbeddedOnly", &oxceEmbeddedOnly, true));
+	// Logs the full virtual file system contents during startup for debugging.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceListVFSContents", &oxceListVFSContents, false));
+	// Applies a workaround to reduce palette flickering artifacts in 8-bit mode.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceEnablePaletteFlickerFix", &oxceEnablePaletteFlickerFix, false));
+	// Internal flag tracking whether a mod's recommendedUserOptions have already been applied.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceRecommendedOptionsWereSet", &oxceRecommendedOptionsWereSet, false));
+	// Password string gating access to certain developer/debug features.
 	_info.push_back(OptionInfo(OPTION_OXCE, "password", &password, "secret"));
 
 	// OXCE hidden but moddable
+	// Controls how much of the startup/loading text is shown (higher = less).
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceStartUpTextMode", &oxceStartUpTextMode, 0, "", "HIDDEN"));
 
+	// Maximum number of entries retained in the geoscape debug log.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceGeoscapeDebugLogMaxEntries", &oxceGeoscapeDebugLogMaxEntries, 1000, "", "HIDDEN"));
+	// Divides geoscape time-step speed by this factor to slow time passage (1 = normal).
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceGeoSlowdownFactor", &oxceGeoSlowdownFactor, 1, "", "HIDDEN"));
+	// Shows total score instead of available funds on the geoscape.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceGeoShowScoreInsteadOfFunds", &oxceGeoShowScoreInsteadOfFunds, false)); // debug only
+	// Shows an indicator on the geoscape when soldiers are in training.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceGeoEnableTrainingIndicator", &oxceGeoEnableTrainingIndicator, false, "", "HIDDEN"));
+	// Suppresses the repeated alert when a hunter-killer UFO is already being handled.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceGeoSuppressRedundantHKAlert", &oxceGeoSuppressRedundantHKAlert, true, "", "HIDDEN"));
+	// Suppresses the warning shown when landing a craft that carries no equipment.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceGeoSuppressLandingWithoutEquipment", &oxceGeoSuppressLandingWithoutEquipment, false, "", "HIDDEN"));
+	// Auto-selects the nearest base when sending a craft back to base.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceGeoGoToNearestBase", &oxceGeoGoToNearestBase, false, "", "HIDDEN"));
+	// Sorts craft in the intercept list by distance to the target.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceGeoSortCraftByDistanceToTarget", &oxceGeoSortCraftByDistanceToTarget, false, "", "HIDDEN"));
 
+	// Scales the base-info defense strength bar by this percentage (100 = normal).
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceBaseInfoDefenseScaleMultiplier", &oxceBaseInfoDefenseScaleMultiplier, 100, "", "HIDDEN"));
+	// Lists only soldiers currently eligible for a transformation.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceBaseSoldierTransformationShowOnlyEligible", &oxceBaseSoldierTransformationShowOnlyEligible, false, "", "HIDDEN"));
+	// Filters the new-research list to only items that can be researched right now.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceBaseFilterResearchable", &oxceBaseFilterResearchable, false, "", "HIDDEN"));
+	// Enables reordering of the active research queue.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceBaseResearchReorder", &oxceBaseResearchReorder, false, "", "HIDDEN"));
+	// Adds a fallback button in the manufacture screen.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceBaseManufactureFallbackButton", &oxceBaseManufactureFallbackButton, false, "", "HIDDEN"));
 #ifdef __MOBILE__
+	// Adds a button to set a manufacture project to unlimited quantity.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceBaseManufactureInfinityButton", &oxceBaseManufactureInfinityButton, true, "", "HIDDEN"));
+	// Enables touch-friendly buttons in the basescape screens.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceBaseTouchButtons", &oxceBaseTouchButtons, true, "", "HIDDEN"));
 #else
+	// Adds a button to set a manufacture project to unlimited quantity.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceBaseManufactureInfinityButton", &oxceBaseManufactureInfinityButton, false, "", "HIDDEN"));
+	// Enables touch-friendly buttons in the basescape screens.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceBaseTouchButtons", &oxceBaseTouchButtons, false, "", "HIDDEN"));
 #endif
 
+	// Disables viewing the inventory of alien/enemy units.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceDisableAlienInventory", &oxceDisableAlienInventory, false, "", "HIDDEN"));
+	// Disables the per-turn hit log (Ctrl-H) in the battlescape.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceDisableHitLog", &oxceDisableHitLog, false, "", "HIDDEN"));
+	// Disables time-unit costs for moving items in the inventory.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceDisableInventoryTuCost", &oxceDisableInventoryTuCost, false, "", "HIDDEN"));
+	// Disables the manufacture dependency-tree viewer.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceDisableProductionDependencyTree", &oxceDisableProductionDependencyTree, false, "", "HIDDEN"));
+	// Disables the "Stats for Nerds" raw-data screen in the Ufopaedia.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceDisableStatsForNerds", &oxceDisableStatsForNerds, false, "", "HIDDEN"));
+	// Disables the tech tree viewer.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceDisableTechTreeViewer", &oxceDisableTechTreeViewer, false, "", "HIDDEN"));
 
+	// Persistence of the personal-light toggle (0 = not persisted, 1 = per battle, 2 = per campaign).
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceTogglePersonalLightType", &oxceTogglePersonalLightType, 1, "", "HIDDEN")); // per battle
+	// Persistence of the night-vision toggle (0 = not persisted, 1 = per battle, 2 = per campaign).
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceToggleNightVisionType", &oxceToggleNightVisionType, 1, "", "HIDDEN"));     // per battle
+	// Persistence of the brightness toggle (0 = not persisted, 1 = per battle, 2 = per campaign).
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceToggleBrightnessType", &oxceToggleBrightnessType, 0, "", "HIDDEN"));       // not persisted
 
+	// Shows units that are on fire using the wounded status indicator.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceShowBurningAsWounded", &oxceShowBurningAsWounded, false, "", "HIDDEN"));
+	// Hides the tile/unit info popup while the throw cursor is active.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceDisableInfoOnThrowCursor", &oxceDisableInfoOnThrowCursor, false, "", "HIDDEN"));
+	// Swaps the behavior of the don't-reselect-unit action buttons.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceSwapDontReselectActions", &oxceSwapDontReselectActions, false, "", "HIDDEN"));
+	// Enables unit acknowledgement/response voice sounds on selection and orders.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceEnableUnitResponseSounds", &oxceEnableUnitResponseSounds, true, "", "HIDDEN"));
+	// How often (in turns) the hidden-movement background image changes (1 = every turn).
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceHiddenMovementBackgroundChangeFrequency", &oxceHiddenMovementBackgroundChangeFrequency, 1, "", "HIDDEN"));
+	// Shows the unit/built-in equipment slot in the inventory screen.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceInventoryShowUnitSlot", &oxceInventoryShowUnitSlot, false, "", "HIDDEN"));
+	// Replaces the in-game notes link with an alternative link target.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceReplaceNotesLink", &oxceReplaceNotesLink, false, "", "HIDDEN"));
 
 #ifdef __MOBILE__
+	// Uses separate up/down buttons instead of a combined scroll control in the inventory.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceInventorySplitScrollButton", &oxceInventorySplitScrollButton, true, "", "HIDDEN"));
+	// Allows dropping an item onto the paperdoll to equip it directly.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceInventoryDropItemOverPaperdoll", &oxceInventoryDropItemOverPaperdoll, true, "", "HIDDEN"));
+	// Allows unloading ammo from fixed/built-in weapons in the inventory.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceInventoryUnloadFixedWeapons", &oxceInventoryUnloadFixedWeapons, true, "", "HIDDEN"));
 #else
+	// Uses separate up/down buttons instead of a combined scroll control in the inventory.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceInventorySplitScrollButton", &oxceInventorySplitScrollButton, false, "", "HIDDEN"));
+	// Allows dropping an item onto the paperdoll to equip it directly.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceInventoryDropItemOverPaperdoll", &oxceInventoryDropItemOverPaperdoll, false, "", "HIDDEN"));
+	// Allows unloading ammo from fixed/built-in weapons in the inventory.
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceInventoryUnloadFixedWeapons", &oxceInventoryUnloadFixedWeapons, false, "", "HIDDEN"));
 #endif
 
+	// Maximum number of saved equipment-layout templates.
 	// TODO: needs restart (or code change) to work properly
 	_info.push_back(OptionInfo(OPTION_OXCE, "oxceMaxEquipmentLayoutTemplates", &oxceMaxEquipmentLayoutTemplates, 20, "", "HIDDEN"));
 }
