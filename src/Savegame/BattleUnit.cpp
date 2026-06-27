@@ -142,6 +142,9 @@ void BattleUnit::updateArmorFromSoldier(const Mod *mod, Soldier *soldier, const 
 {
 	_armor = ruleArmor;
 
+	for (int side = 0; side < SIDE_MAX; ++side)
+		_armorDamage[side] = _maxArmorBase[side] = _maxArmor[side] = _currentArmor[side] = 0;
+
 	_standHeight = _armor->getStandHeight() == -1 ? soldier->getRules()->getStandHeight() : _armor->getStandHeight();
 	_kneelHeight = _armor->getKneelHeight() == -1 ? soldier->getRules()->getKneelHeight() : _armor->getKneelHeight();
 	_floatHeight = _armor->getFloatHeight() == -1 ? soldier->getRules()->getFloatHeight() : _armor->getFloatHeight();
@@ -206,11 +209,14 @@ void BattleUnit::updateArmorFromSoldier(const Mod *mod, Soldier *soldier, const 
 		_maxArmor[SIDE_REAR]  = std::max(0, _maxArmor[SIDE_REAR]);
 		_maxArmor[SIDE_UNDER] = std::max(0, _maxArmor[SIDE_UNDER]);
 	}
+	for (int side = 0; side < SIDE_MAX; ++side)
+		_maxArmorBase[side] = _maxArmor[side];
 	_currentArmor[SIDE_FRONT] = _maxArmor[SIDE_FRONT];
 	_currentArmor[SIDE_LEFT] = _maxArmor[SIDE_LEFT];
 	_currentArmor[SIDE_RIGHT] = _maxArmor[SIDE_RIGHT];
 	_currentArmor[SIDE_REAR] = _maxArmor[SIDE_REAR];
 	_currentArmor[SIDE_UNDER] = _maxArmor[SIDE_UNDER];
+	recalculateMaxArmor();
 
 
 	if (_armor->drawBubbles())
@@ -506,6 +512,9 @@ void BattleUnit::updateArmorFromNonSoldier(const Mod* mod, const Armor* newArmor
 {
 	_armor = newArmor;
 
+	for (int side = 0; side < SIDE_MAX; ++side)
+		_armorDamage[side] = _maxArmorBase[side] = _maxArmor[side] = _currentArmor[side] = 0;
+
 	_standHeight = _armor->getStandHeight() == -1 ? _unitRules->getStandHeight() : _armor->getStandHeight();
 	_kneelHeight = _armor->getKneelHeight() == -1 ? _unitRules->getKneelHeight() : _armor->getKneelHeight();
 	_floatHeight = _armor->getFloatHeight() == -1 ? _unitRules->getFloatHeight() : _armor->getFloatHeight();
@@ -537,11 +546,15 @@ void BattleUnit::updateArmorFromNonSoldier(const Mod* mod, const Armor* newArmor
 	_maxArmor[SIDE_REAR] = _armor->getRearArmor();
 	_maxArmor[SIDE_UNDER] = _armor->getUnderArmor();
 
+	for (int side = 0; side < SIDE_MAX; ++side)
+		_maxArmorBase[side] = _maxArmor[side];
+
 	_currentArmor[SIDE_FRONT] = _maxArmor[SIDE_FRONT];
 	_currentArmor[SIDE_LEFT] = _maxArmor[SIDE_LEFT];
 	_currentArmor[SIDE_RIGHT] = _maxArmor[SIDE_RIGHT];
 	_currentArmor[SIDE_REAR] = _maxArmor[SIDE_REAR];
 	_currentArmor[SIDE_UNDER] = _maxArmor[SIDE_UNDER];
+	recalculateMaxArmor();
 
 
 	if (_armor->drawBubbles())
@@ -1804,6 +1817,7 @@ int BattleUnit::damage(Position relative, int damage, const RuleDamageType *type
 		}
 
 		setValueMax(_currentArmor[side], - std::get<toArmor>(args.data), 0, _maxArmor[side]);
+		_armorDamage[side] = _maxArmor[side] - _currentArmor[side]; // Recalculate armor damage for the side, since damage might have been done.
 
 		setFatalShotInfo(side, bodypart);
 
@@ -2597,6 +2611,7 @@ int BattleUnit::getAccuracyModifier(const BattleItem *item) const
 void BattleUnit::setArmor(int armor, UnitSide side)
 {
 	_currentArmor[side] = Clamp(armor, 0, _maxArmor[side]);
+	_armorDamage[side] = _maxArmor[side] - _currentArmor[side];
 }
 
 /**
@@ -2618,6 +2633,7 @@ void BattleUnit::setMaxArmor(int armor, UnitSide side)
 {
 	_maxArmor[side] = Clamp(armor, 0, UnitStats::BaseStatLimit);
 	_currentArmor[side] = Clamp(_currentArmor[side], 0, _maxArmor[side]);
+	_armorDamage[side] = _maxArmor[side] - _currentArmor[side];
 }
 
 
@@ -4444,9 +4460,61 @@ UnitStats BattleUnit::computeEffectiveBaseStats(const BattleItem* excludedItem) 
 /**
  * Recomputes cached effective base stats.
  */
-void BattleUnit::refreshBaseStats()
+void BattleUnit::refreshBaseStats(bool reloadingFromSave)
 {
 	_stats = computeEffectiveBaseStats(nullptr);
+	recalculateMaxArmor(reloadingFromSave);
+}
+
+/**
+ * Recomputes per-side max armor from the base armor (armor rule + soldier bonuses, cached in
+ * _maxArmorBase) plus the directional armor granted by equipped inventory items.
+ *
+ * Accumulated armor damage is tracked separately in _armorDamage (kept in sync as max - current
+ * at every armor write), so it survives max changes: equipping or removing a directional-armor
+ * item shifts both the side's max and its current value by the same amount, and re-equipping a
+ * previously removed item never refunds lost armor.
+ *
+ * When @a reloadingFromSave is true, _currentArmor already holds the saved absolute value, so the
+ * damage is derived from it (current is authoritative); otherwise current is recomputed from the
+ * tracked damage.
+ */
+void BattleUnit::recalculateMaxArmor(bool reloadingFromSave)
+{
+	int itemBonus[SIDE_MAX] = { };
+	for (const auto* item : _inventory)
+	{
+		if (!item || item->getSlot() == nullptr)
+		{
+			continue;
+		}
+		const RuleItem* itemRules = item->getRules();
+		if (!itemRules || !itemRules->hasDirectionalArmor())
+		{
+			continue;
+		}
+		itemBonus[SIDE_FRONT] += itemRules->getFrontArmorBonus();
+		itemBonus[SIDE_LEFT]  += itemRules->getSideArmorBonus();
+		itemBonus[SIDE_RIGHT] += itemRules->getSideArmorBonus();
+		itemBonus[SIDE_REAR]  += itemRules->getRearArmorBonus();
+		itemBonus[SIDE_UNDER] += itemRules->getUnderArmorBonus();
+	}
+	for (int side = 0; side < SIDE_MAX; ++side)
+	{
+		int newMax = std::max(0, _maxArmorBase[side] + itemBonus[side]);
+		_maxArmor[side] = newMax;
+		if (reloadingFromSave)
+		{
+			// _currentArmor is the saved absolute value; derive the damage from it.
+			_currentArmor[side] = Clamp(_currentArmor[side], 0, newMax);
+			_armorDamage[side] = newMax - _currentArmor[side];
+		}
+		else
+		{
+			// Preserve accumulated damage; clamping current never erases the stored damage.
+			_currentArmor[side] = Clamp(newMax - _armorDamage[side], 0, newMax);
+		}
+	}
 }
 
 /**

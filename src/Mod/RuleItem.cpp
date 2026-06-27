@@ -172,6 +172,7 @@ RuleItem::RuleItem(const std::string &type, int listOrder) :
 	_painKiller(0), _heal(0), _stimulant(0), _medikitType(BMT_NORMAL), _medikitTargetSelf(false), _medikitTargetImmune(false), _medikitTargetMatrix(63),
 	_woundRecovery(0), _healthRecovery(0), _stunRecovery(0), _energyRecovery(0), _manaRecovery(0), _moraleRecovery(0), _painKillerRecovery(1.0f),
 	_recoveryPoints(0), _stats(), _statModifiers(UnitStats::scalar(0)), _hasStats(false), _hasStatModifiers(false), _armor(20), _turretType(-1),
+	_frontArmorBonus(0), _sideArmorBonus(0), _rearArmorBonus(0), _underArmorBonus(0), _hasDirectionalArmor(false),
 	_aiUseDelay(-1), _aiMeleeHitCount(25),
 	_recover(true), _recoverCorpse(true), _ignoreInBaseDefense(false), _ignoreInCraftEquip(true), _liveAlien(false),
 	_liveAlienPrisonType(0), _attraction(0), _flatUse(0, 1), _flatThrow(0, 1), _flatPrime(0, 1), _flatUnprime(0, 1), _arcingShot(false),
@@ -605,6 +606,11 @@ void RuleItem::load(const YAML::YamlNodeReader& node, Mod *mod, const ModScript&
 
 	reader.tryRead("recoveryPoints", _recoveryPoints);
 	reader.tryRead("armor", _armor);
+	reader.tryRead("frontArmor", _frontArmorBonus);
+	reader.tryRead("sideArmor", _sideArmorBonus);
+	reader.tryRead("rearArmor", _rearArmorBonus);
+	reader.tryRead("underArmor", _underArmorBonus);
+	_hasDirectionalArmor = (_frontArmorBonus || _sideArmorBonus || _rearArmorBonus || _underArmorBonus);
 	reader.tryRead("turretType", _turretType);
 	if (const auto& nodeAI = reader["ai"])
 	{

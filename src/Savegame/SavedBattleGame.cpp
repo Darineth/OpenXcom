@@ -352,9 +352,11 @@ void SavedBattleGame::load(const YAML::YamlNodeReader& node, Mod *mod, SavedGame
 	_itemId++;
 
 	// Rebuild cached effective stats after inventory ownership/slots are restored from save.
+	// Pass reloadingFromSave so per-side armor damage is derived from the saved current armor
+	// (which is authoritative) instead of from the tracked damage, which isn't persisted.
 	for (auto* unit : _units)
 	{
-		unit->refreshBaseStats();
+		unit->refreshBaseStats(true);
 	}
 
 	// units 2nd pass

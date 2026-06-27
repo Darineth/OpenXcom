@@ -157,15 +157,21 @@ Everything below is DX-specific work confirmed **absent** from the base.
   - ✅ **Done.** Added `RuleItem.stats`, `RuleItem.statModifiers`, and `Armor.statModifiers` ruleset support, then wired effective stat recomputation in `Soldier::prepareStatsWithBonuses` and `BattleUnit::getBaseStats` so equipped items and armor modifiers contribute at runtime.
 - [x] **Inventory stat display revamp** — display all unit stats (TU, reactions, firing, throwing, melee, psi, strength) from the inventory view.
   - ✅ **Done.** Inventory now shows the expanded stat block in the battlescape inventory screen: TU, weight/strength, reactions, firing, throwing, melee, psi skill, and psi strength. The layout keeps the compact right-side stack by adding two extra stat rows and shifting the whole block only when `showMoreStatsInInventoryView` is enabled.
-- [ ] **Directional armor** — `frontArmor`/`sideArmor`/`rearArmor`/`underArmor`,
-  `armorSide`. *(feeds the Phase 3 damage model)*
+- [x] **Directional armor on items** — `frontArmor`/`sideArmor`/`rearArmor`/`underArmor`
+  on `RuleItem`, folded into the wearer's per-side max armor.
+  *(per-side armor on units/armor already exists in OXCE and drives the damage model; this adds the
+  item-side contribution — design: [plans/Feature-DirectionalArmorOnItems.md](plans/Feature-DirectionalArmorOnItems.md))*
+  - ✅ **Done.** Added `frontArmor`/`sideArmor`/`rearArmor`/`underArmor` to `RuleItem`; equipped
+    items now contribute to the wearer's per-side max armor via `BattleUnit::recalculateMaxArmor`
+    (cached base + item bonuses, with separately-tracked per-side armor damage so removing/
+    re-equipping a plate never refunds lost armor). Fields shown in Stats-for-Nerds.
 - [ ] **Inventory layouts** — `RuleInventoryLayout`, `RuleSoldier.inventoryLayout`.
   - [ ] **Configurable weapon slots / unload config** — replace hand-slot assumptions in
     `Inventory::unload` with layout-aware destination policies (handling slots, ammo destination,
     fallbacks, and battle shift-unload gating) so custom layouts without hand slots behave safely.
     *(design: [plans/Feature-ConfigurableWeaponSlotsUnload.md](plans/Feature-ConfigurableWeaponSlotsUnload.md))*
 - [ ] **Typed slots / filtering / move-cost** — `battleType`, `allowCombatSwap`, `costs`,
-  `countStats`, `armorSide`.
+  `countStats`.
 - [ ] **Utility equipment slots** — `INV_UTILITY`. *(needs typed slots)*
 
 ## Phase 5: Firing & Accuracy (the combat loop)

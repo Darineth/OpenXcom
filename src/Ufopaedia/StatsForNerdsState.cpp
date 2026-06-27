@@ -2230,6 +2230,11 @@ void StatsForNerdsState::initItemList()
 
 	addInteger(ss, itemRule->getArmor(), "armor", 20);
 
+	addInteger(ss, itemRule->getFrontArmorBonus(), "frontArmor");
+	addInteger(ss, itemRule->getSideArmorBonus(), "sideArmor");
+	addInteger(ss, itemRule->getRearArmorBonus(), "rearArmor");
+	addInteger(ss, itemRule->getUnderArmorBonus(), "underArmor");
+
 	addBattleMediKitType(ss, itemRule->getMediKitType(), "medikitType");
 	addSingleString(ss, itemRule->getPainKillerActionName(), "painKillerActionName", "STR_PAIN_KILLER");
 	addSingleString(ss, itemRule->getStimulantActionName(), "stimulantActionName", "STR_STIMULANT");

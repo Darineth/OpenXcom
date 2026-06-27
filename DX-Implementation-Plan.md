@@ -105,8 +105,8 @@ This document serves as a high-level checklist of features from the original Ope
     - [ ] Implement visual/sound scaling by blast radius
 - [x] **Armor Degradation**
     - [x] Implement thresholded blocked-hit and penetrating-hit armor degradation via `RuleDamageType`
-- [ ] **Directional Armor Values**
-    - [ ] Implement directional armor values
+- [x] **Directional Armor Values**
+    - [x] Implement directional armor values
 - [ ] **Item-based Stat Modification Rules**
     - [ ] Implement item-based stat modification rules
 

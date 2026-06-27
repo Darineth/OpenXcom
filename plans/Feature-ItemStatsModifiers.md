@@ -152,7 +152,7 @@ When typed-slot work lands, `countStats` can narrow which slots contribute witho
 ## Out of Scope (This Feature)
 
 - Slot-level `countStats` filtering.
-- Directional armor item fields (`frontArmor`/`sideArmor`/`rearArmor`/`underArmor`, `armorSide`).
+- Directional armor item fields (`frontArmor`/`sideArmor`/`rearArmor`/`underArmor`).
 - Typed-slot and utility-slot mechanics.
 
 Those remain in later Phase 4 checklist items.

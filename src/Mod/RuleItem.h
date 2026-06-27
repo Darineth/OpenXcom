@@ -457,6 +457,8 @@ private:
 	bool _hasStats;
 	bool _hasStatModifiers;
 	int _armor;
+	int _frontArmorBonus, _sideArmorBonus, _rearArmorBonus, _underArmorBonus;
+	bool _hasDirectionalArmor;
 	int _turretType;
 	int _aiUseDelay, _aiMeleeHitCount;
 	bool _recover, _recoverCorpse, _ignoreInBaseDefense, _ignoreInCraftEquip, _liveAlien;
@@ -704,6 +706,17 @@ public:
 	bool hasStats() const { return _hasStats; }
 	/// Does this item define any percent stat modifiers?
 	bool hasStatModifiers() const { return _hasStatModifiers; }
+
+	/// Get the front armor granted to the wearer while this item is equipped.
+	int getFrontArmorBonus() const { return _frontArmorBonus; }
+	/// Get the side armor (applied to both left and right) granted while equipped.
+	int getSideArmorBonus() const { return _sideArmorBonus; }
+	/// Get the rear armor granted to the wearer while this item is equipped.
+	int getRearArmorBonus() const { return _rearArmorBonus; }
+	/// Get the under armor granted to the wearer while this item is equipped.
+	int getUnderArmorBonus() const { return _underArmorBonus; }
+	/// Does this item grant any per-side armor to its wearer?
+	bool hasDirectionalArmor() const { return _hasDirectionalArmor; }
 
 	/// Get additional power from unit statistics
 	int getPowerBonus(BattleActionAttack::ReadOnly attack) const;

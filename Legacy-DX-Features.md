@@ -591,7 +591,7 @@ wound-recovery + `STR_FIELD_SURGERY_UNIT` branch in `BattleUnit::postMissionProc
   both `RuleItem` and `Armor`; inventory slots can opt to apply stats from items in
   them; Power/Flying Suit bonuses converted to stat modifiers.
 - **Directional armor on items:** `frontArmor`, `sideArmor`, `rearArmor`,
-  `underArmor` (verified on both `RuleItem` and `Armor`); `armorSide` on items;
+  `underArmor` (verified on both `RuleItem` and `Armor`);
   an **Armor inventory slot type** (later reworked into sided slots).
 - **Per-item effect hooks:** `hitEffect` and `equippedEffect` (RuleItem) link items
   to the effects framework (see §12).
@@ -654,8 +654,6 @@ wound-recovery + `STR_FIELD_SURGERY_UNIT` branch in `BattleUnit::postMissionProc
   - **`countStats`** (default false) — only items in `countStats` slots contribute
     their `stats`/`statModifiers` (§9) to the wearer; `updateStats()` walks just
     those slots, so you can have "display/holster" slots that grant no bonuses.
-  - **`armorSide`** — for armor-type slots, which body facing the slot's armor
-    applies to (front/side/rear/under), feeding the directional-armor model (§9).
   - **`allowGenericItems`** is **parsed but not currently enforced** — together with
     the item-side `validSlots` / `_checkValidSlots` and the older
     `canBeUsedInSlot()` path, the generic-item gating is **commented out** in the
@@ -1209,7 +1207,7 @@ All keys below were verified against the `Ruleset/*.cpp` `load()` parsers.
 | `battleClipSize` | 0 | Stock/buy/recover ammo per round; pack into magazines of this size at battle time. Non-zero forces `clipSize`→0 (§4) |
 | `stats` | — | `UnitStats` granted while equipped |
 | `statModifiers` | — | Percentage stat modification while equipped |
-| `frontArmor`/`sideArmor`/`rearArmor`/`underArmor`/`armorSide` | 0 | Directional armor |
+| `frontArmor`/`sideArmor`/`rearArmor`/`underArmor` | 0 | Directional armor |
 | `aiRangeClose`/`Mid`/`Long`/`Max` | -1 | AI engagement bands |
 | `aiAttackPriorityClose`/`Mid`/`Long`/`Max` | [] | AI target priority per band (string lists) |
 | `overwatchModifier` | 100 | Overwatch reaction modifier |
@@ -1226,7 +1224,7 @@ All keys below were verified against the `Ruleset/*.cpp` `load()` parsers.
 `camouflageAtDay` / `antiCamouflageAtDark` / `antiCamouflageAtDay`.
 
 **`RuleInventory` (slot):** `id`, `x`, `y`, `type`, `slots`, `costs`, `listOrder`,
-`countStats`, `armorSide`, `allowGenericItems` *(parsed but dormant, §10)*,
+`countStats`, `allowGenericItems` *(parsed but dormant, §10)*,
 `allowCombatSwap`, `battleType`.
 
 **`RuleInventoryLayout`:** `id`, `invs` (list of slot ids). Top-level section

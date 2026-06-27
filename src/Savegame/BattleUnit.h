@@ -109,6 +109,8 @@ private:
 	bool _kneeled, _floating, _dontReselect, _aiMedikitUsed;
 	bool _haveNoFloorBelow = false;
 	int _currentArmor[SIDE_MAX], _maxArmor[SIDE_MAX];
+	int _maxArmorBase[SIDE_MAX];
+	int _armorDamage[SIDE_MAX];
 	int _fatalWounds[BODYPART_MAX];
 	int _fire;
 	std::vector<BattleItem*> _inventory;
@@ -578,7 +580,9 @@ public:
 	/// Gets the unit's gained experience points.
 	const UnitStats* getExpStats() const { return &_exp; }
 	/// Recomputes cached effective base stats from unit/soldier, armor, and equipped items.
-	void refreshBaseStats();
+	void refreshBaseStats(bool reloadingFromSave = false);
+	/// Recomputes per-side max armor from the base armor plus equipped-item directional armor.
+	void recalculateMaxArmor(bool reloadingFromSave = false);
 	/// Computes effective base stats for preview, optionally excluding one inventory item.
 	UnitStats getBaseStatsPreview(const BattleItem* excludedItem = nullptr) const;
 	/// Gets the unit's stats.

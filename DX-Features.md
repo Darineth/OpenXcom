@@ -38,6 +38,37 @@ Compatibility:
 - Existing mods keep prior behavior by default; missing keys are no-op.
 - Slot-level filtering (`countStats`) is intentionally deferred to the later typed-slot feature.
 
+## Directional Armor on Items
+
+Equipped items can now grant per-side armor to their wearer, complementing the per-side armor
+already defined on `Armor`. New `RuleItem` ruleset fields:
+
+- `frontArmor` — added to the wearer's front armor.
+- `sideArmor` — added to **both** the left and right armor (matching how `Armor`'s single
+  `sideArmor` expands to both sides).
+- `rearArmor` — added to the wearer's rear armor.
+- `underArmor` — added to the wearer's under armor.
+
+These are distinct from the existing scalar `armor` field, which remains the item's own structural
+HP / explosive resistance and is unchanged.
+
+Runtime behavior:
+
+- A unit's per-side max armor is `base armor (armor rule + soldier bonuses) + the directional
+  armor of every equipped inventory item that occupies a slot`, recomputed whenever the inventory
+  changes (alongside the effective-stat refresh).
+- Accumulated per-side armor damage is tracked separately, so changing the max never refunds lost
+  armor: equipping a plate while undamaged fills the new capacity, but removing and re-equipping a
+  plate after taking damage restores only the plate's own armor, not the damage taken. On reload
+  the saved (absolute) current armor is authoritative and the damage is derived from it.
+- The fields are shown per-item in the Stats-for-Nerds screen.
+
+Compatibility:
+
+- Existing mods keep prior behavior by default; an item with none of the new keys is a no-op.
+- No new save data: per-side max armor is derived from rules + the equipped loadout and recomputed
+  on load, exactly like the existing soldier-bonus armor.
+
 ## Combat Log
 
 A floating, centered event log across the top of the Battlescape that reports combat events
