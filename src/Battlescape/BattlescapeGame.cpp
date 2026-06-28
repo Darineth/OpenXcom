@@ -767,6 +767,13 @@ void BattlescapeGame::checkForCasualties(const RuleDamageType *damageType, Battl
 	for (auto* victim : *_save->getUnits())
 	{
 		if (victim->isIgnored()) continue;
+		// DX: a unit killed mid-volley must be handled exactly once. checkForCasualties runs
+		// for every round's impact, but the queued UnitDieBState only runs after the whole
+		// volley finishes - so without this guard a unit killed mid-volley would re-fire its
+		// death (duplicate kill log, morale loss and UnitDieBState) on every later round until
+		// it finally reaches STATUS_DEAD. The flag is only set on actual death (health <= 0),
+		// so stun-then-kill still resolves correctly.
+		if (victim->isDeathRegistered()) continue;
 		BattleUnit *murderer = origMurderer;
 
 		BattleUnitKills killStat;
@@ -848,6 +855,7 @@ void BattlescapeGame::checkForCasualties(const RuleDamageType *damageType, Battl
 		{
 			if (victim->getHealth() <= 0)
 			{
+				victim->setDeathRegistered(true); // DX: one-shot guard (see top of loop)
 				if (!victim->isCosmetic())
 				{
 					_save->logKillEvent(victim, murderer);

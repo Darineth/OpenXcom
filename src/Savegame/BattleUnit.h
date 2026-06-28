@@ -124,7 +124,7 @@ private:
 	int _kills;
 	int _faceDirection; // used only during strafing moves
 	std::vector<int> _meleeAttackedBy;
-	bool _hitByFire, _hitByAnything, _alreadyExploded;
+	bool _hitByFire, _hitByAnything, _alreadyExploded, _deathRegistered;
 	int _fireMaxHit;
 	int _smokeMaxHit;
 	int _moraleRestored;
@@ -856,6 +856,10 @@ public:
 	bool hasAlreadyExploded() const { return _alreadyExploded; }
 	/// Set the already exploded flag.
 	void setAlreadyExploded(bool alreadyExploded) { _alreadyExploded = alreadyExploded; }
+	/// Has this unit's death already been registered by checkForCasualties? (one-shot guard)
+	bool isDeathRegistered() const { return _deathRegistered; }
+	/// Set the death-registered flag.
+	void setDeathRegistered(bool deathRegistered) { _deathRegistered = deathRegistered; }
 	/// Get the unconscious/dead notification shown flag.
 	int getNotificationShown() const { return _notificationShown; }
 	/// Set the unconscious/dead notification shown flag.

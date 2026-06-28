@@ -67,7 +67,7 @@ BattleUnit::BattleUnit(const Mod *mod, Soldier *soldier, int depth, const RuleSt
 	_verticalDirection(0), _status(STATUS_STANDING), _wantsToSurrender(false), _isSurrendering(false), _walkPhase(0), _fallPhase(0), _kneeled(false), _floating(false),
 	_dontReselect(false), _aiMedikitUsed(false), _fire(0), _currentAIState(0), _visible(false),
 	_exp{ }, _expTmp{ },
-	_motionPoints(0), _scannedTurn(-1), _customMarker(0), _kills(0), _hitByFire(false), _hitByAnything(false), _alreadyExploded(false), _fireMaxHit(0), _smokeMaxHit(0),
+	_motionPoints(0), _scannedTurn(-1), _customMarker(0), _kills(0), _hitByFire(false), _hitByAnything(false), _alreadyExploded(false), _deathRegistered(false), _fireMaxHit(0), _smokeMaxHit(0),
 	_moraleRestored(0), _notificationShown(0), _charging(0),
 	_statistics(), _murdererId(0), _mindControllerID(0), _fatalShotSide(SIDE_FRONT), _fatalShotBodyPart(BODYPART_HEAD), _armor(0),
 	_geoscapeSoldier(soldier), _unitRules(0), _rankInt(0), _turretType(-1), _hidingForTurn(false), _floorAbove(false), _respawn(false), _alreadyRespawned(false),
@@ -423,7 +423,7 @@ BattleUnit::BattleUnit(const Mod *mod, const Unit *unit, UnitFaction faction, in
 	_toDirectionTurret(0), _verticalDirection(0), _status(STATUS_STANDING), _wantsToSurrender(false), _isSurrendering(false), _walkPhase(0),
 	_fallPhase(0), _kneeled(false), _floating(false), _dontReselect(false), _aiMedikitUsed(false), _fire(0), _currentAIState(0),
 	_visible(false), _exp{ }, _expTmp{ },
-	_motionPoints(0), _scannedTurn(-1), _customMarker(0), _kills(0), _hitByFire(false), _hitByAnything(false), _alreadyExploded(false), _fireMaxHit(0), _smokeMaxHit(0),
+	_motionPoints(0), _scannedTurn(-1), _customMarker(0), _kills(0), _hitByFire(false), _hitByAnything(false), _alreadyExploded(false), _deathRegistered(false), _fireMaxHit(0), _smokeMaxHit(0),
 	_moraleRestored(0), _notificationShown(0), _charging(0),
 	_statistics(), _murdererId(0), _mindControllerID(0), _fatalShotSide(SIDE_FRONT),
 	_fatalShotBodyPart(BODYPART_HEAD), _armor(armor), _geoscapeSoldier(0),  _unitRules(unit),
@@ -2097,6 +2097,10 @@ void BattleUnit::keepFalling()
 		}
 		else
 			_status = STATUS_UNCONSCIOUS;
+		// DX: the fall has fully played out; clear the one-shot death guard so that a later
+		// recovery from negative HP can re-register a fresh death. STATUS_DEAD is now handled
+		// by checkForCasualties' own status check, so clearing here is safe.
+		_deathRegistered = false;
 	}
 }
 
@@ -2115,6 +2119,8 @@ void BattleUnit::instaFalling()
 	{
 		_status = STATUS_UNCONSCIOUS;
 	}
+	// DX: fall complete, clear the one-shot death guard (see keepFalling).
+	_deathRegistered = false;
 }
 
 
@@ -4322,6 +4328,11 @@ void BattleUnit::heal(UnitBodyPart part, int woundAmount, int healthAmount)
 
 	setValueMax(_fatalWounds[part], -woundAmount, 0, UnitStats::BaseStatLimit);
 	setValueMax(_health, healthAmount, std::min(_health, 1), getBaseStats()->health); //Hippocratic Oath: First do no harm
+	// DX: if the unit recovered above 0 HP, allow a future death to re-register.
+	if (_health > 0)
+	{
+		_deathRegistered = false;
+	}
 
 }
 

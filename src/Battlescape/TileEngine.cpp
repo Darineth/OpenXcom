@@ -4609,7 +4609,13 @@ VoxelType TileEngine::voxelCheck(Position voxel, BattleUnit *excludeUnit, bool e
 	{
 		BattleUnit *unit = tile->getOverlappingUnit(_save);
 
-		if (unit != 0 && !unit->isOut() && unit != excludeUnit && (!excludeAllBut || unit == excludeAllBut) && (!onlyVisible || unit->getVisible() ) )
+		// DX: a unit that is dying must not block voxels. isOut() only covers
+		// STATUS_DEAD/UNCONSCIOUS, so a unit mid-death-collapse, or one already at
+		// zero health in the brief gap before its death animation starts, would still
+		// block. With multiple projectiles airborne at once (burst / async fire),
+		// follow-up rounds then keep slamming into the dying unit and overkill it
+		// instead of passing through to whatever is behind it.
+		if (unit != 0 && !unit->isOut() && unit->getStatus() != STATUS_COLLAPSING && unit->getHealth() > 0 && unit != excludeUnit && (!excludeAllBut || unit == excludeAllBut) && (!onlyVisible || unit->getVisible() ) )
 		{
 			Position tilepos;
 			Position unitpos = unit->getPosition();

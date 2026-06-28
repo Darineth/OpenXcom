@@ -50,12 +50,17 @@ items:
     tuBurst: 33            # DX: TU cost (percentage of unit TUs) - between snap and auto
     burstShots: 3          # DX: 3-round controlled volley
     burstRange: 12         # DX: effective range band
-    # --- Auto: high-volume suppression spray ---
-    # vanilla STR_RIFLE Auto: accuracyAuto 35, tuAuto 35, autoShots 3 (autoRange 7)
-    accuracyAuto: 30       # was 35 - low per-shot accuracy to offset the round count
-    tuAuto: 50             # was 35 - pricier than burst for the longer volley
-    autoShots: 6           # was 3  - now a 6-round auto burst
-    autoRange: 7           # unchanged (engine default)
+    ## --- Auto: high-volume suppression spray ---
+    ## vanilla STR_RIFLE Auto: accuracyAuto 35, tuAuto 35, autoShots 3 (autoRange 7)
+    ##accuracyAuto: 30       # was 35 - low per-shot accuracy to offset the round count
+    ##tuAuto: 50             # was 35 - pricier than burst for the longer volley
+    ##autoShots: 6           # was 3  - now a 6-round auto burst
+    ##autoRange: 7           # unchanged (engine default)
+    # --- Auto: Many shots with high accuracy to test async projectile flight ---
+    accuracyAuto: 200      # DX: high per-shot accuracy to see many rounds in flight
+    tuAuto: 20             # DX: low TU cost to allow many rounds in a single turn
+    autoRange: 200         # DX: long range to allow many rounds hitting multiple targets in a line
+    autoShots: 10          # DX: many rounds in a single turn to test async projectile flight
 
   # -------------------------------------------------------------------
   #  Basic grenade -> full radius falloff
