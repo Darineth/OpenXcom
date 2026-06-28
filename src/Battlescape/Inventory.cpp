@@ -1388,9 +1388,13 @@ bool Inventory::unload(bool quickUnload)
 		return true;
 	}
 
-	// Check which hands are free.
-	RuleInventory *FirstFreeHand = _inventorySlotRightHand;
-	RuleInventory *SecondFreeHand = _inventorySlotLeftHand;
+	// Check which hands are free. Only consider hand sections the unit's inventory
+	// layout actually has, so custom layouts that omit a hand (e.g. no off-hand) don't
+	// try to stash the weapon/ammo in a nonexistent slot. With only one hand available
+	// the ejected ammo falls back to the ground via the SecondFreeHand == null path below.
+	const RuleInventoryLayout *layout = _selUnit->getInventoryLayout();
+	RuleInventory *FirstFreeHand = (!layout || layout->hasSection(_inventorySlotRightHand)) ? _inventorySlotRightHand : nullptr;
+	RuleInventory *SecondFreeHand = (!layout || layout->hasSection(_inventorySlotLeftHand)) ? _inventorySlotLeftHand : nullptr;
 
 	for (auto* bi : *_selUnit->getInventory())
 	{
@@ -1418,6 +1422,20 @@ bool Inventory::unload(bool quickUnload)
 		return false;
 	}
 
+	// Decide where the ejected ammo goes: the off-hand if it is free, otherwise try to fit
+	// it into another inventory slot the unit's layout has (ctrl+click style), and only fall
+	// back to the ground if nothing fits.
+	RuleInventory *ammoDest = SecondFreeHand;
+	int ammoDestX = 0, ammoDestY = 0;
+	if (!grenade && ammoDest == nullptr)
+	{
+		BattleItem *ammo = _selItem->getAmmoForSlot(slotForAmmoUnload);
+		if (!ammo || !findFreeSlotForItem(ammo, ammoDest, ammoDestX, ammoDestY))
+		{
+			ammoDest = _inventorySlotGround;
+		}
+	}
+
 	BattleActionCost cost { BA_NONE, _selUnit, _selItem };
 	if (grenade)
 	{
@@ -1429,10 +1447,11 @@ bool Inventory::unload(bool quickUnload)
 		// 2. unload (= move the ammo to the second free hand)
 		cost.Time += toForAmmoUnload;
 
-		if (SecondFreeHand == nullptr)
+		// 3. if the ammo isn't going to the (free) off-hand, add the cost of moving it from
+		// the working hand to its destination slot (or the ground)
+		if (ammoDest != SecondFreeHand)
 		{
-			// 3. drop the ammo on the ground (if the second hand is not free)
-			cost.Time += FirstFreeHand->getCost(_inventorySlotGround);
+			cost.Time += FirstFreeHand->getCost(ammoDest);
 		}
 	}
 
@@ -1455,13 +1474,9 @@ bool Inventory::unload(bool quickUnload)
 		else
 		{
 			auto* oldAmmo = _selItem->setAmmoForSlot(slotForAmmoUnload, nullptr);
-			if (SecondFreeHand != nullptr)
+			moveItem(oldAmmo, ammoDest, ammoDestX, ammoDestY); // 2. (+ 3. if not the off-hand)
+			if (ammoDest->getType() == INV_GROUND)
 			{
-				moveItem(oldAmmo, SecondFreeHand, 0, 0); // 2.
-			}
-			else
-			{
-				moveItem(oldAmmo, _inventorySlotGround, 0, 0); // 2. + 3.
 				arrangeGround();
 			}
 		}
@@ -1786,6 +1801,56 @@ bool Inventory::fitItem(const RuleInventory *newSlot, BattleItem *item, std::str
 		}
 	}
 	return placed;
+}
+
+/**
+ * Finds the first free, fitting slot for an item among the selected unit's layout
+ * sections (INV_SLOT only), in the configured slot order. Used as a ctrl+click-style
+ * fallback when there is no free hand to receive unloaded ammo.
+ * @param item Item to place.
+ * @param outSlot Receives the destination section.
+ * @param outX Receives the destination slot X.
+ * @param outY Receives the destination slot Y.
+ * @return True if a fitting slot was found.
+ */
+bool Inventory::findFreeSlotForItem(BattleItem *item, RuleInventory *&outSlot, int &outX, int &outY) const
+{
+	if (!_selUnit)
+	{
+		return false;
+	}
+	std::vector<const RuleInventory*> candidates;
+	for (const auto* s : getActiveLayout()->getSections())
+	{
+		if (s->getType() == INV_SLOT && item->getRules()->canBePlacedIntoInventorySection(s))
+		{
+			candidates.push_back(s);
+		}
+	}
+	if (Mod::EXTENDED_INVENTORY_SLOT_SORTING)
+	{
+		std::sort(candidates.begin(), candidates.end(),
+			[](const RuleInventory* a, const RuleInventory* b) { return a->getListOrder() < b->getListOrder(); });
+	}
+	else
+	{
+		std::sort(candidates.begin(), candidates.end(),
+			[](const RuleInventory* a, const RuleInventory* b) { return a->getId() < b->getId(); });
+	}
+	for (const auto* s : candidates)
+	{
+		for (const RuleSlot& rs : *s->getSlots())
+		{
+			if (!overlapItems(_selUnit, item, s, rs.x, rs.y) && s->fitItemInSlot(item->getRules(), rs.x, rs.y))
+			{
+				outSlot = const_cast<RuleInventory*>(s);
+				outX = rs.x;
+				outY = rs.y;
+				return true;
+			}
+		}
+	}
+	return false;
 }
 
 /**

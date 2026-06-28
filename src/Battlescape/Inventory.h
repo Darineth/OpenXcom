@@ -125,6 +125,8 @@ public:
 	void arrangeGround(int alterOffset = 0);
 	/// Attempts to place an item in an inventory slot.
 	bool fitItem(const RuleInventory *newSlot, BattleItem *item, std::string &warning);
+	/// Finds the first free slot in the selected unit's layout that the item fits into.
+	bool findFreeSlotForItem(BattleItem *item, RuleInventory *&outSlot, int &outX, int &outY) const;
 	/// Checks if two items can be stacked on one another.
 	bool canBeStacked(BattleItem *itemA, BattleItem *itemB);
 	/// Checks for item overlap.
