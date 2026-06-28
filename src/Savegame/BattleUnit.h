@@ -54,6 +54,7 @@ class SavedBattleGame;
 class Node;
 class Surface;
 class RuleInventory;
+class RuleInventoryLayout;
 class RuleEnviroEffects;
 class RuleStartingCondition;
 class Soldier;
@@ -573,6 +574,8 @@ public:
 	void setCustomMarker(int customMarker) { _customMarker = customMarker; }
 	/// Gets the unit's armor.
 	const Armor *getArmor() const;
+	/// Gets the inventory layout this unit uses (the armor's, or the mod default).
+	const RuleInventoryLayout *getInventoryLayout(const Mod *mod) const;
 	/// Sets the unit's name.
 	void setName(const std::string &name);
 	/// Gets the unit's name.

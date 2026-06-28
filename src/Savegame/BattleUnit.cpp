@@ -4388,6 +4388,19 @@ const Armor *BattleUnit::getArmor() const
 }
 
 /**
+ * Gets the inventory layout that governs this unit's slots: the one declared by
+ * its armor, or the mod's implicit default (all global sections) when the armor
+ * declares none. Resolution is O(1), so callers can use it directly per frame.
+ * @param mod The mod (provides the default layout).
+ * @return The resolved inventory layout.
+ */
+const RuleInventoryLayout *BattleUnit::getInventoryLayout(const Mod *mod) const
+{
+	const RuleInventoryLayout *layout = _armor->getInventoryLayout();
+	return layout ? layout : mod->getDefaultInventoryLayout();
+}
+
+/**
  * Set the unit's name.
  * @param name Name
  */
