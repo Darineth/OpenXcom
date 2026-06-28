@@ -311,3 +311,13 @@ implementation (see CLAUDE.md "Planning Features").*
     is re-locked after load; out-of-range indices are soft errors; no save format change. Touches
     [src/Mod/Mod.cpp](src/Mod/Mod.cpp) (`loadAll` global pre-pass + `loadEarlyRules`) and
     [src/Mod/Mod.h](src/Mod/Mod.h).
+
+- [x] **Inventory ammo-count badges** — show remaining rounds top-right on weapons/clips in the
+  inventory, colored by state, plus on the right-side ammo preview (and for hovered clips).
+  *(design: [plans/Feature-InventoryAmmoCount.md](plans/Feature-InventoryAmmoCount.md))*
+  - ✅ **Done.** Bordered count drawn by `Inventory::drawItems`/`drawAmmoCount`; full/half/low
+    coloring via `ammoStateColor` and configurable `ammoFull`/`ammoMid`/`ammoLow` interface
+    elements (block-start indices so the bordered glyph stays in-hue). Single-shot ammo (clip ≤ 1)
+    is skipped. Preview badge via the public `Inventory::drawAmmoBadge`; the redundant `_txtAmmo`
+    rounds text was removed (its medikit-quantities display will return with the hover stats-panel
+    feature).

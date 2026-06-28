@@ -54,6 +54,20 @@ Details and behavior:
   off-hand is available, the ejected ammo is best-fit into another inventory slot (ctrl+click style)
   before falling back to the ground.
 
+## Inventory Ammo-Count Badges
+
+Weapons and ammo clips in the inventory now show their remaining rounds as a small bordered number
+at the **top-right** of the item, so loadouts can be read at a glance without hovering. A weapon
+shows its loaded ammo's rounds (or self-ammo charge); a clip shows its own remaining rounds;
+single-shot ammo (clip size ≤ 1, e.g. a rocket) shows nothing. The number is colored by state:
+**green** when full, **amber** at half-or-better, **red** below half. These colors are configurable
+via three new `inventory` interface elements — `ammoFull`, `ammoMid`, `ammoLow`
+(see `interfaces.rul`).
+
+The same count badge is drawn on the right-side ammo **preview** box, which now also appears when
+hovering a bare ammo clip (previously only loaded weapons previewed). The old "AMMO ROUNDS LEFT"
+text was removed as redundant. (See design doc: `plans/Feature-InventoryAmmoCount.md`.)
+
 ## Inventory Move TU Costs in Pre-Battle Setup
 
 The per-slot inventory move TU costs (shown on the slot labels while an item is held) now also

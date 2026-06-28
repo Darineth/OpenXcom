@@ -53,6 +53,47 @@
 namespace OpenXcom
 {
 
+namespace
+{
+/**
+ * Rounds count to show as a top-right ammo badge: an ammo item shows its own remaining rounds,
+ * a loaded weapon shows the rounds of its primary loaded ammo (or self-ammo charge).
+ * @param item The item.
+ * @param count Receives the round count.
+ * @return True if the item should show an ammo badge.
+ */
+bool getInventoryAmmoCount(const BattleItem *item, int &count, int &capacity)
+{
+	const RuleItem *rule = item->getRules();
+	if (rule->getBattleType() == BT_AMMO)
+	{
+		capacity = rule->getClipSize();
+		if (capacity <= 1)
+		{
+			// single-shot ammo (e.g. a rocket): the count is always trivial, skip it
+			return false;
+		}
+		count = item->getAmmoQuantity();
+		return true;
+	}
+	for (int slot = 0; slot < RuleItem::AmmoSlotMax; ++slot)
+	{
+		bool selfAmmo = (slot == 0 && rule->getClipSize() > 0);
+		if (item->needsAmmoForSlot(slot) || selfAmmo)
+		{
+			const BattleItem *ammo = item->getAmmoForSlot(slot);
+			if (ammo)
+			{
+				count = ammo->getAmmoQuantity();
+				capacity = ammo->getRules()->getClipSize();
+				return true;
+			}
+		}
+	}
+	return false;
+}
+}
+
 /**
  * Sets up an inventory with the specified size and position.
  * @param game Pointer to core game.
@@ -100,6 +141,19 @@ Inventory::Inventory(Game *game, int width, int height, int x, int y, bool base)
 				_shockIndicator = _game->getMod()->getSurface(enviro->getInventoryShockIndicator(), false);
 			}
 		}
+	}
+
+	// ammo-count badge state colors: full (green), half-or-better (orange), low (red).
+	// Dedicated, configurable interface elements; fall back to the two-handed/medikit
+	// colors if a mod's inventory interface doesn't define them.
+	{
+		const RuleInterface *invInterface = _game->getMod()->getInterface("inventory");
+		const Element *eFull = invInterface->getElementOptional("ammoFull");
+		const Element *eMid = invInterface->getElementOptional("ammoMid");
+		const Element *eLow = invInterface->getElementOptional("ammoLow");
+		_ammoFullColor = eFull ? eFull->color : _twoHandedGreen;
+		_ammoMidColor = eMid ? eMid->color : _game->getMod()->getInterface("battlescape")->getElement("medikitOrange")->color;
+		_ammoLowColor = eLow ? eLow->color : _twoHandedRed;
 	}
 
 	_inventorySlotRightHand = _game->getMod()->getInventoryRightHand();
@@ -366,6 +420,24 @@ void Inventory::drawItems()
 			{
 				primers(x, y, invItem->isFuseEnabled());
 			}
+
+			// ammo rounds badge (top-right)
+			int ammoCount, ammoCapacity;
+			if (getInventoryAmmoCount(invItem, ammoCount, ammoCapacity))
+			{
+				int rightX, topY;
+				if (invItem->getSlot()->getType() == INV_HAND)
+				{
+					rightX = invItem->getSlot()->getX() + RuleInventory::HAND_W * RuleInventory::SLOT_W;
+					topY = invItem->getSlot()->getY();
+				}
+				else
+				{
+					rightX = invItem->getSlot()->getX() + (invItem->getSlotX() + invItem->getRules()->getInventoryWidth()) * RuleInventory::SLOT_W;
+					topY = invItem->getSlot()->getY() + invItem->getSlotY() * RuleInventory::SLOT_H;
+				}
+				drawAmmoCount(rightX, topY, ammoCount, ammoStateColor(ammoCount, ammoCapacity), _items);
+			}
 		}
 
 		Surface stackLayer(getWidth(), getHeight(), 0, 0);
@@ -413,6 +485,15 @@ void Inventory::drawItems()
 			if (groundItem->getFuseTimer() >= 0 && groundItem->getRules()->getInventoryWidth() > 0)
 			{
 				primers(x, y, groundItem->isFuseEnabled());
+			}
+
+			// ammo rounds badge (top-right)
+			int ammoCount, ammoCapacity;
+			if (getInventoryAmmoCount(groundItem, ammoCount, ammoCapacity))
+			{
+				int rightX = groundItem->getSlot()->getX() + ((groundItem->getSlotX() + groundItem->getRules()->getInventoryWidth()) - _groundOffset) * RuleInventory::SLOT_W;
+				int topY = groundItem->getSlot()->getY() + groundItem->getSlotY() * RuleInventory::SLOT_H;
+				drawAmmoCount(rightX, topY, ammoCount, ammoStateColor(ammoCount, ammoCapacity), &stackLayer);
 			}
 
 			// fatal wounds
@@ -473,6 +554,61 @@ void Inventory::drawItems()
 
 		stackLayer.blitNShade(_items, 0, 0);
 	}
+}
+
+/**
+ * Draws an ammo-rounds count badge, right-aligned at the top-right corner of an item footprint.
+ * @param rightX Pixel X of the item footprint's right edge.
+ * @param topY Pixel Y of the item footprint's top edge.
+ * @param count The round count to show.
+ * @param numberColor Palette color for the number.
+ * @param target Surface to draw onto.
+ */
+Uint8 Inventory::ammoStateColor(int count, int capacity) const
+{
+	if (capacity > 0 && count < capacity)
+	{
+		// below full: half-or-better is a warning, under half is low
+		return (count * 2 >= capacity) ? _ammoMidColor : _ammoLowColor;
+	}
+	return _ammoFullColor;
+}
+
+void Inventory::drawAmmoCount(int rightX, int topY, int count, Uint8 numberColor, Surface *target)
+{
+	_stackNumber->setX(rightX - 4);
+	if (count > 9)
+	{
+		_stackNumber->setX(_stackNumber->getX() - 4);
+	}
+	if (count > 99)
+	{
+		_stackNumber->setX(_stackNumber->getX() - 4);
+	}
+	_stackNumber->setY(topY);
+	_stackNumber->setValue(count);
+	_stackNumber->draw();
+	_stackNumber->setColor(numberColor);
+	_stackNumber->blit(target->getSurface());
+}
+
+/**
+ * Draws an ammo item's rounds-count badge (state-colored) at the top-right of a preview surface.
+ * Skips single-shot ammo (capacity <= 1), matching the in-inventory item badges.
+ * @param ammo The ammo item.
+ * @param rightX Pixel X of the preview's right edge.
+ * @param topY Pixel Y of the preview's top edge.
+ * @param target Surface to draw onto.
+ */
+void Inventory::drawAmmoBadge(const BattleItem *ammo, int rightX, int topY, Surface *target)
+{
+	int capacity = ammo->getRules()->getClipSize();
+	if (capacity <= 1)
+	{
+		return;
+	}
+	int count = ammo->getAmmoQuantity();
+	drawAmmoCount(rightX, topY, count, ammoStateColor(count, capacity), target);
 }
 
 /**

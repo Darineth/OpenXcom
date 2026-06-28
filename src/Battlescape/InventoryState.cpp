@@ -115,7 +115,6 @@ InventoryState::InventoryState(bool tu, BattlescapeState *parent, Base *base, bo
 	_txtArmorBack = new Text(70, 9, 260, 120);
 	_txtArmorUnder = new Text(70, 9, 260, 128);
 	_txtItem = new Text(160, 9, 128, 140);
-	_txtAmmo = new Text(32, 24, 288, 64);
 	_btnOk = new BattlescapeButton(35, 22, 237, 1);
 	_btnPrev = new BattlescapeButton(23, 22, 273, 1);
 	_btnNext = new BattlescapeButton(23, 22, 297, 1);
@@ -175,8 +174,7 @@ InventoryState::InventoryState(bool tu, BattlescapeState *parent, Base *base, bo
 	add(_btnCreateTemplate, "buttonCreate", "inventory", _bg);
 	add(_btnApplyTemplate, "buttonApply", "inventory", _bg);
 	add(_btnLinks, "buttonLinks", "inventory", _bg);
-	// added after the buttons so the ammo preview (text + sprite) draws in front of them
-	add(_txtAmmo, "textAmmo", "inventory", _bg);
+	// added after the buttons so the ammo preview sprite draws in front of them
 	add(_selAmmo);
 	add(_inv);
 	add(_txtPosition, "textSlot", "inventory", _bg);
@@ -232,9 +230,6 @@ InventoryState::InventoryState(bool tu, BattlescapeState *parent, Base *base, bo
 	_txtArmorUnder->setHighContrast(true);
 
 	_txtItem->setHighContrast(true);
-
-	_txtAmmo->setAlign(ALIGN_CENTER);
-	_txtAmmo->setHighContrast(true);
 
 	_btnOk->onMouseClick((ActionHandler)&InventoryState::btnOkClick);
 	_btnOk->onKeyboardPress((ActionHandler)&InventoryState::btnOkClick, Options::keyCancel);
@@ -1253,7 +1248,6 @@ void InventoryState::btnUnloadClick(Action *)
 	if (_inv->unload(false))
 	{
 		_txtItem->setText("");
-		_txtAmmo->setText("");
 		_selAmmo->clear();
 		updateStats();
 		_game->getMod()->getSoundByDepth(0, Mod::ITEM_DROP)->play();
@@ -2028,25 +2022,17 @@ void InventoryState::invMouseOver(Action *)
 
 		_selAmmo->clear();
 		bool hasSelfAmmo = item->getRules()->getBattleType() != BT_AMMO && item->getRules()->getClipSize() > 0;
-		if ((item->isWeaponWithAmmo() || hasSelfAmmo) && item->haveAnyAmmo())
+		bool isAmmoItem = item->getRules()->getBattleType() == BT_AMMO;
+		if (((item->isWeaponWithAmmo() || hasSelfAmmo) && item->haveAnyAmmo()) || isAmmoItem)
 		{
+			// loaded weapon or an ammo clip: think() shows the ammo preview (sprite + count badge).
+			// hide the template buttons, which the preview overlaps.
 			updateTemplateButtons(false);
-			_txtAmmo->setText("");
 		}
 		else
 		{
 			_mouseHoverItem = nullptr;
 			updateTemplateButtons(!_tu);
-			std::string s;
-			if (item->getRules()->getBattleType() == BT_AMMO && (item->getAmmoQuantity() != 0 || item->getRules()->isAmmoRechargeable()))
-			{
-				s = tr("STR_AMMO_ROUNDS_LEFT").arg(item->getAmmoQuantity());
-			}
-			else if (item->getRules()->getBattleType() == BT_MEDIKIT)
-			{
-				s = tr("STR_MEDI_KIT_QUANTITIES_LEFT").arg(item->getPainKillerQuantity()).arg(item->getStimulantQuantity()).arg(item->getHealQuantity());
-			}
-			_txtAmmo->setText(s);
 		}
 	}
 	else
@@ -2055,7 +2041,6 @@ void InventoryState::invMouseOver(Action *)
 		{
 			_txtItem->setText("");
 		}
-		_txtAmmo->setText("");
 		_selAmmo->clear();
 		updateTemplateButtons(!_tu);
 	}
@@ -2068,7 +2053,6 @@ void InventoryState::invMouseOver(Action *)
 void InventoryState::invMouseOut(Action *)
 {
 	_txtItem->setText("");
-	_txtAmmo->setText("");
 	_selAmmo->clear();
 	_inv->setMouseOverItem(0);
 	_mouseHoverItem = nullptr;
@@ -2207,42 +2191,50 @@ void InventoryState::think()
 	if (_mouseHoverItem)
 	{
 		int anim = _inv->getAnimFrame();
-		int seq = std::max(((anim - _mouseHoverItemFrame) / 10) - 1, 0); // `-1` cause that first item will be show bit more longer
-		int modulo = 0;
-		for (int slot = 0; slot < RuleItem::AmmoSlotMax; ++slot)
+		BattleItem* ammoToShow = nullptr;
+		if (_mouseHoverItem->getRules()->getBattleType() == BT_AMMO)
 		{
-			bool showSelfAmmo = slot == 0 && _mouseHoverItem->getRules()->getClipSize() > 0;
-			if ((_mouseHoverItem->needsAmmoForSlot(slot) || showSelfAmmo) && _mouseHoverItem->getAmmoForSlot(slot))
-			{
-				++modulo;
-			}
+			// hovering an ammo clip directly: preview the clip itself
+			ammoToShow = _mouseHoverItem;
 		}
-		if (modulo)
+		else
 		{
-			seq %= modulo;
-		}
-
-		BattleItem* firstAmmo = nullptr;
-		for (int slot = 0; slot < RuleItem::AmmoSlotMax; ++slot)
-		{
-			bool showSelfAmmo = slot == 0 && _mouseHoverItem->getRules()->getClipSize() > 0;
-			if ((_mouseHoverItem->needsAmmoForSlot(slot) || showSelfAmmo) && _mouseHoverItem->getAmmoForSlot(slot))
+			// hovering a loaded weapon: cycle through its loaded ammo slots
+			int seq = std::max(((anim - _mouseHoverItemFrame) / 10) - 1, 0); // `-1` cause that first item will be show bit more longer
+			int modulo = 0;
+			for (int slot = 0; slot < RuleItem::AmmoSlotMax; ++slot)
 			{
-				firstAmmo = _mouseHoverItem->getAmmoForSlot(slot);
-				if (slot >= seq)
+				bool showSelfAmmo = slot == 0 && _mouseHoverItem->getRules()->getClipSize() > 0;
+				if ((_mouseHoverItem->needsAmmoForSlot(slot) || showSelfAmmo) && _mouseHoverItem->getAmmoForSlot(slot))
 				{
-					break;
+					++modulo;
 				}
 			}
-			else
+			if (modulo)
 			{
-				// this will skip empty slot
-				++seq;
+				seq %= modulo;
+			}
+
+			for (int slot = 0; slot < RuleItem::AmmoSlotMax; ++slot)
+			{
+				bool showSelfAmmo = slot == 0 && _mouseHoverItem->getRules()->getClipSize() > 0;
+				if ((_mouseHoverItem->needsAmmoForSlot(slot) || showSelfAmmo) && _mouseHoverItem->getAmmoForSlot(slot))
+				{
+					ammoToShow = _mouseHoverItem->getAmmoForSlot(slot);
+					if (slot >= seq)
+					{
+						break;
+					}
+				}
+				else
+				{
+					// this will skip empty slot
+					++seq;
+				}
 			}
 		}
-		if (firstAmmo)
+		if (ammoToShow)
 		{
-			_txtAmmo->setText(tr("STR_AMMO_ROUNDS_LEFT").arg(firstAmmo->getAmmoQuantity()));
 			SDL_Rect r;
 			r.x = 0;
 			r.y = 0;
@@ -2254,7 +2246,9 @@ void InventoryState::think()
 			r.w -= 2;
 			r.h -= 2;
 			_selAmmo->drawRect(&r, Palette::blockOffset(0)+15);
-			firstAmmo->getRules()->drawHandSprite(_game->getMod()->getSurfaceSet("BIGOBS.PCK"), _selAmmo, firstAmmo, _game->getSavedGame()->getSavedBattle(), anim);
+			ammoToShow->getRules()->drawHandSprite(_game->getMod()->getSurfaceSet("BIGOBS.PCK"), _selAmmo, ammoToShow, _game->getSavedGame()->getSavedBattle(), anim);
+			// ammo count badge, top-right of the preview (same style/colors as the in-inventory badges)
+			_inv->drawAmmoBadge(ammoToShow, RuleInventory::HAND_W * RuleInventory::SLOT_W, 0, _selAmmo);
 		}
 		else
 		{

@@ -2218,6 +2218,15 @@ interfaces:
       - id: numStack
         color: 66
         color2: 32
+      # DX: ammo-count badge colors by remaining-rounds state.
+      # Bordered NumberText spans color..color+12, so keep each within its 16-block
+      # (block start..start+3) to avoid cross-hue fringing.
+      - id: ammoFull
+        color: 50    # green   - block 3 (48-63)
+      - id: ammoMid
+        color: 18    # amber   - block 1 (16-31)
+      - id: ammoLow
+        color: 34    # red     - block 2 (32-47)
   - type: stats
     elements:
       - id: numMaxHealth

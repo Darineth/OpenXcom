@@ -44,6 +44,7 @@ private:
 	Game *_game;
 	Surface *_grid, *_items, *_gridLabels, *_selection;
 	Uint8 _twoHandedRed, _twoHandedGreen;
+	Uint8 _ammoFullColor, _ammoMidColor, _ammoLowColor;
 	WarningMessage *_warning;
 	BattleUnit *_selUnit;
 	BattleItem *_selItem;
@@ -97,6 +98,8 @@ public:
 	void drawItems();
 	/// Draws the selected item.
 	void drawSelectedItem();
+	/// Draws an ammo-rounds count badge for an ammo item at the top-right of a preview surface.
+	void drawAmmoBadge(const BattleItem *ammo, int rightX, int topY, Surface *target);
 	/// Gets the currently selected item.
 	BattleItem *getSelectedItem() const;
 	/// Sets the currently selected item.
@@ -127,6 +130,10 @@ public:
 	bool fitItem(const RuleInventory *newSlot, BattleItem *item, std::string &warning);
 	/// Finds the first free slot in the selected unit's layout that the item fits into.
 	bool findFreeSlotForItem(BattleItem *item, RuleInventory *&outSlot, int &outX, int &outY) const;
+	/// Draws an ammo-rounds count badge right-aligned at the top-right of an item footprint.
+	void drawAmmoCount(int rightX, int topY, int count, Uint8 numberColor, Surface *target);
+	/// Picks the ammo badge color (full/mid/low) for a round count vs its capacity.
+	Uint8 ammoStateColor(int count, int capacity) const;
 	/// Checks if two items can be stacked on one another.
 	bool canBeStacked(BattleItem *itemA, BattleItem *itemB);
 	/// Checks for item overlap.
