@@ -39,6 +39,7 @@
 #include "../Mod/Unit.h"
 #include "../Mod/RuleEnviroEffects.h"
 #include "../Mod/RuleInventory.h"
+#include "../Mod/RuleInventoryLayout.h"
 #include "../Mod/RuleItemCategory.h"
 #include "../Mod/RuleSkill.h"
 #include "../Mod/RuleSoldier.h"
@@ -141,6 +142,7 @@ BattleUnit::BattleUnit(const Mod *mod, Soldier *soldier, int depth, const RuleSt
 void BattleUnit::updateArmorFromSoldier(const Mod *mod, Soldier *soldier, const Armor *ruleArmor, int depth, bool nextStage, const RuleStartingCondition* sc)
 {
 	_armor = ruleArmor;
+	resolveInventoryLayout(mod);
 
 	for (int side = 0; side < SIDE_MAX; ++side)
 		_armorDamage[side] = _maxArmorBase[side] = _maxArmor[side] = _currentArmor[side] = 0;
@@ -511,6 +513,7 @@ BattleUnit::BattleUnit(const Mod *mod, const Unit *unit, UnitFaction faction, in
 void BattleUnit::updateArmorFromNonSoldier(const Mod* mod, const Armor* newArmor, int depth, bool nextStage, const RuleStartingCondition* sc)
 {
 	_armor = newArmor;
+	resolveInventoryLayout(mod);
 
 	for (int side = 0; side < SIDE_MAX; ++side)
 		_armorDamage[side] = _maxArmorBase[side] = _maxArmor[side] = _currentArmor[side] = 0;
@@ -3038,6 +3041,11 @@ const std::vector<BattleItem*> *BattleUnit::getInventory() const
 bool BattleUnit::fitItemToInventory(const RuleInventory *slot, BattleItem *item)
 {
 	auto rule = item->getRules();
+	// the unit's layout must actually contain this section (no-op for the default layout)
+	if (_inventoryLayout && !_inventoryLayout->hasSection(slot))
+	{
+		return false;
+	}
 	if (rule->canBePlacedIntoInventorySection(slot) == false)
 	{
 		return false;
@@ -3125,7 +3133,7 @@ bool BattleUnit::addItem(BattleItem *item, const Mod *mod, bool allowSecondClip,
 	if (rule->isFixed())
 	{
 		// either in the default slot provided in the ruleset
-		if (rule->getDefaultInventorySlot())
+		if (rule->getDefaultInventorySlot() && (!_inventoryLayout || _inventoryLayout->hasSection(rule->getDefaultInventorySlot())))
 		{
 			RuleInventory *defaultSlot = const_cast<RuleInventory *>(rule->getDefaultInventorySlot());
 			BattleItem *defaultSlotWeapon = getItem(defaultSlot);
@@ -4388,16 +4396,15 @@ const Armor *BattleUnit::getArmor() const
 }
 
 /**
- * Gets the inventory layout that governs this unit's slots: the one declared by
- * its armor, or the mod's implicit default (all global sections) when the armor
- * declares none. Resolution is O(1), so callers can use it directly per frame.
+ * Resolves and caches the inventory layout that governs this unit's slots: the
+ * one declared by its armor, or the mod's implicit default (all global sections)
+ * when the armor declares none. Called whenever the unit's armor is set.
  * @param mod The mod (provides the default layout).
- * @return The resolved inventory layout.
  */
-const RuleInventoryLayout *BattleUnit::getInventoryLayout(const Mod *mod) const
+void BattleUnit::resolveInventoryLayout(const Mod *mod)
 {
 	const RuleInventoryLayout *layout = _armor->getInventoryLayout();
-	return layout ? layout : mod->getDefaultInventoryLayout();
+	_inventoryLayout = layout ? layout : mod->getDefaultInventoryLayout();
 }
 
 /**

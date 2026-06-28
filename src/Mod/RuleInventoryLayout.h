@@ -65,6 +65,8 @@ public:
 	int getListOrder() const { return _listOrder; }
 	/// Gets the resolved, ordered sections of this layout.
 	const std::vector<const RuleInventory*>& getSections() const { return _sections; }
+	/// Checks whether a given inventory section belongs to this layout.
+	bool hasSection(const RuleInventory* section) const;
 	/// Directly sets the resolved sections (used by Mod to synthesize the implicit default layout).
 	void setSectionsDirectly(std::vector<const RuleInventory*> sections) { _sections = std::move(sections); }
 };

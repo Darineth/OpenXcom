@@ -26,6 +26,7 @@ namespace OpenXcom
 {
 
 class RuleInventory;
+class RuleInventoryLayout;
 class Game;
 class WarningMessage;
 class BattleItem;
@@ -69,6 +70,8 @@ private:
 	void moveItem(BattleItem *item, const RuleInventory *slot, int x, int y);
 	/// Gets the slot in the specified position.
 	RuleInventory *getSlotInPosition(int *x, int *y) const;
+	/// Gets the inventory layout driving the displayed sections (selected unit's, or the mod default).
+	const RuleInventoryLayout *getActiveLayout() const;
 	/// Play a sound.
 	void playSound(int sound);
 public:

@@ -21,6 +21,7 @@
 #include <cmath>
 #include "../Mod/Mod.h"
 #include "../Mod/RuleInventory.h"
+#include "../Mod/RuleInventoryLayout.h"
 #include "../Mod/RuleInterface.h"
 #include "../Engine/Game.h"
 #include "../Engine/Timer.h"
@@ -196,10 +197,8 @@ void Inventory::drawGrid()
 	RuleInterface *rule = _game->getMod()->getInterface("inventory");
 	Uint8 color = rule->getElement("grid")->color;
 
-	for (const auto& invPair : *_game->getMod()->getInventories())
+	for (const auto* ruleInv : getActiveLayout()->getSections())
 	{
-		RuleInventory* ruleInv = invPair.second;
-
 		// Draw grid
 		if (ruleInv->getType() == INV_SLOT)
 		{
@@ -272,10 +271,8 @@ void Inventory::drawGridLabels(bool showTuCost)
 	text.setColor(rule->getElement("textSlots")->color);
 	text.setHighContrast(true);
 
-	// Note: iterating over the (sorted) invs vector instead of invs map, because we want to consider listOrder here
-	for (auto& invName : _game->getMod()->getInvsList())
+	for (const auto* i : getActiveLayout()->getSections())
 	{
-		auto* i = _game->getMod()->getInventory(invName, true);
 		// Draw label
 		text.setX(i->getX());
 		text.setY(i->getY() - text.getFont()->getHeight() - text.getFont()->getSpacing());
@@ -558,14 +555,33 @@ bool Inventory::overlapItems(BattleUnit *unit, BattleItem *item, const RuleInven
  */
 RuleInventory *Inventory::getSlotInPosition(int *x, int *y) const
 {
-	for (const auto& pair : *_game->getMod()->getInventories())
+	for (const auto* section : getActiveLayout()->getSections())
 	{
-		if (pair.second->checkSlotInPosition(x, y))
+		if (section->checkSlotInPosition(x, y))
 		{
-			return pair.second;
+			return const_cast<RuleInventory*>(section);
 		}
 	}
 	return 0;
+}
+
+/**
+ * Gets the inventory layout that drives the sections shown for the current unit:
+ * the selected unit's resolved layout, or the mod's default when no unit is
+ * selected. Never null.
+ * @return The active inventory layout.
+ */
+const RuleInventoryLayout *Inventory::getActiveLayout() const
+{
+	if (_selUnit)
+	{
+		const RuleInventoryLayout *layout = _selUnit->getInventoryLayout();
+		if (layout)
+		{
+			return layout;
+		}
+	}
+	return _game->getMod()->getDefaultInventoryLayout();
 }
 
 /**
@@ -1724,6 +1740,15 @@ void Inventory::arrangeGround(int alterOffset)
  */
 bool Inventory::fitItem(const RuleInventory *newSlot, BattleItem *item, std::string &warning)
 {
+	// the selected unit's layout must actually contain this section (no-op for the default layout)
+	if (_selUnit)
+	{
+		const RuleInventoryLayout *layout = _selUnit->getInventoryLayout();
+		if (layout && !layout->hasSection(newSlot))
+		{
+			return false;
+		}
+	}
 	// Check if this inventory section supports the item
 	if (!item->getRules()->canBePlacedIntoInventorySection(newSlot))
 	{

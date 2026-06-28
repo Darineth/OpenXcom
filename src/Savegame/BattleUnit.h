@@ -168,6 +168,7 @@ private:
 	int _visibilityThroughFire = 100;
 	SpecialAbility _specab;
 	const Armor *_armor;
+	const RuleInventoryLayout *_inventoryLayout = nullptr;
 	SoldierGender _gender;
 	Soldier *_geoscapeSoldier;
 	std::vector<int> _loftempsSet;
@@ -574,8 +575,10 @@ public:
 	void setCustomMarker(int customMarker) { _customMarker = customMarker; }
 	/// Gets the unit's armor.
 	const Armor *getArmor() const;
-	/// Gets the inventory layout this unit uses (the armor's, or the mod default).
-	const RuleInventoryLayout *getInventoryLayout(const Mod *mod) const;
+	/// Gets the inventory layout this unit uses (the armor's, or the mod default). Resolved/cached when the armor is set.
+	const RuleInventoryLayout *getInventoryLayout() const { return _inventoryLayout; }
+	/// Resolves and caches the active inventory layout from the current armor.
+	void resolveInventoryLayout(const Mod *mod);
 	/// Sets the unit's name.
 	void setName(const std::string &name);
 	/// Gets the unit's name.

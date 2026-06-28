@@ -145,4 +145,23 @@ void RuleInventoryLayout::afterLoad(const Mod* mod)
 	}
 }
 
+/**
+ * Checks whether a section belongs to this layout. Section identity is by pointer:
+ * `ref:` entries share the global RuleInventory pointer, inline ones are unique to
+ * the layout, so pointer comparison is exact.
+ * @param section The section to test.
+ * @return True if the section is part of this layout.
+ */
+bool RuleInventoryLayout::hasSection(const RuleInventory* section) const
+{
+	for (const auto* s : _sections)
+	{
+		if (s == section)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 }

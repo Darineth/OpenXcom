@@ -28,6 +28,7 @@
 #include "../Interface/Text.h"
 #include "../Mod/Mod.h"
 #include "../Mod/RuleInventory.h"
+#include "../Mod/RuleInventoryLayout.h"
 #include "../Mod/RuleInterface.h"
 #include "../Savegame/BattleUnit.h"
 #include "../Savegame/SavedGame.h"
@@ -118,20 +119,23 @@ void AlienInventory::drawGrid()
 	RuleInterface *rule = _game->getMod()->getInterface("inventory");
 	Uint8 color = rule->getElement("grid")->color;
 
-	for (const auto& pair : *_game->getMod()->getInventories())
+	const RuleInventoryLayout *layout = _selUnit ? _selUnit->getInventoryLayout() : nullptr;
+	if (!layout)
+		layout = _game->getMod()->getDefaultInventoryLayout();
+	for (const auto* section : layout->getSections())
 	{
-		if (pair.second->getType() == INV_HAND)
+		if (section->getType() == INV_HAND)
 		{
 			SDL_Rect r;
-			r.x = pair.second->getX();
+			r.x = section->getX();
 			r.x += _game->getMod()->getAlienInventoryOffsetX();
 
-			if (pair.second->isRightHand())
+			if (section->isRightHand())
 				r.x -= _dynamicOffset;
-			else if (pair.second->isLeftHand())
+			else if (section->isLeftHand())
 				r.x += _dynamicOffset;
 
-			r.y = pair.second->getY();
+			r.y = section->getY();
 			r.w = RuleInventory::HAND_W * RuleInventory::SLOT_W;
 			r.h = RuleInventory::HAND_H * RuleInventory::SLOT_H;
 			_grid->drawRect(&r, color);
@@ -197,11 +201,14 @@ void AlienInventory::drawItems()
  */
 RuleInventory *AlienInventory::getSlotInPosition(int *x, int *y) const
 {
-	for (const auto& pair : *_game->getMod()->getInventories())
+	const RuleInventoryLayout *layout = _selUnit ? _selUnit->getInventoryLayout() : nullptr;
+	if (!layout)
+		layout = _game->getMod()->getDefaultInventoryLayout();
+	for (const auto* section : layout->getSections())
 	{
-		if (pair.second->checkSlotInPosition(x, y))
+		if (section->checkSlotInPosition(x, y))
 		{
-			return pair.second;
+			return const_cast<RuleInventory*>(section);
 		}
 	}
 	return 0;
