@@ -115,7 +115,7 @@ InventoryState::InventoryState(bool tu, BattlescapeState *parent, Base *base, bo
 	_txtArmorBack = new Text(70, 9, 260, 120);
 	_txtArmorUnder = new Text(70, 9, 260, 128);
 	_txtItem = new Text(160, 9, 128, 140);
-	_txtAmmo = new Text(66, 24, 254, 64);
+	_txtAmmo = new Text(32, 24, 288, 64);
 	_btnOk = new BattlescapeButton(35, 22, 237, 1);
 	_btnPrev = new BattlescapeButton(23, 22, 273, 1);
 	_btnNext = new BattlescapeButton(23, 22, 297, 1);
@@ -134,7 +134,7 @@ InventoryState::InventoryState(bool tu, BattlescapeState *parent, Base *base, bo
 	{
 		_btnLinks = new BattlescapeButton(23, 22, 213, 1);
 	}
-	_selAmmo = new Surface(RuleInventory::HAND_W * RuleInventory::SLOT_W, RuleInventory::HAND_H * RuleInventory::SLOT_H, 272, 88);
+	_selAmmo = new Surface(RuleInventory::HAND_W * RuleInventory::SLOT_W, RuleInventory::HAND_H * RuleInventory::SLOT_H, 288, 88);
 	_inv = new Inventory(_game, 320, 200, 0, 0, _parent == 0);
 	_btnQuickSearch = new TextEdit(this, 40, 9, 244, 140);
 
@@ -166,7 +166,6 @@ InventoryState::InventoryState(bool tu, BattlescapeState *parent, Base *base, bo
 	add(_txtArmorBack, "textStatLine1", "inventory", _bg);
 	add(_txtArmorUnder, "textStatLine1", "inventory", _bg);
 	add(_txtItem, "textItem", "inventory", _bg);
-	add(_txtAmmo, "textAmmo", "inventory", _bg);
 	add(_btnOk, "buttonOK", "inventory", _bg);
 	add(_btnPrev, "buttonPrev", "inventory", _bg);
 	add(_btnNext, "buttonNext", "inventory", _bg);
@@ -176,6 +175,8 @@ InventoryState::InventoryState(bool tu, BattlescapeState *parent, Base *base, bo
 	add(_btnCreateTemplate, "buttonCreate", "inventory", _bg);
 	add(_btnApplyTemplate, "buttonApply", "inventory", _bg);
 	add(_btnLinks, "buttonLinks", "inventory", _bg);
+	// added after the buttons so the ammo preview (text + sprite) draws in front of them
+	add(_txtAmmo, "textAmmo", "inventory", _bg);
 	add(_selAmmo);
 	add(_inv);
 	add(_txtPosition, "textSlot", "inventory", _bg);
