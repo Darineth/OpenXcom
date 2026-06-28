@@ -9,9 +9,10 @@ vanilla behavior in historical order; `BattleUnit` resolves/caches its layout fr
 inventory UI (`Inventory`/`AlienInventory` grid, labels, hit-testing), item placement, quick-move
 (ctrl+click), and start-of-mission auto-equip all iterate the unit's layout; placement primitives and
 the template/equipment-layout apply paths reject non-layout slots (items stay on the ground, with a
-warning for templates). `RuleInventory::getCost` was hardened against undefined section-pair costs.
-See `DX-Features.md` for the shipped behavior. Remaining edge: battlescape-save items whose slot became
-invalid due to a layout/armor definition change after the save are not yet relocated on load.
+warning for templates). Loading a battlescape save whose item slots became invalid due to a
+layout/armor definition change since the save drops those items to the unit's tile (logged).
+`RuleInventory::getCost` was hardened against undefined section-pair costs. See `DX-Features.md` for the
+shipped behavior.
 
 ## Summary
 

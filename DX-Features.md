@@ -47,14 +47,12 @@ Details and behavior:
   sections are drawn, clickable, and valid auto/quick-move targets.
 - **Stranding protection.** Item placement that would force an item into a section the unit's layout
   lacks (loadout templates, persistent equipment layouts saved under a different armor) instead leaves
-  the item on the ground; templates show a warning (`STR_DX_TEMPLATE_SLOT_NOT_IN_LAYOUT`).
+  the item on the ground; templates show a warning (`STR_DX_TEMPLATE_SLOT_NOT_IN_LAYOUT`). Loading a
+  battlescape save whose item slots became invalid because the layout/armor definition changed *since
+  the save* drops those items to the unit's tile (logged), so they stay accessible.
 - **Layout-aware unload.** Weapon unload only uses hand sections present in the unit's layout; when no
   off-hand is available, the ejected ammo is best-fit into another inventory slot (ctrl+click style)
   before falling back to the ground.
-
-Known limitation: loading a battlescape save whose item slots became invalid because the layout/armor
-definition changed *since the save* will leave those items at their old position (engine grounds only
-globally-missing slot ids, not globally-valid-but-not-in-this-layout ones).
 
 ## Inventory Move TU Costs in Pre-Battle Setup
 

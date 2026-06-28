@@ -41,6 +41,7 @@
 #include "../Engine/Game.h"
 #include "../Engine/Sound.h"
 #include "../Mod/RuleInventory.h"
+#include "../Mod/RuleInventoryLayout.h"
 #include "../Battlescape/AIModule.h"
 #include "../Engine/RNG.h"
 #include "../Engine/Options.h"
@@ -403,6 +404,49 @@ void SavedBattleGame::load(const YAML::YamlNodeReader& node, Mod *mod, SavedGame
 				return itemA->getId() < itemB->getId();
 			}
 		);
+	}
+
+	// DX: relocate items stranded in sections that are no longer part of their owner's
+	// inventory layout (e.g. the layout/armor definition changed since the save). The slot is
+	// valid globally, so BattleItem::load kept it, but the unit can't show/use it. Drop such
+	// items to the unit's tile so they remain accessible.
+	const RuleInventory* groundRule = mod->getInventoryGround();
+	for (auto* unit : _units)
+	{
+		const RuleInventoryLayout* layout = unit->getInventoryLayout();
+		if (!layout)
+			continue;
+		Tile* tile = getTile(unit->getPosition());
+		if (!tile)
+			continue;
+		std::vector<BattleItem*> stranded;
+		for (auto* item : *unit->getInventory())
+		{
+			const RuleInventory* slot = item->getSlot();
+			if (slot && slot->getType() != INV_GROUND && !item->getRules()->isFixed() && !layout->hasSection(slot))
+			{
+				stranded.push_back(item);
+			}
+		}
+		for (auto* item : stranded)
+		{
+			const RuleInventory* oldSlot = item->getSlot();
+			auto& inv = *unit->getInventory();
+			for (auto it = inv.begin(); it != inv.end(); ++it)
+			{
+				if (*it == item)
+				{
+					inv.erase(it);
+					break;
+				}
+			}
+			item->setOwner(nullptr);
+			item->setPreviousOwner(nullptr);
+			tile->addItem(item, groundRule);
+			Log(LOG_INFO) << "Item " << item->getRules()->getType() << " was in inventory section "
+				<< (oldSlot ? oldSlot->getId() : std::string("?")) << " not present in unit " << unit->getId()
+				<< "'s layout; dropped to the ground.";
+		}
 	}
 
 	reader.tryRead("vipEscapeType", _vipEscapeType);
