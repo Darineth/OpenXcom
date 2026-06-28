@@ -291,3 +291,16 @@ implementation (see CLAUDE.md "Planning Features").*
     with reaction fire and TU reserves; AI usage; whether the debt is a flat carryover or
     scaled. Touches `BattleUnit` TU accounting (`spendTimeUnits`, `prepareNewTurn`/turn
     recovery) and the action-cost checks that gate actions on available TUs.
+
+- [x] **Editable base damage type properties** — make the built-in damage types' properties
+  moddable instead of hard-coded, so mods can tune the base behavior of each damage type.
+  *(design: [plans/Feature-EditableDamageTypes.md](plans/Feature-EditableDamageTypes.md))*
+  - Implemented via a new top-level `damageTypes:` ruleset node keyed by `ResistType`, which
+    overlays any `RuleDamageType` field (the same set `damageAlter` understands) onto the built-in
+    base table. Applied in a pre-pass across all files before `items:` load (order-independent),
+    so the precedence chain is built-in default -> global `damageTypes:` edit -> per-item
+    `damageAlter`. Slot count stays fixed at 20; `ResistType` is the key (a node cannot remap
+    itself). Resolved questions: all loadable `RuleDamageType` fields are editable; `ResistType`
+    is re-locked after load; out-of-range indices are soft errors; no save format change. Touches
+    [src/Mod/Mod.cpp](src/Mod/Mod.cpp) (`loadMod` pre-pass + `loadEarlyRules`) and
+    [src/Mod/Mod.h](src/Mod/Mod.h).

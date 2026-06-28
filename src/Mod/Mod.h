@@ -348,6 +348,8 @@ private:
 	void loadConstants(const YAML::YamlNodeReader& reader);
 	/// Loads a ruleset from a YAML file.
 	void loadFile(const FileMap::FileRecord &filerec, ModScript &parsers);
+	/// Loads rules that must be applied before the main per-file load (DX), e.g. base damage type overrides.
+	void loadEarlyRules(const FileMap::FileRecord &filerec);
 
 	template<typename T>
 	struct RuleFactory

@@ -8,6 +8,53 @@
 #  Add new throwaway test content below as DX features land.
 # =====================================================================
 
+# =====================================================================
+#  DX: editable base damage types (loadEarlyRules pre-pass)
+#  Give every PHYSICAL damage type the same armor-wear profile so the
+#  Armor Degradation feature can be exercised across weapon types at
+#  once. Special types are intentionally excluded: DT_IN (fire),
+#  DT_STUN, DT_SMOKE (no normal armor interaction) and DT_NONE.
+#  Edited here once instead of per-item damageAlter on every weapon.
+#
+#  Profile applied to AP / HE / LASER / PLASMA / MELEE:
+#    ToArmor: 0.2                 # clean-penetration wear (power * 0.2)
+#    ToArmorBlocked: 0.05         # blocked-hit wear ((origPower - armor*0.5) * 0.05 + 1)
+#    ToArmorBlockedThreshold: 0.5
+#    ToArmorOverPen: 1.0          # smash-through extra wear (power - armor)
+#    ToArmorOverPenThreshold: 2.0
+# =====================================================================
+damageTypes:
+  - ResistType: 1                # DT_AP
+    ToArmor: 0.2
+    ToArmorBlocked: 0.05
+    ToArmorBlockedThreshold: 0.5
+    ToArmorOverPen: 1.0
+    ToArmorOverPenThreshold: 2.0
+  - ResistType: 3                # DT_HE
+    ToArmor: 0.2
+    ToArmorBlocked: 0.05
+    ToArmorBlockedThreshold: 0.5
+    ToArmorOverPen: 1.0
+    ToArmorOverPenThreshold: 2.0
+  - ResistType: 4                # DT_LASER
+    ToArmor: 0.2
+    ToArmorBlocked: 0.05
+    ToArmorBlockedThreshold: 0.5
+    ToArmorOverPen: 1.0
+    ToArmorOverPenThreshold: 2.0
+  - ResistType: 5                # DT_PLASMA
+    ToArmor: 0.2
+    ToArmorBlocked: 0.05
+    ToArmorBlockedThreshold: 0.5
+    ToArmorOverPen: 1.0
+    ToArmorOverPenThreshold: 2.0
+  - ResistType: 7                # DT_MELEE
+    ToArmor: 0.2
+    ToArmorBlocked: 0.05
+    ToArmorBlockedThreshold: 0.5
+    ToArmorOverPen: 1.0
+    ToArmorOverPenThreshold: 2.0
+
 items:
   # -------------------------------------------------------------------
   #  Pistol -> auto-firing shotgun

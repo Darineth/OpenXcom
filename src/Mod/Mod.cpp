@@ -2486,6 +2486,28 @@ void Mod::loadMod(const std::vector<FileMap::FileRecord> &rulesetFiles, ModScrip
 	std::sort(sortedRulesetFiles.begin(), sortedRulesetFiles.end(),
 		[](const FileMap::FileRecord& a, const FileMap::FileRecord& b)
 		{ return a.fullpath > b.fullpath; });
+
+	// DX: early-load pass. Some rules must reach the mod tables before the main per-file load runs.
+	// Currently this applies base damage type overrides: RuleItem::load() copies the base
+	// RuleDamageType by value, so a 'damageTypes:' override must land before any item is loaded.
+	// Apply every file's early rules in this dedicated pre-pass (in the same sorted order, so
+	// last-wins per field) before the main per-file loop touches 'items:'.
+	for (const auto& filerec : sortedRulesetFiles)
+	{
+		try
+		{
+			loadEarlyRules(filerec);
+		}
+		catch (Exception &e)
+		{
+			throw Exception(filerec.fullpath + ": " + std::string(e.what()));
+		}
+		catch (YAML::Exception &e)
+		{
+			throw Exception(filerec.fullpath + ": " + std::string(e.what()));
+		}
+	}
+
 	for (const auto& filerec : sortedRulesetFiles)
 	{
 		Log(LOG_VERBOSE) << "- " << filerec.fullpath;
@@ -2727,6 +2749,43 @@ void Mod::loadConstants(const YAML::YamlNodeReader &reader)
  * @param filename YAML filename.
  * @param parsers Object with all available parsers.
  */
+/**
+ * Loads a single file's early rules (DX): rules that must be applied before the main per-file load.
+ * Run as a pre-pass over all files before any items load.
+ *
+ * Currently this handles the 'damageTypes:' node (editable base damage types). RuleItem copies the
+ * base RuleDamageType by value at load time, so a base override must land first. Each entry selects
+ * the slot to edit via 'ResistType' and overlays any RuleDamageType fields present; the precedence
+ * chain is base default -> this global edit -> per-item 'damageAlter'.
+ * @param filerec File to scan for early rules.
+ */
+void Mod::loadEarlyRules(const FileMap::FileRecord &filerec)
+{
+	YAML::YamlRootNodeReader r = filerec.getYAML();
+	YAML::YamlNodeReader reader = r.useIndex();
+
+	const auto& node = reader["damageTypes"];
+	if (!node)
+	{
+		return;
+	}
+
+	for (const auto& dtReader : node.children())
+	{
+		int idx = -1;
+		dtReader.tryRead("ResistType", idx);
+		if (checkForSoftError(idx < 0 || idx >= DAMAGE_TYPES, "damageTypes", dtReader,
+			"Invalid or missing 'ResistType' " + std::to_string(idx) + " (must be 0.." + std::to_string(DAMAGE_TYPES - 1) + ")", LOG_ERROR))
+		{
+			continue;
+		}
+
+		_damageTypes[idx]->load(dtReader);
+		// 'ResistType' is the slot key, not a mutable field: re-lock it so an entry cannot remap itself.
+		_damageTypes[idx]->ResistType = static_cast<ItemDamageType>(idx);
+	}
+}
+
 void Mod::loadFile(const FileMap::FileRecord &filerec, ModScript &parsers)
 {
 	YAML::YamlRootNodeReader r = filerec.getYAML();

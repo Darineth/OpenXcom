@@ -24,6 +24,42 @@ further stages: one for "nearly penetrated but was stopped" hits (`ToArmorBlocke
 / `0.5`) and one for "smashed clean through" hits (`ToArmorOverPen`, defaults `0.0` / `2.0`). All
 defaults are no-ops, so existing mods keep their prior behavior until they opt in.
 
+## Editable Base Damage Types
+
+The built-in damage types (`DT_AP`, `DT_IN`, `DT_HE`, `DT_LASER`, `DT_PLASMA`, `DT_STUN`,
+`DT_MELEE`, `DT_ACID`, `DT_SMOKE`, plus the ten spare slots `DT_10`..`DT_19`) can now be retuned
+globally with a new top-level `damageTypes:` ruleset node, instead of overriding `damageAlter` on
+every weapon. Each entry selects a slot via `ResistType` and overlays any field that per-item
+`damageAlter` already understands (the `To*` multipliers, `Random*`/`Ignore*` flags,
+`ArmorEffectiveness`, `RadiusEffectiveness`, `TileDamageMethod`, thresholds, etc.):
+
+```yaml
+damageTypes:
+  - ResistType: 1        # DT_AP — retune armor-piercing globally
+    ToArmor: 0.2
+    ArmorEffectiveness: 1.1
+  - ResistType: 10       # DT_10 — give a spare slot real behavior (e.g. EMP/cold/sonic)
+    RandomType: 1
+    ToHealth: 1.0
+    ToStun: 0.5
+    IgnoreDirection: true
+```
+
+Behavior and compatibility:
+
+- All `damageTypes:` nodes are applied in a pre-pass across every ruleset file **before** any
+  `items:` load, so it does not matter which file (or in what order) defines the override; the
+  result is order-independent (last-wins per field, in file sort order). This is required because
+  `RuleItem` copies the base damage type by value at load time.
+- Precedence chain: built-in engine default → global `damageTypes:` edit → per-item `damageAlter`.
+- `ResistType` is the lookup key only and is re-locked after load — a node cannot remap itself to a
+  different slot. Out-of-range indices are reported as soft errors.
+- The slot count remains fixed at 20 (`DT_NONE`..`DT_19`); adding more types is not supported.
+- This is mod data, not savegame state, so there is no save-format change. Retuning base damage
+  does shift balance for existing saves.
+- The first cut reuses the existing `STR_DAMAGE_1x` strings for spare-slot display names; mods can
+  localize those keys.
+
 ## Item Stats & Stat Modifiers
 
 Items and armors can now apply generic stat effects using ruleset fields:
