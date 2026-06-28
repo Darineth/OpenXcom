@@ -27,7 +27,7 @@ namespace OpenXcom
  * Creates a new, empty combat log.
  * @param maxEntries Maximum number of entries kept (older ones scroll off the top).
  */
-CombatLog::CombatLog(size_t maxEntries) : _maxEntries(maxEntries)
+CombatLog::CombatLog(size_t maxEntries) : _maxEntries(maxEntries), _revision(0)
 {
 }
 
@@ -43,6 +43,8 @@ void CombatLog::add(const std::string &text, CombatLogOutcome outcome)
 	{
 		_entries.pop_front();
 	}
+	// Always a content change, even when full (one popped, one pushed -> same count) — bump so viewers redraw.
+	++_revision;
 }
 
 /**
@@ -56,6 +58,7 @@ void CombatLog::setMaxEntries(size_t maxEntries)
 	while (_entries.size() > _maxEntries)
 	{
 		_entries.pop_front();
+		++_revision;
 	}
 }
 
@@ -75,6 +78,10 @@ bool CombatLog::prune()
 		_entries.pop_front();
 		changed = true;
 	}
+	if (changed)
+	{
+		++_revision;
+	}
 	return changed;
 }
 
@@ -83,7 +90,11 @@ bool CombatLog::prune()
  */
 void CombatLog::clear()
 {
-	_entries.clear();
+	if (!_entries.empty())
+	{
+		_entries.clear();
+		++_revision;
+	}
 }
 
 }

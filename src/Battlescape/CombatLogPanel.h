@@ -40,7 +40,7 @@ private:
 	CombatLog *_log;
 	Uint8 _colors[OUTCOME_MAX];
 	int _lineHeight;
-	size_t _lastCount;
+	size_t _lastRevision;
 public:
 	/// Creates a combat log panel with the specified size and position.
 	CombatLogPanel(int width, int height, int x = 0, int y = 0);

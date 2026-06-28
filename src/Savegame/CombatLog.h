@@ -61,6 +61,7 @@ class CombatLog
 private:
 	std::deque<CombatLogEntry> _entries;
 	size_t _maxEntries;
+	size_t _revision; ///< Bumped on every content change so viewers can detect updates even when the entry count is unchanged (e.g. add-while-full pops one and pushes one).
 public:
 	/// Creates a combat log with the given visible cap (entry lifetime comes from the live option).
 	CombatLog(size_t maxEntries = 20);
@@ -74,6 +75,8 @@ public:
 	void clear();
 	/// Gets the current entries, oldest first.
 	const std::deque<CombatLogEntry> &getEntries() const { return _entries; }
+	/// Gets a counter that changes whenever the log's contents change (for redraw detection).
+	size_t getRevision() const { return _revision; }
 };
 
 }

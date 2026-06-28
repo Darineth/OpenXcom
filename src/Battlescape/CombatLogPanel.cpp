@@ -29,7 +29,7 @@ namespace OpenXcom
  * @param x X position in pixels.
  * @param y Y position in pixels.
  */
-CombatLogPanel::CombatLogPanel(int width, int height, int x, int y) : Surface(width, height, x, y), _log(0), _lineHeight(9), _lastCount(0)
+CombatLogPanel::CombatLogPanel(int width, int height, int x, int y) : Surface(width, height, x, y), _log(0), _lineHeight(9), _lastRevision(0)
 {
 	_text = new Text(width, _lineHeight, 0, 0);
 	_text->setHighContrast(true);
@@ -110,10 +110,12 @@ void CombatLogPanel::think()
 	{
 		return;
 	}
-	bool changed = _log->prune();
-	if (changed || _log->getEntries().size() != _lastCount)
+	_log->prune();
+	// Redraw whenever the log's contents changed. Use the revision counter, not the entry count:
+	// once the log is full, an add() pops one and pushes one, leaving the count unchanged.
+	if (_log->getRevision() != _lastRevision)
 	{
-		_lastCount = _log->getEntries().size();
+		_lastRevision = _log->getRevision();
 		_redraw = true;
 	}
 }
