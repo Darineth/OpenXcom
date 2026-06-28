@@ -2240,6 +2240,33 @@ void Mod::loadAll()
 	_soundOffsetBattle = _sounds["BATTLE.CAT"]->getMaxSharedSounds();
 	_soundOffsetGeo = _sounds["GEO.CAT"]->getMaxSharedSounds();
 
+	Log(LOG_INFO) << "Loading early rules...";
+	// DX: sweep early rules (e.g. 'damageTypes:') from EVERY mod before ANY mod loads its items.
+	// RuleItem copies the base RuleDamageType by value at load time, so this must run globally and
+	// up front: otherwise a later mod could not retune a damage type that an earlier-loaded mod's
+	// (e.g. the master's) items inherit. Mods are processed in load order, files within a mod in the
+	// same sorted order loadMod uses, so the result is last-wins per field across the whole load.
+	for (size_t i = 0; mods.size() > i; ++i)
+	{
+		try
+		{
+			_modCurrent = &_modData.at(i);
+			std::vector<FileMap::FileRecord> sortedRulesetFiles = mods[i].second;
+			std::sort(sortedRulesetFiles.begin(), sortedRulesetFiles.end(),
+				[](const FileMap::FileRecord& a, const FileMap::FileRecord& b)
+				{ return a.fullpath > b.fullpath; });
+			for (const auto& filerec : sortedRulesetFiles)
+			{
+				loadEarlyRules(filerec);
+			}
+		}
+		catch (Exception &e)
+		{
+			const std::string &modId = mods[i].first;
+			throwModOnErrorHelper(modId, e.what());
+		}
+	}
+
 	Log(LOG_INFO) << "Loading rulesets...";
 	// load rest rulesets
 	for (size_t i = 0; mods.size() > i; ++i)
@@ -2487,26 +2514,9 @@ void Mod::loadMod(const std::vector<FileMap::FileRecord> &rulesetFiles, ModScrip
 		[](const FileMap::FileRecord& a, const FileMap::FileRecord& b)
 		{ return a.fullpath > b.fullpath; });
 
-	// DX: early-load pass. Some rules must reach the mod tables before the main per-file load runs.
-	// Currently this applies base damage type overrides: RuleItem::load() copies the base
-	// RuleDamageType by value, so a 'damageTypes:' override must land before any item is loaded.
-	// Apply every file's early rules in this dedicated pre-pass (in the same sorted order, so
-	// last-wins per field) before the main per-file loop touches 'items:'.
-	for (const auto& filerec : sortedRulesetFiles)
-	{
-		try
-		{
-			loadEarlyRules(filerec);
-		}
-		catch (Exception &e)
-		{
-			throw Exception(filerec.fullpath + ": " + std::string(e.what()));
-		}
-		catch (YAML::Exception &e)
-		{
-			throw Exception(filerec.fullpath + ": " + std::string(e.what()));
-		}
-	}
+	// NOTE: DX early rules (e.g. 'damageTypes:') are NOT loaded here. They are swept across ALL mods
+	// in loadAll() before any mod's items load, so a later mod can retune a damage type that an
+	// earlier mod's (e.g. the master's) items will inherit. See Mod::loadEarlyRules.
 
 	for (const auto& filerec : sortedRulesetFiles)
 	{
@@ -2750,8 +2760,9 @@ void Mod::loadConstants(const YAML::YamlNodeReader &reader)
  * @param parsers Object with all available parsers.
  */
 /**
- * Loads a single file's early rules (DX): rules that must be applied before the main per-file load.
- * Run as a pre-pass over all files before any items load.
+ * Loads a single file's early rules (DX): rules that must be applied before any items load.
+ * Called from loadAll() as a pre-pass over EVERY mod's rulesets (not just the current mod's) so
+ * that a later mod can retune config an earlier-loaded mod's items will inherit.
  *
  * Currently this handles the 'damageTypes:' node (editable base damage types). RuleItem copies the
  * base RuleDamageType by value at load time, so a base override must land first. Each entry selects
@@ -2780,9 +2791,10 @@ void Mod::loadEarlyRules(const FileMap::FileRecord &filerec)
 			continue;
 		}
 
-		_damageTypes[idx]->load(dtReader);
+		auto dt = _damageTypes[idx];
+		dt->load(dtReader);
 		// 'ResistType' is the slot key, not a mutable field: re-lock it so an entry cannot remap itself.
-		_damageTypes[idx]->ResistType = static_cast<ItemDamageType>(idx);
+		dt->ResistType = static_cast<ItemDamageType>(idx);
 	}
 }
 

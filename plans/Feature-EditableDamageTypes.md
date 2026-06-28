@@ -1,8 +1,8 @@
 # Feature: Editable Base Damage Type Properties
 
-**Status:** Implemented. Top-level `damageTypes:` node, applied via a cross-file early-load pre-pass
-in `Mod::loadMod` (`loadEarlyRules`) before any `items:` load. Resolutions to the open questions are
-noted inline below.
+**Status:** Implemented. Top-level `damageTypes:` node, applied via a global early-load pre-pass in
+`Mod::loadAll` (`loadEarlyRules`) that sweeps every mod's rulesets before any `items:` load.
+Resolutions to the open questions are noted inline below.
 
 ## Motivation
 
@@ -125,11 +125,14 @@ makes the *numeric behavior* editable, reusing existing strings.
 
 ## Resolutions
 
-1. **Cross-file load ordering → option (b), pre-pass.** `Mod::loadMod` now runs `loadEarlyRules`
-   (a generic early-load pass that currently handles `damageTypes:`) over every sorted ruleset file
-   *before* the main per-file loop that loads `items:`. Overrides therefore reach `_damageTypes`
-   regardless of which file defines them; last-wins per field in file sort order. `loadFile` does
-   **not** also process `damageTypes:` (the pre-pass owns it).
+1. **Cross-file / cross-mod load ordering → option (b), global pre-pass.** `Mod::loadAll` runs
+   `loadEarlyRules` (a generic early-load pass that currently handles `damageTypes:`) over **every
+   mod's** rulesets *before* the main per-mod loop that loads `items:`. This must be global, not
+   per-mod: because each mod's `loadMod` loads that mod's items, a per-mod pre-pass could not let a
+   later mod retune a damage type that an earlier-loaded mod's (e.g. the master's) items inherit.
+   Mods are swept in load order, files within a mod in the same sorted order `loadMod` uses, so the
+   result is last-wins per field across the whole load. Neither `loadMod` nor `loadFile` processes
+   `damageTypes:` (the global pre-pass owns it).
 2. **Fields exposed → all of `RuleDamageType::load()`'s fields**, reused as-is.
 3. **`ResistType` as key → re-locked.** After `_damageTypes[idx]->load(node)`, the loader forces
    `ResistType = idx` so an entry cannot remap itself to another slot.

@@ -302,5 +302,5 @@ implementation (see CLAUDE.md "Planning Features").*
     `damageAlter`. Slot count stays fixed at 20; `ResistType` is the key (a node cannot remap
     itself). Resolved questions: all loadable `RuleDamageType` fields are editable; `ResistType`
     is re-locked after load; out-of-range indices are soft errors; no save format change. Touches
-    [src/Mod/Mod.cpp](src/Mod/Mod.cpp) (`loadMod` pre-pass + `loadEarlyRules`) and
+    [src/Mod/Mod.cpp](src/Mod/Mod.cpp) (`loadAll` global pre-pass + `loadEarlyRules`) and
     [src/Mod/Mod.h](src/Mod/Mod.h).

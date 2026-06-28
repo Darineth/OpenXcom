@@ -47,10 +47,11 @@ damageTypes:
 
 Behavior and compatibility:
 
-- All `damageTypes:` nodes are applied in a pre-pass across every ruleset file **before** any
-  `items:` load, so it does not matter which file (or in what order) defines the override; the
-  result is order-independent (last-wins per field, in file sort order). This is required because
-  `RuleItem` copies the base damage type by value at load time.
+- All `damageTypes:` nodes are applied in a global pre-pass across **every mod's** rulesets
+  **before** any `items:` load, so it does not matter which file or which mod defines the override;
+  a later mod can retune a damage type that an earlier-loaded mod's (e.g. the master's) items
+  inherit. Mods are swept in load order (last-wins per field). This is required because `RuleItem`
+  copies the base damage type by value at load time.
 - Precedence chain: built-in engine default → global `damageTypes:` edit → per-item `damageAlter`.
 - `ResistType` is the lookup key only and is re-locked after load — a node cannot remap itself to a
   different slot. Out-of-range indices are reported as soft errors.
