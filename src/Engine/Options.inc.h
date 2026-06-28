@@ -149,6 +149,8 @@ OPT bool oxceBaseManufactureInfinityButton;
 OPT bool oxceBaseTouchButtons;
 
 OPT bool combatLogEnabled;
+OPT bool combatLogVerbose;
+OPT int combatLogDuration;
 OPT bool hoveredUnitNameEnabled;
 OPT bool grenadeIndicatorEnabled;
 OPT bool unitStatusIndicatorEnabled;

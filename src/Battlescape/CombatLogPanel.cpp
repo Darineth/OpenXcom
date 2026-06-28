@@ -52,6 +52,20 @@ CombatLogPanel::~CombatLogPanel()
 }
 
 /**
+ * Sets the log this panel reads from and caps it to the number of lines that fit,
+ * so entries beyond the visible area are pruned as new ones are added.
+ * @param log The combat log to display.
+ */
+void CombatLogPanel::setLog(CombatLog *log)
+{
+	_log = log;
+	if (_log && _lineHeight > 0)
+	{
+		_log->setMaxEntries((size_t)(getHeight() / _lineHeight));
+	}
+}
+
+/**
  * Sets the display color for a given outcome type.
  * @param outcome Outcome type.
  * @param color Palette color index.

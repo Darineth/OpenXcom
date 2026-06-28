@@ -71,3 +71,10 @@ items:
   - type: STR_ROCKET_LAUNCHER
     stats:
       tu: -10
+
+# =====================================================================
+#  User options forced on while this test mod is active
+# =====================================================================
+fixedUserOptions:
+  combatLogVerbose: true   # DX: extra detail in the combat log (hidden option)
+

@@ -18,6 +18,7 @@
  */
 #include "CombatLog.h"
 #include <SDL.h>
+#include "../Engine/Options.h"
 
 namespace OpenXcom
 {
@@ -25,9 +26,8 @@ namespace OpenXcom
 /**
  * Creates a new, empty combat log.
  * @param maxEntries Maximum number of entries kept (older ones scroll off the top).
- * @param lifetime How long, in milliseconds, an entry stays before fading off.
  */
-CombatLog::CombatLog(size_t maxEntries, unsigned int lifetime) : _maxEntries(maxEntries), _lifetime(lifetime)
+CombatLog::CombatLog(size_t maxEntries) : _maxEntries(maxEntries)
 {
 }
 
@@ -46,6 +46,20 @@ void CombatLog::add(const std::string &text, CombatLogOutcome outcome)
 }
 
 /**
+ * Sets the maximum number of entries kept, pruning the oldest immediately if the
+ * new cap is smaller than the current count.
+ * @param maxEntries New visible cap.
+ */
+void CombatLog::setMaxEntries(size_t maxEntries)
+{
+	_maxEntries = maxEntries;
+	while (_entries.size() > _maxEntries)
+	{
+		_entries.pop_front();
+	}
+}
+
+/**
  * Removes entries that have outlived their lifetime. Entries are stored oldest-first,
  * so expired ones are always at the front.
  * @return True if at least one entry was removed.
@@ -54,7 +68,9 @@ bool CombatLog::prune()
 {
 	bool changed = false;
 	Uint32 now = SDL_GetTicks();
-	while (!_entries.empty() && (now - _entries.front().born) >= _lifetime)
+	// Entry lifetime is the live DX option value (seconds), read directly so duration changes apply immediately.
+	Uint32 lifetime = (Uint32)Options::combatLogDuration * 1000;
+	while (!_entries.empty() && (now - _entries.front().born) >= lifetime)
 	{
 		_entries.pop_front();
 		changed = true;

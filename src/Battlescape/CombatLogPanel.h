@@ -47,7 +47,7 @@ public:
 	/// Cleans up the combat log panel.
 	~CombatLogPanel();
 	/// Sets the log this panel reads from.
-	void setLog(CombatLog *log) { _log = log; }
+	void setLog(CombatLog *log);
 	/// Sets the display color for an outcome type.
 	void setOutcomeColor(CombatLogOutcome outcome, Uint8 color);
 	/// Initializes the panel's text resources.

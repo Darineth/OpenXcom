@@ -1,6 +1,6 @@
 # Feature - Combat Log
 
-**Status:** ✅ Implemented. Core infrastructure plus all scoped emit points (#1–#8) are wired and committed. Remaining items are optional/deferred only: pre-fire no-LOF warnings (#8b), finer research-gated text (#9), and configurable options (#10).
+**Status:** ✅ Implemented. Core infrastructure plus all scoped emit points (#1–#8) are wired and committed. A hidden `combatLogVerbose` option (#12) gates extra diagnostic detail, starting with per-side armor-damage lines. Remaining items are optional/deferred only: pre-fire no-LOF warnings (#8b), finer research-gated text (#9), and configurable options (#10).
 
 ## Overview
 
@@ -10,7 +10,7 @@ A floating, centered combat log displayed at the top of the battlescape screen. 
 
 The log is a transient store (`CombatLog`) owned by `SavedBattleGame`. Combat code calls `appendToCombatLog(text, outcome)` to push already-localized entries. A display widget (`CombatLogPanel`) reads the entries and draws them centered at the top of the screen, one per line, colored by outcome. Entries older than 8 seconds are pruned; the log caps at 20 visible entries (oldest scroll off first).
 
-The store is **not serialized** — it lives only for the duration of a battle and is cleared on new battle start.
+The store is **not serialized** — it lives only for the duration of a battle and is cleared on new battle start. Each entry's lifetime is `Options::combatLogDuration` seconds (advanced option, default 8, range 1–60), read directly by `CombatLog::prune()` each frame, so duration changes take effect immediately, even mid-battle.
 
 ## Key files
 
@@ -18,9 +18,9 @@ The store is **not serialized** — it lives only for the duration of a battle a
 |------|------|
 | `src/Savegame/CombatLog.h/.cpp` | Core store: outcome enum, entry struct, add/prune/clear |
 | `src/Battlescape/CombatLogPanel.h/.cpp` | Display widget: reads log, draws centered color-coded lines |
-| `src/Savegame/SavedBattleGame.h/.cpp` | Ownership + helpers: emit API (`appendToCombatLog`), naming (`getCombatLogName`, `getCombatLogWeaponName`), tone (`combatLogVictimOutcome`, `combatLogActorOutcome`), and per-event loggers (`logUnitEvent`, `logKillEvent`, `logFireEvent`, `logThrowEvent`, `logMeleeEvent`, `logHitEvent`, `logPanicEvent`, `logOutOfAmmoEvent`) |
+| `src/Savegame/SavedBattleGame.h/.cpp` | Ownership + helpers: emit API (`appendToCombatLog`), naming (`getCombatLogName`, `getCombatLogWeaponName`), tone (`combatLogVictimOutcome`, `combatLogActorOutcome`), and per-event loggers (`logUnitEvent`, `logKillEvent`, `logFireEvent`, `logThrowEvent`, `logMeleeEvent`, `logHitEvent`, `logArmorDamageEvent`, `logDamageCalcEvent`, `logPanicEvent`, `logOutOfAmmoEvent`) |
 | `src/Battlescape/BattlescapeState.h/.cpp` | Panel instantiation, interface ruleset theming, visibility toggle |
-| `src/Engine/Options.inc.h` / `Options.cpp` | `combatLogEnabled` option registration |
+| `src/Engine/Options.inc.h` / `Options.cpp` | `combatLogEnabled` option registration; `combatLogDuration` (entry lifetime, seconds) advanced option; hidden `combatLogVerbose` option for extra diagnostic detail |
 | `bin/standard/xcom1/interfaces.rul` / `xcom2` | `combatLog` element + four outcome color slots (`combatLogNeutral`, `combatLogGood`, `combatLogWarning`, `combatLogBad`) |
 | `bin/common/Language/DX/en-US.yml` | DX language strings (`STR_COMBATLOG_*`) |
 
@@ -55,12 +55,14 @@ All planned emit points are active:
 | 1 | New turn | `NextTurnState.cpp:289` | NEUTRAL | ✅ Active |
 | 2 | Kill / stun (casualties) | `BattlescapeGame.cpp:951` + `SavedBattleGame.cpp:3530-3539` | GOOD/BAD via faction | ✅ Active |
 | 3 | Any unit fires / throws | `ProjectileFlyBState.cpp::createNewProjectile` + `SavedBattleGame::logFireEvent`/`logThrowEvent` | actor-based | ✅ Active |
-| 3b | Any unit melee attack | `MeleeAttackBState.cpp::init` + `SavedBattleGame::logMeleeEvent` | actor-based | ✅ Active |
-| 4 | Hit / damage on a unit | `TileEngine.cpp::hitUnit` + `SavedBattleGame::logHitEvent` | GOOD/BAD via victim | ✅ Active |
-| 5 | Reaction fire | `BattleAction::reaction` flag (set in `TileEngine::tryReaction`) → reaction-variant wording in #3 fire/melee lines | actor-based | ✅ Active |
-| 6 | Unit takes damage | — superseded by #4 (same `hitUnit` hook) | GOOD/BAD via victim | ✅ via #4 |
-| 7 | Panic / berserk | `BattlescapeGame::handlePanickingUnit` + `SavedBattleGame::logPanicEvent` | GOOD/BAD via unit | ✅ Active |
-| 8 | Out-of-ammo (weapon emptied by the shot) | `ProjectileFlyBState::createNewProjectile` + `SavedBattleGame::logOutOfAmmoEvent` | WARNING | ✅ Active |
+| 4 | Any unit melee attack | `MeleeAttackBState.cpp::init` + `SavedBattleGame::logMeleeEvent` | actor-based | ✅ Active |
+| 5 | Hit / damage on a unit | `TileEngine.cpp::hitUnit` + `SavedBattleGame::logHitEvent` | GOOD/BAD via victim | ✅ Active |
+| 6 | Reaction fire | `BattleAction::reaction` flag (set in `TileEngine::tryReaction`) → reaction-variant wording in #3 fire/melee lines | actor-based | ✅ Active |
+| 7 | Unit takes damage | — superseded by #4 (same `hitUnit` hook) | GOOD/BAD via victim | ✅ via #4 |
+| 8 | Panic / berserk | `BattlescapeGame::handlePanickingUnit` + `SavedBattleGame::logPanicEvent` | GOOD/BAD via unit | ✅ Active |
+| 9 | Out-of-ammo (weapon emptied by the shot) | `ProjectileFlyBState::createNewProjectile` + `SavedBattleGame::logOutOfAmmoEvent` | WARNING | ✅ Active |
+| 10 | Armor takes damage (verbose only) | `BattleUnit::damage` + `SavedBattleGame::logArmorDamageEvent` | GOOD/BAD via victim | ✅ Active (gated on `combatLogVerbose`) |
+| 11 | Damage calculation breakdown (verbose only) | `BattleUnit::damage` + `SavedBattleGame::logDamageCalcEvent` | GOOD/BAD via victim | ✅ Active (gated on `combatLogVerbose`) |
 
 ---
 
@@ -123,4 +125,17 @@ The current `getCombatLogName()` already handles basic knowledge-aware naming ("
 - Both would follow the existing pattern in `Options.inc.h` / `Options.cpp`.
 
 ### 11. Localization strings ✅ DONE
-All combat-log strings live in `bin/common/Language/DX/en-US.yml` under the `#=== DX Combat Log ===` section. The full set added during wiring is documented per emit-point in the **Strings:** line of each section above (fire/throw/shot-type, melee, hit/damage/wounds, reaction variants, panic/berserk, out-of-ammo). No keys outstanding.
+
+### 12. Verbose armor damage ✅ DONE
+**Option:** `combatLogVerbose` — a hidden (HIDDEN-category) DX option, default off, registered in `createOptionsDX()`. Not shown in the Advanced Options menu, but settable by mods via `fixedUserOptions`/`recommendedUserOptions`. The bundled `dx-test` mod forces it on so the behavior is easy to observe.
+**Hook:** `BattleUnit::damage`, right after the per-side armor reduction (`setValueMax(_currentArmor[side], ...)`). The armor actually lost this hit is computed as the drop in `_currentArmor[side]`, and when `Options::combatLogVerbose` is on and the loss is positive, `SavedBattleGame::logArmorDamageEvent(this, lost, side)` is called.
+**What:** Logs "{0}'s {1} armor takes {2} damage" with the unit's knowledge-aware name and the side word (front/left/right/rear/under). Always shows the exact amount — it is a developer-facing diagnostic.
+**Color:** `combatLogVictimOutcome(unit)` — our unit's armor loss is BAD, an enemy's is GOOD.
+**Strings:** `STR_COMBATLOG_ARMOR_DAMAGE`, `STR_COMBATLOG_ARMOR_SIDE_FRONT/LEFT/RIGHT/REAR/UNDER`.
+
+### 13. Verbose damage calculation ✅ DONE
+**Option:** Same hidden `combatLogVerbose` gate as #12.
+**Hook:** `BattleUnit::damage`, at the same per-side armor-reduction point. The hook captures `rawDamage` (damage reaching the armor after resistance/scripts), `effectiveArmorUsed` (`getArmor(side) * type->ArmorEffectiveness`, rounded — the value actually subtracted), the penetrating damage left after armor (`std::max(0, damage)`), and the final health damage (`std::get<toHealth>(args.data)`), then calls `SavedBattleGame::logDamageCalcEvent(this, side, incoming, armor, penetrating, health)`. Fires on every hit that deals positive damage (not only when armor is lost), so it always pairs with #5's hit line and optionally #12's armor-degradation line.
+**What:** Logs "{0}'s {1}: {2} damage vs {3} armor, {4} through ({5} to health)" so the armor maths are legible at a glance. Always exact — developer-facing diagnostic.
+**Color:** `combatLogVictimOutcome(unit)` — damage to our unit is BAD, to an enemy GOOD.
+**Strings:** `STR_COMBATLOG_DAMAGE_CALC` (reuses the `STR_COMBATLOG_ARMOR_SIDE_*` side words).

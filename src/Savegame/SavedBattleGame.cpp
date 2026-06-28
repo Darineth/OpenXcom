@@ -3726,6 +3726,77 @@ void SavedBattleGame::logHitEvent(const BattleUnit *attacker, const BattleUnit *
 }
 
 /**
+ * Logs a unit's armor absorbing damage on a given side, reading "<unit>'s <side> armor takes
+ * <amount> damage". This is verbose-only diagnostic detail (gated by Options::combatLogVerbose at
+ * the call site), so it always reports the exact amount regardless of research. Tone follows the
+ * victim: armor lost by our own unit is bad, an enemy's is good.
+ * @param unit The unit whose armor was damaged.
+ * @param amount Points of armor lost.
+ * @param side Which armor side took the damage.
+ */
+void SavedBattleGame::logArmorDamageEvent(const BattleUnit *unit, int amount, UnitSide side)
+{
+	if (!unit || amount <= 0)
+	{
+		return;
+	}
+
+	static const char *const sideKeys[SIDE_MAX] = {
+		"STR_COMBATLOG_ARMOR_SIDE_FRONT",
+		"STR_COMBATLOG_ARMOR_SIDE_LEFT",
+		"STR_COMBATLOG_ARMOR_SIDE_RIGHT",
+		"STR_COMBATLOG_ARMOR_SIDE_REAR",
+		"STR_COMBATLOG_ARMOR_SIDE_UNDER",
+	};
+	if (side < 0 || side >= SIDE_MAX)
+	{
+		return;
+	}
+
+	std::string sideName = _lang->getString(sideKeys[side]);
+	_combatLog->add(_lang->getString("STR_COMBATLOG_ARMOR_DAMAGE")
+		.arg(getCombatLogName(unit)).arg(sideName).arg(amount), combatLogVictimOutcome(unit));
+}
+
+/**
+ * Logs the armor/damage calculation for a single hit, reading "<unit>'s <side>: <incoming> damage
+ * vs <armor> armor, <penetrating> through (<health> to health)". This is verbose-only diagnostic
+ * detail (gated by Options::combatLogVerbose at the call site) meant to make the armor maths
+ * legible, so it always reports the exact numbers regardless of research. Tone follows the victim:
+ * damage to our own unit is bad, to an enemy good.
+ * @param unit The unit that was hit.
+ * @param side Which armor side was struck.
+ * @param incoming Damage reaching the armor (after resistance/scripts, before armor subtraction).
+ * @param armor Effective armor value subtracted on that side (armor * ArmorEffectiveness, rounded).
+ * @param penetrating Damage left after armor (clamped to 0).
+ * @param health Health damage finally dealt by this hit.
+ */
+void SavedBattleGame::logDamageCalcEvent(const BattleUnit *unit, UnitSide side, int incoming, int armor, int penetrating, int health)
+{
+	if (!unit)
+	{
+		return;
+	}
+
+	static const char *const sideKeys[SIDE_MAX] = {
+		"STR_COMBATLOG_ARMOR_SIDE_FRONT",
+		"STR_COMBATLOG_ARMOR_SIDE_LEFT",
+		"STR_COMBATLOG_ARMOR_SIDE_RIGHT",
+		"STR_COMBATLOG_ARMOR_SIDE_REAR",
+		"STR_COMBATLOG_ARMOR_SIDE_UNDER",
+	};
+	if (side < 0 || side >= SIDE_MAX)
+	{
+		return;
+	}
+
+	std::string sideName = _lang->getString(sideKeys[side]);
+	_combatLog->add(_lang->getString("STR_COMBATLOG_DAMAGE_CALC")
+		.arg(getCombatLogName(unit)).arg(sideName).arg(incoming).arg(armor).arg(penetrating).arg(health),
+		combatLogVictimOutcome(unit));
+}
+
+/**
  * Logs a unit losing morale control, reading "<unit> panics" or "<unit> goes berserk". A hostile
  * the player can't currently see is not logged (no leaking unseen enemy morale). Tone follows the
  * unit (combatLogVictimOutcome): one of ours losing control is bad, an enemy losing it is good.

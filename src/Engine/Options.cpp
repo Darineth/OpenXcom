@@ -644,12 +644,15 @@ void createControlsOTHER()
 void createOptionsDX()
 {
 	// DX hidden options here
+	// Adds extra detail to the combat log; hidden, can be enabled via fixedUserOptions/recommendedUserOptions.
+	_info.push_back(OptionInfo(OPTION_DX, "combatLogVerbose", &combatLogVerbose, false, "", "HIDDEN"));
 }
 
 void createAdvancedOptionsDX()
 {
 	// DX advanced options
 	_info.push_back(OptionInfo(OPTION_DX, "combatLogEnabled", &combatLogEnabled, true, "STR_COMBAT_LOG", "STR_BATTLESCAPE"));
+	_info.push_back(OptionInfo(OPTION_DX, "combatLogDuration", &combatLogDuration, 8, "STR_COMBAT_LOG_DURATION", "STR_BATTLESCAPE"));
 	_info.push_back(OptionInfo(OPTION_DX, "hoveredUnitNameEnabled", &hoveredUnitNameEnabled, true, "STR_HOVERED_UNIT_NAME", "STR_BATTLESCAPE"));
 	_info.push_back(OptionInfo(OPTION_DX, "grenadeIndicatorEnabled", &grenadeIndicatorEnabled, true, "STR_GRENADE_INDICATOR", "STR_BATTLESCAPE"));
 	_info.push_back(OptionInfo(OPTION_DX, "unitStatusIndicatorEnabled", &unitStatusIndicatorEnabled, true, "STR_UNIT_STATUS_INDICATOR", "STR_BATTLESCAPE"));

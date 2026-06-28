@@ -1739,10 +1739,12 @@ int BattleUnit::damage(Position relative, int damage, const RuleDamageType *type
 		const int rawDamage = damage;
 		int blockedArmorDamage = 0;
 		int overPenArmorDamage = 0;
+		int effectiveArmorUsed = 0; // DX: armor value subtracted on this side (for verbose logging).
 
 		if (type->ArmorEffectiveness > 0.0f)
 		{
 			const int effectiveArmor = (int)std::round(getArmor(side) * type->ArmorEffectiveness);
+			effectiveArmorUsed = effectiveArmor;
 			damage -= effectiveArmor;
 			if (damage <= 0)
 			{
@@ -1817,7 +1819,18 @@ int BattleUnit::damage(Position relative, int damage, const RuleDamageType *type
 		}
 
 		setValueMax(_currentArmor[side], - std::get<toArmor>(args.data), 0, _maxArmor[side]);
+		const int armorLost = _maxArmor[side] - _currentArmor[side] - _armorDamage[side];
 		_armorDamage[side] = _maxArmor[side] - _currentArmor[side]; // Recalculate armor damage for the side, since damage might have been done.
+
+		// DX: verbose combat-log diagnostics for the armor/damage calculation.
+		if (Options::combatLogVerbose)
+		{
+			save->logDamageCalcEvent(this, side, rawDamage, effectiveArmorUsed, std::max(0, damage), std::get<toHealth>(args.data));
+			if (armorLost > 0)
+			{
+				save->logArmorDamageEvent(this, armorLost, side);
+			}
+		}
 
 		setFatalShotInfo(side, bodypart);
 

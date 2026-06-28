@@ -2,6 +2,7 @@ en-US:
 #=================== DX Combat Log ===================
 #Options.cpp
   STR_COMBAT_LOG: "Combat log"
+  STR_COMBAT_LOG_DURATION: "Combat log duration (seconds)"
 #SavedBattleGame.cpp
   STR_COMBATLOG_UNKNOWN_UNIT: "Unknown"
   STR_COMBATLOG_HOSTILE: "Hostile"
@@ -10,6 +11,13 @@ en-US:
   STR_COMBATLOG_KILLED_FEMALE: "{0} is killed"
   STR_COMBATLOG_KILLED_BY_MALE: "{0} was killed by {1}"
   STR_COMBATLOG_KILLED_BY_FEMALE: "{0} was killed by {1}"
+  STR_COMBATLOG_ARMOR_DAMAGE: "{0}'s {1} armor takes {2} damage"
+  STR_COMBATLOG_DAMAGE_CALC: "{0}'s {1}: {2} damage vs {3} armor, {4} through ({5} to health)"
+  STR_COMBATLOG_ARMOR_SIDE_FRONT: "front"
+  STR_COMBATLOG_ARMOR_SIDE_LEFT: "left"
+  STR_COMBATLOG_ARMOR_SIDE_RIGHT: "right"
+  STR_COMBATLOG_ARMOR_SIDE_REAR: "rear"
+  STR_COMBATLOG_ARMOR_SIDE_UNDER: "under"
 #BattlescapeGame.cpp
   STR_COMBATLOG_STUNNED_MALE: "{0} is knocked out"
   STR_COMBATLOG_STUNNED_FEMALE: "{0} is knocked out"

@@ -61,12 +61,13 @@ class CombatLog
 private:
 	std::deque<CombatLogEntry> _entries;
 	size_t _maxEntries;
-	unsigned int _lifetime; ///< how long (ms) an entry stays before it fades off.
 public:
-	/// Creates a combat log with the given visible cap and per-entry lifetime.
-	CombatLog(size_t maxEntries = 20, unsigned int lifetime = 8000);
+	/// Creates a combat log with the given visible cap (entry lifetime comes from the live option).
+	CombatLog(size_t maxEntries = 20);
 	/// Adds an already-localized entry with the given outcome.
 	void add(const std::string &text, CombatLogOutcome outcome);
+	/// Sets the maximum number of entries kept (older ones are pruned on add).
+	void setMaxEntries(size_t maxEntries);
 	/// Drops entries older than their lifetime; returns true if anything was removed.
 	bool prune();
 	/// Removes all entries.

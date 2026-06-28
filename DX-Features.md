@@ -6,17 +6,23 @@ here as features are implemented.
 ## Armor Degradation
 
 Battlescape damage types can now wear armor even on a hit that fails to penetrate, as long as the
-hit was strong enough to meaningfully challenge that side's armor. This is controlled per
-`damageAlter` / `RuleDamageType` via two new knobs:
+hit was strong enough to meaningfully challenge that side's armor, and can wear extra armor on a
+hit that smashes well past it. This is controlled per `damageAlter` / `RuleDamageType` via four
+new knobs:
 
 - `ToArmorBlocked` — the blocked-hit armor wear multiplier, applied only to fully blocked hits.
 - `ToArmorBlockedThreshold` — the minimum fraction of the struck side's effective armor block the
   rolled damage must reach before blocked-hit wear begins.
+- `ToArmorOverPen` — the over-penetration extra-wear multiplier, applied only to hits that punch
+  through the struck side's armor.
+- `ToArmorOverPenThreshold` — the multiple of the struck side's effective armor the rolled damage
+  must exceed before over-penetration wear begins.
 
 The existing fork behavior is preserved around it: `ToArmorPre` still applies unconditional
-pre-armor wear, and `ToArmor` still applies only from post-armor penetrating damage. DX adds a
-third stage specifically for "nearly penetrated but was stopped" hits, with defaults of `0.0`
-and `0.5` so existing mods keep their prior behavior until they opt in.
+pre-armor wear, and `ToArmor` still applies only from post-armor penetrating damage. DX adds two
+further stages: one for "nearly penetrated but was stopped" hits (`ToArmorBlocked`, defaults `0.0`
+/ `0.5`) and one for "smashed clean through" hits (`ToArmorOverPen`, defaults `0.0` / `2.0`). All
+defaults are no-ops, so existing mods keep their prior behavior until they opt in.
 
 ## Item Stats & Stat Modifiers
 
@@ -84,6 +90,9 @@ hostiles show as "Hostile"/"Unknown" and their gear as "an unknown weapon". The 
 transient (never serialized) and distinct from the on-demand OXCE hit log (Ctrl-H).
 
 - Toggle: advanced option **Combat log** (`combatLogEnabled`, default on), under Battlescape.
+- Duration: advanced option **Combat log duration (seconds)** (`combatLogDuration`, default 8,
+  range 1–60), under Battlescape — controls how long each entry stays before fading off. Changes
+  take effect immediately, even mid-battle.
 - Theming: the `combatLog` element in the `battlescape` interface ruleset sets the panel's
   position and size; `combatLogNeutral` / `combatLogGood` / `combatLogWarning` / `combatLogBad`
   set the four outcome colors.

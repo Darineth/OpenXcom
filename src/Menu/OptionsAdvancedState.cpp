@@ -429,6 +429,11 @@ void OptionsAdvancedState::lstOptionsClick(Action *action)
 			min = 0;
 			max = 15;
 		}
+		else if (i == &Options::combatLogDuration)
+		{
+			min = 1;
+			max = 60;
+		}
 		else if (i == &Options::oxceNightVisionColor)
 		{
 			// UFO: 1-15, TFTD: 2-16 except 8 and 10
