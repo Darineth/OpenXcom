@@ -50,6 +50,7 @@
 #include "../Mod/RuleUfo.h"
 #include "../Mod/RuleCraft.h"
 #include "../Mod/RuleInventory.h"
+#include "../Mod/RuleInventoryLayout.h"
 #include "../Mod/Mod.h"
 #include "../Mod/MapData.h"
 #include "../Mod/Armor.h"
@@ -1921,6 +1922,12 @@ bool BattlescapeGenerator::placeItemByLayout(BattleItem *item, const std::vector
 				if (layoutItem->isFixed()) continue;
 
 				if (item->getRules() != layoutItem->getItemType()) continue;
+
+				// the saved layout-slot must exist in this unit's inventory layout; if not
+				// (e.g. layout/armor changed since the layout was saved), skip it so the item
+				// is not stranded in a non-existent slot - it stays on the ground / auto-equips
+				const RuleInventoryLayout* unitLayout = unit->getInventoryLayout();
+				if (unitLayout && !unitLayout->hasSection(layoutItem->getSlot())) continue;
 
 				// we need to check all "slot boxes" for overlap (not just top left)
 				bool overlaps = false;

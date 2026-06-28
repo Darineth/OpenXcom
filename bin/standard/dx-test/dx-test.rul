@@ -133,7 +133,7 @@ items:
 #    STR_NONE_UC          -> LIGHT  (exclusion: hands + belt + ground only)
 #    STR_PERSONAL_ARMOR_UC-> RIG    (no backpack; adds an inline "satchel")
 #    STR_POWER_SUIT_UC    -> CLONE  (refNode-inherits LIGHT; renders == LIGHT)
-#    STR_FLYING_SUIT_UC   -> (unset; uses the default = vanilla full grid)
+#    STR_FLYING_SUIT_UC   -> ONEHAND (right hand + belt only; no left hand)
 #
 #  What to check:
 #    * LIGHT: backpack/legs/shoulders are gone; auto-equip never fills them;
@@ -143,7 +143,10 @@ items:
 #    * CLONE: power-suit inventory looks identical to LIGHT (hands+belt+ground),
 #      proving refNode inheritance loaded the parent's sections. (If refNode
 #      failed, you'd see only the ground slot.)
-#    * FLYING SUIT / any other unit: unchanged vanilla grid (default layout).
+#    * ONEHAND: only a right hand + belt (+ ground). Stress-tests unload, which
+#      historically assumes both hand slots exist: try unloading a loaded weapon
+#      held in the right hand and see where the ejected clip goes (belt/ground)
+#      or whether it refuses. Drives the companion unload-config feature.
 # =====================================================================
 inventoryLayouts:
   - type: STR_DX_LAYOUT_LIGHT
@@ -185,6 +188,14 @@ inventoryLayouts:
     refNode:
       sections: *dxLightSections
 
+  - type: STR_DX_LAYOUT_ONEHAND
+    # only a right hand + belt (ground is auto-added). For testing unload behavior
+    # when the left hand slot is absent.
+    sections:
+      - ref: STR_RIGHT_HAND
+      - ref: STR_BELT
+      - ref: STR_GROUND
+
 armors:
   - type: STR_NONE_UC
     inventoryLayout: STR_DX_LAYOUT_LIGHT
@@ -192,6 +203,8 @@ armors:
     inventoryLayout: STR_DX_LAYOUT_RIG
   - type: STR_POWER_SUIT_UC
     inventoryLayout: STR_DX_LAYOUT_CLONE
+  - type: STR_FLYING_SUIT_UC
+    inventoryLayout: STR_DX_LAYOUT_ONEHAND
 
 extraStrings:
   - type: en-US

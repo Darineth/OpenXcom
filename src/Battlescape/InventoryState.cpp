@@ -50,6 +50,7 @@
 #include "../Savegame/Soldier.h"
 #include "../Mod/RuleItem.h"
 #include "../Mod/RuleInventory.h"
+#include "../Mod/RuleInventoryLayout.h"
 #include "../Mod/RuleSoldier.h"
 #include "../Mod/Armor.h"
 #include "../Engine/Options.h"
@@ -1453,6 +1454,7 @@ void InventoryState::_applyInventoryTemplate(std::vector<EquipmentLayoutItem*> &
 	// from the ground.  if any item is not found on the ground, display warning
 	// message, but continue attempting to fulfill the template as best we can
 	bool itemMissing = false;
+	bool slotMissingInLayout = false;
 	for (const auto* equipmentLayoutItem : inventoryTemplate)
 	{
 		// search for template item in ground inventory
@@ -1611,8 +1613,14 @@ void InventoryState::_applyInventoryTemplate(std::vector<EquipmentLayoutItem*> &
 			continue;
 		}
 
+		// the remembered slot must exist in this unit's inventory layout; otherwise
+		// (e.g. template made under a different armor) we must not force the item into a
+		// section the unit doesn't have - leave it on the ground instead of stranding it
+		const RuleInventoryLayout* layout = unit->getInventoryLayout();
+		bool slotInLayout = (!layout || layout->hasSection(equipmentLayoutItem->getSlot()));
+
 		// check if the slot is not occupied already (e.g. by a fixed weapon)
-		if (matchedWeapon && !_inv->overlapItems(
+		if (matchedWeapon && slotInLayout && !_inv->overlapItems(
 			unit,
 			matchedWeapon,
 			equipmentLayoutItem->getSlot(),
@@ -1626,6 +1634,12 @@ void InventoryState::_applyInventoryTemplate(std::vector<EquipmentLayoutItem*> &
 			matchedWeapon->setSlotY(equipmentLayoutItem->getSlotY());
 			matchedWeapon->setFuseTimer(equipmentLayoutItem->getFuseTimer());
 		}
+		else if (matchedWeapon && !slotInLayout)
+		{
+			// item was found but its template slot is absent in this layout: it stays on
+			// the ground (already dropped above), flag it so we can tell the player
+			slotMissingInLayout = true;
+		}
 		else
 		{
 			// let the user know or not? probably not... should be obvious why
@@ -1635,6 +1649,10 @@ void InventoryState::_applyInventoryTemplate(std::vector<EquipmentLayoutItem*> &
 	if (itemMissing)
 	{
 		_inv->showWarning(tr("STR_NOT_ENOUGH_ITEMS_FOR_TEMPLATE"));
+	}
+	if (slotMissingInLayout)
+	{
+		_inv->showWarning(tr("STR_DX_TEMPLATE_SLOT_NOT_IN_LAYOUT"));
 	}
 }
 

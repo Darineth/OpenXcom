@@ -93,6 +93,7 @@ en-US:
   STR_DX_INVENTORY_ARMOR_R_SHORT: "R>{ALT}{0}"
   STR_DX_INVENTORY_ARMOR_B_SHORT: "B>{ALT}{0}"
   STR_DX_INVENTORY_ARMOR_U_SHORT: "U>{ALT}{0}"
+  STR_DX_TEMPLATE_SLOT_NOT_IN_LAYOUT: "Some items left on the ground: no matching slot in this armor's inventory."
 #=================== DX Geoscape Activity Display ===================
 #GeoscapeState.cpp / Options.cpp
   STR_ACTIVITY_DISPLAY: "Geoscape activity display"
