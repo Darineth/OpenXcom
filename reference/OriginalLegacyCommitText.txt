@@ -1,0 +1,1970 @@
+Commit: 53af17e87a004c661d087d4efff196b37846cc42
+Parents: e05c959598c83198ae594c3c87158340e59c80a1
+Author: Bryan P. Whalen <bryanpwhalen@gmail.com>
+Committer: Bryan P. Whalen <bryanpwhalen@gmail.com>
+Date: Sun Sep 03 2017 22:20:55 GMT-0600 (Mountain Daylight Time)
+ 
+
+- Highlight TUs in red on the shot selection menu if insufficient.
+- Highlight Acc in red if the weapon has insufficient ammo.
+- Display auto shot count as ##%x<Count>.
+
+- Display wounded days with status.
+
+- Handle thrown items in ammo count check.
+- Remove user preferences.
+
+- Highlight TUs in red on the shot selection menu if insufficient.
+- Highlight Acc in red if the weapon has insufficient ammo.
+- Display auto shot count as ##%x<Count>.
+
+Conflicts:
+    src/Battlescape/ActionMenuState.cpp
+
+- Handle thrown items in ammo count check.
+- Remove user preferences.
+
+- Display sell price info on manufacturing screens.
+- Shrink actions list in battlescape.
+- Added numeric hotkeys to activate actions.
+- Display the selected action briefly after selection.
+
+- Rearranged base info window.
+- Added soldiers, stores and quarters info to base info.
+- Added current stores to manufacture start screen.
+
+- Fixed ammo count checking for non-shooting actions.
+- Added a colorable message display for non-warning text.
+- Improved damage display.
+- Report wounds added from BattleUnit::damage.
+
+- Added a floating combat log to display events.
+
+- Implemented a Quick Reload action.
+- Added an option to base reload TU cost off inventory slot and magazine weight.
+
+- Finished quick reload option. Handles existing magazine now.
+
+Firing a gun while berserk now requires that the gun actually has a snapshot
+
+- Applied new reload logic to AIs.
+
+- Added white cross-marks on the unit health bar to indicate wounds.
+
+- Apply maximize info screen option to various Geoscape screens.
+
+- Added extra check to prevent quick reload action from being available on non-firearms.
+
+- Flash the aim cursor red/yellow if you do not have enough TU to continue firing.
+
+- Added Stores/Quarters information to Purchase screen.
+
+- BattlescapeGenerator::explodePowerSources() was eventually making a call to displayDamage() and crashing if an alien was hurt by the explosion.
+- Added a development build configuration for speed compilation and testing.
+
+- Slight reorganization to displayDamage conditions.
+
+- Added proper translations and strings for combat log and reload features.
+
+- Highlight TUs in red on the shot selection menu if insufficient.
+- Highlight Acc in red if the weapon has insufficient ammo.
+- Display auto shot count as ##%x<Count>.
+
+- Display wounded days with status.
+
+- Handle thrown items in ammo count check.
+- Remove user preferences.
+
+- Highlight TUs in red on the shot selection menu if insufficient.
+- Highlight Acc in red if the weapon has insufficient ammo.
+- Display auto shot count as ##%x<Count>.
+
+- Display wounded days with status.
+
+- Handle thrown items in ammo count check.
+- Remove user preferences.
+
+Merge branch 'master' of https://github.com/Darineth/OpenXcom
+
+- Display sell price info on manufacturing screens.
+- Shrink actions list in battlescape.
+- Added numeric hotkeys to activate actions.
+- Display the selected action briefly after selection.
+
+- Rearranged base info window.
+- Added soldiers, stores and quarters info to base info.
+- Added current stores to manufacture start screen.
+
+- Fixed ammo count checking for non-shooting actions.
+- Added a colorable message display for non-warning text.
+- Improved damage display.
+- Report wounds added from BattleUnit::damage.
+
+- Added a floating combat log to display events.
+
+- Implemented a Quick Reload action.
+- Added an option to base reload TU cost off inventory slot and magazine weight.
+
+- Finished quick reload option. Handles existing magazine now.
+
+Firing a gun while berserk now requires that the gun actually has a snapshot
+
+Merge branch 'master' of https://github.com/Darineth/OpenXcom
+
+- Applied new reload logic to AIs.
+
+- Added white cross-marks on the unit health bar to indicate wounds.
+
+- Apply maximize info screen option to various Geoscape screens.
+
+- Added extra check to prevent quick reload action from being available on non-firearms.
+
+- Flash the aim cursor red/yellow if you do not have enough TU to continue firing.
+
+- Added Stores/Quarters information to Purchase screen.
+
+- BattlescapeGenerator::explodePowerSources() was eventually making a call to displayDamage() and crashing if an alien was hurt by the explosion.
+- Added a development build configuration for speed compilation and testing.
+
+- Slight reorganization to displayDamage conditions.
+
+Post-rebase re-merging.
+
+- Added new translations to en-GB language set.
+
+- Fixed combat log crashing when full.
+- Fixed quick reload ignoring lack of TUs.
+
+- Added logic to further adjust the Unload TU cost based on the magazine weight with the Adjust Reload Costs option.
+  - Quick Reload will now cost Magazine Weight + Hand->Ground cost.
+  - Normal Unload will now cost Magazine Weight + Hand->Hand cost.
+
+- Fixed a leftover Combat Log long duration test change in.
+
+- Implemented first level Roles menu for accessing basic role functions.
+
+- First pass at implementing a full Role system for managing unit equipment templates.
+
+- Added a simpler mechanism for the Maximize Info Screens option that also prevents multiple maximized screens from confusing the scale because of constructor/destructor order.
+
+- Adjusted base cost for adjusted ammo reload option.
+
+- Made role icon bob like the original selected unit arrow.
+
+- Completed role ruleset configuration and en-US strings.
+- Added "none", "Sniper", and "Rifleman" icons, and placeholder files for the rest.
+
+- Added medic and grenadier icons.
+- Cropped sniper simple icon.
+
+- Added Assault, Grenadier, Medic icons.
+- Redesigned Sniper icon.
+
+- Fixed Roles not being available in New Battle mode.
+- Fixed an incorrect enumeration usage.
+- Fixed the sniper role icon palette.
+
+- Re-enabled selected unit bobbing for role icons.
+- New mini icon for sniper role.
+- Shrunk medic small icon.
+
+- Made shotgun-type weapons simultaneously fire their rounds without using simplified insta-hit logic.
+
+- Fixed State think timer being changed mid-flight on shotgun projectiles.
+
+- Tweaked multi-projectile logic.
+
+- Changed shotgun projectile logic to apply accuracy to an initial shot, then base further spread off of accuracyShotgunSpread on the weapon (if available).
+
+- Finished first draft for demo, heavy, psionic, rocketeer, scout, and specialist role icons.
+
+- Adjusted several role icons, and fixed some palettes.
+
+- Fixed some issues with trajectory calculation on shotgun attacks.
+
+- Further fixes to shotgun projectile mode.
+- Store calculated impact on the projectile object rather than a single member variable in ProjectileFlyBState.
+
+- Tweaked several role icons to apply a slightly more embossed effect.
+
+- Shotgun pellet spread now follows a somewhat more realistic normal distribution
+
+Merge branch 'master' of https://github.com/Darineth/OpenXcom
+
+- Fixed shotgun pellet applyAccuracy change to pull the pellet count from the ammo item.
+
+- Improved shot action display to include shotgun shot count.
+- Tweaked shotgun pellet impact explosion behavior for simultaneous hits.
+
+- Fixed a bug where _currentAction.result was not cleared after giving a warning for failing a quick reload. This resulted in repeatedly being warned after most actions following it.
+- Temporarily changed createNewProjectile so that throwing items can't have shotgun pellets. This was causing crashes when attempting to throw, for example, a cluster rocket.
+
+- Rewrote projectile rendering to use a single pre-pass to generate future drawable objects before looping across visible tiles.
+- Capture shotgun attribute at ProjectileFlyBState constructor for use in applyAccuracy later, to prevent issues when running out of ammo.
+- Further tweaks to auto/shotgun attacks in shot action menu display.
+
+- Further shotgun pellet logic rewriting to reduce lost or repeated explosions.
+
+- Display estimated accuracy even without UFOExtender accuracy mode.
+- Fixed an issue where the initial shotgun tracer round was fired with shotgun mode, causing it to ignore standard accuracy rules.
+
+- Added kneelModifier to RuleItem so that weapons may define exactly what accuracy multiplier they get for kneeling.
+
+- Fixed LoS check being skipped on normal shots.
+
+- Display grenade primed indicator on battlescape.
+
+- Combat log adjustments.
+- Fixed bad translation string for Reloaded combat log display.
+
+- Early attempt - explosions occur synchronously.
+
+- Async explosion logic round 1.
+
+- Final round of async shot/explosion logic.
+
+- Cleanup/fix branch.
+
+- Fixed target voxel deviation for shotgun-type weapons on auto fire.
+
+- Do not change state interval in ExplosionBState when being run as a sub-state.
+
+- Added blastDropoff to item ruleset, which controls how quickly an explosion loses damage as it spreads outward
+- Modified explosion-related functions so that the visual size and sound of an explosion is determined by blast radius instead of power
+
+- Allow mousewheel scrolling through oversized ground inventories.
+
+- Fixed incorrect max on mouse wheel inventory scrolling.
+
+- Fix inventory not being re-rendered for some actions.
+
+- Combat log improvements for non-damage or stun damage attacks.
+- Further tweaks to mousewheel inventory scrolling.
+
+- Slight tweak to RoleIconNone.
+
+- Added reactionsModifier as a setting to RuleItem
+
+- Implemented per-weapon AI range handling.
+
+New item rules:
+aiRangeClose, aiRangeMid, aiRangeLong, aiRangeMax
+aiAttackPriorityClose, aiAttackPriorityMid, aiAttackPriorityLong, aiAttackPriorityMax.
+
+- Adjusted reserved TU fallback logic to handle weapons with non-standard shot configurations.
+- Force AI to use normal TU reserve logic instead of custom percentages.
+
+- Fix firing animation getting stuck.
+
+- Fixed an issue causing crashes with the modified explosion graphics/sound code
+
+- Implemented Overwatch ability.
+
+- Grant hostile units the weapon kneel modifier if it is above the base 115.
+
+- Commented alien unit kneel special case.
+
+- Fixed death message spam for multi-hit weapons.
+- Fixed canMakeReactionShot not checking required TUs on snapshot.
+
+- Adjusted Overwatch cost to be a minimum of 90% of the unit's TU.
+- Added a simple display for overwatch to indicate the target region.
+
+- Clear Overwatch state on new turn.
+
+- Add Role to Soldier Info screen.
+- Apply "one in a million" AI fix.
+
+- Fixed InventoryState not popping the maximized state properly.
+- Added an Inventory button to the soldier info screen.
+
+- Post-rebase cleanup.
+- Modified SavedGame loading of role configuration to eliminate SavedGame constructor conflicts.
+- Applied custom string changes to en-GB.yml.
+
+- Show all spotted units in spotted list, not just those spotted by the current unit.
+
+- Added tracer logic to display line of fire when targeting.
+- Fixed roles not being loaded in time for use in New Battle games.
+
+- Fixed logic issue causing the trajectory calculation to fail with any compilation optimizations turned on.
+- Fixed an issue where the trajectory trace was being created for non-visible higher Z level tiles and all rendered at once when the higher Z level became visible.
+
+- Added a drawing hack to draw throwing arcs above the currently drawn map Z-level.
+
+- Implemented an Instant grenade fuse option.
+
+- Fixed Stun/Hit melee action showing ammo-related errors.
+
+- Fixed rounding error on reaction fire distance calculation. Lying documentation!!!!!!
+- Added smoke-driven accuracy falloff.
+
+- Fix Psionic attacks not display in log.
+- Fix instaprime grenades not saving to EquipmentLayoutItem.
+
+- Sort Interceptor list by distance to target.
+
+- Fixes to psionics caused by modified Explosion logic.
+
+- Inventory stats display changes.
+
+- Display basic craft stats on Craft Info state.
+
+- Added negative health and unit bleedout functionality.
+
+- Fixed a logic error that broke health healing when healing a fatal wound.
+
+- Show all red on medikit view if the target unit is bleeding out.
+
+- Fix fatal wounds going negative.
+
+- Separated ExplosionBState animation interval from the main state loop using a separate timer.
+
+- Medikit info display improvements.
+- Set health to 10% when being stabilized from bleeding to death.
+- Display more damage info in the combat log in debug mode.
+
+- Changed bleedout mechanic to be wound-based.
+- Changed stabilization heals from medikits to be overcharged wound heals, but zero health restoration.
+- Improved medikit info display.
+
+- Improved interception distance sorting to use the craft's in-flight position when possible.
+
+- Allow overwatch to carry over between turns.
+- Fix some language file entries for accuracy displays.
+
+- Changed the firing trajectory system to use an aimcone-style system instead of the existing hit-or-wild-miss system.
+
+- Fixed STABLIZED typo.
+- Changed wounded recovery time to be percentage based rather than absolute value based.
+- Fixed overwatch being able to fire infinite times.
+- Added visual indicator to highlight units on overwatch.
+- Reduced LOS penalty on grenades to 75% maximum.
+- Allow fatal wound bleeding to cause bleedout extra wounds.
+- Fixed autoshot causing crashes if initiating fire with only 1 ammo left.
+
+OpenXCOM+!!!
+
+- Prevent psi attack targeting from using intellect to select a previously spotted target.
+- Added a new fog of war-style field of view display mechanic.
+
+- Attempt to prevent alien spotting incorrectly?
+
+Merge branch 'master' of https://github.com/Darineth/OpenXcom
+
+- Fixed weapon accuracy mods not being applied.
+
+- Rebased.
+
+- Implemented enforced squadsight logic for alien psi targeting.
+
+- Added a bleeding out icon to dying soldiers on the battlefield.
+
+- Added missing bleeding icon.
+- Modified movement reaction fire triggers to only cause spotting to protect from the spotted unit rather than all enemies for normal reaction fire, not overwatch.
+- Prevent weapon reaction modifiers from being used when on the defensive.
+- Fixed bleedout icons not drawing when a live unit was on the tile.
+
+- Fix post-rebase merge issue.
+
+- Added an overall bleeding out indicator next to the spotted enemies list.
+
+- Allow tanks to click open doors.
+- Display the overall bleedout indicator regardless of selected unit.
+
+- The initial tracer round fired by shotguns should now use the new trajectory system.
+
+- Display distance to target along with accuracy percentage.
+
+- Prevent a crash when capturing the last alien on the map with Mind Control.
+
+- Preliminary work to allow grenades as ammo items.
+
+- Fixed an issue with grenades as ammo.
+
+- Allow racial research to display race type and basic damage percent in combat log.
+- Allow unit interrogation to display full unit name and hp/damage in combat log.
+
+- Display hovered unit name on the map.
+
+- Minor BattleItem tweaks.
+
+- Clear base as retaliation target on successful defense.
+
+- Add Role Icon to unit tooltip.
+
+- Initial implementation of "channeled" mind control.
+
+- Implemented backlash damage for mind controlled units.
+
+- Prevent mind controlled units from entering panic or berserk modes.
+- Fix an issue with unit deaths causing projectile slowdown due to chained explosions.
+- Increased backlash damage for mind controllers.
+
+- Tweaked backlash damage formula to be percentage based on the controller's HP.
+- Fixed a couple issues with mind control.
+
+- Increased backlash psychic damage to 40%-60%.
+- Reduced psychic stun damage to 25%-50%.
+
+- Implemented an ammo mechanic for psi amps.
+- Allow AI units to attempt to counter-mindcontrol.
+- Display an indicator over the controlling or controlled unit.
+
+- Fixed an issue with weapons that do not require ammo.
+- Fixed psi amp not auto loading or allowing reload options.
+- Fixed ongoing action not being properly initialized in all constructors.
+
+- Implemented Clairvoyance and Mind Blast psionic powers.
+
+- Mind Blast tweaks.
+
+- Fixed known enemy units not being cleared between turns.
+
+- Fixed psi amp ammo not being recoverable.
+- Fixed an issue with basescape unit inventory access corrupting saves with the temporary battlescape game.
+- Fixed bleedout status not being saved causing units to regain bleedout 10 wounds.
+
+- Display role on craft soldier list.
+- Attempt to prevent mind blast from being able to hit a secondary target.
+
+- Include Xusilak's X-COM Overhaul mod files.
+
+- Plasma machine gun sprite update.
+
+- Further plasma blaster tweaks.
+
+- InventoryState tweaks to support new interface rule layout stuff.
+
+- Increased panic cost to 4.
+
+- Allow number key shortcuts for dogfight dialogs.
+- Fixed a crash caused by a surface being added twice to the battlescape state.
+- Reduced panic cost to 1.
+
+- Post-rebase cleanup.
+
+- Highlight TUs in red on the shot selection menu if insufficient.
+- Highlight Acc in red if the weapon has insufficient ammo.
+- Display auto shot count as ##%x<Count>.
+
+- Display wounded days with status.
+
+- Handle thrown items in ammo count check.
+- Remove user preferences.
+
+- Highlight TUs in red on the shot selection menu if insufficient.
+- Highlight Acc in red if the weapon has insufficient ammo.
+- Display auto shot count as ##%x<Count>.
+
+Conflicts:
+    src/Battlescape/ActionMenuState.cpp
+
+- Handle thrown items in ammo count check.
+- Remove user preferences.
+
+- Display sell price info on manufacturing screens.
+- Shrink actions list in battlescape.
+- Added numeric hotkeys to activate actions.
+- Display the selected action briefly after selection.
+
+- Rearranged base info window.
+- Added soldiers, stores and quarters info to base info.
+- Added current stores to manufacture start screen.
+
+- Fixed ammo count checking for non-shooting actions.
+- Added a colorable message display for non-warning text.
+- Improved damage display.
+- Report wounds added from BattleUnit::damage.
+
+- Added a floating combat log to display events.
+
+- Implemented a Quick Reload action.
+- Added an option to base reload TU cost off inventory slot and magazine weight.
+
+- Finished quick reload option. Handles existing magazine now.
+
+Firing a gun while berserk now requires that the gun actually has a snapshot
+
+- Applied new reload logic to AIs.
+
+- Added white cross-marks on the unit health bar to indicate wounds.
+
+- Apply maximize info screen option to various Geoscape screens.
+
+- Added extra check to prevent quick reload action from being available on non-firearms.
+
+- Flash the aim cursor red/yellow if you do not have enough TU to continue firing.
+
+- Added Stores/Quarters information to Purchase screen.
+
+- BattlescapeGenerator::explodePowerSources() was eventually making a call to displayDamage() and crashing if an alien was hurt by the explosion.
+- Added a development build configuration for speed compilation and testing.
+
+- Slight reorganization to displayDamage conditions.
+
+- Added proper translations and strings for combat log and reload features.
+
+- Highlight TUs in red on the shot selection menu if insufficient.
+- Highlight Acc in red if the weapon has insufficient ammo.
+- Display auto shot count as ##%x<Count>.
+
+- Display wounded days with status.
+
+- Handle thrown items in ammo count check.
+- Remove user preferences.
+
+- Highlight TUs in red on the shot selection menu if insufficient.
+- Highlight Acc in red if the weapon has insufficient ammo.
+- Display auto shot count as ##%x<Count>.
+
+- Display wounded days with status.
+
+- Handle thrown items in ammo count check.
+- Remove user preferences.
+
+Merge branch 'master' of https://github.com/Darineth/OpenXcom
+
+- Display sell price info on manufacturing screens.
+- Shrink actions list in battlescape.
+- Added numeric hotkeys to activate actions.
+- Display the selected action briefly after selection.
+
+- Rearranged base info window.
+- Added soldiers, stores and quarters info to base info.
+- Added current stores to manufacture start screen.
+
+- Fixed ammo count checking for non-shooting actions.
+- Added a colorable message display for non-warning text.
+- Improved damage display.
+- Report wounds added from BattleUnit::damage.
+
+- Added a floating combat log to display events.
+
+- Implemented a Quick Reload action.
+- Added an option to base reload TU cost off inventory slot and magazine weight.
+
+- Finished quick reload option. Handles existing magazine now.
+
+Firing a gun while berserk now requires that the gun actually has a snapshot
+
+Merge branch 'master' of https://github.com/Darineth/OpenXcom
+
+- Applied new reload logic to AIs.
+
+- Added white cross-marks on the unit health bar to indicate wounds.
+
+- Apply maximize info screen option to various Geoscape screens.
+
+- Added extra check to prevent quick reload action from being available on non-firearms.
+
+- Flash the aim cursor red/yellow if you do not have enough TU to continue firing.
+
+- Added Stores/Quarters information to Purchase screen.
+
+- BattlescapeGenerator::explodePowerSources() was eventually making a call to displayDamage() and crashing if an alien was hurt by the explosion.
+- Added a development build configuration for speed compilation and testing.
+
+- Slight reorganization to displayDamage conditions.
+
+Post-rebase re-merging.
+
+- Added new translations to en-GB language set.
+
+- Fixed combat log crashing when full.
+- Fixed quick reload ignoring lack of TUs.
+
+- Added logic to further adjust the Unload TU cost based on the magazine weight with the Adjust Reload Costs option.
+  - Quick Reload will now cost Magazine Weight + Hand->Ground cost.
+  - Normal Unload will now cost Magazine Weight + Hand->Hand cost.
+
+- Fixed a leftover Combat Log long duration test change in.
+
+- Implemented first level Roles menu for accessing basic role functions.
+
+- First pass at implementing a full Role system for managing unit equipment templates.
+
+- Added a simpler mechanism for the Maximize Info Screens option that also prevents multiple maximized screens from confusing the scale because of constructor/destructor order.
+
+- Adjusted base cost for adjusted ammo reload option.
+
+- Made role icon bob like the original selected unit arrow.
+
+- Completed role ruleset configuration and en-US strings.
+- Added "none", "Sniper", and "Rifleman" icons, and placeholder files for the rest.
+
+- Added medic and grenadier icons.
+- Cropped sniper simple icon.
+
+- Added Assault, Grenadier, Medic icons.
+- Redesigned Sniper icon.
+
+- Fixed Roles not being available in New Battle mode.
+- Fixed an incorrect enumeration usage.
+- Fixed the sniper role icon palette.
+
+- Re-enabled selected unit bobbing for role icons.
+- New mini icon for sniper role.
+- Shrunk medic small icon.
+
+- Made shotgun-type weapons simultaneously fire their rounds without using simplified insta-hit logic.
+
+- Fixed State think timer being changed mid-flight on shotgun projectiles.
+
+- Tweaked multi-projectile logic.
+
+- Changed shotgun projectile logic to apply accuracy to an initial shot, then base further spread off of accuracyShotgunSpread on the weapon (if available).
+
+- Finished first draft for demo, heavy, psionic, rocketeer, scout, and specialist role icons.
+
+- Adjusted several role icons, and fixed some palettes.
+
+- Fixed some issues with trajectory calculation on shotgun attacks.
+
+- Further fixes to shotgun projectile mode.
+- Store calculated impact on the projectile object rather than a single member variable in ProjectileFlyBState.
+
+- Tweaked several role icons to apply a slightly more embossed effect.
+
+- Shotgun pellet spread now follows a somewhat more realistic normal distribution
+
+Merge branch 'master' of https://github.com/Darineth/OpenXcom
+
+- Fixed shotgun pellet applyAccuracy change to pull the pellet count from the ammo item.
+
+- Improved shot action display to include shotgun shot count.
+- Tweaked shotgun pellet impact explosion behavior for simultaneous hits.
+
+- Fixed a bug where _currentAction.result was not cleared after giving a warning for failing a quick reload. This resulted in repeatedly being warned after most actions following it.
+- Temporarily changed createNewProjectile so that throwing items can't have shotgun pellets. This was causing crashes when attempting to throw, for example, a cluster rocket.
+
+- Rewrote projectile rendering to use a single pre-pass to generate future drawable objects before looping across visible tiles.
+- Capture shotgun attribute at ProjectileFlyBState constructor for use in applyAccuracy later, to prevent issues when running out of ammo.
+- Further tweaks to auto/shotgun attacks in shot action menu display.
+
+- Further shotgun pellet logic rewriting to reduce lost or repeated explosions.
+
+- Display estimated accuracy even without UFOExtender accuracy mode.
+- Fixed an issue where the initial shotgun tracer round was fired with shotgun mode, causing it to ignore standard accuracy rules.
+
+- Added kneelModifier to RuleItem so that weapons may define exactly what accuracy multiplier they get for kneeling.
+
+- Fixed LoS check being skipped on normal shots.
+
+- Display grenade primed indicator on battlescape.
+
+- Combat log adjustments.
+- Fixed bad translation string for Reloaded combat log display.
+
+- Early attempt - explosions occur synchronously.
+
+- Async explosion logic round 1.
+
+- Final round of async shot/explosion logic.
+
+- Cleanup/fix branch.
+
+- Fixed target voxel deviation for shotgun-type weapons on auto fire.
+
+- Do not change state interval in ExplosionBState when being run as a sub-state.
+
+- Added blastDropoff to item ruleset, which controls how quickly an explosion loses damage as it spreads outward
+- Modified explosion-related functions so that the visual size and sound of an explosion is determined by blast radius instead of power
+
+- Allow mousewheel scrolling through oversized ground inventories.
+
+- Fixed incorrect max on mouse wheel inventory scrolling.
+
+- Fix inventory not being re-rendered for some actions.
+
+- Combat log improvements for non-damage or stun damage attacks.
+- Further tweaks to mousewheel inventory scrolling.
+
+- Slight tweak to RoleIconNone.
+
+- Added reactionsModifier as a setting to RuleItem
+
+- Implemented per-weapon AI range handling.
+
+New item rules:
+aiRangeClose, aiRangeMid, aiRangeLong, aiRangeMax
+aiAttackPriorityClose, aiAttackPriorityMid, aiAttackPriorityLong, aiAttackPriorityMax.
+
+- Adjusted reserved TU fallback logic to handle weapons with non-standard shot configurations.
+- Force AI to use normal TU reserve logic instead of custom percentages.
+
+- Fix firing animation getting stuck.
+
+- Fixed an issue causing crashes with the modified explosion graphics/sound code
+
+- Implemented Overwatch ability.
+
+- Grant hostile units the weapon kneel modifier if it is above the base 115.
+
+- Commented alien unit kneel special case.
+
+- Fixed death message spam for multi-hit weapons.
+- Fixed canMakeReactionShot not checking required TUs on snapshot.
+
+- Adjusted Overwatch cost to be a minimum of 90% of the unit's TU.
+- Added a simple display for overwatch to indicate the target region.
+
+- Clear Overwatch state on new turn.
+
+- Add Role to Soldier Info screen.
+- Apply "one in a million" AI fix.
+
+- Fixed InventoryState not popping the maximized state properly.
+- Added an Inventory button to the soldier info screen.
+
+- Post-rebase cleanup.
+- Modified SavedGame loading of role configuration to eliminate SavedGame constructor conflicts.
+- Applied custom string changes to en-GB.yml.
+
+- Show all spotted units in spotted list, not just those spotted by the current unit.
+
+- Added tracer logic to display line of fire when targeting.
+- Fixed roles not being loaded in time for use in New Battle games.
+
+- Fixed logic issue causing the trajectory calculation to fail with any compilation optimizations turned on.
+- Fixed an issue where the trajectory trace was being created for non-visible higher Z level tiles and all rendered at once when the higher Z level became visible.
+
+- Added a drawing hack to draw throwing arcs above the currently drawn map Z-level.
+
+- Implemented an Instant grenade fuse option.
+
+- Fixed Stun/Hit melee action showing ammo-related errors.
+
+- Fixed rounding error on reaction fire distance calculation. Lying documentation!!!!!!
+- Added smoke-driven accuracy falloff.
+
+- Fix Psionic attacks not display in log.
+- Fix instaprime grenades not saving to EquipmentLayoutItem.
+
+- Sort Interceptor list by distance to target.
+
+- Fixes to psionics caused by modified Explosion logic.
+
+- Inventory stats display changes.
+
+- Display basic craft stats on Craft Info state.
+
+- Added negative health and unit bleedout functionality.
+
+- Fixed a logic error that broke health healing when healing a fatal wound.
+
+- Show all red on medikit view if the target unit is bleeding out.
+
+- Fix fatal wounds going negative.
+
+- Separated ExplosionBState animation interval from the main state loop using a separate timer.
+
+- Medikit info display improvements.
+- Set health to 10% when being stabilized from bleeding to death.
+- Display more damage info in the combat log in debug mode.
+
+- Changed bleedout mechanic to be wound-based.
+- Changed stabilization heals from medikits to be overcharged wound heals, but zero health restoration.
+- Improved medikit info display.
+
+- Improved interception distance sorting to use the craft's in-flight position when possible.
+
+- Allow overwatch to carry over between turns.
+- Fix some language file entries for accuracy displays.
+
+- Changed the firing trajectory system to use an aimcone-style system instead of the existing hit-or-wild-miss system.
+
+- Fixed STABLIZED typo.
+- Changed wounded recovery time to be percentage based rather than absolute value based.
+- Fixed overwatch being able to fire infinite times.
+- Added visual indicator to highlight units on overwatch.
+- Reduced LOS penalty on grenades to 75% maximum.
+- Allow fatal wound bleeding to cause bleedout extra wounds.
+- Fixed autoshot causing crashes if initiating fire with only 1 ammo left.
+
+OpenXCOM+!!!
+
+- Prevent psi attack targeting from using intellect to select a previously spotted target.
+- Added a new fog of war-style field of view display mechanic.
+
+- Attempt to prevent alien spotting incorrectly?
+
+Merge branch 'master' of https://github.com/Darineth/OpenXcom
+
+- Fixed weapon accuracy mods not being applied.
+
+- Rebased.
+
+- Implemented enforced squadsight logic for alien psi targeting.
+
+- Added a bleeding out icon to dying soldiers on the battlefield.
+
+- Added missing bleeding icon.
+- Modified movement reaction fire triggers to only cause spotting to protect from the spotted unit rather than all enemies for normal reaction fire, not overwatch.
+- Prevent weapon reaction modifiers from being used when on the defensive.
+- Fixed bleedout icons not drawing when a live unit was on the tile.
+
+- Fix post-rebase merge issue.
+
+- Added an overall bleeding out indicator next to the spotted enemies list.
+
+- Allow tanks to click open doors.
+- Display the overall bleedout indicator regardless of selected unit.
+
+- The initial tracer round fired by shotguns should now use the new trajectory system.
+
+- Display distance to target along with accuracy percentage.
+
+- Prevent a crash when capturing the last alien on the map with Mind Control.
+
+- Preliminary work to allow grenades as ammo items.
+
+- Fixed an issue with grenades as ammo.
+
+- Allow racial research to display race type and basic damage percent in combat log.
+- Allow unit interrogation to display full unit name and hp/damage in combat log.
+
+- Display hovered unit name on the map.
+
+- Minor BattleItem tweaks.
+
+- Clear base as retaliation target on successful defense.
+
+- Add Role Icon to unit tooltip.
+
+- Initial implementation of "channeled" mind control.
+
+- Implemented backlash damage for mind controlled units.
+
+- Prevent mind controlled units from entering panic or berserk modes.
+- Fix an issue with unit deaths causing projectile slowdown due to chained explosions.
+- Increased backlash damage for mind controllers.
+
+- Tweaked backlash damage formula to be percentage based on the controller's HP.
+- Fixed a couple issues with mind control.
+
+- Increased backlash psychic damage to 40%-60%.
+- Reduced psychic stun damage to 25%-50%.
+
+- Implemented an ammo mechanic for psi amps.
+- Allow AI units to attempt to counter-mindcontrol.
+- Display an indicator over the controlling or controlled unit.
+
+- Fixed an issue with weapons that do not require ammo.
+- Fixed psi amp not auto loading or allowing reload options.
+- Fixed ongoing action not being properly initialized in all constructors.
+
+- Implemented Clairvoyance and Mind Blast psionic powers.
+
+- Mind Blast tweaks.
+
+- Fixed known enemy units not being cleared between turns.
+
+- Fixed psi amp ammo not being recoverable.
+- Fixed an issue with basescape unit inventory access corrupting saves with the temporary battlescape game.
+- Fixed bleedout status not being saved causing units to regain bleedout 10 wounds.
+
+- Display role on craft soldier list.
+- Attempt to prevent mind blast from being able to hit a secondary target.
+
+- Include Xusilak's X-COM Overhaul mod files.
+
+index on master: d662cec - Include Xusilak's X-COM Overhaul mod files.
+
+On master: panic stuff
+
+Merge commit 'b9580da3ccc1a11d486ed80468ff53cfca1fd4ab'
+
+Conflicts:
+    bin/data/Resources/XusilakOverhaul/Items/PlasmaBlaster/PlasmaBlasterBig.gif
+    bin/data/Ruleset/Xcom1Ruleset.rul
+    bin/data/Ruleset/Xusilak's X-COM Overhaul.rul
+    src/Battlescape/BattlescapeState.cpp
+    src/Battlescape/Inventory.cpp
+    src/Battlescape/InventoryState.cpp
+    src/Battlescape/Map.cpp
+    src/Battlescape/MedikitState.cpp
+    src/Battlescape/Projectile.cpp
+    src/Battlescape/TileEngine.cpp
+    src/Interface/Bar.cpp
+    src/Interface/Bar.h
+    src/OpenXcom.2010.vcxproj.filters
+
+- Aliens now have 85 base bravery.
+
+- Added soldier list option to pre-combat inventory screen.
+- Fixed an issue with scrolling to the bottom of a TextList when the number of items was less than the possible visible number.
+- Added a short name for roles for display on lists.
+
+- Added two handed modifier option for weapons to explicitly set accuracy when dual wielding.
+- Random code tweaks.
+
+- Force float division for two handed modifier.
+
+- Added dualwielding accuracy modifiers to heavy weapons.
+- Slightly increased minigun accuracy.
+
+- Miniguns fire 20 shots instead of 16.
+
+- Improved mind control indicator.
+
+- Added clipsize setting to stun rod.
+- Tweaked BattleItem constructor.
+
+- Fix rebase issues.
+
+- Fix surface double-add crash issue in BattlescapeState.
+
+- Fixed a double added surface in the medkit state.
+- Fixed an issue with hovering over mind controlled player units.
+
+- Fix mouseover unit bug.
+
+- Rebase and sound fixes.
+
+- More projectile sound fixing.
+
+- Fixed rebase issues.
+
+- Restored some missing language strings.
+- Fixed up some remaining rebase issues on getStats changes.
+
+- Initial work on modular vehicles.
+
+- Reworked modular vehicles into separate soldier types as chassis.
+- Added battleClipSize item ruleset option to allow ammo to be purchased individually and loaded into magazines at battle time.
+- Added stats ruleset option to all items.
+- Allow all items to affect unit stats.
+
+- Implemented generic items being able to have stat modifiers.
+- Allow inventory slots to optionally apply stats from items in them.
+- Reworked modular vehicles to have soldier configurations represent the base chassis.
+
+- Implemented an inventory layout ruleset to allow different units to have separate inventory structures.
+
+- Fixed non-soldier unit stat calculation.
+- Handle non-HAND inventory slots for weapon quick slots.
+- Use vehicle type as rank string for vehicle soldiers.
+- Prevent quick assigning armor for vehicles.
+
+- Fixed up ammo recovery issues with battle clip size option.
+- Prevent vehicles from gaining experience/promotions.
+
+- Tweaked vehicle inventory layout for demonstration.
+
+- Fixed a missing entry in the standard inventory layout.
+- Added frontArmor, sideArmor, rearArmor, underArmor options to all items.
+- Added Armor inventory slot type.
+
+- Restored vcxproj user settings file.
+
+Conflicts:
+    src/Basescape/BasescapeState.cpp
+    src/Basescape/CraftArmorState.cpp
+    src/Basescape/CraftInfoState.cpp
+    src/Basescape/CraftSoldiersState.cpp
+    src/Basescape/CraftSoldiersState.h
+    src/Basescape/ManageAlienContainmentState.cpp
+    src/Basescape/ManufactureInfoState.cpp
+    src/Basescape/ManufactureStartState.cpp
+    src/Basescape/PurchaseState.cpp
+    src/Basescape/SoldierInfoState.cpp
+    src/Battlescape/BattlescapeState.cpp
+    src/Battlescape/InventoryState.cpp
+    src/Geoscape/DogfightState.cpp
+    src/Geoscape/InterceptState.cpp
+
+- Post-rebase cleanup.
+
+- Initial work on item inventory slot restriction.
+
+- Display TU cost of moving items in inventory.
+- Highlight valid target slots for items when moving.
+- Reverted project file to VS 2010 version.
+
+- Added example Tank background image.
+- Added sided armor slots.
+- Added armor slots to vehicle inventory.
+- Changed item movement criteria to allow individual slots to prevent item swapping in combat instead of being locked for vehicles.
+
+- Improved tank background image.
+
+- Rebased UI changes.
+
+- Added battleType option to inventory slots for filtering valid items.
+- Removed ARMOR inventory type.
+- Added example vehicle engines.
+- Changed example vehicle starting stats.
+- Disable TU recovery penalties for overweight vehicle units.
+- Added BT_EQUIPMENT item battle type.
+- Ensure special stats (stamina, health, time units) are property updated by inventory edits.
+
+- Vehicle equipment tweaks.
+- Clear inventory armor display for normal soldiers.
+
+- Removed some lazy usage of auto.
+- Added RuleVideo files to project.
+
+- Improved display of damage in combat log.
+- Display more info about stun damage in combat log.
+
+- Move armor damage logic outside criteria that damage was taken.
+- Apply 10% damage to armor if incoming base damage is over 50% of armor.
+- Apply 20% damage to armor if damage is actually done.
+- More example vehicle equipment work.
+
+- Vehicle gear tweaks.
+- Allow field surgery unit research to halve wound recovery time.
+
+- Redesigned engine bays for accessory room and removed misc item section from vehicles.
+
+- Reworked reload logic for vehicles.
+- Remove reload TU cost for vehicles.
+- Tweaked inventory stats display, put unit HP back in display.
+- Allow more inventory stats to update properly when dragging items.
+
+- Unified reload cost calculation into BattleUnit class.
+
+- Adjusted inventory screen. Removed built-in icons from background image.
+- Implemented Dual Fire action that allows units to fire both equipped weapons simultaneously.
+
+- Allow loading more rulesets from subdirectories.
+- Migrate XXCOMO into a ruleset subdirectory.
+- Clean up reaction fire changes with overwatch code.
+- Integrate leftover ruleset changes with new split files.
+
+- Added tooltip mode to inventory.
+- Added sample Vehicles ruleset for overhaul.
+- Fixed poor logic in fitItem function for attempting to auto-place items in inventory.
+- Fixed some uninitialized variables.
+
+- Fixed issue with blaster launcher not exploding on impact.
+- Attempted to fix issue where units could get stuck offset in map rendering.
+- Further improvements to inventory item tooltip stats.
+
+- Changed soldier energy recovery to be 1/3 stamina.
+- Changed vehicle soldier energy recovery to be 100% stamina.
+- Changed wound energy recovery reduction to be 10% of recovery per torso wound.
+- Added sample vehicle machine gun, rocket laucher, and cannon.
+
+- Fixed swapped inventory for hover/medium tanks.
+
+- Vehicle weapons ruleset
+
+- Minor vehicle weapons update
+
+- Added reload cost to inventory reload display.
+- Added ammo count to inventory display.
+- Further attempts to fix units getting stuck in firing position.
+
+- Fixed up artillery cannon ruleset problems.
+- Made Ruleset accessible via static function on Game object.
+- Fixed error in Heavy Tank inventory layout.
+- Removed Original XCom load button from savegame list.
+- Improved many places that hardcoded left/right hand slots. Centralized weapon slot logic to BattleUnit.
+
+- Vehicles can reload weapons at no TU cost (fixing a reload cost bug in the process)
+- Partial implementation of free weapon unloading for vehicles
+- Changed the armor damage formula to scale more smoothly and be more punishing with heavy hits
+
+- Fix a failure in projectile state if a unit did not have sufficient TUs to fire.
+
+- Improved reload/ammo management for vehicles.
+- Added logic to prevent swapping items between slots that do not have costs configured.
+- Added an explicit cost for Ground->Ammo Rack swap.
+
+- Added a missing language entry for combat item swap.
+- Updated vehicle ruleset from spreadsheet with new data filled in.
+- Adjusted positioning of ammo and stack indicators on inventory.
+
+- Used HWP graphics from http://openxcom.org/forum/index.php?topic=2738.0 to add differentiated looks to each vehicle type.
+
+- Always display TU movement costs on inventory view, even out of combat.
+- Added Blue variant sprites for HWPs.
+- Fixed several ruleset errors for vehicle weapons.
+- Fixed dualfire bug that caused primary weapon to determine impacts for all projectiles fired.
+- Fixed bug preventing moving an item around intra-slot.
+- Tweaked TU recovery calculation.
+
+- Added soldier name.
+
+- Inventory management fixes.
+- Fix vehicle stats not updating properly on load.
+
+- Reworked inventory management, moved item management functions to BattleUnit for common usage.
+
+- Further improvements to stat display in inventory view.
+
+- Vehicle ruleset update.
+- Allow zero HP units.
+- Tweaked ammo tooltip position.
+
+- Added VS2013 project files.
+
+- Added mind control icon.
+- Added first draft sprites for vehicle equipment (except engines).
+- Fixed up dual fire logic, allow use with aimed shot weapons.
+- More inventory fixes.
+
+- Implemented production rule category STR_VEHICLE.
+
+- Fixed a crash when unloading items on the ground.
+- Updated Vehicle ruleset.
+
+- Tweaked display of purchase stuff for soldiers.
+- Vehicle ruleset update.
+
+- Reduce blast radius on HWP heavy cannon.
+
+- Implemented HWP laser weapons
+- Reduced HWP weapon general store sizes
+- Buy, manufacture, and sell costs on a variety of HWP things
+- Lots of HWP research stuff
+- Reduced HWP weapon reaction modifiers to allow HWPs to have high reaction stats for evading reaction fire but not causing reaction fire
+- Increased HWP reaction stats
+- Reduced HWP machine gun accuracy
+
+- Added HWP laser sprites.
+- Tweaked HWP cannon sprites.
+
+Merge branch 'master' of https://github.com/Darineth/OpenXcom
+
+- Applied sprites to HWP laser weapons.
+
+- Fix reload cost calculation.
+- Ensure TUs are displayed for valid item moves.
+
+- Removed duplicate hover tank and heavy tank research entries
+
+Merge branch 'master' of https://github.com/Darineth/OpenXcom
+
+- Removed _VHC suffix from armor plates.
+- Fixed a dualfire bug that used the secondary weapon's action type for both weapons.
+
+- Fixed HWP Missile Launcher shotgun spread
+- Fixed soldier Rocket Launcher shotgun spread
+- HWP Artillery Cluster Shell added
+- HWP Artillery and Heavy Cannon ammo is no longer buyable
+- HEAT and Plasma missiles/rockets have marginally appropriate impact sounds and animations
+- Added strings for HWP categories in manufacturing
+- Moved HWP weapons lower on the purchase list
+- Artillery cannon size fixed
+
+- No buyable cluster missiles. Sorry.
+
+- Added Artillery cluster round graphic.
+
+Merge branch 'master' of https://github.com/Darineth/OpenXcom
+
+- Increased minigun weapon accuracy
+- Removed duplicate baseAccuracy entry from the Plasma Blaster
+- Greatly increased production time for all vehicle component manufacturing
+- Added HWP plasma weapons
+- Renamed "Cluster" missiles and rockets to "Fusion Cluster"
+- Advanced HWP missiles can now be manufactured
+- Fixed reactions modifier on HWP Machine Gun
+- Fixed HWP Heavy Laser Cannon
+- Added (x##) counts to HWP machine gun and minigun ammo items to make it obvious they come in a group, unlike other HWP ammo
+
+- Fixed an uninitialized boolean error on BattleAction.dualFiring that caused normal units to fire with significantly reduced accuracy.
+
+- Massive overhaul of costSell values
+- HWP Heavy Cannon Ammo can now be produced after researching HWP Heavy Cannons
+- Fixed HWP plasma weapon production category
+
+Merge branch 'master' of https://github.com/Darineth/OpenXcom
+
+Conflicts:
+    bin/data/Ruleset/Xusilak's X-COM Overhaul/VehicleWeapons.rul
+
+- Fixed mod load issue that caused directory-based mods to not be listed.
+- Added first draft sprites for plasma HWP weapons.
+- Further vehicle/weapon tweaks.
+
+- Fixed overwatch improperly checking for TUs.
+
+- Fixed overwatch not activating.
+- Fixed overwatch actions not being refunded if multiple are triggered.
+- Added short role name to combat log for units.
+
+- Improved data on medikit view.
+
+- Added in-world display for motion detector readings.
+
+- Added various fusion and fission ammo items
+- Removed cluster missiles
+
+- Attempt to prevent ammo mismatched count stacking.
+
+- Added sprites for fission and fusion artillery shells.
+
+- Tweaked fusion shell graphics.
+- Applied new shell graphics to fission/fusion config.
+
+- Tweak cluster shell graphics.
+- Fix up project file for recent main OpenXcom branch changes.
+
+- Remove vehicles from psi training list.
+
+- Fixed bug in calculateLine that caused trajectory miscalculation.
+
+- Added Fusion Explosive
+
+- Updated alien missions for the new ruleset fields
+- Added HWP Smart Launcher
+- Increased some research and manufacturing costs here and there
+
+- calculateLine tweaks.
+
+- Fixed a bug that caused craft to be stuck in battlescape mode when the soldier inventory was opened from the soldier list.
+- Added fusion explosive sprites.
+
+- Fixed blastDropoff field for weapon items
+- Psi Orbs now use battleClipSize instead of clipSize
+- Psi Orbs cost significantly less money per shot
+- Ammo items now display the amount of ammo they contain per purchase/manufacture on X-COM base screens
+- Renamed all 'clip' items to 'ammo' items to remove ambiguity with the ammo count display change
+- HWP Light Cannon and HWP Light Plasma Cannon now use clipSize instead of battleClipSize
+- Fixed Plasma Burst Ammo manufacturing
+
+- Actually fixed Plasma Burst Ammo manufacturing
+
+- Removed (x50) from Cannon Rounds name
+
+- Fixed crash when selling vehicles.
+- Tweaked several HWP weapon graphics for alignment.
+- Modified ammo count display to use translated string.
+
+- Moved large beam projectiles to heavy laser/plasma.
+- Created new medium projectiles for laser and plasma sniper rifles.
+
+- Fix vehicles not "dying" after missions.
+
+- Appended "Rifle" to the name of the Heavy Laser and Heavy Plasma weapons.
+- Slightly altered a few item descriptions.
+- Light armor plates have increased armor, putting them at an armor/weight ratio 50% higher than heavy armor plates.
+- Light HWP cannons are significantly more accurate, functioning close to the level of a sniper rifle.
+
+- Added statModifier section to item and armor rules. Value is percent modification to associated stat.
+
+- Updated vehicle cannon projectile sprites.
+- Removed stun damage split on mind blast. Damage still needs to be adjusted.
+- Cap Dual Fire at 95% TUs.
+
+- Removed general mind control backlash damage.
+- Apply -2 psi strength to controller when a mind controlled unit dies.
+- Added a 20-40 psionic damage hit when a mind controlled unit dies.
+- Scale clairvoyance radius based on psi strength + skill.
+- Apply a morale penalty when receiving psionic damage.
+- Prevent use of clairvoyance with < 100 psionic strength + skill.
+
+- Updated psychic damage to be % based.
+
+- Improve display of stat modifiers in inventory.
+- Adjusted mind blast values.
+
+- Changed some Power Suit and Flying Suit stat bonuses into stat modifiers
+
+- Allow psychic damage to be reduced by armor.
+- Created graphics for Fusion explosives, missiles, rockets, HWP smart launcher and smart fusion bomb.
+
+- Fix soldier info state not displaying stats as affected by stat modifiers.
+
+- Tweaked smart fusion bomb graphic.
+
+- Always display base stores info on sell state.
+
+- Improve corpse information in inventory screen.
+
+- Tweaked HWP smart launcher graphic.
+
+- Recolored fusion weaponry.
+- Test vehicle rule updates.
+
+Merge branch 'master' of https://github.com/Darineth/OpenXcom
+
+- Added purple bit to smart launcher.
+
+Merge branch 'master' of https://github.com/Darineth/OpenXcom
+
+- Converted advanced movement Run option into a Sprint option at 200% energy cost, 50% TU cost.
+- Added 25% soldier accuracy penalty to firing at a sprinting target.
+- Draw preview path in Blue for sprinting actions.
+- Sprint movement will not be stopped on spotting targets or reaction fire.
+
+- Hover Tanks get two armor slots per side
+- Various balance changes to vehicles
+
+- Removed obsolete items and old-style vehicles
+
+- Attempt to fix findTurretType for consistency.
+
+Merge branch 'master' of https://github.com/Darineth/OpenXcom
+
+- Added an exhaustion penalty to accuracy when under 50% energy.
+- Add 4x each vehicle type to the New Battle mode.
+
+- Increased Artillery Smoke Shell blast radius
+
+- Include soldier status in Debriefing.
+- Allow reaction fire to stop a sprinting unit.
+
+Merge branch 'master' of https://github.com/Darineth/OpenXcom
+
+- Fixed sprint vs. reaction fire issue.
+- Added a combat log for mind control backlash.
+
+- New plasma machine gun and minigun graphics.
+
+- Placeholder engine item images.
+
+- Fixed bad ruleset generator data for Vehicle addons.
+
+- Ruleset updates.
+- Fix incorrect upper bound for damage types array on armor.
+
+- Split soldier info on debriefing screen into a separate view.
+
+- Fix armor rule issue that caused innate armor types to appear in armor selection list.
+
+- Recolored fusion artillery rounds.
+- Recolored casing on HWP smart fusion bomb.
+- Fixed incorrect bigobj sprite for H-class engines.
+- Fixed sprinting logic issue that caused close range sprinting to not activate sprint mode.
+- Fixed arced shot calculations with shotgun mode.
+- Changed needsAmmo function to detect if the item has any valid ammo.
+
+- Disable available quarters error on manufacturing vehicles.
+
+- Display a hovering icon over armed proximity grenades on the ground.
+
+- Scout Cars and Hover Tanks now have an innate TU boost of 20% and 30% respectively
+- Hover Tanks can mount two weapons now
+- Sprinting now reduces your reactions to zero, but reduces enemy accuracy by 30%
+- Greatly reduced stamina bonuses from flying suit and power armor
+- Light Reinforcement addons are much lighter
+- Clairvoyance scaling altered such that 100 psi score = 0 radius, 110 = 1, 130 = 2, 160 = 3, 200 = 4, 250 = 5, 310 = 6
+- Transfer Items screen now lists space used at local base and destination base
+
+- Fixed issue where autofired projectiles preserved their trajectory when obstacles were broken.
+
+- Added missing string for transfers window.
+
+- Updated en-US.yml for the new transfer state display
+
+Merge branch 'master' of https://github.com/Darineth/OpenXcom
+
+Merge branch 'master' of https://github.com/Darineth/OpenXcom
+
+Conflicts:
+    src/Menu/NewBattleState.cpp
+    src/OpenXcom.2010.vcxproj.filters
+    src/Ruleset/Ruleset.cpp
+
+Conflicts:
+    src/Battlescape/BattlescapeGame.cpp
+    src/Battlescape/BattlescapeGame.h
+    src/Battlescape/ExplosionBState.cpp
+    src/Battlescape/ExplosionBState.h
+    src/Battlescape/ProjectileFlyBState.cpp
+    src/Battlescape/TileEngine.cpp
+    src/Battlescape/TileEngine.h
+    src/OpenXcom.2010.vcxproj
+    src/OpenXcom.2010.vcxproj.filters
+    src/Savegame/BattleUnit.cpp
+
+Conflicts:
+    src/Ruleset/Armor.cpp
+    src/Ruleset/Armor.h
+    src/Savegame/BattleUnit.cpp
+    src/Savegame/BattleUnit.h
+    src/Savegame/SavedGame.cpp
+
+Conflicts:
+    src/Battlescape/UnitDieBState.cpp
+    src/Ruleset/Armor.cpp
+    src/Ruleset/Armor.h
+    src/Savegame/BattleUnit.cpp
+
+Conflicts:
+    src/Battlescape/ProjectileFlyBState.cpp
+
+- Items ruleset data has been moved into Items.rul.
+- An overhaul of weapon damage was conducted. In general, weapon damage now increases by 33% of tier 1 for tier 2, and another 33% of tier 1 for tier 3. This has caused a substantial reduction in tier 2 and tier 3 weapon damage.
+- X-COM soldier and vehicle armor reduced by ~40% across the board to compensate for the drop in plasma weapon damage.
+- X-COM soldier and vehicle health reduced by ~25% for the same reason.
+- Laser accuracy bonus was reduced somewhat.
+- Sniper rifles are somewhat more accurate.
+- Artillery shells have been significantly improved.
+- HWP Smart Fusion Bombs have a wider blast radius and lower blast drop-off.
+- Various other weapon changes.
+- Appropriate armor (the amount of explosive damage it takes to destroy them) values have been added for most items.
+- Some listorder entries were filled in.
+
+Merge branch 'master' of https://github.com/Darineth/OpenXcom
+
+- Sprinting units get 20% of reactions, instead of 0%.
+- Moved soldier health change to a new ruleset file.
+
+Merge branch 'master' of https://github.com/Darineth/OpenXcom
+
+- Reduce bleedout buffer to 50% of max hp.
+
+- Cleanup bleedout check.
+
+- Rewrote sprint logic to be tied to new MovementAction setting.
+- Added Sneak movement action (CTRL+ALT). Grants 100% reaction score for defensive purposes while moving.
+
+Conflicts:
+    src/Battlescape/TileEngine.cpp
+
+- New reaction score mechanics for defense and offense.
+
+- Reworked some reaction fire code. Split score checking functions in to getReactionScore and getEvasionScore.
+
+- Tweaked beam projectiles.
+
+- Fixed a missing item overlap check that allowed items to stack in inventory slots.
+
+- Added Terrain.cpp/h to VS2013 project.
+
+- Fixed up rebase issues from new Melee and Psionic battle states.
+
+Conflicts:
+    src/Battlescape/MeleeAttackBState.cpp
+
+- Began work on effect ruleset.
+- Apply TU penalty to soldiers based on their weight.
+- Increased weight of heavy explosives.
+
+- Fixed soldier strength stats changes being in base XCOM files instead of overhaul.
+
+- Updated mod rulesets to conform with new OpenXCOM definitions
+
+- Further update to ensure ruleset conformity
+
+- Fixed uninitialized targetSprinting on BattleAction.
+- More work on Effect rules.
+
+- Fixed sprint selection logic that failed in pathfinding due to shortcut Bresenham algorithm.
+
+- Funding nation decisions now place far more emphasis on X-COM's local activity in their own country than X-COM's global activity.
+
+- Altered council funding increases to be linear instead of exponential. Funding reductions are still exponential.
+
+- More work on Effect system.
+- Exposed a static getGame member for Game class to get access to the Game singleton.
+
+- Added missing BattleEffect files.
+
+- Funding nations now consider X-COM's success in the local region as well as their own country for funding decisions.
+
+- Reduce bleedout wounds from 10 to 5.
+
+- Most ammo is now much lighter.
+- Rocket launchers are lighter.
+- Heavy Rifles and Miniguns are now heavier.
+- Corrected some other weapon weights.
+- Modified throwing distance calculation to allow throwing items weighing nothing.
+
+- Units in the bleedout state no longer get a bonus to wound recovery when healed.
+
+- More work on effects system.
+
+- Lots more work on Effect system.
+
+- Finished initial implementation of effects framework.
+- Allow ammunition items to apply effects on hit.
+- Implemented Health Damage effect component.
+
+- Restore pistol clip item configuration.
+
+- Tweaks to auto and vector const calls.
+
+Conflicts:
+    bin/standard/xcom1/Language/en-GB.yml
+    bin/standard/xcom1/Language/en-US.yml
+    src/Menu/ListLoadState.cpp
+
+Conflicts:
+    src/Basescape/CraftInfoState.cpp
+    src/Battlescape/BattlescapeGame.cpp
+    src/Battlescape/BattlescapeGenerator.cpp
+    src/Battlescape/DebriefingState.cpp
+    src/Battlescape/Map.cpp
+    src/Battlescape/TileEngine.cpp
+    src/Battlescape/UnitWalkBState.cpp
+    src/Savegame/BattleUnit.cpp
+    src/Savegame/BattleUnit.h
+
+Conflicts:
+    src/Basescape/PurchaseState.cpp
+    src/Basescape/SoldiersState.cpp
+    src/Basescape/TransferItemsState.cpp
+    src/Battlescape/BattlescapeState.cpp
+    src/Battlescape/DebriefingState.cpp
+    src/Battlescape/DebriefingState.h
+    src/Battlescape/InventoryState.cpp
+    src/Engine/Timer.cpp
+    src/OpenXcom.2010.vcxproj.filters
+    src/Ruleset/Ruleset.cpp
+    src/Ruleset/Ruleset.h
+    src/Savegame/Soldier.cpp
+
+Conflicts:
+    src/Battlescape/BattlescapeGame.cpp
+    src/Battlescape/BattlescapeState.cpp
+    src/Battlescape/ExplosionBState.cpp
+    src/Battlescape/ProjectileFlyBState.cpp
+    src/Battlescape/TileEngine.cpp
+    src/OpenXcom.2010.vcxproj.filters
+    src/Ruleset/Ruleset.h
+    src/Savegame/BattleUnit.h
+
+- Rebased and moved config and data files into new folders.
+
+- Post-rebase fixes.
+
+- Moved XXCO Resources into mod directory.
+
+- Language and resource fixes.
+
+Conflicts:
+    bin/standard/xcom1/Language/en-US.yml
+
+- Added missing INVENTORY string.
+
+- Moved around XXCO ruleset files.
+- Fixed some more post-data rearrangement language file stuff.
+
+- Moved several non-overhaul strings to main xcom1/xcom2 language files.
+- Redid layout of Geoscape sidebar and added current Score.
+- Option to show Funds is now obsolete and is always on.
+- Added standard inventory layout and soldier fund cost to standard rulesets.
+
+- Defaulted base accuracy to 75 for weapons.
+
+- Removed unnecessary x50 from cannon round strings.
+
+- Migrate to new OpenXCOM isAmmo functions for battle items.
+
+- Cleaned up missing includes/forward declarations.
+
+- Reworked overhaul time unit recovery into new recoverTimeUnits function.
+
+- Added some standard OXP sprites to xcom2 configuration.
+- Created TFTD versions of new inventory button sprites.
+
+- Added roles config to TFTD.
+- Updated TFTD interfaces configuration to include proper colors for OXP stats displays.
+- Fixed an item stacking issue in the inventory logic.
+
+- Fixed more missing required interface elements in TFTD.
+- Fixed action menu positioning.
+- Put role in front of rank on craft soldier list.
+- Fixed an issue with explosion-less projectiles causing an infinite loop.
+
+- Ensure pathing is updated when standing up from kneeling.
+
+- Removed some explicit color references from the Role states to improve TFTD compatibility.
+
+- Added role menu and role change states to interface rulesets.
+- Removed some hardcoded UI options from role menus that caused problems in TFTD mode.
+
+- Changed OpenXcom title to OpenXcom+.
+
+- Cleaned up some leftover rebasing issues.
+
+- Allow Globe Palette setting to be 0, clearing the standard "water" fill behavior.
+
+- Rebase fixes.
+
+- Fix an inventory loading issue for vehicles on a craft.
+
+- Rebase fixes and updates.
+- Removed UFO Trajectory overrides to eliminate 5x time increase that was fixed in base OpenXCOM.
+- Merged custom soldier/vehicle types with new core OpenXCOM types.
+
+- Added Submachine Gun
+- Added Marksman Rifle
+- Sniper Rifle magazine capacity reduced from 10 to 4
+- Assault Rifle magazine capacity reduced from 20 to 15
+- Shotgun Ammo magazine capacity reduced from 10 to 6
+- Machine Gun ammo weight increased from 4 to 5
+- Machine Gun weight increased from 13 to 18
+- Sniper Rifle weight increased from 10 to 14
+- Assault Rifle and Shotgun down to 70% accuracy while dualwielding, from 80%.
+
+- Altered the description for the Marksman Rifle
+
+- Marksman Rifle is less loud.
+
+- Added submachinegun bigobj image.
+- Fixed list order of SMG and marksman rifle.
+
+- SMG accuracy increased
+- Fixed reactions modifier for Marksman Rifle
+
+- Added Marksman Rifle bigsprite
+
+- Revised Marksman Rifle bigsprite
+
+- Added the rest of the Marksman Rifle graphics
+- Fixed the positioning of two Sniper Rifle handob frames
+
+- Altered Marksman Rifle Ammo bigsprite graphic
+
+- Added Strike Beam Rifle (laser marksman rifle) and Pulse Laser Pistol (laser SMG) data
+- Very slightly reduced SMG accuracy
+
+- Added graphics for a laser submachinegun.
+
+- Linked up the graphics for the Pulse Laser Pistol
+- Completely redid the ordering and listordering of items
+
+- Added HandObj images for ballistic SMGs.
+- Redid HandObj for laser SMGs.
+- Added floorobs for ballistic SMGs and ammo.
+
+- Added Plasma Blaster Pistol (Plasma SMG) and Plasma Shock Rifle (Plasma Marksman)
+- Some aliens carry the new weapons
+- Also made more aliens carry heavier weapons in the late game for better armor penetration
+- Linked up the ufopedia entries for the laser SMG and laser marksman
+- Adjusted the AI range parameters for most plasma weapons
+- Reduced plasma weapon ammo capacity to the same as ballistic weapons
+- Fixed plasma sniper accuracy
+
+- Replaced Laser Sniper graphics
+
+- Overhauled Pulse Laser Pistol handobj images.
+- Added graphics for the Plasma Blaster Pistol.
+
+- Added Laser Marksman graphics
+
+- Fixed Laser Marksman bigob file name
+
+- Added Laser Rifle graphics
+
+- Updated the datasheet with the latest item ruleset information, and regenerated the item ruleset
+
+- Fixed the visual size of explosions to scale with explosion radius rather than explosion power
+
+- Fixed calculation of display accuracy for dual fired weapons with aimed shot.
+
+- Fixed weapon and ammo weights for some vehicle weapons
+
+- Post-rebase fixes.
+- Regenerated vehicle ruleset with storeItem set to STR_NONE explicitly.
+- Added Shift+Click to Unload on craft equipment state to load up all items for testing.
+- Adjusted position of text on Purchase and Sell state to handle new filter combobox.
+- Fixed an old rebase error that caused the alien containment management dialog to come up at the end of every battle.
+- Fixed death sound specified by armor.
+- Switched to new core OpenXCOM requires definitions for soldier types.
+- Fixed a TileEngine error that allowed tile visibility through diagonal walls.
+- Prevent melee attacks from zombifying vehicle units.
+
+- Raised range limits on short range weapons for AI use.
+
+- Added icon and role for Designated Marksman.
+- Renamed Rifleman to Infantry.
+- Reverted CraftSoldiersState mostly to upstream version.
+- Fixed Armors not initializing the vehicleItem flag.
+- Fixed an issue with the new explosion calculations that caused a crash for non-item explosions.
+- Prevent vehicle armors from being selectable in the armor list.
+
+- Updated ruleset from spreadsheets.
+- Adjusted reaction score calculations to once again be based on current TUs except when sneaking.
+
+- First attempt at merging VehicleWeapons into the items.rul datasheet
+- Electrolasers are a bit slower and less accurate
+- HWP Heavy Laser Cannon blast radius reduced and other stats worsened slightly
+- HWP Light Cannons improved slightly
+- All HWP weapons except machine gun and minigun type weapons were converted to use battleclipsize
+- Various weight rebalancings among weapons
+
+- Fixed up various data entry errors from the VehicleWeapons merge
+
+- Firestorms should be durable enough to take on Terror Ships now
+
+General cleanup and balance fixes
+- Removed snap shot from heavy rifles and Rocket Launcher
+- Reduced the power of Blaster Launchers
+- Deleted the unnecessary Fusion Missile research topic; Fusion Defenses now depends on Fusion Warheads
+- Reorganized HWP items in the manufacturing list
+- Rebalanced HWP item manufacture times and costs
+
+Large-scale data structure changes
+- Moved Research and Manufacturing to the data sheet
+- Renamed ballistic, laser, and plasma weapons to follow a simple naming format
+- Consolidated laser and plasma weapon research topics
+- Added RuleResearch fields "NeedsAnyItems" and "NeedsAllItems", which allow a research project to specify alternative needed items to become available
+
+Armor work
+- Integrated armors into the datasheet
+- Replaced the three existing personal armor suits with six new armor suits (Scout Armor, Heavy Armor, Stealth Armor, Assault Armor, Flying Armor, Power Armor).
+- Minor alien armor rebalancing (Sectopods should be somewhat less invulnerable now)
+
+- Filled out Effect system.
+  - Added combat logging.
+  - Added simple battlescape display of active effects.
+  - Added effect cancellation triggers.
+- Cleaned up Tile FOV calculation.
+- Added Stealth effect.
+- Added sample effects.
+
+- Cap unit brightness when stealthed as a simple visual indicator of stealth status.
+
+- Flipped sign on stealth shade check.
+
+- Allow armors to have an inventory layout that overrides the unit's own.
+- Added a new Utility inventory slot type. Full functionality TBD.
+- Adjusted origin voxel for kneeled soldiers when firing weapons to allow firing over fences.
+- Implemented more cancellation triggers for effects on various movement and activations actions.
+- Added stealth effect, and applied to Stealth and Flying armors.
+- Split Inventory rules into separate ruleset file.
+- Added inventoryLayout and equippedEffects to Armor ruleset generation.
+
+- Redesigned battlescape buttons/stats/weapons bar.
+- Added Utility slot functionality.
+- Added a temporary Stealth Armor sprite sheet.
+
+- Implemented a customizable armor recoloring mechanism.
+- Default armor colors provided by the base ruleset variables.
+- Save/copy armor coloring with inventory templates and role defaults.
+- Allow roles to specify a default color in config.
+- Apply Utile recoloring from soldiers in the inventory screen's armor background display.
+- Rearranged battlescape UI.
+- Allow armors to have a default Utile recolor. Applied when no custom color is selected.
+
+- Fix non-white colors being prevented from using the lightest color in the range for recoloring in lighten mode.
+
+- Implemented a new partial-draw stealth shader.
+- Made Utility slots 2x2.
+- Tweaked utility and hand slots on battlescape UI.
+
+- Changed encumbrance formula to begin encumbering at 50% of STR in carried weight.
+- Adjusted starting STR range to 20-40.
+- Reduced STR cap to 70.
+- Fixed positioning of left hand ammo counter.
+- Added Dark Purple and Dark Green armor colors.
+
+- Implemented Night Vision as an effect.
+- Cleaned up FOV calculation to not have a separate list of tiles.
+
+- Implemented directional light sources.
+- Implemented directional light effect for items.
+- Adjusted night vision lighting visuals, clamp to 10-15 light levels.
+
+- Attempt to support the Terrain Pack's port attack missions by overwriting just the deployment data.
+
+- Added Equipment inventory slot type.
+- Adjusted inventory layouts to add new equipment slots.
+- Changed mind control backlash to -15 psi skill.
+
+- Finished first round of inventory revamp and adding head/torso/legs equipment slots.
+- Allow inventory layouts to offset the unit image background on the inventory screen.
+
+- Display soldier stat gains on the debriefing state along with their recovery status.
+
+Added Arc Weapons
+- Added Arc Rifle (sans graphics)
+- Added Arc Launcher (sans graphics)
+- Changed 'waypoint' ruleItem field to 'waypoints'. It is now an int specifying the maximum number of waypoints a weapon can follow, instead of a bool.
+- Blaster Launchers cannot be manufactured anymore, and require an Ethereal Commander interrogation to research.
+- Fixed some UFOpedia entries.
+- Rearranged research.rul a bit.
+
+- Added graphics for headlamp and night vision goggles.
+- Reduced light power of headlamp effect.
+- Regenerated items rules with new headlamp and night vision goggles.
+- Regenerate unit recoloring for soldier-based units after the initial inventory screen is closed.
+- Added initial part of regenerating ammo.
+
+- Initial work on battle experience and soldier leveling system.
+
+- Further work on experience system. Implemented full basic support for battle gained experience and levelling.
+
+- Fixed action experience gain on dual firing.
+
+- First round of post-rebase fixes. Not yet run-worthy.
+
+- Fixed bad rebase code for death detection.
+- Fixed Debriefing Stats not being initialized in all constructors.
+- Fixed SavedGame save failure when GIT build was not being used caused by index out of bounds on expected version data.
+
+- Added initial versions of many XCOM (human) plasma weapon graphics. Not implemented!
+
+- Fixed rebase issue in GraphsState.
+
+- Post-rebase fixes.
+
+- Fixed rebase issues with casualty checks that caused performance problems on projectile impacts.
+- Fixed roles not being loaded properly.
+- Ensure XXCO starting base only loads standard soldiers when starting a new game.
+- Fixed an infinite loop on debriefing.
+- Removed some unnecessary FOV recalculation.
+- Fixed a crash caused by distance checks on non-existent targets.
+- Cleaned up some more bad rebase code leftover in ProjectileFlyBState.
+
+Initial implementation of raycaster-based simulation for displayed hit chances on the cursor.
+
+- Renaming XCOMPlasmaHeavy resources.
+
+- Created new set of XCOM-specific plasma weapons. HandObjs are not implemented yet.
+
+Added a cover percentage indicator to the cursor hit chance display.
+
+- Fixed ammo recovery not working properly for soldier equipped items.
+- Added language for headlamps and night vision goggles.
+
+- Improved layout and allow craft switching from soldier info screen.
+- Another attempt to fix dying enemies not recalculating FOV.
+- Remove vehicles from Psi training selection.
+- Added a minimum mission experience option.
+- Calculate experience gain for a mission based on 100% of positive score items and 10% of negative score items.
+
+- Made the raycaster-based chance to hit display work better.
+
+- Small update to increase the accuracy of the displayed hit chance against tiles.
+
+- Fixed research ruleset problems with typos on cannon research dependencies.
+
+- Fixed spacing on the item transfer screen.
+- Added an indicator to unresearched items in the sell screen.
+
+- Added vehicle headlights and night vision modules.
+
+- Overhauled Lightning to fit 20 units, 4 tanks. Stats reduced to be between Skyranger and Avenger.
+
+- Reduced fuel consumption and increased max fuel for Lightning and Avenger.
+
+- Assigned engineers now roll over to the top production item when they finish working on a project
+- Manufacturing projects with zero engineers assigned do not take workshop space
+- Rightclicking an item in the production list menu instantly adds it to the production queue, with all available engineers
+
+- Restored some lost ruleset fixes.
+- More research dependency fixes.
+- Allow reordering manufacturing list.
+- Allow left/right hand hotkeys to toggle weapons on the interception minigame.
+
+- Swapped HWPs to use standard tank images with customizable colors and defaults set.
+- Removed custom resources.
+
+- Moved tile visibility tracking to be entirely in BattleUnit.
+- Removed references to removed HWP images.
+
+- Added a basic activity log to the Geoscape.
+
+- Added a simple activity log to the geoscape to better track progress, craft, and alien fuel.
+- Colorize Weight display based on 0-50%, 50%-100%, 100%+ in the inventory display.
+
+- Fixed an issue where simultaneous projectile impacts could queue up unit death states causing slowness and multiple kills counted.
+- Trigger "ACTIVATE" effect cancellation on psi and medikit usage.
+- Improved the precision of the estimated profit per month display on manufacturing.
+- Changed the structure of the Active Effects display to try to prevent sizing issues.
+- Check for casualties after mind blast usage so units die properly.
+
+- Fuel efficiency tweak for Firestorm.
+
+- Post-rebase fixes.
+
+- Rebased through 5/30/2016.
+
+- Fixed primary action and unit death problems from rebase.
+
+- Heavy armor gives half as much stamina
+- Armor values on T2/T3 armor and tanks reduced significantly
+- Heavy tank health increased
+- Reinforcement module health bonus increased
+- All heavy rifle damage reduced by ~20%
+- Rockets and tank cannons also had their damage reduced to stay in line with heavy rifles
+- Sectopod armor reduced
+- Sectopods now have a heavy plasma cannon instead of an autofire laser
+- Firestorm refueling is more efficient
+- Miniguns are ~26% less accurate
+- Blaster bombs have a somewhat larger blast radius
+- Psi orbs hold 12 ammo instead of 10
+
+- Fixed an issue where items were double-recovered from player units on mission end.
+- Fixed an issue where the debriefing screen would crash due to a rebasing mistake.
+- Fixed a crash issue in projectile flight calculation caused by a rebasing mistake.
+- Ensure the temporary stat upgrades object is cleared during post-mission calculations so vehicle units do not display stat increases from prior units in order.
+
+- Reduced bonus health from armors.
+- Compensated for range dissipation on ballistic/laser/plasma weapons with extra damage (+10-20% depending on weapon class)
+- Greatly increased Electrolaser accuracy and firing rate
+- Overhauled weapon accuracy/TU costs
+- Improved tank miniguns (autoshot fires 10 instead of 20, but autoshot TU cost greatly reduced)
+- Added minor plasma resistance to assault-class armor
+- Fixed an issue with research not destroying items if it was configured to.
+- Fixed alien fuel display showing the first base data for all bases.
+- Fixed wound health loss calculation.
+
+- Implemented a damage dropoff mechanism by damage type.
+
+- Reduced accuracy of marksman rifles and vehicle miniguns.
+- Fixed a crash issue that could occur if an arced weapon could not calculate a trajectory and the shot action was confirmed.
+
+- Implemented a basic 50% time unit debt system.
+- Allow negative numbers in the NumberText display object.
+
+- Fixed Sectopod weapon.
+- Increased TU cost of miniguns.
+- Implemented a "time unit debt" system allowing an action to take a unit below 0 TUs, to a minimum of -20%.
+- Improved FOV calculation for large units.
+
+- Display kills on post-mission debriefing screen per unit.
+
+- Fixed some missing interface configuration and colors for TFTD.
+- Added Base accuracy to inventory weapon accuracy display, and removed base accuracy from the displayed shot accuracies.
+
+- Removed cost for canceling ongoing actions (overwatch, mind control).
+- Fixed New Battle generating random vehicles instead of just soldiers.
+
+Fixes #9
+
+- Fixed an issue where units could see terrain through walls in certain directions if they were directly against the wall.
+
+Fixes #2.
+
+- Fixed world indicators for motion tracking and clairvoyance not showing up on every other floor (Fixes #7).
+- Highlight the current Z-level in yellow, and other levels in white for motion tracker/clairvoyance world indicators.
+
+- Added Burst Shot functionality. Usable as a second auto shot that fires faster and fewer rounds.
+
+- Added some missing interface elements to the TFTD interface ruleset.
+- Fixed shot accuracy display language string so it properly displays all 4 accuracy values.
+
+- Fixed an issue in debriefing with reloading classic vehicles that use battleClipSize.
+- Fixed text coloring of the Combat Log in TFTD.
+- Fixed coloring of spotted enemy buttons in TFTD.
+- Fixed text coloring of unit names in TFTD.
+
+- Made the encumbrance multiplier a ruleset constant for better compatibility with vanilla XCOM/TFTD.
+- Added more missing language strings to GB and TFTD.
+
+- New bigobj and floorobj for laser minigun.
+- Tweaked bigobj for laser shotgun.
+
+- Adjusted minigun handob positioning and reworked laser minigun handobs.
+
+- Created handobs for the XCOM plasma minigun.
+- Loaded latest ruleset with Burst shot configuration.
+
+- Increased number of generated soldiers in New Battle mode.
+- Restrict non-researchable items from being added in New Battle mode.
+
+- Added the Grenade Launcher to the game.
+- Replaced the graphics for the Heavy Rifle.
+
+- Added strings and manufacturing rules for the grenade launcher.
+
+- Added missing XCOM Plasma Minigun handob images.
+
+- Fixed an issue where units double-recovered TUs after each turn.
+
+- Fixed an issue where chained explosions of map objects could get stuck.
+
+- Moved manufacturing queue movement buttons so they do not overlap other columns.
+
+- Fixed accuracy calculation for units standing on a sloped surface. (Fixes #1).
