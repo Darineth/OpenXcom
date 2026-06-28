@@ -3292,13 +3292,16 @@ bool BattleUnit::addItem(BattleItem *item, const Mod *mod, bool allowSecondClip,
 						}
 					}
 				}
-				// C3 - fallback: vanilla slot order by listOrder
+				// C3 - fallback: slot order by listOrder, restricted to the unit's layout
+				// (so custom inline sections are included and hidden ones excluded)
 				if (!placed)
 				{
-					// this is `n*(log(n) + log(n))` code, it could be `n` but we would lose predefined order, as `RuleItem` have them in effective in random order (depending on global memory allocations)
-					for (const auto& s : mod->getInvsList())
+					std::vector<const RuleInventory*> candidates(
+						_inventoryLayout->getSections().begin(), _inventoryLayout->getSections().end());
+					std::sort(candidates.begin(), candidates.end(),
+						[](const RuleInventory* a, const RuleInventory* b) { return a->getListOrder() < b->getListOrder(); });
+					for (const auto* slot : candidates)
 					{
-						RuleInventory* slot = mod->getInventory(s);
 						if (slot->getType() == INV_SLOT)
 						{
 							placed = fitItemToInventory(slot, item);

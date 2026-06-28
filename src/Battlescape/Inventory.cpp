@@ -172,6 +172,9 @@ BattleUnit *Inventory::getSelectedUnit() const
 void Inventory::setSelectedUnit(BattleUnit *unit, bool resetGroundOffset)
 {
 	_selUnit = unit;
+	// The drawn grid (and its labels) now depend on the selected unit's inventory
+	// layout, so redraw it whenever the unit changes.
+	drawGrid();
 	if (resetGroundOffset)
 	{
 		_groundOffset = 0;
@@ -853,39 +856,36 @@ void Inventory::mouseClick(Action *action, State *state)
 
 							if (!placed)
 							{
+								// fallback: try every non-ground section in the unit's layout (so custom
+								// inline sections are included and hidden ones excluded), in the configured
+								// slot order. For the default layout this reproduces the historical
+								// listOrder (B3) / alphabetical (A2) global iteration exactly.
+								std::vector<const RuleInventory*> candidates;
+								for (const auto* s : getActiveLayout()->getSections())
+								{
+									if (s->getType() != INV_GROUND)
+									{
+										candidates.push_back(s);
+									}
+								}
 								if (Mod::EXTENDED_INVENTORY_SLOT_SORTING)
 								{
-									// B3 - fallback: slot order by listOrder
-									for (const auto& s : _game->getMod()->getInvsList())
-									{
-										if (placed)
-										{
-											break; // loop finished
-										}
-										newSlot = _game->getMod()->getInventory(s);
-										if (newSlot->getType() == INV_GROUND)
-										{
-											continue;
-										}
-										placed = fitItem(newSlot, item, warning);
-									}
+									std::sort(candidates.begin(), candidates.end(),
+										[](const RuleInventory* a, const RuleInventory* b) { return a->getListOrder() < b->getListOrder(); });
 								}
 								else
 								{
-									// A2 - fallback: vanilla alphabetical slot order
-									for (const auto& wildCard : *_game->getMod()->getInventories())
+									std::sort(candidates.begin(), candidates.end(),
+										[](const RuleInventory* a, const RuleInventory* b) { return a->getId() < b->getId(); });
+								}
+								for (const auto* s : candidates)
+								{
+									if (placed)
 									{
-										if (placed)
-										{
-											break; // loop finished
-										}
-										newSlot = wildCard.second;
-										if (newSlot->getType() == INV_GROUND)
-										{
-											continue;
-										}
-										placed = fitItem(newSlot, item, warning);
+										break; // loop finished
 									}
+									newSlot = s;
+									placed = fitItem(newSlot, item, warning);
 								}
 							}
 							if (!placed)

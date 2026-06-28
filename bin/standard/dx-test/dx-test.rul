@@ -125,6 +125,80 @@ items:
       tu: -10
 
 # =====================================================================
+#  DX: configurable inventory layouts (per-armor)
+#  Exercises RuleInventoryLayout + Armor.inventoryLayout. Each soldier
+#  armor below gets a different layout so you can swap armor in the base
+#  and watch the inventory grid change.
+#
+#    STR_NONE_UC          -> LIGHT  (exclusion: hands + belt + ground only)
+#    STR_PERSONAL_ARMOR_UC-> RIG    (no backpack; adds an inline "satchel")
+#    STR_POWER_SUIT_UC    -> CLONE  (refNode-inherits LIGHT; renders == LIGHT)
+#    STR_FLYING_SUIT_UC   -> (unset; uses the default = vanilla full grid)
+#
+#  What to check:
+#    * LIGHT: backpack/legs/shoulders are gone; auto-equip never fills them;
+#      you cannot drop items there; hands/belt/ground still work.
+#    * RIG: the inline satchel slot draws to the right and accepts items by
+#      hand (manual placement); backpack is absent.
+#    * CLONE: power-suit inventory looks identical to LIGHT (hands+belt+ground),
+#      proving refNode inheritance loaded the parent's sections. (If refNode
+#      failed, you'd see only the ground slot.)
+#    * FLYING SUIT / any other unit: unchanged vanilla grid (default layout).
+# =====================================================================
+inventoryLayouts:
+  - type: STR_DX_LAYOUT_LIGHT
+    sections: &dxLightSections
+      - ref: STR_RIGHT_HAND
+      - ref: STR_LEFT_HAND
+      - ref: STR_BELT
+      - ref: STR_GROUND
+
+  - type: STR_DX_LAYOUT_RIG
+    sections:
+      - ref: STR_RIGHT_HAND
+      - ref: STR_LEFT_HAND
+      - ref: STR_BELT
+      - ref: STR_RIGHT_SHOULDER
+      - ref: STR_LEFT_SHOULDER
+      - ref: STR_GROUND
+      # inline section: a custom 3x2 "satchel" where the backpack used to be
+      - id: STR_DX_SATCHEL
+        x: 192
+        y: 37
+        type: 0
+        slots:
+          - [0, 0]
+          - [1, 0]
+          - [2, 0]
+          - [0, 1]
+          - [1, 1]
+          - [2, 1]
+        costs:
+          STR_RIGHT_HAND: 8
+          STR_LEFT_HAND: 8
+          STR_BELT: 12
+          STR_GROUND: 10
+
+  - type: STR_DX_LAYOUT_CLONE
+    # refNode reuse: inherit LIGHT's section list verbatim (no own `sections:`),
+    # so this renders identical to LIGHT. Demonstrates the standard refNode mechanic.
+    refNode:
+      sections: *dxLightSections
+
+armors:
+  - type: STR_NONE_UC
+    inventoryLayout: STR_DX_LAYOUT_LIGHT
+  - type: STR_PERSONAL_ARMOR_UC
+    inventoryLayout: STR_DX_LAYOUT_RIG
+  - type: STR_POWER_SUIT_UC
+    inventoryLayout: STR_DX_LAYOUT_CLONE
+
+extraStrings:
+  - type: en-US
+    strings:
+      STR_DX_SATCHEL: "SATCHEL"
+
+# =====================================================================
 #  User options forced on while this test mod is active
 # =====================================================================
 fixedUserOptions:

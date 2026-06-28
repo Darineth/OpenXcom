@@ -247,7 +247,14 @@ int RuleInventory::getCost(const RuleInventory* slot) const
 {
 	if (slot == this)
 		return 0;
-	return _costs.find(slot->getId())->second;
+	auto it = _costs.find(slot->getId());
+	if (it != _costs.end())
+		return it->second;
+	// Undefined section-pair cost: this happens when a custom inventory layout adds
+	// sections (e.g. inline ones) that this section has no `costs` entry for. Fall back
+	// to a sane default move cost instead of dereferencing a missing key. The fully
+	// specified default layout always has every pair, so this is never hit there.
+	return DEFAULT_MOVE_COST;
 }
 
 int RuleInventory::getListOrder() const

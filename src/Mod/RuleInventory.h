@@ -53,6 +53,8 @@ private:
 public:
 	static const int SLOT_W = 16;
 	static const int SLOT_H = 16;
+	/// Fallback TU cost for moving into a section with no explicit `costs` entry (custom-layout sections).
+	static const int DEFAULT_MOVE_COST = 8;
 	static const int HAND_W = 2;
 	static const int HAND_H = 3;
 	static const int PAPERDOLL_W = 40;
