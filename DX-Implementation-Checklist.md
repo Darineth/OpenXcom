@@ -165,7 +165,8 @@ Everything below is DX-specific work confirmed **absent** from the base.
     items now contribute to the wearer's per-side max armor via `BattleUnit::recalculateMaxArmor`
     (cached base + item bonuses, with separately-tracked per-side armor damage so removing/
     re-equipping a plate never refunds lost armor). Fields shown in Stats-for-Nerds.
-- [ ] **Inventory layouts** — `RuleInventoryLayout`, `RuleSoldier.inventoryLayout`.
+- [ ] **Inventory layouts** — `RuleInventoryLayout`, `Armor.inventoryLayout`.
+  *(design: [plans/Feature-ConfigurableInventoryLayouts.md](plans/Feature-ConfigurableInventoryLayouts.md))*
   - [ ] **Configurable weapon slots / unload config** — replace hand-slot assumptions in
     `Inventory::unload` with layout-aware destination policies (handling slots, ammo destination,
     fallbacks, and battle shift-unload gating) so custom layouts without hand slots behave safely.

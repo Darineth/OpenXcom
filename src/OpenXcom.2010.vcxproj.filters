@@ -855,6 +855,9 @@
     <ClCompile Include="Mod\RuleInventory.cpp">
       <Filter>Mod</Filter>
     </ClCompile>
+    <ClCompile Include="Mod\RuleInventoryLayout.cpp">
+      <Filter>Mod</Filter>
+    </ClCompile>
     <ClCompile Include="Mod\RuleItem.cpp">
       <Filter>Mod</Filter>
     </ClCompile>
@@ -2115,6 +2118,9 @@
       <Filter>Mod</Filter>
     </ClInclude>
     <ClInclude Include="Mod\RuleInventory.h">
+      <Filter>Mod</Filter>
+    </ClInclude>
+    <ClInclude Include="Mod\RuleInventoryLayout.h">
       <Filter>Mod</Filter>
     </ClInclude>
     <ClInclude Include="Mod\RuleItem.h">

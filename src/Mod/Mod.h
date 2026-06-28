@@ -69,6 +69,7 @@ class Unit;
 class Armor;
 class ArticleDefinition;
 class RuleInventory;
+class RuleInventoryLayout;
 class RuleResearch;
 class RuleManufacture;
 class RuleManufactureShortcut;
@@ -188,6 +189,8 @@ private:
 	std::map<std::string, Armor*> _armors;
 	std::map<std::string, ArticleDefinition*> _ufopaediaArticles;
 	std::map<std::string, RuleInventory*> _invs;
+	std::map<std::string, RuleInventoryLayout*> _inventoryLayouts;
+	RuleInventoryLayout* _defaultInventoryLayout = nullptr;
 	bool _inventoryOverlapsPaperdoll;
 	std::map<std::string, RuleResearch *> _research;
 	std::map<std::string, RuleManufacture *> _manufacture;
@@ -313,14 +316,14 @@ private:
 	std::vector<int> _aliensFacingCraftOdds;
 
 	std::map<std::string, int> _ufopaediaSections;
-	std::vector<std::string> _countriesIndex, _extraGlobeLabelsIndex, _regionsIndex, _facilitiesIndex, _craftsIndex, _craftWeaponsIndex, _itemCategoriesIndex, _itemsIndex, _invsIndex, _ufosIndex;
+	std::vector<std::string> _countriesIndex, _extraGlobeLabelsIndex, _regionsIndex, _facilitiesIndex, _craftsIndex, _craftWeaponsIndex, _itemCategoriesIndex, _itemsIndex, _invsIndex, _inventoryLayoutsIndex, _ufosIndex;
 	std::vector<std::string> _aliensIndex, _enviroEffectsIndex, _startingConditionsIndex, _deploymentsIndex, _armorsIndex, _ufopaediaIndex, _ufopaediaCatIndex, _researchIndex, _manufactureIndex;
 	std::vector<std::string> _skillsIndex, _soldiersIndex, _soldierTransformationIndex, _soldierBonusIndex;
 	std::vector<std::string> _alienMissionsIndex, _terrainIndex, _customPalettesIndex, _arcScriptIndex, _eventScriptIndex, _eventIndex, _missionScriptIndex, _adhocScriptIndex;
 	std::vector<std::vector<int> > _alienItemLevels;
 	std::vector<std::array<SDL_Color, TransparenciesOpacityLevels>> _transparencies;
 	int _facilityListOrder, _craftListOrder, _itemCategoryListOrder, _itemListOrder, _armorListOrder, _alienRaceListOrder, _researchListOrder,  _manufactureListOrder;
-	int _soldierBonusListOrder, _transformationListOrder, _ufopaediaListOrder, _invListOrder, _soldierListOrder;
+	int _soldierBonusListOrder, _transformationListOrder, _ufopaediaListOrder, _invListOrder, _invLayoutListOrder, _soldierListOrder;
 	std::vector<ModData> _modData;
 	ModData* _modCurrent;
 	const SDL_Color *_statePalette;
@@ -623,6 +626,10 @@ public:
 		{
 			rule = getInventory(name, true);
 		}
+		else if constexpr (std::is_same_v<T, RuleInventoryLayout>)
+		{
+			rule = getInventoryLayout(name, true);
+		}
 		else if constexpr (std::is_same_v<T, RuleEvent>)
 		{
 			rule = getEvent(name, true);
@@ -772,6 +779,10 @@ public:
 	RuleInventory *getInventoryBelt() const { return getInventory("STR_BELT", true); }
 	/// Gets the ruleset for ground inventory slot.
 	RuleInventory *getInventoryGround() const { return getInventory("STR_GROUND", true); }
+	/// Gets the ruleset for a specific inventory layout.
+	RuleInventoryLayout *getInventoryLayout(const std::string &id, bool error = false) const;
+	/// Gets the implicit default inventory layout (synthesized from the global inventory set).
+	RuleInventoryLayout *getDefaultInventoryLayout() const { return _defaultInventoryLayout; }
 
 	/// Gets whether or not the inventory slots overlap with the paperdoll button
 	bool getInventoryOverlapsPaperdoll() const { return _inventoryOverlapsPaperdoll; }

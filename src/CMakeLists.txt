@@ -324,6 +324,7 @@ set ( mod_src
   Mod/RuleGlobe.cpp
   Mod/RuleInterface.cpp
   Mod/RuleInventory.cpp
+  Mod/RuleInventoryLayout.cpp
   Mod/RuleItem.cpp
   Mod/RuleItemCategory.cpp
   Mod/RuleManufacture.cpp

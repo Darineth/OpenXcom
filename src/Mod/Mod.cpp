@@ -75,6 +75,7 @@
 #include "Armor.h"
 #include "ArticleDefinition.h"
 #include "RuleInventory.h"
+#include "RuleInventoryLayout.h"
 #include "RuleResearch.h"
 #include "RuleManufacture.h"
 #include "RuleManufactureShortcut.h"
@@ -454,7 +455,7 @@ Mod::Mod() :
 	_defeatScore(0), _defeatFunds(0), _difficultyDemigod(false), _startingTime(6, 1, 1, 1999, 12, 0, 0), _startingDifficulty(0),
 	_baseDefenseMapFromLocation(0), _disableUnderwaterSounds(false), _enableUnitResponseSounds(false), _pediaReplaceCraftFuelWithRangeType(-1),
 	_facilityListOrder(0), _craftListOrder(0), _itemCategoryListOrder(0), _itemListOrder(0), _armorListOrder(0), _alienRaceListOrder(0),
-	_researchListOrder(0),  _manufactureListOrder(0), _soldierBonusListOrder(0), _transformationListOrder(0), _ufopaediaListOrder(0), _invListOrder(0), _soldierListOrder(0),
+	_researchListOrder(0),  _manufactureListOrder(0), _soldierBonusListOrder(0), _transformationListOrder(0), _ufopaediaListOrder(0), _invListOrder(0), _invLayoutListOrder(0), _soldierListOrder(0),
 	_modCurrent(0), _statePalette(0)
 {
 	_muteMusic = new Music();
@@ -723,6 +724,11 @@ Mod::~Mod()
 	{
 		delete pair.second;
 	}
+	for (auto& pair : _inventoryLayouts)
+	{
+		delete pair.second;
+	}
+	delete _defaultInventoryLayout;
 	for (auto& pair : _research)
 	{
 		delete pair.second;
@@ -2337,6 +2343,22 @@ void Mod::loadAll()
 	afterLoadHelper("items", this, _items, &RuleItem::afterLoad);
 	afterLoadHelper("weaponSets", this, _weaponSets, &RuleWeaponSet::afterLoad);
 	afterLoadHelper("manufacture", this, _manufacture, &RuleManufacture::afterLoad);
+	afterLoadHelper("inventoryLayouts", this, _inventoryLayouts, &RuleInventoryLayout::afterLoad);
+	// Synthesize the implicit default layout from the global inventory set, so every unit always has
+	// a layout and mods that define no inventoryLayouts behave exactly as before. The sections are
+	// collected in _invs (id/map) iteration order to match how the engine historically walked the
+	// global inventory map, keeping auto-placement order byte-for-byte unchanged.
+	{
+		std::vector<const RuleInventory*> sections;
+		sections.reserve(_invs.size());
+		for (auto& pair : _invs)
+		{
+			sections.push_back(pair.second);
+		}
+		delete _defaultInventoryLayout;
+		_defaultInventoryLayout = new RuleInventoryLayout("STR_INVENTORY_LAYOUT_DEFAULT", 0);
+		_defaultInventoryLayout->setSectionsDirectly(std::move(sections));
+	}
 	afterLoadHelper("armors", this, _armors, &Armor::afterLoad);
 	afterLoadHelper("units", this, _units, &Unit::afterLoad);
 	afterLoadHelper("soldiers", this, _soldiers, &RuleSoldier::afterLoad);
@@ -2938,6 +2960,14 @@ void Mod::loadFile(const FileMap::FileRecord &filerec, ModScript &parsers)
 	for (const auto& ruleReader : iterateRules("invs", "id"))
 	{
 		RuleInventory *rule = loadRule(ruleReader, &_invs, &_invsIndex, "id", RuleListOrderedFactory<RuleInventory>{ _invListOrder, 10 });
+		if (rule != 0)
+		{
+			rule->load(ruleReader);
+		}
+	}
+	for (const auto& ruleReader : iterateRules("inventoryLayouts", "type"))
+	{
+		RuleInventoryLayout *rule = loadRule(ruleReader, &_inventoryLayouts, &_inventoryLayoutsIndex, "type", RuleListOrderedFactory<RuleInventoryLayout>{ _invLayoutListOrder, 10 });
 		if (rule != 0)
 		{
 			rule->load(ruleReader);
@@ -4616,6 +4646,17 @@ RuleInventory *Mod::getInventory(const std::string &id, bool error) const
 }
 
 /**
+ * Returns the rules for a specific inventory layout.
+ * @param id Layout type.
+ * @param error Throw if not found.
+ * @return Inventory layout ruleset.
+ */
+RuleInventoryLayout *Mod::getInventoryLayout(const std::string &id, bool error) const
+{
+	return getRule(id, "InventoryLayout", _inventoryLayouts, error);
+}
+
+/**
  * Returns basic damage type.
  * @param type damage type.
  * @return basic damage ruleset.
@@ -5090,6 +5131,7 @@ void Mod::sortLists()
 	sortIndex(_manufactureIndex, _manufacture, compareRule<RuleManufacture>(this));
 	sortIndex(_soldierTransformationIndex, _soldierTransformation, compareRule<RuleSoldierTransformation>(this));
 	sortIndex(_invsIndex, _invs, compareRule<RuleInventory>(this));
+	sortIndex(_inventoryLayoutsIndex, _inventoryLayouts, compareRule<RuleInventoryLayout>(this));
 	// special cases
 	sortIndex(_craftWeaponsIndex, _craftWeapons, compareRule<RuleCraftWeapon>(this));
 	sortIndex(_armorsIndex, _armors, compareRule<Armor>(this));

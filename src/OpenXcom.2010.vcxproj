@@ -675,6 +675,7 @@
     <ClCompile Include="Mod\RuleCraft.cpp" />
     <ClCompile Include="Mod\RuleCraftWeapon.cpp" />
     <ClCompile Include="Mod\RuleInventory.cpp" />
+    <ClCompile Include="Mod\RuleInventoryLayout.cpp" />
     <ClCompile Include="Mod\RuleItem.cpp" />
     <ClCompile Include="Mod\RuleManufacture.cpp" />
     <ClCompile Include="Mod\RuleRegion.cpp" />
@@ -1172,6 +1173,7 @@
     <ClInclude Include="Mod\RuleCraft.h" />
     <ClInclude Include="Mod\RuleCraftWeapon.h" />
     <ClInclude Include="Mod\RuleInventory.h" />
+    <ClInclude Include="Mod\RuleInventoryLayout.h" />
     <ClInclude Include="Mod\RuleItem.h" />
     <ClInclude Include="Mod\RuleManufacture.h" />
     <ClInclude Include="Mod\RuleRegion.h" />

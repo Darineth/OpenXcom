@@ -86,6 +86,7 @@ void Armor::load(const YAML::YamlNodeReader& node, Mod *mod, const ModScript &pa
 	reader.tryRead("spriteSheet", _spriteSheet);
 	reader.tryRead("spriteInv", _spriteInv);
 	reader.tryRead("allowInv", _hasInventory);
+	reader.tryRead("inventoryLayout", _inventoryLayoutName);
 	if (reader["corpseItem"])
 	{
 		_corpseBattleNames.clear();
@@ -302,6 +303,7 @@ void Armor::afterLoad(const Mod* mod)
 	mod->linkRule(_storeItem, _storeItemName); //special logic there: "STR_NONE" -> nullptr
 	mod->linkRule(_selfDestructItem, _selfDestructItemName);
 	mod->linkRule(_specWeapon, _specWeaponName);
+	mod->linkRule(_inventoryLayout, _inventoryLayoutName);
 
 
 	{

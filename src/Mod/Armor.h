@@ -35,6 +35,7 @@ enum AIAttackWeight : int;
 
 class BattleUnit;
 class RuleItem;
+class RuleInventoryLayout;
 class RuleResearch;
 class RuleSoldier;
 class RulesoldierBonus;
@@ -100,6 +101,7 @@ public:
 private:
 	std::string _ufopediaType;
 	std::string _type, _spriteSheet, _spriteInv, _corpseGeoName, _storeItemName, _selfDestructItemName, _specWeaponName;
+	std::string _inventoryLayoutName;
 	std::string _requiresName;
 	std::string _requiresAwardName;
 	std::string _requiresBonusName;
@@ -121,6 +123,7 @@ private:
 	const RuleItem* _storeItem = nullptr;
 	const RuleItem* _selfDestructItem = nullptr;
 	const RuleItem* _specWeapon = nullptr;
+	const RuleInventoryLayout* _inventoryLayout = nullptr;
 
 	bool _infiniteSupply;
 	int _frontArmor, _sideArmor, _leftArmorDiff, _rearArmor, _underArmor, _drawingRoutine;
@@ -458,6 +461,8 @@ public:
 	const std::vector<int> &getRankColorRaw() const { return _rankColor; }
 	/// Can we access this unit's inventory?
 	bool hasInventory() const;
+	/// Gets the inventory layout this armor assigns (nullptr => use the default layout).
+	const RuleInventoryLayout* getInventoryLayout() const { return _inventoryLayout; }
 	/// Gets script.
 	template<typename Script>
 	const typename Script::Container &getScript() const { return _battleUnitScripts.get<Script>(); }
