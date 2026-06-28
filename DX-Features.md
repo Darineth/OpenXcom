@@ -3,6 +3,59 @@
 This document tracks features added in OpenXcom DX on top of OXCE-Plus. Entries will be added
 here as features are implemented.
 
+## Configurable Inventory Layouts
+
+Different armors can now grant different inventory **section sets** (slots), instead of every unit
+in the game sharing one global grid. In stock OXCE the `invs:` sections are global and armor's only
+inventory control is the `allowInv` on/off toggle; DX adds a per-armor layout on top.
+
+Define named layouts with a new top-level `inventoryLayouts:` node and assign one to an armor via
+`Armor.inventoryLayout`:
+
+```yaml
+inventoryLayouts:
+  - type: STR_LAYOUT_LIGHT
+    sections:
+      - ref: STR_RIGHT_HAND      # reuse a globally-defined `invs` section by id
+      - ref: STR_LEFT_HAND
+      - ref: STR_BELT
+      - id: STR_SATCHEL          # ...or define a section inline (same fields as an `invs` entry)
+        x: 192
+        y: 37
+        type: 0                  # 0 = slot, 1 = hand, 2 = ground
+        slots: [ [0,0], [1,0], [2,0], [0,1], [1,1], [2,1] ]
+        costs: { STR_RIGHT_HAND: 8, STR_BELT: 12, STR_GROUND: 10 }
+
+armors:
+  - type: STR_HEAVY_SUIT
+    inventoryLayout: STR_LAYOUT_LIGHT
+```
+
+Details and behavior:
+
+- **Sections** are either a `ref:` to a global `invs` section (shared by id) or defined inline (the
+  layout owns them; same fields as an `invs` entry). Layouts support the standard `refNode` parent
+  mechanic for reuse between layouts.
+- **Keying is armor-only.** Every unit always has an armor (soldiers, aliens, HWPs), so the armor's
+  layout fully determines its slots. There is no `RuleSoldier`/`Unit` layout field.
+- **Default behavior is unchanged.** With no `inventoryLayouts` defined (or an armor that sets none),
+  the engine uses an implicit default layout synthesized from the global `invs` set, in the historical
+  iteration order — so unmodified mods behave exactly as before.
+- A ground section is always guaranteed (appended if a layout omits one).
+- The inventory screen, item placement, quick-move (ctrl+click), start-of-mission auto-equip, and the
+  alien inventory all honor the active unit's layout: hidden sections are not drawn or used, and inline
+  sections are drawn, clickable, and valid auto/quick-move targets.
+- **Stranding protection.** Item placement that would force an item into a section the unit's layout
+  lacks (loadout templates, persistent equipment layouts saved under a different armor) instead leaves
+  the item on the ground; templates show a warning (`STR_DX_TEMPLATE_SLOT_NOT_IN_LAYOUT`).
+- **Layout-aware unload.** Weapon unload only uses hand sections present in the unit's layout; when no
+  off-hand is available, the ejected ammo is best-fit into another inventory slot (ctrl+click style)
+  before falling back to the ground.
+
+Known limitation: loading a battlescape save whose item slots became invalid because the layout/armor
+definition changed *since the save* will leave those items at their old position (engine grounds only
+globally-missing slot ids, not globally-valid-but-not-in-this-layout ones).
+
 ## Inventory Move TU Costs in Pre-Battle Setup
 
 The per-slot inventory move TU costs (shown on the slot labels while an item is held) now also

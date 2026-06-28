@@ -1,6 +1,14 @@
 # Feature: Configurable Weapon Slots and Unload Behavior
 
-**Status:** Planned (Phase 4).
+**Status:** Implemented (Phase 4) — lean approach (no new ruleset config).
+
+**What shipped vs. this plan:** rather than the configurable `weaponHandlingSlots` / `unloadRules`
+policy surface proposed below, DX shipped an automatic, layout-derived version that needs no ruleset
+config. `Inventory::unload` now restricts its candidate hands to the hand sections in the unit's
+inventory layout, and when no off-hand is free the ejected ammo is best-fit into another inventory
+slot (ctrl+click style, ordered by `EXTENDED_INVENTORY_SLOT_SORTING`) before falling back to the
+ground; TU cost is computed from the actual destination. Default two-hand layouts are unchanged when
+the off-hand is free. The configurable policy surface below is deferred unless a concrete need arises.
 
 ## Summary
 

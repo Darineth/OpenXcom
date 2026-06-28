@@ -165,11 +165,17 @@ Everything below is DX-specific work confirmed **absent** from the base.
     items now contribute to the wearer's per-side max armor via `BattleUnit::recalculateMaxArmor`
     (cached base + item bonuses, with separately-tracked per-side armor damage so removing/
     re-equipping a plate never refunds lost armor). Fields shown in Stats-for-Nerds.
-- [ ] **Inventory layouts** — `RuleInventoryLayout`, `Armor.inventoryLayout`.
+- [x] **Inventory layouts** — `RuleInventoryLayout`, `Armor.inventoryLayout`.
   *(design: [plans/Feature-ConfigurableInventoryLayouts.md](plans/Feature-ConfigurableInventoryLayouts.md))*
-  - [ ] **Configurable weapon slots / unload config** — replace hand-slot assumptions in
-    `Inventory::unload` with layout-aware destination policies (handling slots, ammo destination,
-    fallbacks, and battle shift-unload gating) so custom layouts without hand slots behave safely.
+  - ✅ **Done.** Per-armor inventory section sets via the `inventoryLayouts:` node (with `ref:`/inline
+    sections and `refNode` reuse) and `Armor.inventoryLayout`, resolved/cached per `BattleUnit`. The
+    inventory UI, placement, quick-move, auto-equip, and alien inventory all honor the active layout;
+    a synthesized default preserves vanilla behavior. Stranding-protection on template/equipment-layout
+    apply. See `DX-Features.md`.
+  - [x] **Configurable weapon slots / unload config** — `Inventory::unload` is now layout-aware:
+    candidate hands are restricted to the layout's hand sections, and ammo falls back from off-hand →
+    best-fit inventory slot → ground. Shipped as the lean, config-free approach (the policy surface in
+    the design doc is deferred).
     *(design: [plans/Feature-ConfigurableWeaponSlotsUnload.md](plans/Feature-ConfigurableWeaponSlotsUnload.md))*
 - [ ] **Typed slots / filtering / move-cost** — `battleType`, `allowCombatSwap`, `costs`,
   `countStats`.
