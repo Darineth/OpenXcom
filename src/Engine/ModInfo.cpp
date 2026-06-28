@@ -181,6 +181,7 @@ struct EngineData
  */
 const EngineData supportedEngines[] = {
 	{ OPENXCOM_VERSION_ENGINE, { OPENXCOM_VERSION_NUMBER }},
+	{ OPENXCOM_VERSION_ENGINE_OXCE, { OPENXCOM_VERSION_NUMBER }}, // DX is backward-compatible with mods requiring the OXCE "Extended" engine
 	{ "", { 0, 0, 0, 0 } }, // assume that every engine support mods from base game, remove if its not true.
 };
 
@@ -215,7 +216,7 @@ void ModInfo::load(const YAML::YamlNodeReader& reader)
 	reader.tryRead("reservedSpace", _reservedSpace);
 
 	if (reader.tryRead("requiredExtendedVersion", _requiredExtendedVersion))
-		_requiredExtendedEngine = "Extended"; // for backward compatibility
+		_requiredExtendedEngine = OPENXCOM_VERSION_ENGINE_OXCE; // for backward compatibility
 	reader.tryRead("requiredExtendedEngine", _requiredExtendedEngine);
 
 	_engineOk = findCompatibleEngine(supportedEngines, _requiredExtendedEngine, CrossPlatform::parseVersion(_requiredExtendedVersion));

@@ -21,6 +21,7 @@
 #define MIN_REQUIRED_RULESET_VERSION_NUMBER 8,6,0,0
 
 #define OPENXCOM_VERSION_ENGINE "Extended DX"
+#define OPENXCOM_VERSION_ENGINE_OXCE "Extended" // OXCE engine name DX stays backward-compatible with
 #define OPENXCOM_VERSION_SHORT "Extended DX 8.6.1"
 #define OPENXCOM_VERSION_LONG "8.6.1.0"
 #define OPENXCOM_VERSION_NUMBER 8,6,1,0
