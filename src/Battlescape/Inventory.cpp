@@ -616,10 +616,11 @@ void Inventory::setSelectedItem(BattleItem *item)
 	}
 	drawSelectedItem();
 	drawItems();
-	if (_tu)
-	{
-		drawGridLabels(!Options::oxceDisableInventoryTuCost);
-	}
+	// DX: show inventory move TU costs while holding an item in the pre-battle setup
+	// phase too (not just in battle), so loadouts can be planned around them. The costs
+	// are the same rule-based values that will apply in the mission; no TUs are spent here.
+	// Still honors the oxceDisableInventoryTuCost option.
+	drawGridLabels(!Options::oxceDisableInventoryTuCost);
 }
 
 /**

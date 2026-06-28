@@ -3,6 +3,14 @@
 This document tracks features added in OpenXcom DX on top of OXCE-Plus. Entries will be added
 here as features are implemented.
 
+## Inventory Move TU Costs in Pre-Battle Setup
+
+The per-slot inventory move TU costs (shown on the slot labels while an item is held) now also
+appear during the pre-battle equipment setup phase, not only during a mission. These are the same
+rule-based costs that will apply once the battle starts, so loadouts can be planned around them;
+no TUs are actually spent in the setup phase. The display still honors the existing
+`oxceDisableInventoryTuCost` option — turning it off hides the costs in both phases.
+
 ## Armor Degradation
 
 Battlescape damage types can now wear armor even on a hit that fails to penetrate, as long as the
