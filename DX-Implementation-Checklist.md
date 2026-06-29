@@ -338,3 +338,12 @@ implementation (see CLAUDE.md "Planning Features").*
     is skipped. Preview badge via the public `Inventory::drawAmmoBadge`; the redundant `_txtAmmo`
     rounds text was removed (its medikit-quantities display will return with the hover stats-panel
     feature).
+
+- [x] **Quick stock buttons on craft equipment (New Battle)** — a **Fill** button beside the existing
+  **Unload Craft** (clear) button to instantly stock the craft with a generous spread of items, so
+  New-Battle loadout setup is fast.
+  *(design: [plans/Feature-CraftEquipmentQuickStock.md](plans/Feature-CraftEquipmentQuickStock.md))*
+  - ✅ **Done.** New `CraftEquipmentState::btnFillClick` (New Battle only) adds 40 of each
+    ammo/grenade/proximity-grenade/flare and 10 of every other recoverable, non-corpse inventory item,
+    then refreshes the list. Existing Unload Craft kept as the clear; bottom row re-laid-out (narrower
+    filter combo) to fit Inventory + Unload Craft + Fill + OK. New `STR_DX_CRAFT_FILL` string.

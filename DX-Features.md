@@ -76,6 +76,19 @@ from a soldier's **Soldier Info** screen (previously hidden in New Battle). Edit
 and carried into the battle when you start it. (The other base-management actions — Sack, transfer to
 Craft, Transformations — remain unavailable in New Battle.)
 
+## Quick Craft Stock Buttons (New Battle)
+
+In New Battle, the **Equip Craft → Equipment** screen gains a **Fill** button next to the existing
+**Unload Craft** button, for fast loadout setup:
+
+- **Fill** instantly stocks the craft with a generous spread of every usable item (recoverable,
+  non-corpse inventory items): **40** of each ammo / grenade / proximity grenade / flare, **10** of
+  everything else (weapons, tools, medikits). Open the inventory afterward to distribute them.
+- **Unload Craft** (unchanged) empties the craft.
+
+Both buttons appear only in New Battle, where the loadout is a sandbox — the real geoscape craft
+screen, bound by base storage and the economy, is unaffected.
+
 ## Contextual Inventory Info Panel
 
 Hovering an item in the inventory replaces the soldier stat panel with information about that item, in

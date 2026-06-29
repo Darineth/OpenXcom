@@ -77,10 +77,11 @@ CraftEquipmentState::CraftEquipmentState(Base *base, size_t craft) :
 	_window = new Window(this, 320, 200, 0, 0);
 	_btnQuickSearch = new TextEdit(this, 48, 9, Options::oxceBaseTouchButtons ? 10 : 264, Options::oxceBaseTouchButtons ? 13 : 12);
 	_btnOk = new TextButton((craftHasACrew || _isNewBattle)?30:140, 16, (craftHasACrew || _isNewBattle)?274:164, 176);
-	// In New Battle the row holds both Clear and Inventory, so it is laid out tighter
+	// In New Battle the row holds Inventory + Unload Craft + Fill, so it is laid out tighter
 	// (narrower filter combo below) than the normal single wide-button layout.
-	_btnClear = new TextButton(78, 16, 194, 176);
-	_btnInventory = new TextButton(_isNewBattle ? 64 : 102, 16, _isNewBattle ? 128 : 164, 176);
+	_btnClear = new TextButton(78, 16, 162, 176);
+	_btnFill = new TextButton(30, 16, 242, 176);
+	_btnInventory = new TextButton(_isNewBattle ? 62 : 102, 16, _isNewBattle ? 98 : 164, 176);
 	_txtTitle = new Text(300, 17, 16, 7);
 	_txtItem = new Text(144, 9, 16, 32);
 	_txtStores = new Text(150, 9, 160, 32);
@@ -88,7 +89,7 @@ CraftEquipmentState::CraftEquipmentState(Base *base, size_t craft) :
 	_txtUsed = new Text(110, 9, 130, 24);
 	_txtCrew = new Text(71, 9, 244, 24);
 	_lstEquipment = new TextList(288, 128, 8, 40);
-	_cbxFilterBy = new ComboBox(this, _isNewBattle ? 110 : 140, 16, 16, 176, true);
+	_cbxFilterBy = new ComboBox(this, _isNewBattle ? 80 : 140, 16, 16, 176, true);
 
 	touchComponentsCreate(_txtTitle);
 
@@ -101,6 +102,7 @@ CraftEquipmentState::CraftEquipmentState(Base *base, size_t craft) :
 	add(_btnQuickSearch, "button", "craftEquipment");
 	add(_btnOk, "button", "craftEquipment");
 	add(_btnClear, "button", "craftEquipment");
+	add(_btnFill, "button", "craftEquipment");
 	add(_btnInventory, "button", "craftEquipment");
 	add(_txtTitle, "text", "craftEquipment");
 	add(_txtItem, "text", "craftEquipment");
@@ -130,6 +132,10 @@ CraftEquipmentState::CraftEquipmentState(Base *base, size_t craft) :
 	_btnClear->setText(tr("STR_UNLOAD_CRAFT"));
 	_btnClear->onMouseClick((ActionHandler)&CraftEquipmentState::btnClearClick);
 	_btnClear->setVisible(_isNewBattle);
+
+	_btnFill->setText(tr("STR_DX_CRAFT_FILL"));
+	_btnFill->onMouseClick((ActionHandler)&CraftEquipmentState::btnFillClick);
+	_btnFill->setVisible(_isNewBattle);
 
 	_btnInventory->setText(tr("STR_INVENTORY"));
 	_btnInventory->onMouseClick((ActionHandler)&CraftEquipmentState::btnInventoryClick);
@@ -954,6 +960,39 @@ void CraftEquipmentState::btnClearClick(Action *)
 		Craft* c = _base->getCrafts()->at(_craft);
 		c->getItems()->clear();
 	}
+}
+
+/**
+ * Stocks the craft with a generous spread of every usable item (New Battle only), so loadouts
+ * can be assembled quickly: 40 of each ammo/consumable, 10 of everything else.
+ * @param action Pointer to an action.
+ */
+void CraftEquipmentState::btnFillClick(Action *)
+{
+	Craft* c = _base->getCrafts()->at(_craft);
+	for (const auto& itemType : _game->getMod()->getItemsList())
+	{
+		const RuleItem* rule = _game->getMod()->getItem(itemType);
+		if (rule->getBattleType() == BT_CORPSE || rule->getBattleType() == BT_NONE)
+			continue;
+		if (!rule->isRecoverable() || !rule->isInventoryItem())
+			continue;
+		int qty;
+		switch (rule->getBattleType())
+		{
+		case BT_AMMO:
+		case BT_GRENADE:
+		case BT_PROXIMITYGRENADE:
+		case BT_FLARE:
+			qty = 40; // ammo and consumables
+			break;
+		default:
+			qty = 10; // weapons and other gear
+			break;
+		}
+		c->getItems()->addItem(rule, qty);
+	}
+	initList();
 }
 
 /**

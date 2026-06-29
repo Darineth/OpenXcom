@@ -41,7 +41,7 @@ class Base;
 class CraftEquipmentState : public TouchState
 {
 private:
-	TextButton *_btnOk, *_btnClear, *_btnInventory;
+	TextButton *_btnOk, *_btnClear, *_btnInventory, *_btnFill;
 	TextEdit *_btnQuickSearch;
 	Window *_window;
 	Text *_txtTitle, *_txtItem, *_txtStores, *_txtAvailable, *_txtUsed, *_txtCrew;
@@ -106,6 +106,8 @@ public:
 	void moveRightByValue(int change, bool suppressErrors = false);
 	/// Empties the contents of the craft, moving all of the items back to the base.
 	void btnClearClick(Action *action);
+	/// Handler for clicking the Fill button (New Battle: stock the craft with a generous spread).
+	void btnFillClick(Action *action);
 	/// Handler for clicking the Inventory button.
 	void btnInventoryClick(Action *action);
 	/// Methods for handling the global craft loadout save/load hotkeys.

@@ -118,6 +118,8 @@ en-US:
   STR_DX_INV_MEDI_HEAL: "Heal>{ALT}{0}"
   STR_DX_INV_MEDI_STIM: "Stim>{ALT}{0}"
   STR_DX_INV_MEDI_PAIN: "Pain>{ALT}{0}"
+#CraftEquipmentState.cpp - New Battle quick stock button
+  STR_DX_CRAFT_FILL: "Fill"
 #=================== DX Geoscape Activity Display ===================
 #GeoscapeState.cpp / Options.cpp
   STR_ACTIVITY_DISPLAY: "Geoscape activity display"
