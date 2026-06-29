@@ -77,8 +77,10 @@ CraftEquipmentState::CraftEquipmentState(Base *base, size_t craft) :
 	_window = new Window(this, 320, 200, 0, 0);
 	_btnQuickSearch = new TextEdit(this, 48, 9, Options::oxceBaseTouchButtons ? 10 : 264, Options::oxceBaseTouchButtons ? 13 : 12);
 	_btnOk = new TextButton((craftHasACrew || _isNewBattle)?30:140, 16, (craftHasACrew || _isNewBattle)?274:164, 176);
-	_btnClear = new TextButton(102, 16, 164, 176);
-	_btnInventory = new TextButton(102, 16, 164, 176);
+	// In New Battle the row holds both Clear and Inventory, so it is laid out tighter
+	// (narrower filter combo below) than the normal single wide-button layout.
+	_btnClear = new TextButton(78, 16, 194, 176);
+	_btnInventory = new TextButton(_isNewBattle ? 64 : 102, 16, _isNewBattle ? 128 : 164, 176);
 	_txtTitle = new Text(300, 17, 16, 7);
 	_txtItem = new Text(144, 9, 16, 32);
 	_txtStores = new Text(150, 9, 160, 32);
@@ -86,7 +88,7 @@ CraftEquipmentState::CraftEquipmentState(Base *base, size_t craft) :
 	_txtUsed = new Text(110, 9, 130, 24);
 	_txtCrew = new Text(71, 9, 244, 24);
 	_lstEquipment = new TextList(288, 128, 8, 40);
-	_cbxFilterBy = new ComboBox(this, 140, 16, 16, 176, true);
+	_cbxFilterBy = new ComboBox(this, _isNewBattle ? 110 : 140, 16, 16, 176, true);
 
 	touchComponentsCreate(_txtTitle);
 
@@ -131,7 +133,7 @@ CraftEquipmentState::CraftEquipmentState(Base *base, size_t craft) :
 
 	_btnInventory->setText(tr("STR_INVENTORY"));
 	_btnInventory->onMouseClick((ActionHandler)&CraftEquipmentState::btnInventoryClick);
-	_btnInventory->setVisible(craftHasACrew && !_isNewBattle);
+	_btnInventory->setVisible(craftHasACrew);
 	_btnInventory->onKeyboardPress((ActionHandler)&CraftEquipmentState::btnInventoryClick, Options::keyBattleInventory);
 
 	_txtTitle->setBig();

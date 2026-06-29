@@ -312,6 +312,14 @@ implementation (see CLAUDE.md "Planning Features").*
     [src/Mod/Mod.cpp](src/Mod/Mod.cpp) (`loadAll` global pre-pass + `loadEarlyRules`) and
     [src/Mod/Mod.h](src/Mod/Mod.h).
 
+- [x] **Edit soldier inventories from New Battle** — un-gate the per-soldier inventory screen in New
+  Battle so loadouts can be arranged without starting the battle (the mechanism already existed;
+  it was disabled via `!_isNewBattle` / `months > -1`).
+  *(design: [plans/Feature-NewBattleInventoryEditing.md](plans/Feature-NewBattleInventoryEditing.md))*
+  - ✅ **Done.** Un-gated the Inventory button in `CraftEquipmentState` (with a New-Battle bottom-row
+    relayout so Unload Craft + Inventory coexist) and in `SoldierInfoState` (split out of the
+    months-gated button group). Build/persistence path works as-is under the New-Battle save.
+
 - [x] **Contextual inventory info panel** — when hovering an item, the right-side stat panel shows
   item-type info: weapon shot modes + accuracy, medikit charges, and granted unit stats/armor; reverts
   to unit stats on hover-out.

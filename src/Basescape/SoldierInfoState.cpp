@@ -498,12 +498,14 @@ void SoldierInfoState::init()
 
 	_btnArmor->setText(wsArmor);
 
-	bool showNastyButtons = !_readOnly && _game->getSavedGame()->getMonthsPassed() > -1 && !(_soldier->getCraft() && _soldier->getCraft()->getStatus() == "STR_OUT");
+	bool craftDeployed = _soldier->getCraft() && _soldier->getCraft()->getStatus() == "STR_OUT";
+	bool showNastyButtons = !_readOnly && _game->getSavedGame()->getMonthsPassed() > -1 && !craftDeployed;
 
 	_btnSack->setVisible(showNastyButtons);
 	_btnCraft->setVisible(showNastyButtons);
 	_btnTransformations->setVisible(showNastyButtons && !_noTransformations);
-	_btnInventory->setVisible(showNastyButtons && _base->getAvailableSoldiers(true, true) > 0);
+	// Inventory editing is also allowed in New Battle (months == -1), unlike the other "nasty" buttons.
+	_btnInventory->setVisible(!_readOnly && !craftDeployed && _base->getAvailableSoldiers(true, true) > 0);
 
 	_txtRank->setText(tr("STR_RANK_").arg(tr(_soldier->getRankString())));
 

@@ -68,6 +68,14 @@ The same count badge is drawn on the right-side ammo **preview** box, which now 
 hovering a bare ammo clip (previously only loaded weapons previewed). The old "AMMO ROUNDS LEFT"
 text was removed as redundant. (See design doc: `plans/Feature-InventoryAmmoCount.md`.)
 
+## Edit Soldier Inventories from New Battle
+
+The New Battle setup now lets you arrange soldier loadouts in the full inventory screen before
+starting the fight. The **Inventory** button is available both from **Equip Craft → Equipment** and
+from a soldier's **Soldier Info** screen (previously hidden in New Battle). Edited loadouts are saved
+and carried into the battle when you start it. (The other base-management actions — Sack, transfer to
+Craft, Transformations — remain unavailable in New Battle.)
+
 ## Contextual Inventory Info Panel
 
 Hovering an item in the inventory replaces the soldier stat panel with information about that item, in
