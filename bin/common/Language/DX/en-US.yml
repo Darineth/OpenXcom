@@ -94,6 +94,30 @@ en-US:
   STR_DX_INVENTORY_ARMOR_B_SHORT: "B>{ALT}{0}"
   STR_DX_INVENTORY_ARMOR_U_SHORT: "U>{ALT}{0}"
   STR_DX_TEMPLATE_SLOT_NOT_IN_LAYOUT: "Some items left on the ground: no matching slot in this armor's inventory."
+  #--- Contextual inventory info panel (shown on item hover) ---
+  STR_DX_INV_ITEM_WEIGHT: "Weight>{ALT}{0}"
+  # Item stat bonuses use the same STAT>VAL style as the unit stats ({ALT} = value color).
+  STR_DX_INV_STAT_TU: "TU>{ALT}{0}"
+  STR_DX_INV_STAT_STAMINA: "En>{ALT}{0}"
+  STR_DX_INV_STAT_HEALTH: "HP>{ALT}{0}"
+  STR_DX_INV_STAT_BRAVERY: "Brv>{ALT}{0}"
+  STR_DX_INV_STAT_REACTIONS: "RE>{ALT}{0}"
+  STR_DX_INV_STAT_FIRING: "FA>{ALT}{0}"
+  STR_DX_INV_STAT_THROWING: "TA>{ALT}{0}"
+  STR_DX_INV_STAT_STRENGTH: "Str>{ALT}{0}"
+  STR_DX_INV_STAT_PSISTRENGTH: "PSt>{ALT}{0}"
+  STR_DX_INV_STAT_PSISKILL: "PSk>{ALT}{0}"
+  STR_DX_INV_STAT_MELEE: "ME>{ALT}{0}"
+  STR_DX_INV_STAT_MANA: "Man>{ALT}{0}"
+  # Item-specific (non-stat) info, shown below the stat lines.
+  STR_DX_INV_ACC_SNAP: "Snap>{ALT}{0}%"
+  STR_DX_INV_ACC_AIMED: "Aimed>{ALT}{0}%"
+  STR_DX_INV_ACC_AUTO: "Auto>{ALT}{0}%"
+  STR_DX_INV_ACC_BURST: "Burst>{ALT}{0}%"
+  STR_DX_INV_ACC_MELEE: "Melee>{ALT}{0}%"
+  STR_DX_INV_MEDI_HEAL: "Heal>{ALT}{0}"
+  STR_DX_INV_MEDI_STIM: "Stim>{ALT}{0}"
+  STR_DX_INV_MEDI_PAIN: "Pain>{ALT}{0}"
 #=================== DX Geoscape Activity Display ===================
 #GeoscapeState.cpp / Options.cpp
   STR_ACTIVITY_DISPLAY: "Geoscape activity display"

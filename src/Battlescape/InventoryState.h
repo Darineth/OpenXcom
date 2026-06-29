@@ -65,6 +65,7 @@ private:
 	std::string _currentDamageTooltip;
 	int _mouseHoverItemFrame = 0;
 	BattleItem *_mouseHoverItem = nullptr;
+	bool _statPanelShowsItem = false;
 	BattleItem *_currentDamageTooltipItem = nullptr;
 	bool _reloadUnit;
 	int _globalLayoutIndex;
@@ -89,6 +90,8 @@ public:
 	void edtSoldierChange(Action *action);
 	/// Updates the soldier info (Weight, TU).
 	void updateStats();
+	/// Fills the stat panel (below weight) with info about the hovered item; returns false if the item has no contextual info.
+	bool showItemStats(const BattleItem *item);
 	/// Saves the soldiers' equipment-layout.
 	void saveEquipmentLayout();
 	/// Handler for clicking the Armor button.

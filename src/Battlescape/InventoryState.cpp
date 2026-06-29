@@ -747,6 +747,113 @@ void InventoryState::updateStats()
 	_txtArmorRight->setSecondaryColor(getBarColor("barRightArmor", _txtArmorRight->getColor()));
 	_txtArmorBack->setSecondaryColor(getBarColor("barRearArmor", _txtArmorBack->getColor()));
 	_txtArmorUnder->setSecondaryColor(getBarColor("barUnderArmor", _txtArmorUnder->getColor()));
+
+	_statPanelShowsItem = false;
+}
+
+/**
+ * Fills the stat panel (the lines below weight) with information about the hovered item,
+ * by item type: weapon shot modes (base accuracy %), medikit charges, and granted unit stats.
+ * The weight line is left untouched. Returns false (panel unchanged) if the item has no such info,
+ * so the caller can fall back to the unit stats.
+ * @param item The hovered item.
+ * @return True if the panel was filled with item info.
+ */
+bool InventoryState::showItemStats(const BattleItem *item)
+{
+	const RuleItem *rule = item->getRules();
+	// each panel line: rendered text + the value-color element id from the "stats" interface,
+	// so each line's value matches the corresponding soldier stat bar color.
+	std::vector<std::pair<std::string, std::string>> lines;
+	auto signedStr = [](int v) -> std::string { return (v > 0 ? "+" : "") + std::to_string(v); };
+
+	// Section 1: granted unit stats - flat bonuses and/or percentage modifiers, same STAT>VAL style
+	const UnitStats *flatStats = rule->getStats();
+	const UnitStats *pctStats = rule->getStatModifiers();
+	static const struct { UnitStats::Ptr ptr; const char *key; const char *bar; } statFields[] = {
+		{ &UnitStats::tu, "STR_DX_INV_STAT_TU", "barTUs" },
+		{ &UnitStats::stamina, "STR_DX_INV_STAT_STAMINA", "barEnergy" },
+		{ &UnitStats::health, "STR_DX_INV_STAT_HEALTH", "barHealth" },
+		{ &UnitStats::bravery, "STR_DX_INV_STAT_BRAVERY", "barBravery" },
+		{ &UnitStats::reactions, "STR_DX_INV_STAT_REACTIONS", "barReactions" },
+		{ &UnitStats::firing, "STR_DX_INV_STAT_FIRING", "barFiring" },
+		{ &UnitStats::throwing, "STR_DX_INV_STAT_THROWING", "barThrowing" },
+		{ &UnitStats::strength, "STR_DX_INV_STAT_STRENGTH", "barStrength" },
+		{ &UnitStats::psiStrength, "STR_DX_INV_STAT_PSISTRENGTH", "barPsiStrength" },
+		{ &UnitStats::psiSkill, "STR_DX_INV_STAT_PSISKILL", "barPsiSkill" },
+		{ &UnitStats::melee, "STR_DX_INV_STAT_MELEE", "barMelee" },
+		{ &UnitStats::mana, "STR_DX_INV_STAT_MANA", "barMana" },
+	};
+	for (const auto &f : statFields)
+	{
+		int flat = flatStats->*(f.ptr);
+		int pct = pctStats->*(f.ptr);
+		if (flat == 0 && pct == 0) continue;
+		std::string val;
+		if (flat != 0) val += signedStr(flat);
+		if (pct != 0) { if (!val.empty()) val += ' '; val += signedStr(pct); val += '%'; }
+		lines.push_back({ tr(f.key).arg(val), f.bar });
+	}
+
+	// Section 2: directional armor bonuses granted by the item (F / L / R / B / U; side covers L+R)
+	static const struct { int (RuleItem::*get)() const; const char *key; const char *bar; } armorFields[] = {
+		{ &RuleItem::getFrontArmorBonus, "STR_DX_INVENTORY_ARMOR_F_SHORT", "barFrontArmor" },
+		{ &RuleItem::getSideArmorBonus,  "STR_DX_INVENTORY_ARMOR_L_SHORT", "barLeftArmor" },
+		{ &RuleItem::getSideArmorBonus,  "STR_DX_INVENTORY_ARMOR_R_SHORT", "barRightArmor" },
+		{ &RuleItem::getRearArmorBonus,  "STR_DX_INVENTORY_ARMOR_B_SHORT", "barRearArmor" },
+		{ &RuleItem::getUnderArmorBonus, "STR_DX_INVENTORY_ARMOR_U_SHORT", "barUnderArmor" },
+	};
+	for (const auto &a : armorFields)
+	{
+		int bonus = (rule->*(a.get))();
+		if (bonus == 0) continue;
+		lines.push_back({ tr(a.key).arg(signedStr(bonus)), a.bar });
+	}
+
+	// Section 3: item-specific info (below the stat lines). Shot accuracies use the firing color;
+	// medikit actions map to health (heal), energy (stimulant) and morale (pain killer).
+	if (rule->getAccuracySnap() > 0)  lines.push_back({ tr("STR_DX_INV_ACC_SNAP").arg(rule->getAccuracySnap()), "barFiring" });
+	if (rule->getAccuracyAimed() > 0) lines.push_back({ tr("STR_DX_INV_ACC_AIMED").arg(rule->getAccuracyAimed()), "barFiring" });
+	if (rule->getAccuracyAuto() > 0)  lines.push_back({ tr("STR_DX_INV_ACC_AUTO").arg(rule->getAccuracyAuto()), "barFiring" });
+	if (rule->getAccuracyBurst() > 0) lines.push_back({ tr("STR_DX_INV_ACC_BURST").arg(rule->getAccuracyBurst()), "barFiring" });
+	if (rule->getAccuracyMelee() > 0) lines.push_back({ tr("STR_DX_INV_ACC_MELEE").arg(rule->getAccuracyMelee()), "barMelee" });
+	if (rule->getBattleType() == BT_MEDIKIT)
+	{
+		if (!rule->getHealActionName().empty())       lines.push_back({ tr("STR_DX_INV_MEDI_HEAL").arg(item->getHealQuantity()), "barHealth" });
+		if (!rule->getStimulantActionName().empty())  lines.push_back({ tr("STR_DX_INV_MEDI_STIM").arg(item->getStimulantQuantity()), "barEnergy" });
+		if (!rule->getPainKillerActionName().empty()) lines.push_back({ tr("STR_DX_INV_MEDI_PAIN").arg(item->getPainKillerQuantity()), "barMorale" });
+	}
+
+	if (lines.empty())
+	{
+		return false;
+	}
+
+	_statPanelShowsItem = true;
+
+	const RuleInterface *statsInterface = _game->getMod()->getInterface("stats");
+
+	// Fill the panel lines (everything below the weight line), blanking any unused ones.
+	Text *panel[] = {
+		_txtStatLine1, _txtTus, _txtStatLine2, _txtStatLine3, _txtStatLine4,
+		_txtStatLine5, _txtStatLine6, _txtStatLine7,
+		_txtArmorFront, _txtArmorLeft, _txtArmorRight, _txtArmorBack, _txtArmorUnder
+	};
+	const int panelCount = (int)(sizeof(panel) / sizeof(panel[0]));
+	for (int i = 0; i < panelCount; ++i)
+	{
+		if (i < (int)lines.size())
+		{
+			panel[i]->setText(lines[i].first);
+			const Element *element = statsInterface ? statsInterface->getElementOptional(lines[i].second) : nullptr;
+			panel[i]->setSecondaryColor(element ? static_cast<Uint8>(element->color) : panel[i]->getColor());
+		}
+		else
+		{
+			panel[i]->setText(std::string());
+		}
+	}
+	return true;
 }
 
 /**
@@ -2034,6 +2141,16 @@ void InventoryState::invMouseOver(Action *)
 			_mouseHoverItem = nullptr;
 			updateTemplateButtons(!_tu);
 		}
+
+		// contextual stat panel: item-type info, or revert to unit stats for a plain item
+		if (!showItemStats(item) && _statPanelShowsItem)
+		{
+			updateStats();
+		}
+		// while hovering, the weight line shows the hovered item's own weight, in the normal weight color
+		_txtWeight->setText(tr("STR_DX_INV_ITEM_WEIGHT").arg(item->getTotalWeight()));
+		_txtWeight->setSecondaryColor(_game->getMod()->getInterface("inventory")->getElement("weight")->color);
+		_statPanelShowsItem = true;
 	}
 	else
 	{
@@ -2043,6 +2160,10 @@ void InventoryState::invMouseOver(Action *)
 		}
 		_selAmmo->clear();
 		updateTemplateButtons(!_tu);
+		if (_statPanelShowsItem)
+		{
+			updateStats();
+		}
 	}
 }
 
@@ -2054,6 +2175,10 @@ void InventoryState::invMouseOut(Action *)
 {
 	_txtItem->setText("");
 	_selAmmo->clear();
+	if (_statPanelShowsItem)
+	{
+		updateStats();
+	}
 	_inv->setMouseOverItem(0);
 	_mouseHoverItem = nullptr;
 	_currentDamageTooltipItem = nullptr;

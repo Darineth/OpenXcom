@@ -68,6 +68,23 @@ The same count badge is drawn on the right-side ammo **preview** box, which now 
 hovering a bare ammo clip (previously only loaded weapons previewed). The old "AMMO ROUNDS LEFT"
 text was removed as redundant. (See design doc: `plans/Feature-InventoryAmmoCount.md`.)
 
+## Contextual Inventory Info Panel
+
+Hovering an item in the inventory replaces the soldier stat panel with information about that item, in
+the same `STAT>VAL` style and colors as the soldier stats:
+
+- **Granted unit stats** the item provides — one line per modified stat, flat and/or percentage
+  (e.g. `FA>+5`, `RE>+10%`), each in its matching soldier stat color.
+- **Directional armor bonuses** the item provides (`F>/L>/R>/B>/U>`), in the armor colors.
+- Below the stats, **item-specific info**: weapon shot modes with base accuracy (`Snap>`, `Aimed>`,
+  `Auto>`, `Burst>`, `Melee>`, colored like firing/melee) and medikit charges (`Heal>`/`Stim>`/`Pain>`,
+  colored like health/energy/morale).
+- The **weight line** shows the hovered item's own weight (in the normal weight color).
+
+Items with none of the above keep the soldier stats; moving off the item restores the full soldier
+panel. The panel reuses the expanded stat rows, so it follows the `showMoreStatsInInventoryView`
+option. (See `plans/Feature-InventoryContextualInfoPanel.md`.)
+
 ## Inventory Move TU Costs in Pre-Battle Setup
 
 The per-slot inventory move TU costs (shown on the slot labels while an item is held) now also

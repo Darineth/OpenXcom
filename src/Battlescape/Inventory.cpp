@@ -539,7 +539,7 @@ void Inventory::drawItems()
 			// item stacking
 			if (_stackLevel[groundItem->getSlotX()][groundItem->getSlotY()] > 1)
 			{
-				_stackNumber->setX((groundItem->getSlot()->getX() + ((groundItem->getSlotX() + groundItem->getRules()->getInventoryWidth()) - _groundOffset) * RuleInventory::SLOT_W)-4);
+				_stackNumber->setX((groundItem->getSlot()->getX() + ((groundItem->getSlotX() + groundItem->getRules()->getInventoryWidth()) - _groundOffset) * RuleInventory::SLOT_W)-5);
 				if (_stackLevel[groundItem->getSlotX()][groundItem->getSlotY()] > 9)
 				{
 					_stackNumber->setX(_stackNumber->getX()-4);
@@ -576,7 +576,7 @@ Uint8 Inventory::ammoStateColor(int count, int capacity) const
 
 void Inventory::drawAmmoCount(int rightX, int topY, int count, Uint8 numberColor, Surface *target)
 {
-	_stackNumber->setX(rightX - 4);
+	_stackNumber->setX(rightX - 5);
 	if (count > 9)
 	{
 		_stackNumber->setX(_stackNumber->getX() - 4);

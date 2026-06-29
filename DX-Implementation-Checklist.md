@@ -312,6 +312,15 @@ implementation (see CLAUDE.md "Planning Features").*
     [src/Mod/Mod.cpp](src/Mod/Mod.cpp) (`loadAll` global pre-pass + `loadEarlyRules`) and
     [src/Mod/Mod.h](src/Mod/Mod.h).
 
+- [x] **Contextual inventory info panel** — when hovering an item, the right-side stat panel shows
+  item-type info: weapon shot modes + accuracy, medikit charges, and granted unit stats/armor; reverts
+  to unit stats on hover-out.
+  *(design: [plans/Feature-InventoryContextualInfoPanel.md](plans/Feature-InventoryContextualInfoPanel.md))*
+  - ✅ **Done.** `InventoryState::showItemStats` replaces the panel with the item's stat/armor bonuses
+    (STAT>VAL, per-stat soldier bar colors) plus shot modes / medikit charges below, and the weight
+    line shows the item's own weight. Reverts to unit stats via `updateStats` on hover-out. Reuses the
+    stat rows (follows `showMoreStatsInInventoryView`).
+
 - [x] **Inventory ammo-count badges** — show remaining rounds top-right on weapons/clips in the
   inventory, colored by state, plus on the right-side ammo preview (and for hovered clips).
   *(design: [plans/Feature-InventoryAmmoCount.md](plans/Feature-InventoryAmmoCount.md))*
