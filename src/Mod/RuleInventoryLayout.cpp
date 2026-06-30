@@ -35,22 +35,23 @@ RuleInventoryLayout::RuleInventoryLayout(const std::string& id, int listOrder): 
 }
 
 /**
- * Cleans up the layout, deleting any inline sections it owns.
+ * Cleans up the layout.
  */
 RuleInventoryLayout::~RuleInventoryLayout()
 {
-	for (auto* section : _owned)
-	{
-		delete section;
-	}
 }
 
 /**
  * Loads the layout from YAML. Supports the standard `refNode` parent mechanic
- * (the parent is loaded first, then this node's values override it). A `sections:`
- * block (when present) fully replaces the inherited section list, so a child node
- * can keep a parent's sections by omitting `sections:` or replace them by providing
+ * (the parent is loaded first, then this node's values override it). An `invs:`
+ * list (when present) fully replaces the inherited section list, so a child node
+ * can keep a parent's sections by omitting `invs:` or replace them by providing
  * its own.
+ *
+ * A layout is just an ordered list of global `invs` section ids:
+ *   invs: [STR_RIGHT_HAND, STR_LEFT_HAND, STR_BELT, STR_GROUND]
+ * To restrict a section to particular layouts, define it as a normal global `invs:`
+ * section and only list it in the layouts that should have it.
  * @param reader YAML reader.
  */
 void RuleInventoryLayout::load(const YAML::YamlNodeReader& reader)
@@ -62,41 +63,17 @@ void RuleInventoryLayout::load(const YAML::YamlNodeReader& reader)
 
 	reader.tryRead("listOrder", _listOrder);
 
-	const auto& sections = reader["sections"];
-	if (sections && sections.isSeq())
+	if (reader["sections"])
 	{
-		// a redefinition replaces the previous section list wholesale
-		for (auto* section : _owned)
-		{
-			delete section;
-		}
-		_owned.clear();
-		_spec.clear();
+		throw Exception("Inventory layout " + _id + " uses the obsolete `sections:` block; list the "
+			"global section ids directly with `invs: [STR_RIGHT_HAND, ...]` instead.");
+	}
 
-		int order = 0;
-		for (const auto& sectionReader : sections.children())
-		{
-			SectionSpec spec;
-			const auto& refNode = sectionReader["ref"];
-			if (refNode)
-			{
-				refNode.tryReadVal(spec.ref);
-			}
-			else
-			{
-				std::string id;
-				if (!sectionReader.tryRead("id", id) || id.empty())
-				{
-					throw Exception("Inventory layout " + _id + " has an inline section without an 'id'");
-				}
-				RuleInventory* inv = new RuleInventory(id, order);
-				inv->load(sectionReader);
-				_owned.push_back(inv);
-				spec.inlineSection = inv;
-			}
-			_spec.push_back(spec);
-			++order;
-		}
+	// an `invs:` list redefinition replaces the previous section list wholesale
+	if (const auto& invs = reader["invs"])
+	{
+		_refs.clear();
+		invs.tryReadVal(_refs);
 	}
 }
 
@@ -108,17 +85,13 @@ void RuleInventoryLayout::load(const YAML::YamlNodeReader& reader)
 void RuleInventoryLayout::afterLoad(const Mod* mod)
 {
 	_sections.clear();
-	_sections.reserve(_spec.size() + 1);
+	_sections.reserve(_refs.size() + 1);
 
 	bool hasGround = false;
 	std::set<std::string> seen;
-	for (const auto& spec : _spec)
+	for (const auto& ref : _refs)
 	{
-		const RuleInventory* section = spec.inlineSection;
-		if (!section)
-		{
-			section = mod->getInventory(spec.ref, true); // throws if the ref is unknown
-		}
+		const RuleInventory* section = mod->getInventory(ref, true); // throws if the ref is unknown
 		if (!section)
 		{
 			continue;

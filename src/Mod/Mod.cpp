@@ -2344,20 +2344,28 @@ void Mod::loadAll()
 	afterLoadHelper("weaponSets", this, _weaponSets, &RuleWeaponSet::afterLoad);
 	afterLoadHelper("manufacture", this, _manufacture, &RuleManufacture::afterLoad);
 	afterLoadHelper("inventoryLayouts", this, _inventoryLayouts, &RuleInventoryLayout::afterLoad);
-	// Synthesize the implicit default layout from the global inventory set, so every unit always has
-	// a layout and mods that define no inventoryLayouts behave exactly as before. The sections are
-	// collected in _invs (id/map) iteration order to match how the engine historically walked the
-	// global inventory map, keeping auto-placement order byte-for-byte unchanged.
+	// Determine the implicit default layout used by armors that set no `inventoryLayout`. The base
+	// game data defines the standard slot set as the `STR_STANDARD_INV` layout, so prefer that.
+	// Fall back to synthesizing one from the full global `invs` set (in _invs id/map iteration order,
+	// matching how the engine historically walked the global inventory map) when a mod / total
+	// conversion doesn't provide STR_STANDARD_INV - so such mods behave exactly as before.
 	{
-		std::vector<const RuleInventory*> sections;
-		sections.reserve(_invs.size());
-		for (auto& pair : _invs)
-		{
-			sections.push_back(pair.second);
-		}
 		delete _defaultInventoryLayout;
 		_defaultInventoryLayout = new RuleInventoryLayout("STR_INVENTORY_LAYOUT_DEFAULT", 0);
-		_defaultInventoryLayout->setSectionsDirectly(std::move(sections));
+		if (RuleInventoryLayout* standard = getInventoryLayout("STR_STANDARD_INV"))
+		{
+			_defaultInventoryLayout->setSectionsDirectly(standard->getSections());
+		}
+		else
+		{
+			std::vector<const RuleInventory*> sections;
+			sections.reserve(_invs.size());
+			for (auto& pair : _invs)
+			{
+				sections.push_back(pair.second);
+			}
+			_defaultInventoryLayout->setSectionsDirectly(std::move(sections));
+		}
 	}
 	afterLoadHelper("armors", this, _armors, &Armor::afterLoad);
 	afterLoadHelper("units", this, _units, &Unit::afterLoad);
@@ -2965,9 +2973,9 @@ void Mod::loadFile(const FileMap::FileRecord &filerec, ModScript &parsers)
 			rule->load(ruleReader);
 		}
 	}
-	for (const auto& ruleReader : iterateRules("inventoryLayouts", "type"))
+	for (const auto& ruleReader : iterateRules("inventoryLayouts", "id"))
 	{
-		RuleInventoryLayout *rule = loadRule(ruleReader, &_inventoryLayouts, &_inventoryLayoutsIndex, "type", RuleListOrderedFactory<RuleInventoryLayout>{ _invLayoutListOrder, 10 });
+		RuleInventoryLayout *rule = loadRule(ruleReader, &_inventoryLayouts, &_inventoryLayoutsIndex, "id", RuleListOrderedFactory<RuleInventoryLayout>{ _invLayoutListOrder, 10 });
 		if (rule != 0)
 		{
 			rule->load(ruleReader);

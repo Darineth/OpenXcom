@@ -167,8 +167,10 @@ Everything below is DX-specific work confirmed **absent** from the base.
     re-equipping a plate never refunds lost armor). Fields shown in Stats-for-Nerds.
 - [x] **Inventory layouts** — `RuleInventoryLayout`, `Armor.inventoryLayout`.
   *(design: [plans/Feature-ConfigurableInventoryLayouts.md](plans/Feature-ConfigurableInventoryLayouts.md))*
-  - ✅ **Done.** Per-armor inventory section sets via the `inventoryLayouts:` node (with `ref:`/inline
-    sections and `refNode` reuse) and `Armor.inventoryLayout`, resolved/cached per `BattleUnit`. The
+  - ✅ **Done.** Per-armor inventory section sets via the `inventoryLayouts:` node (`id:` + `invs:`-list
+    schema + `refNode` reuse) and `Armor.inventoryLayout`, resolved/cached per `BattleUnit`. The base
+    data defines `STR_STANDARD_INV` (the nine standard slots) as the default for armors with no layout;
+    a section restricted to specific layouts is just a global `invs:` entry those layouts list. The
     inventory UI, placement, quick-move, auto-equip, and alien inventory all honor the active layout;
     a synthesized default preserves vanilla behavior. Stranding-protection on template/equipment-layout
     apply. See `DX-Features.md`.
@@ -177,8 +179,13 @@ Everything below is DX-specific work confirmed **absent** from the base.
     best-fit inventory slot → ground. Shipped as the lean, config-free approach (the policy surface in
     the design doc is deferred).
     *(design: [plans/Feature-ConfigurableWeaponSlotsUnload.md](plans/Feature-ConfigurableWeaponSlotsUnload.md))*
-- [ ] **Typed slots / filtering / move-cost** — `battleType`, `allowCombatSwap`, `costs`,
+- [x] **Typed slots / filtering / move-cost** — `battleType`, `allowCombatSwap`, `costs`,
   `countStats`.
+  - ✅ **Done.** Three `RuleInventory` fields added: slot-side `battleType` filter, `allowCombatSwap`
+    (combat-locked loadout slots), `countStats` (stat-bonus gating per slot), plus an explicit `-1`
+    `costs` entry that forbids an in-combat transfer. (Legacy's `allowGenericItems` was dropped — see
+    the design doc for why.)
+  *(design: [plans/Feature-TypedInventorySlots.md](plans/Feature-TypedInventorySlots.md))*
 - [ ] **Utility equipment slots** — `INV_UTILITY`. *(needs typed slots)*
 
 ## Phase 5: Firing & Accuracy (the combat loop)

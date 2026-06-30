@@ -3,8 +3,28 @@
 **Status:** Implemented (Phase 4). Parent feature for
 [Configurable Weapon Slots / Unload](Feature-ConfigurableWeaponSlotsUnload.md).
 
-**What shipped:** `RuleInventoryLayout` (`inventoryLayouts:` node, `ref:`/inline sections, `refNode`
-reuse, guaranteed ground section) + `Armor.inventoryLayout`; a synthesized default layout preserving
+**Amendment (Jun 2026): inline sections removed; STR_STANDARD_INV added.** Layout sections were
+originally either a `ref:` to a global `invs` section *or* an inline section owned by the layout.
+Inline sections were dropped because the same inline id could name distinct section *objects* across
+layouts (especially when a layout reused another's section list via a `refNode`/YAML anchor, which
+re-instantiates them), and slot identity is by pointer — so a serialized equipment-layout reference to
+an inline slot could resolve to the wrong object and the item would be silently dropped on load
+(observed in New Battle save/reload). Two follow-on changes finalized the model:
+
+- **Schema is now `id:` + `invs:` list** (matching the legacy build), e.g.
+  `- id: STR_STANDARD_INV` / `invs: [STR_RIGHT_HAND, STR_LEFT_HAND, ...]`. No inline sections; the
+  loader rejects the obsolete `sections:`/inline `id:` forms with a message pointing at `invs:`.
+- **The default is an explicit `STR_STANDARD_INV` layout** shipped in `xcom1`/`xcom2`
+  `inventories.rul`, not a per-section `defaultLayout` flag (that flag was tried, then removed). An
+  armor with no `inventoryLayout` falls back to `STR_STANDARD_INV`; a section absent from it (and from
+  the armor's own layout) doesn't appear on that unit. If a mod doesn't define `STR_STANDARD_INV`, the
+  engine synthesizes the old all-`invs` default as a fallback.
+
+Sections below describing inline definitions / `sections:`/`ref:` syntax are historical.
+
+**What shipped:** `RuleInventoryLayout` (`inventoryLayouts:` node, `id:`/`invs:`-list schema, `refNode`
+reuse, guaranteed ground section) + `Armor.inventoryLayout`; the base-data `STR_STANDARD_INV` layout
+used as the default (with an all-`invs` synthesized fallback) preserving
 vanilla behavior in historical order; `BattleUnit` resolves/caches its layout from its armor. The
 inventory UI (`Inventory`/`AlienInventory` grid, labels, hit-testing), item placement, quick-move
 (ctrl+click), and start-of-mission auto-equip all iterate the unit's layout; placement primitives and

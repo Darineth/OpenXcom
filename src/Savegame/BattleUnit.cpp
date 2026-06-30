@@ -4490,6 +4490,11 @@ UnitStats BattleUnit::computeEffectiveBaseStats(const BattleItem* excludedItem) 
 		{
 			continue;
 		}
+		// Display/holster slots can be flagged `countStats: false` to grant no bonus.
+		if (!item->getSlot()->getCountStats())
+		{
+			continue;
+		}
 		if (itemRules->hasStats())
 		{
 			itemStats += *itemRules->getStats();

@@ -50,6 +50,11 @@ private:
 	std::map<std::string, int> _costs;
 	int _listOrder;
 	int _hand;
+	/// Slot-side item filter: stored as BattleType (BT_NONE = accept anything). Kept as int so this
+	/// widely-included header doesn't have to pull in the heavy RuleItem.h just for the enum.
+	int _battleType;
+	bool _allowCombatSwap;
+	bool _countStats;
 public:
 	static const int SLOT_W = 16;
 	static const int SLOT_H = 16;
@@ -93,6 +98,14 @@ public:
 	bool fitItemInSlot(const RuleItem *item, int x, int y) const;
 	/// Gets a certain cost in the inventory.
 	int getCost(const RuleInventory *slot) const;
+	/// Gets the battle type this slot is restricted to (BT_NONE = unrestricted).
+	int getBattleType() const;
+	/// Checks whether an item's battle type is accepted by this slot's `battleType` filter.
+	bool canAcceptBattleType(const RuleItem *item) const;
+	/// Gets whether items can be moved into/out of this slot once combat is underway.
+	bool getAllowCombatSwap() const;
+	/// Gets whether items in this slot contribute their stat bonuses to the wearer.
+	bool getCountStats() const;
 	int getListOrder() const;
 };
 

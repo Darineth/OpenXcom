@@ -1,10 +1,10 @@
 # TODO
-- Move the visible ammo item display to the right in the inventory stuff.
-- Move the ammo rounds left display (it's hidden) see screenshot
+- Hand-handling slots for weapon shenanigans.  Don't like the fixed left/right hand slots at all.
+- Don't let locked in combat items be picked up at all ideally.
 
 # Terror Defense Future Notes
 
-These are notes for the future Terror Defense mod.  Ignore them for now, they are just notes for me.
+These are notes for the future Terror Defense mod.  *Ignore them for now, they are just notes for me.*
 
 ## Armor Damage Config
 

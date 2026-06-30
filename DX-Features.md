@@ -10,21 +10,22 @@ in the game sharing one global grid. In stock OXCE the `invs:` sections are glob
 inventory control is the `allowInv` on/off toggle; DX adds a per-armor layout on top.
 
 Define named layouts with a new top-level `inventoryLayouts:` node and assign one to an armor via
-`Armor.inventoryLayout`:
+`Armor.inventoryLayout`. A layout is just an `invs:` list of globally-defined `invs` section ids.
+A slot that should only appear in certain layouts (not on every unit) is a normal global `invs`
+section that those layouts simply list and others don't:
 
 ```yaml
+invs:
+  - id: STR_SATCHEL          # a normal global section, not part of STR_STANDARD_INV
+    x: 192
+    y: 37
+    type: 0                  # 0 = slot, 1 = hand, 2 = ground
+    slots: [ [0,0], [1,0], [2,0], [0,1], [1,1], [2,1] ]
+    costs: { STR_RIGHT_HAND: 8, STR_BELT: 12, STR_GROUND: 10 }
+
 inventoryLayouts:
-  - type: STR_LAYOUT_LIGHT
-    sections:
-      - ref: STR_RIGHT_HAND      # reuse a globally-defined `invs` section by id
-      - ref: STR_LEFT_HAND
-      - ref: STR_BELT
-      - id: STR_SATCHEL          # ...or define a section inline (same fields as an `invs` entry)
-        x: 192
-        y: 37
-        type: 0                  # 0 = slot, 1 = hand, 2 = ground
-        slots: [ [0,0], [1,0], [2,0], [0,1], [1,1], [2,1] ]
-        costs: { STR_RIGHT_HAND: 8, STR_BELT: 12, STR_GROUND: 10 }
+  - id: STR_LAYOUT_LIGHT
+    invs: [STR_RIGHT_HAND, STR_LEFT_HAND, STR_BELT, STR_SATCHEL, STR_GROUND]
 
 armors:
   - type: STR_HEAVY_SUIT
@@ -33,18 +34,25 @@ armors:
 
 Details and behavior:
 
-- **Sections** are either a `ref:` to a global `invs` section (shared by id) or defined inline (the
-  layout owns them; same fields as an `invs` entry). Layouts support the standard `refNode` parent
-  mechanic for reuse between layouts.
+- **Sections are reusable globals.** A layout's `invs:` is an ordered list of global `invs` section
+  ids (the same section object can appear in many layouts). There are no inline section definitions —
+  define the section in `invs:` and list its id. Layouts support the standard `refNode` parent
+  mechanic for reuse between layouts. (This single-object-per-section model means slot identity is
+  unambiguous everywhere, including when a soldier's equipment layout is saved and reloaded.)
+- **`STR_STANDARD_INV` is the default.** The base game data (`xcom1`/`xcom2` `inventories.rul`) defines
+  the standard nine-slot set as the `STR_STANDARD_INV` layout. An armor that sets no `inventoryLayout`
+  falls back to it — so a section that isn't listed in `STR_STANDARD_INV` (and isn't in the armor's
+  own layout) won't appear on that unit. To add a slot to *everyone*, add it to `STR_STANDARD_INV`;
+  to add it to *some* units, make a layout that lists it and assign that to their armor.
 - **Keying is armor-only.** Every unit always has an armor (soldiers, aliens, HWPs), so the armor's
   layout fully determines its slots. There is no `RuleSoldier`/`Unit` layout field.
-- **Default behavior is unchanged.** With no `inventoryLayouts` defined (or an armor that sets none),
-  the engine uses an implicit default layout synthesized from the global `invs` set, in the historical
-  iteration order — so unmodified mods behave exactly as before.
+- **Default behavior is unchanged.** Armors with no `inventoryLayout` use `STR_STANDARD_INV` (the same
+  nine slots as vanilla). If a mod / total conversion doesn't define `STR_STANDARD_INV` at all, the
+  engine falls back to an implicit layout synthesized from the full global `invs` set, so those mods
+  behave exactly as before.
 - A ground section is always guaranteed (appended if a layout omits one).
 - The inventory screen, item placement, quick-move (ctrl+click), start-of-mission auto-equip, and the
-  alien inventory all honor the active unit's layout: hidden sections are not drawn or used, and inline
-  sections are drawn, clickable, and valid auto/quick-move targets.
+  alien inventory all honor the active unit's layout: sections not in the layout are not drawn or used.
 - **Stranding protection.** Item placement that would force an item into a section the unit's layout
   lacks (loadout templates, persistent equipment layouts saved under a different armor) instead leaves
   the item on the ground; templates show a warning (`STR_DX_TEMPLATE_SLOT_NOT_IN_LAYOUT`). Loading a
@@ -53,6 +61,49 @@ Details and behavior:
 - **Layout-aware unload.** Weapon unload only uses hand sections present in the unit's layout; when no
   off-hand is available, the ejected ammo is best-fit into another inventory slot (ctrl+click style)
   before falling back to the ground.
+
+## Typed Inventory Slots
+
+Inventory sections (`invs:`) can now be turned into **typed, role-specific
+sockets** with three new `RuleInventory` fields. In stock OXCE/OXCE-Plus, item-vs-slot restriction
+only exists from the *item* side (`RuleItem.supportedInventorySections`); DX adds the complementary
+*slot* side plus combat-lock, move gating, and per-slot stat gating.
+
+```yaml
+invs:
+  - id: STR_ARMOR_SLOT
+    battleType: 11          # BT_FLARE — only items of this battle type fit here (0 = anything)
+    allowCombatSwap: false  # locked once combat is underway: can't move items in or out
+    countStats: false       # items here grant no stat/statModifier bonuses (display/holster slot)
+    costs:
+      STR_GROUND: -1        # an explicit -1 forbids this transfer while in combat
+```
+
+| Field | Default | Meaning |
+|---|---|---|
+| `battleType` | `0` (BT_NONE) | If set, only items whose `battleType` matches may be placed in the slot. Composes with the item-side `supportedInventorySections` (both must pass). |
+| `allowCombatSwap` | `true` | When `false`, items can't be moved **into or out of** the slot once combat is live (the pre-battle equip / base inventory screen is unaffected). |
+| `countStats` | `true` | When `false`, items in the slot do **not** contribute their `stats`/`statModifiers` to the wearer — for holster/display slots. Default `true` preserves the shipped *Item Stats Modifiers* behavior. |
+
+Behavior and details:
+
+- **`battleType` is always enforced** (pre-battle and in-combat), at manual drop, ctrl-click
+  quick-equip, `fitItem`, and the auto-place candidate scan. A rejected placement shows
+  `STR_INVALID_ITEM_SLOT`.
+- **`allowCombatSwap` only bites in combat** (`InventoryState` TU mode). In combat an item in a locked
+  slot can't even be *picked up* — clicking it shows `STR_NOT_COMBAT_SWAPPABLE` instead of lifting it
+  onto the cursor — and dropping anything *into* a locked slot is likewise rejected. (The same is
+  enforced at the drop/`fitItem`/ctrl-click-to-ground paths as a backstop, so a locked item can't be
+  popped out to the floor either.) Pre-battle equip / base inventory is unaffected.
+- **`costs` allow-list (lenient):** unlisted section pairs keep the existing `DEFAULT_MOVE_COST`
+  fallback (so partially-specified custom layouts still work); only an **explicit `-1`** cost forbids
+  that move while in combat (`STR_INVALID_TRANSFER`).
+- **`countStats`** gates the per-item bonus sum in `BattleUnit::computeEffectiveBaseStats`.
+- All four fields are also exposed to Y-Script on `RuleInventory` (`getBattleType`,
+  `getAllowCombatSwap`, `getCountStats`). No save-format change (rule-side only).
+
+This re-ports the legacy DX typed-slot behavior onto the current OXCE-Plus base and is the
+foundation for the follow-on **Utility equipment slots** (`INV_UTILITY`) feature.
 
 ## Inventory Ammo-Count Badges
 

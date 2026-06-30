@@ -130,16 +130,23 @@ items:
 #  armor below gets a different layout so you can swap armor in the base
 #  and watch the inventory grid change.
 #
-#    STR_NONE_UC          -> LIGHT  (exclusion: hands + belt + ground only)
-#    STR_PERSONAL_ARMOR_UC-> RIG    (no backpack; adds an inline "satchel")
+#    STR_NONE_UC          -> LIGHT  (hands + ground + 3 typed test slots; no belt)
+#    STR_PERSONAL_ARMOR_UC-> RIG    (no backpack; adds a "satchel" slot)
 #    STR_POWER_SUIT_UC    -> CLONE  (refNode-inherits LIGHT; renders == LIGHT)
 #    STR_FLYING_SUIT_UC   -> ONEHAND (right hand + belt only; no left hand)
 #
 #  What to check:
-#    * LIGHT: backpack/legs/shoulders are gone; auto-equip never fills them;
-#      you cannot drop items there; hands/belt/ground still work.
-#    * RIG: the inline satchel slot draws to the right and accepts items by
-#      hand (manual placement); backpack is absent.
+#    * LIGHT: backpack/legs/shoulders AND the belt are gone; auto-equip never fills
+#      them; you cannot drop items there; hands/ground still work. Plus three DX
+#      typed test slots: an AMMO pouch (clips only), a HOLSTER (firearms only), and
+#      a LOCKER (un-unequippable in combat). Try mis-placing items: a pistol in the
+#      AMMO pouch or a clip in the HOLSTER is rejected with STR_INVALID_ITEM_SLOT.
+#      For the LOCKER, stow something pre-battle, then in combat you can't even pick it
+#      up (click is rejected with STR_NOT_COMBAT_SWAPPABLE), nor drop anything in.
+#    * RIG: the satchel slot draws to the right and accepts items by
+#      hand (manual placement); backpack is absent. The satchel is countStats:false,
+#      so a stat-granting item stowed there grants NO bonus (move it to a hand/belt
+#      slot and the bonus reappears) - check via the soldier's stats.
 #    * CLONE: power-suit inventory looks identical to LIGHT (hands+belt+ground),
 #      proving refNode inheritance loaded the parent's sections. (If refNode
 #      failed, you'd see only the ground slot.)
@@ -148,53 +155,77 @@ items:
 #      held in the right hand and see where the ejected clip goes (belt/ground)
 #      or whether it refuses. Drives the companion unload-config feature.
 # =====================================================================
+# The DX typed-slot test sections are normal global `invs:` sections. They're simply not listed
+# in STR_STANDARD_INV, so they only appear in the layouts below that name them (not on every unit).
+invs:
+  # AMMO-ONLY pouch (2 wide). battleType 2 = BT_AMMO -> only clips fit; a weapon/grenade is
+  # rejected (STR_INVALID_ITEM_SLOT), and auto-equip won't dump non-ammo here.
+  - id: STR_DX_AMMO_POUCH
+    x: 16
+    y: 37
+    type: 0
+    battleType: 2
+    slots: [ [0, 0], [1, 0] ]
+    costs:
+      STR_RIGHT_HAND: 8
+      STR_LEFT_HAND: 8
+      STR_GROUND: 6
+  # WEAPON-ONLY "holster" (1 wide, 2 tall). battleType 1 = BT_FIREARM -> only firearms fit
+  # (e.g. the pistol); ammo, grenades, etc. are rejected.
+  - id: STR_DX_HOLSTER
+    x: 192
+    y: 104
+    type: 0
+    battleType: 1
+    slots: [ [0, 0], [0, 1] ]
+    costs:
+      STR_RIGHT_HAND: 8
+      STR_LEFT_HAND: 1     # quick-draw: 1 TU to whip the holstered weapon into the left hand
+      STR_GROUND: 6
+  # un-unequippable "locker" backpack (2x2) in the normal backpack zone. allowCombatSwap:
+  # false -> load it freely on the pre-battle equip screen, but once combat is underway you
+  # can't move an item into OR out of it (STR_NOT_COMBAT_SWAPPABLE) - including ctrl-click to ground.
+  - id: STR_DX_LOCKER
+    x: 192
+    y: 37
+    type: 0
+    allowCombatSwap: false
+    slots: [ [0, 0], [1, 0], [0, 1], [1, 1] ]
+    costs:
+      STR_RIGHT_HAND: 8
+      STR_LEFT_HAND: 8
+      STR_GROUND: 6
+  # 3x2 "satchel" where the backpack used to be. countStats: false -> items stowed here grant
+  # NO stat/statModifier bonus (the same item in a hand/belt slot still grants its bonus).
+  - id: STR_DX_SATCHEL
+    x: 192
+    y: 37
+    type: 0
+    countStats: false
+    slots: [ [0, 0], [1, 0], [2, 0], [0, 1], [1, 1], [2, 1] ]
+    costs:
+      STR_RIGHT_HAND: 8
+      STR_LEFT_HAND: 8
+      STR_BELT: 12
+      STR_GROUND: 10
+
 inventoryLayouts:
-  - type: STR_DX_LAYOUT_LIGHT
-    sections: &dxLightSections
-      - ref: STR_RIGHT_HAND
-      - ref: STR_LEFT_HAND
-      - ref: STR_BELT
-      - ref: STR_GROUND
+  - id: STR_DX_LAYOUT_LIGHT
+    invs: &dxLightInvs [STR_RIGHT_HAND, STR_LEFT_HAND, STR_GROUND, STR_DX_AMMO_POUCH, STR_DX_HOLSTER, STR_DX_LOCKER]
 
-  - type: STR_DX_LAYOUT_RIG
-    sections:
-      - ref: STR_RIGHT_HAND
-      - ref: STR_LEFT_HAND
-      - ref: STR_BELT
-      - ref: STR_RIGHT_SHOULDER
-      - ref: STR_LEFT_SHOULDER
-      - ref: STR_GROUND
-      # inline section: a custom 3x2 "satchel" where the backpack used to be
-      - id: STR_DX_SATCHEL
-        x: 192
-        y: 37
-        type: 0
-        slots:
-          - [0, 0]
-          - [1, 0]
-          - [2, 0]
-          - [0, 1]
-          - [1, 1]
-          - [2, 1]
-        costs:
-          STR_RIGHT_HAND: 8
-          STR_LEFT_HAND: 8
-          STR_BELT: 12
-          STR_GROUND: 10
+  - id: STR_DX_LAYOUT_RIG
+    invs: [STR_RIGHT_HAND, STR_LEFT_HAND, STR_BELT, STR_RIGHT_SHOULDER, STR_LEFT_SHOULDER, STR_GROUND, STR_DX_SATCHEL]
 
-  - type: STR_DX_LAYOUT_CLONE
-    # refNode reuse: inherit LIGHT's section list verbatim (no own `sections:`),
-    # so this renders identical to LIGHT. Demonstrates the standard refNode mechanic.
+  - id: STR_DX_LAYOUT_CLONE
+    # refNode reuse: inherit LIGHT's invs list verbatim (no own `invs:`), so this renders
+    # identical to LIGHT. Demonstrates the standard refNode mechanic.
     refNode:
-      sections: *dxLightSections
+      invs: *dxLightInvs
 
-  - type: STR_DX_LAYOUT_ONEHAND
+  - id: STR_DX_LAYOUT_ONEHAND
     # only a right hand + belt (ground is auto-added). For testing unload behavior
     # when the left hand slot is absent.
-    sections:
-      - ref: STR_RIGHT_HAND
-      - ref: STR_BELT
-      - ref: STR_GROUND
+    invs: [STR_RIGHT_HAND, STR_BELT, STR_GROUND]
 
 armors:
   - type: STR_NONE_UC
@@ -210,6 +241,9 @@ extraStrings:
   - type: en-US
     strings:
       STR_DX_SATCHEL: "SATCHEL"
+      STR_DX_AMMO_POUCH: "AMMO"
+      STR_DX_HOLSTER: "HOLSTER"
+      STR_DX_LOCKER: "LOCKER"
 
 # =====================================================================
 #  User options forced on while this test mod is active

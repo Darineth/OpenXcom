@@ -126,6 +126,8 @@ public:
 	bool isInSearchString(BattleItem *item);
 	/// Arranges items on the ground.
 	void arrangeGround(int alterOffset = 0);
+	/// Checks the slot-side typed-slot rules (battleType filter, combat-swap lock, move-cost allow-list).
+	bool checkSlotRules(const BattleItem *item, const RuleInventory *dest, std::string &warning) const;
 	/// Attempts to place an item in an inventory slot.
 	bool fitItem(const RuleInventory *newSlot, BattleItem *item, std::string &warning);
 	/// Finds the first free slot in the selected unit's layout that the item fits into.

@@ -118,6 +118,10 @@ en-US:
   STR_DX_INV_MEDI_HEAL: "Heal>{ALT}{0}"
   STR_DX_INV_MEDI_STIM: "Stim>{ALT}{0}"
   STR_DX_INV_MEDI_PAIN: "Pain>{ALT}{0}"
+#Inventory.cpp - typed inventory slot warnings
+  STR_INVALID_ITEM_SLOT: "This item can't go in that slot."
+  STR_NOT_COMBAT_SWAPPABLE: "This slot is locked while in combat."
+  STR_INVALID_TRANSFER: "You can't move the item there."
 #CraftEquipmentState.cpp - New Battle quick stock button
   STR_DX_CRAFT_FILL: "Fill"
 #=================== DX Geoscape Activity Display ===================

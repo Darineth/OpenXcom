@@ -30,7 +30,7 @@ namespace OpenXcom
  * type of inventory section.
  * @param id String defining the id.
  */
-RuleInventory::RuleInventory(const std::string &id, int listOrder): _id(id), _x(0), _y(0), _type(INV_SLOT), _listOrder(listOrder), _hand(0)
+RuleInventory::RuleInventory(const std::string &id, int listOrder): _id(id), _x(0), _y(0), _type(INV_SLOT), _listOrder(listOrder), _hand(0), _battleType(BT_NONE), _allowCombatSwap(true), _countStats(true)
 {
 }
 
@@ -55,6 +55,9 @@ void RuleInventory::load(const YAML::YamlNodeReader& reader)
 	reader.tryRead("type", _type);
 	reader.tryRead("slots", _slots);
 	reader.tryRead("costs", _costs);
+	reader.tryRead("battleType", _battleType);
+	reader.tryRead("allowCombatSwap", _allowCombatSwap);
+	reader.tryRead("countStats", _countStats);
 	reader.tryRead("listOrder", _listOrder);
 	if (_id == "STR_RIGHT_HAND")
 	{
@@ -262,6 +265,49 @@ int RuleInventory::getListOrder() const
 	return _listOrder;
 }
 
+/**
+ * Gets the battle type this slot is restricted to.
+ * @return The BattleType (BT_NONE means the slot accepts any item).
+ */
+int RuleInventory::getBattleType() const
+{
+	return _battleType;
+}
+
+/**
+ * Checks whether an item's battle type is accepted by this slot's `battleType` filter.
+ * This is the slot-side complement of RuleItem::supportedInventorySections: an unrestricted
+ * slot (BT_NONE) accepts anything; a typed slot only accepts items of the matching battle type.
+ * @param item The item ruleset to test.
+ * @return True if the item may go in this slot per the battleType filter.
+ */
+bool RuleInventory::canAcceptBattleType(const RuleItem *item) const
+{
+	if (_battleType == BT_NONE)
+	{
+		return true;
+	}
+	return item && item->getBattleType() == (BattleType)_battleType;
+}
+
+/**
+ * Gets whether items can be moved into/out of this slot once combat is underway.
+ * @return True if combat swaps are allowed (default); false locks the slot during battle.
+ */
+bool RuleInventory::getAllowCombatSwap() const
+{
+	return _allowCombatSwap;
+}
+
+/**
+ * Gets whether items in this slot contribute their stat bonuses to the wearer.
+ * @return True if the slot's items grant their stats/statModifiers (default).
+ */
+bool RuleInventory::getCountStats() const
+{
+	return _countStats;
+}
+
 
 ////////////////////////////////////////////////////////////
 //					Script binding
@@ -326,6 +372,9 @@ void RuleInventory::ScriptRegister(ScriptParserBase* parser)
 
 	bu.add<&getIdScript>("getId");
 	bu.add<&getTypeScript>("getType");
+	bu.add<&RuleInventory::getBattleType>("getBattleType", "Battle type this slot is restricted to (BT_NONE = unrestricted)");
+	bu.add<&RuleInventory::getAllowCombatSwap>("getAllowCombatSwap");
+	bu.add<&RuleInventory::getCountStats>("getCountStats");
 	bu.add<&RuleInventory::isRightHand>("isRightHand");
 	bu.add<&RuleInventory::isLeftHand>("isLeftHand");
 	bu.add<&RuleInventory::getCost>("getMoveToCost", "Cost of moving item from slot in first arg to slot from last arg");

@@ -29,31 +29,26 @@ class RuleInventory;
 
 /**
  * Represents a named set of inventory sections (slots) that can be assigned to
- * a unit via its armor. A layout either reuses globally-defined `invs` sections
- * (by `ref:`) or defines sections inline; the resolved, ordered section list is
- * what the inventory UI and item-placement code iterate for that unit.
+ * a unit via its armor. A layout is an ordered `invs:` list of globally-defined `invs`
+ * section ids; the resolved, ordered section list is what the inventory UI and
+ * item-placement code iterate for that unit. A section that should only appear in
+ * specific layouts is simply not listed in the others.
  *
- * With no layouts defined, the engine synthesizes an implicit default layout
- * from the global `invs` set so behavior is unchanged (see Mod).
+ * The standard slot set ships as the `STR_STANDARD_INV` layout in the base game data;
+ * an armor that sets no `inventoryLayout` falls back to it (or, if a mod doesn't define
+ * it, to an implicit layout synthesized from all global `invs` - see Mod).
  */
 class RuleInventoryLayout
 {
 private:
-	/// One ordered entry in the layout: either a ref to a global section or an owned inline section.
-	struct SectionSpec
-	{
-		std::string ref;                  // non-empty => reference a global `invs` section by id
-		RuleInventory* inlineSection = 0; // owned inline section (when ref is empty)
-	};
 	std::string _id;
 	int _listOrder;
-	std::vector<SectionSpec> _spec;                  // load-time order, preserved across ref/inline mix
-	std::vector<RuleInventory*> _owned;              // inline sections owned by this layout
+	std::vector<std::string> _refs;                  // ordered global-section ids referenced by this layout
 	std::vector<const RuleInventory*> _sections;     // resolved, ordered section list
 public:
 	/// Creates a blank inventory layout ruleset.
 	RuleInventoryLayout(const std::string& id, int listOrder);
-	/// Cleans up the inventory layout ruleset (and any inline sections it owns).
+	/// Cleans up the inventory layout ruleset.
 	~RuleInventoryLayout();
 	/// Loads the layout from YAML.
 	void load(const YAML::YamlNodeReader& reader);

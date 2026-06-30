@@ -139,3 +139,9 @@ invs:
       STR_RIGHT_HAND: 8
       STR_RIGHT_LEG: 16
       STR_RIGHT_SHOULDER: 14
+
+# The standard inventory slot set, as a named layout. An armor that sets no `inventoryLayout`
+# falls back to this; other layouts (e.g. per-armor DX layouts) list whatever subset they want.
+inventoryLayouts:
+  - id: STR_STANDARD_INV
+    invs: [STR_RIGHT_HAND, STR_LEFT_HAND, STR_BELT, STR_RIGHT_LEG, STR_LEFT_LEG, STR_RIGHT_SHOULDER, STR_LEFT_SHOULDER, STR_BACK_PACK, STR_GROUND]

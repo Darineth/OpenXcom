@@ -1032,7 +1032,12 @@ void Inventory::mouseClick(Action *action, State *state)
 						}
 						else
 						{
-							if (!_tu || _selUnit->spendTimeUnits(item->getMoveToCost(newSlot)))
+							// Typed-slot rules (e.g. combat-swap lock) also gate ctrl-click-to-ground.
+							if (std::string typedWarning; !checkSlotRules(item, newSlot, typedWarning))
+							{
+								warning = typedWarning;
+							}
+							else if (!_tu || _selUnit->spendTimeUnits(item->getMoveToCost(newSlot)))
 							{
 								placed = true;
 								moveItem(item, newSlot, 0, 0);
@@ -1052,10 +1057,19 @@ void Inventory::mouseClick(Action *action, State *state)
 					}
 					else
 					{
-						setSelectedItem(item);
-						if (item->getFuseTimer() >= 0)
+						// Combat-swap lock: an item in a loadout-only slot can't even be lifted
+						// once combat is underway (not just blocked when dropped elsewhere).
+						if (_tu && !item->getSlot()->getAllowCombatSwap())
 						{
-							_warning->showMessage(_game->getLanguage()->getString(item->getRules()->getPrimeActionMessage()));
+							_warning->showMessage(_game->getLanguage()->getString("STR_NOT_COMBAT_SWAPPABLE"));
+						}
+						else
+						{
+							setSelectedItem(item);
+							if (item->getFuseTimer() >= 0)
+							{
+								_warning->showMessage(_game->getLanguage()->getString(item->getRules()->getPrimeActionMessage()));
+							}
 						}
 					}
 				}
@@ -1081,6 +1095,11 @@ void Inventory::mouseClick(Action *action, State *state)
 				if (!_selItem->getRules()->canBePlacedIntoInventorySection(slot))
 				{
 					_warning->showMessage(_game->getLanguage()->getString("STR_CANNOT_PLACE_ITEM_INTO_THIS_SECTION"));
+				}
+				// Check the slot-side typed-slot rules (battleType filter, combat-swap lock, move-cost allow-list).
+				else if (std::string typedWarning; !checkSlotRules(_selItem, slot, typedWarning))
+				{
+					_warning->showMessage(_game->getLanguage()->getString(typedWarning));
 				}
 				// Put item in empty slot, or stack it, if possible.
 				else if (item == 0 || item == _selItem || canStack)
@@ -1884,6 +1903,45 @@ void Inventory::arrangeGround(int alterOffset)
 }
 
 /**
+ * Checks the slot-side typed-slot rules for moving an item into a destination section:
+ *  - `battleType` filter: a typed slot only accepts items of the matching battle type (always enforced).
+ *  - `allowCombatSwap`: once combat is underway (`_tu`), a locked slot can't be moved into or out of.
+ *  - `costs` allow-list: an explicit `-1` move cost forbids that source->dest transfer in combat.
+ * @param item The item being moved (its current slot is the source).
+ * @param dest The destination section.
+ * @param warning Receives the localized warning key if the move is rejected.
+ * @return True if the move is permitted by the typed-slot rules.
+ */
+bool Inventory::checkSlotRules(const BattleItem *item, const RuleInventory *dest, std::string &warning) const
+{
+	// Slot-side battle type filter (complement of RuleItem::supportedInventorySections); always enforced.
+	if (!dest->canAcceptBattleType(item->getRules()))
+	{
+		warning = "STR_INVALID_ITEM_SLOT";
+		return false;
+	}
+
+	// The remaining rules only bite once combat is underway (pre-battle/base inventory is unrestricted).
+	if (_tu)
+	{
+		const RuleInventory *source = item->getSlot();
+		// Combat-swap lock: moving across slots is forbidden if either end is loadout-only.
+		if (source && source != dest && (!source->getAllowCombatSwap() || !dest->getAllowCombatSwap()))
+		{
+			warning = "STR_NOT_COMBAT_SWAPPABLE";
+			return false;
+		}
+		// Move-cost allow-list: an explicit negative cost forbids this transfer in combat.
+		if (source && source->getCost(dest) < 0)
+		{
+			warning = "STR_INVALID_TRANSFER";
+			return false;
+		}
+	}
+	return true;
+}
+
+/**
  * Attempts to place the item in the inventory slot.
  * @param newSlot Where to place the item.
  * @param item Item to be placed.
@@ -1905,6 +1963,11 @@ bool Inventory::fitItem(const RuleInventory *newSlot, BattleItem *item, std::str
 	if (!item->getRules()->canBePlacedIntoInventorySection(newSlot))
 	{
 		warning = "STR_CANNOT_PLACE_ITEM_INTO_THIS_SECTION";
+		return false;
+	}
+	// Check the slot-side typed-slot rules (battleType filter, combat-swap lock, move-cost allow-list).
+	if (!checkSlotRules(item, newSlot, warning))
+	{
 		return false;
 	}
 
@@ -1958,7 +2021,7 @@ bool Inventory::findFreeSlotForItem(BattleItem *item, RuleInventory *&outSlot, i
 	std::vector<const RuleInventory*> candidates;
 	for (const auto* s : getActiveLayout()->getSections())
 	{
-		if (s->getType() == INV_SLOT && item->getRules()->canBePlacedIntoInventorySection(s))
+		if (s->getType() == INV_SLOT && item->getRules()->canBePlacedIntoInventorySection(s) && s->canAcceptBattleType(item->getRules()))
 		{
 			candidates.push_back(s);
 		}
