@@ -67,6 +67,10 @@ class ScriptWorkerBlit;
 struct BattleUnitStatistics;
 struct StatAdjustment;
 
+/// Which hand a unit is favouring (active hand / preferred reaction hand). Decoupled from the
+/// section ids so renamed hand slots work; serialized as "right"/"left"/"none".
+enum UnitActiveHand { ACTIVE_HAND_NONE, ACTIVE_HAND_LEFT, ACTIVE_HAND_RIGHT };
+
 /**
  * Placeholder class for future functionality.
  */
@@ -138,8 +142,8 @@ private:
 
 	BattleUnit* _previousOwner = nullptr;
 	const Unit *_spawnUnit = nullptr;
-	std::string _activeHand;
-	std::string _preferredHandForReactions;
+	UnitActiveHand _activeHand = ACTIVE_HAND_RIGHT;
+	UnitActiveHand _preferredHandForReactions = ACTIVE_HAND_NONE;
 	bool _reactionsDisabledForLeftHand = false;
 	bool _reactionsDisabledForRightHand = false;
 	BattleUnitStatistics* _statistics;

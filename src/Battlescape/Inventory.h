@@ -73,6 +73,8 @@ private:
 	RuleInventory *getSlotInPosition(int *x, int *y) const;
 	/// Gets the inventory layout driving the displayed sections (selected unit's, or the mod default).
 	const RuleInventoryLayout *getActiveLayout() const;
+	/// Caches the active layout's hand sections (right/left may be null if the layout omits one).
+	void refreshHandSlots();
 	/// Play a sound.
 	void playSound(int sound);
 public:

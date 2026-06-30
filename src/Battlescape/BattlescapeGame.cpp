@@ -48,6 +48,7 @@
 #include "../Savegame/BattleItem.h"
 #include "../Mod/RuleItem.h"
 #include "../Mod/RuleInventory.h"
+#include "../Mod/RuleInventoryLayout.h"
 #include "../Mod/RuleSoldier.h"
 #include "../Mod/Armor.h"
 #include "../Engine/Options.h"
@@ -2931,8 +2932,9 @@ bool BattlescapeGame::takeItem(BattleItem* item, BattleAction *action)
 		return false;
 	};
 
-	auto equipItem = [&unit](RuleInventory *slot, BattleItem* i)
+	auto equipItem = [&unit](const RuleInventory *slot, BattleItem* i)
 	{
+		if (!slot) return false;
 		BattleActionCost cost{ unit };
 		cost.Time += i->getMoveToCost(slot);
 		if (cost.haveTU() && unit->fitItemToInventory(slot, i))
@@ -2968,7 +2970,8 @@ bool BattlescapeGame::takeItem(BattleItem* item, BattleAction *action)
 	case BT_MELEE:
 		if (!rightWeapon)
 		{
-			placed = equipItem(mod->getInventoryRightHand(), item);
+			const RuleInventoryLayout *layout = unit->getInventoryLayout();
+			placed = equipItem(layout ? layout->getRightHand() : mod->getInventoryRightHand(), item);
 		}
 		break;
 	case BT_MEDIKIT:
@@ -2978,7 +2981,8 @@ bool BattlescapeGame::takeItem(BattleItem* item, BattleAction *action)
 	case BT_MINDPROBE:
 		if (!leftWeapon)
 		{
-			placed = equipItem(mod->getInventoryLeftHand(), item);
+			const RuleInventoryLayout *layout = unit->getInventoryLayout();
+			placed = equipItem(layout ? layout->getLeftHand() : mod->getInventoryLeftHand(), item);
 		}
 		break;
 	default: break;

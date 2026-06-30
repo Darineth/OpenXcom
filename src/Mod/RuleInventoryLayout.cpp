@@ -116,6 +116,34 @@ void RuleInventoryLayout::afterLoad(const Mod* mod)
 			_sections.push_back(ground);
 		}
 	}
+
+	resolveHands();
+}
+
+/**
+ * Resolves this layout's hand sections from its resolved section list, by the `hand:` property.
+ * Handedness is unique per layout: two sections of the same side in one layout is a ruleset error
+ * (the same `hand: left` section is fine in many different layouts, just not twice in one).
+ */
+void RuleInventoryLayout::resolveHands()
+{
+	_rightHand = nullptr;
+	_leftHand = nullptr;
+	for (const auto* s : _sections)
+	{
+		if (s->isRightHand())
+		{
+			if (_rightHand)
+				throw Exception("Inventory layout " + _id + " has two right-hand sections (" + _rightHand->getId() + ", " + s->getId() + "); only one is allowed per layout.");
+			_rightHand = s;
+		}
+		if (s->isLeftHand())
+		{
+			if (_leftHand)
+				throw Exception("Inventory layout " + _id + " has two left-hand sections (" + _leftHand->getId() + ", " + s->getId() + "); only one is allowed per layout.");
+			_leftHand = s;
+		}
+	}
 }
 
 /**

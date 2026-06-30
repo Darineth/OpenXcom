@@ -156,8 +156,7 @@ Inventory::Inventory(Game *game, int width, int height, int x, int y, bool base)
 		_ammoLowColor = eLow ? eLow->color : _twoHandedRed;
 	}
 
-	_inventorySlotRightHand = _game->getMod()->getInventoryRightHand();
-	_inventorySlotLeftHand = _game->getMod()->getInventoryLeftHand();
+	refreshHandSlots(); // resolves from the active layout (the mod default until a unit is selected)
 	_inventorySlotBackPack = _game->getMod()->getInventoryBackpack();
 	_inventorySlotBelt = _game->getMod()->getInventoryBelt();
 	_inventorySlotGround = _game->getMod()->getInventoryGround();
@@ -226,8 +225,9 @@ BattleUnit *Inventory::getSelectedUnit() const
 void Inventory::setSelectedUnit(BattleUnit *unit, bool resetGroundOffset)
 {
 	_selUnit = unit;
-	// The drawn grid (and its labels) now depend on the selected unit's inventory
-	// layout, so redraw it whenever the unit changes.
+	// The hand-slot shortcuts and the drawn grid (and its labels) now depend on the selected
+	// unit's inventory layout, so re-resolve/redraw them whenever the unit changes.
+	refreshHandSlots();
 	drawGrid();
 	if (resetGroundOffset)
 	{
@@ -724,6 +724,20 @@ const RuleInventoryLayout *Inventory::getActiveLayout() const
 }
 
 /**
+ * Caches the active layout's hand sections so the inventory-screen hand shortcuts (quick-move,
+ * reload off-hand placement) target the selected unit's actual hands. Either pointer may be null
+ * when the layout omits that hand (e.g. a one-handed layout); all uses are guarded for that.
+ * The const_cast is safe: these RuleInventory objects are owned mutably by the Mod; the layout
+ * just exposes them read-only.
+ */
+void Inventory::refreshHandSlots()
+{
+	const RuleInventoryLayout *layout = getActiveLayout();
+	_inventorySlotRightHand = const_cast<RuleInventory*>(layout->getRightHand());
+	_inventorySlotLeftHand = const_cast<RuleInventory*>(layout->getLeftHand());
+}
+
+/**
  * Returns the item currently grabbed by the player.
  * @return Pointer to selected item, or NULL if none.
  */
@@ -981,14 +995,17 @@ void Inventory::mouseClick(Action *action, State *state)
 							}
 						}
 
-						if (newSlot->getType() != INV_GROUND)
+						if (newSlot == nullptr || newSlot->getType() != INV_GROUND)
 						{
-							// A1 - vanilla default attempt
+							// A1 - vanilla default attempt (the target hand may not exist in this layout)
 							if (!placed)
 							{
 								_stackLevel[item->getSlotX()][item->getSlotY()] -= 1;
 
-								placed = fitItem(newSlot, item, warning);
+								if (newSlot)
+								{
+									placed = fitItem(newSlot, item, warning);
+								}
 							}
 
 							if (!placed)
@@ -1057,19 +1074,12 @@ void Inventory::mouseClick(Action *action, State *state)
 					}
 					else
 					{
-						// Combat-swap lock: an item in a loadout-only slot can't even be lifted
-						// once combat is underway (not just blocked when dropped elsewhere).
-						if (_tu && !item->getSlot()->getAllowCombatSwap())
+						// Note: a combat-swap-locked item can still be picked up (e.g. to unload it);
+						// the lock is enforced at drop time, when it would move to a *different* slot.
+						setSelectedItem(item);
+						if (item->getFuseTimer() >= 0)
 						{
-							_warning->showMessage(_game->getLanguage()->getString("STR_NOT_COMBAT_SWAPPABLE"));
-						}
-						else
-						{
-							setSelectedItem(item);
-							if (item->getFuseTimer() >= 0)
-							{
-								_warning->showMessage(_game->getLanguage()->getString(item->getRules()->getPrimeActionMessage()));
-							}
+							_warning->showMessage(_game->getLanguage()->getString(item->getRules()->getPrimeActionMessage()));
 						}
 					}
 				}
@@ -1096,15 +1106,18 @@ void Inventory::mouseClick(Action *action, State *state)
 				{
 					_warning->showMessage(_game->getLanguage()->getString("STR_CANNOT_PLACE_ITEM_INTO_THIS_SECTION"));
 				}
-				// Check the slot-side typed-slot rules (battleType filter, combat-swap lock, move-cost allow-list).
-				else if (std::string typedWarning; !checkSlotRules(_selItem, slot, typedWarning))
-				{
-					_warning->showMessage(_game->getLanguage()->getString(typedWarning));
-				}
 				// Put item in empty slot, or stack it, if possible.
 				else if (item == 0 || item == _selItem || canStack)
 				{
-					if (!overlapItems(_selUnit, _selItem, slot, x, y) && slot->fitItemInSlot(_selItem->getRules(), x, y))
+					// Slot-side typed-slot rules (battleType filter, combat-swap lock, move-cost
+					// allow-list) only gate placing the item as a slot occupant - not loading a
+					// weapon already in the slot (the isWeaponWithAmmo branch below).
+					std::string typedWarning;
+					if (!checkSlotRules(_selItem, slot, typedWarning))
+					{
+						_warning->showMessage(_game->getLanguage()->getString(typedWarning));
+					}
+					else if (!overlapItems(_selUnit, _selItem, slot, x, y) && slot->fitItemInSlot(_selItem->getRules(), x, y))
 					{
 						if (!_tu || _selUnit->spendTimeUnits(_selItem->getMoveToCost(slot)))
 						{
@@ -1149,7 +1162,7 @@ void Inventory::mouseClick(Action *action, State *state)
 						// 4. the cost of loading the weapon with the new ammo (from the offhand)
 						int tuCost = item->getRules()->getTULoad(slotAmmo);
 
-						if (Mod::EXTENDED_ITEM_RELOAD_COST && _selItem->getSlot()->getType() != INV_HAND)
+						if (Mod::EXTENDED_ITEM_RELOAD_COST && _selItem->getSlot()->getType() != INV_HAND && _inventorySlotRightHand)
 						{
 							// 3. the cost of moving the new ammo from the current slot to the offhand
 							// Note: the cost for left/right hand might *NOT* be the same, but using the right hand "by definition"
@@ -1160,11 +1173,11 @@ void Inventory::mouseClick(Action *action, State *state)
 						BattleItem *weaponLeftHand = _selUnit->getLeftHandWeapon();
 
 						auto* oldAmmoGoesTo = _inventorySlotGround;
-						if (!weaponRightHand || _selItem == weaponRightHand)
+						if ((!weaponRightHand || _selItem == weaponRightHand) && _inventorySlotRightHand)
 						{
 							oldAmmoGoesTo = _inventorySlotRightHand;
 						}
-						else if (!weaponLeftHand || _selItem == weaponLeftHand)
+						else if ((!weaponLeftHand || _selItem == weaponLeftHand) && _inventorySlotLeftHand)
 						{
 							oldAmmoGoesTo = _inventorySlotLeftHand;
 						}
@@ -1192,7 +1205,7 @@ void Inventory::mouseClick(Action *action, State *state)
 
 								// 1. the cost of unloading the old ammo (to the offhand)
 								tuCost += tuUnload;
-								if (oldAmmoGoesTo == _inventorySlotGround)
+								if (oldAmmoGoesTo == _inventorySlotGround && _inventorySlotRightHand)
 								{
 									// 2. the cost of dropping the old ammo on the ground (from the offhand)
 									// Note: the cost for left/right hand is (should be) the same, so just using the right hand

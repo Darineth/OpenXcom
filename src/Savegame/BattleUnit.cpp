@@ -57,6 +57,27 @@
 namespace OpenXcom
 {
 
+namespace
+{
+/// Serializes a unit hand side as a short, section-id-independent token.
+std::string activeHandToYaml(UnitActiveHand hand)
+{
+	switch (hand)
+	{
+	case ACTIVE_HAND_RIGHT: return "right";
+	case ACTIVE_HAND_LEFT:  return "left";
+	default:                return "none";
+	}
+}
+/// Parses a serialized hand side, migrating the legacy section-id strings from old saves.
+UnitActiveHand activeHandFromYaml(const std::string& s)
+{
+	if (s == "right" || s == "STR_RIGHT_HAND") return ACTIVE_HAND_RIGHT;
+	if (s == "left" || s == "STR_LEFT_HAND") return ACTIVE_HAND_LEFT;
+	return ACTIVE_HAND_NONE;
+}
+}
+
 /**
  * Initializes a BattleUnit from a Soldier
  * @param soldier Pointer to the Soldier.
@@ -106,8 +127,8 @@ BattleUnit::BattleUnit(const Mod *mod, Soldier *soldier, int depth, const RuleSt
 	for (int i = 0; i < SPEC_WEAPON_MAX; ++i)
 		_specWeapon[i] = 0;
 
-	_activeHand = "STR_RIGHT_HAND";
-	_preferredHandForReactions = "";
+	_activeHand = ACTIVE_HAND_RIGHT;
+	_preferredHandForReactions = ACTIVE_HAND_NONE;
 
 	lastCover = TileEngine::invalid;
 
@@ -478,8 +499,8 @@ BattleUnit::BattleUnit(const Mod *mod, const Unit *unit, UnitFaction faction, in
 	for (int i = 0; i < SPEC_WEAPON_MAX; ++i)
 		_specWeapon[i] = 0;
 
-	_activeHand = "STR_RIGHT_HAND";
-	_preferredHandForReactions = "";
+	_activeHand = ACTIVE_HAND_RIGHT;
+	_preferredHandForReactions = ACTIVE_HAND_NONE;
 
 	lastCover = TileEngine::invalid;
 
@@ -672,8 +693,10 @@ void BattleUnit::load(const YAML::YamlNodeReader& node, const Mod *mod, const Sc
 	reader.tryRead("motionPoints", _motionPoints);
 	reader.tryRead("customMarker", _customMarker);
 	reader.tryRead("alreadyRespawned", _alreadyRespawned);
-	reader.tryRead("activeHand", _activeHand);
-	reader.tryRead("preferredHandForReactions", _preferredHandForReactions);
+	if (const auto& ah = reader["activeHand"])
+		_activeHand = activeHandFromYaml(ah.readVal<std::string>());
+	if (const auto& ph = reader["preferredHandForReactions"])
+		_preferredHandForReactions = activeHandFromYaml(ph.readVal<std::string>());
 	reader.tryRead("reactionsDisabledForLeftHand", _reactionsDisabledForLeftHand);
 	reader.tryRead("reactionsDisabledForRightHand", _reactionsDisabledForRightHand);
 	if (reader["tempUnitStatistics"])
@@ -800,9 +823,9 @@ void BattleUnit::save(YAML::YamlNodeWriter writer, const ScriptGlobal *shared) c
 		writer.write("customMarker", _customMarker);
 	if (_alreadyRespawned)
 		writer.write("alreadyRespawned", _alreadyRespawned);
-	writer.write("activeHand", _activeHand);
-	if (!_preferredHandForReactions.empty())
-		writer.write("preferredHandForReactions", _preferredHandForReactions);
+	writer.write("activeHand", activeHandToYaml(_activeHand));
+	if (_preferredHandForReactions != ACTIVE_HAND_NONE)
+		writer.write("preferredHandForReactions", activeHandToYaml(_preferredHandForReactions));
 	if (_reactionsDisabledForLeftHand)
 		writer.write("reactionsDisabledForLeftHand", _reactionsDisabledForLeftHand);
 	if (_reactionsDisabledForRightHand)
@@ -3088,8 +3111,12 @@ bool BattleUnit::fitItemToInventory(const RuleInventory *slot, BattleItem *item)
  */
 bool BattleUnit::addItem(BattleItem *item, const Mod *mod, bool allowSecondClip, bool allowAutoLoadout, bool allowUnloadedWeapons)
 {
-	RuleInventory *rightHand = mod->getInventoryRightHand();
-	RuleInventory *leftHand = mod->getInventoryLeftHand();
+	// Resolve this unit's hands from its own inventory layout (a custom/renamed hand is a real hand);
+	// fall back to the mod default only if the layout isn't resolved yet. A layout may legitimately
+	// have no right/left hand (null), in which case nothing auto-equips there.
+	const RuleInventoryLayout *layout = getInventoryLayout();
+	const RuleInventory *rightHand = layout ? layout->getRightHand() : mod->getInventoryRightHand();
+	const RuleInventory *leftHand = layout ? layout->getLeftHand() : mod->getInventoryLeftHand();
 	bool placed = false;
 	bool loaded = false;
 	const RuleItem *rule = item->getRules();
@@ -3770,7 +3797,7 @@ BattleItem *BattleUnit::getLeftHandWeapon() const
  */
 void BattleUnit::setActiveRightHand()
 {
-	_activeHand = "STR_RIGHT_HAND";
+	_activeHand = ACTIVE_HAND_RIGHT;
 }
 
 /**
@@ -3778,7 +3805,7 @@ void BattleUnit::setActiveRightHand()
  */
 void BattleUnit::setActiveLeftHand()
 {
-	_activeHand = "STR_LEFT_HAND";
+	_activeHand = ACTIVE_HAND_LEFT;
 }
 
 /**
@@ -3786,8 +3813,8 @@ void BattleUnit::setActiveLeftHand()
  */
 const BattleItem *BattleUnit::getActiveHand(const BattleItem *left, const BattleItem *right) const
 {
-	if (_activeHand == "STR_RIGHT_HAND" && right) return right;
-	if (_activeHand == "STR_LEFT_HAND" && left) return left;
+	if (_activeHand == ACTIVE_HAND_RIGHT && right) return right;
+	if (_activeHand == ACTIVE_HAND_LEFT && left) return left;
 	return left ? left : right;
 }
 
@@ -3863,7 +3890,7 @@ void BattleUnit::toggleRightHandForReactions(bool isCtrl)
 	{
 		if (isRightHandPreferredForReactions())
 		{
-			_preferredHandForReactions = "";
+			_preferredHandForReactions = ACTIVE_HAND_NONE;
 		}
 		_reactionsDisabledForRightHand = !_reactionsDisabledForRightHand;
 	}
@@ -3871,11 +3898,11 @@ void BattleUnit::toggleRightHandForReactions(bool isCtrl)
 	{
 		if (isRightHandPreferredForReactions())
 		{
-			_preferredHandForReactions = "";
+			_preferredHandForReactions = ACTIVE_HAND_NONE;
 		}
 		else
 		{
-			_preferredHandForReactions = "STR_RIGHT_HAND";
+			_preferredHandForReactions = ACTIVE_HAND_RIGHT;
 		}
 		_reactionsDisabledForRightHand = false;
 	}
@@ -3890,7 +3917,7 @@ void BattleUnit::toggleLeftHandForReactions(bool isCtrl)
 	{
 		if (isLeftHandPreferredForReactions())
 		{
-			_preferredHandForReactions = "";
+			_preferredHandForReactions = ACTIVE_HAND_NONE;
 		}
 		_reactionsDisabledForLeftHand = !_reactionsDisabledForLeftHand;
 	}
@@ -3898,11 +3925,11 @@ void BattleUnit::toggleLeftHandForReactions(bool isCtrl)
 	{
 		if (isLeftHandPreferredForReactions())
 		{
-			_preferredHandForReactions = "";
+			_preferredHandForReactions = ACTIVE_HAND_NONE;
 		}
 		else
 		{
-			_preferredHandForReactions = "STR_LEFT_HAND";
+			_preferredHandForReactions = ACTIVE_HAND_LEFT;
 		}
 		_reactionsDisabledForLeftHand = false;
 	}
@@ -3913,7 +3940,7 @@ void BattleUnit::toggleLeftHandForReactions(bool isCtrl)
  */
 bool BattleUnit::isRightHandPreferredForReactions() const
 {
-	return _preferredHandForReactions == "STR_RIGHT_HAND";
+	return _preferredHandForReactions == ACTIVE_HAND_RIGHT;
 }
 
 /**
@@ -3921,7 +3948,7 @@ bool BattleUnit::isRightHandPreferredForReactions() const
  */
 bool BattleUnit::isLeftHandPreferredForReactions() const
 {
-	return _preferredHandForReactions == "STR_LEFT_HAND";
+	return _preferredHandForReactions == ACTIVE_HAND_LEFT;
 }
 
 /**
@@ -3929,7 +3956,7 @@ bool BattleUnit::isLeftHandPreferredForReactions() const
  */
 BattleItem *BattleUnit::getWeaponForReactions() const
 {
-	if (_preferredHandForReactions.empty())
+	if (_preferredHandForReactions == ACTIVE_HAND_NONE)
 		return nullptr;
 
 	BattleItem* weapon = nullptr;

@@ -2343,6 +2343,10 @@ void Mod::loadAll()
 	afterLoadHelper("items", this, _items, &RuleItem::afterLoad);
 	afterLoadHelper("weaponSets", this, _weaponSets, &RuleWeaponSet::afterLoad);
 	afterLoadHelper("manufacture", this, _manufacture, &RuleManufacture::afterLoad);
+	// Each layout resolves its own hand sections by the `hand:` property and validates them
+	// per-layout (RuleInventoryLayout::resolveHands) - the same `hand: left` section may appear in
+	// many layouts, just not twice in one. Handedness is a per-layout concept, so there is no global
+	// uniqueness check here.
 	afterLoadHelper("inventoryLayouts", this, _inventoryLayouts, &RuleInventoryLayout::afterLoad);
 	// Determine the implicit default layout used by armors that set no `inventoryLayout`. The base
 	// game data defines the standard slot set as the `STR_STANDARD_INV` layout, so prefer that.
@@ -2367,6 +2371,10 @@ void Mod::loadAll()
 			_defaultInventoryLayout->setSectionsDirectly(std::move(sections));
 		}
 	}
+	// The global hand accessors return the default layout's hands (the vanilla STR_RIGHT_HAND /
+	// STR_LEFT_HAND in unmodded play). Per-unit code resolves hands from the unit's own layout.
+	_inventoryRightHand = _defaultInventoryLayout->getRightHand() ? getInventory(_defaultInventoryLayout->getRightHand()->getId()) : nullptr;
+	_inventoryLeftHand = _defaultInventoryLayout->getLeftHand() ? getInventory(_defaultInventoryLayout->getLeftHand()->getId()) : nullptr;
 	afterLoadHelper("armors", this, _armors, &Armor::afterLoad);
 	afterLoadHelper("units", this, _units, &Unit::afterLoad);
 	afterLoadHelper("soldiers", this, _soldiers, &RuleSoldier::afterLoad);

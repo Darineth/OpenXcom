@@ -187,6 +187,13 @@ Everything below is DX-specific work confirmed **absent** from the base.
     the design doc for why.)
   *(design: [plans/Feature-TypedInventorySlots.md](plans/Feature-TypedInventorySlots.md))*
 - [ ] **Utility equipment slots** — `INV_UTILITY`. *(needs typed slots)*
+- [x] **Configurable hand slots** — handedness is now a slot property (`hand: right|left`) instead of
+  the hard-coded `STR_RIGHT_HAND`/`STR_LEFT_HAND` ids, so renamed/layout-specific hand slots are real
+  hands. Legacy id fallback keeps existing mods unchanged; hands validated/resolved **per layout** (the
+  same hand section can be reused across layouts); auto-equip and the inventory-screen hand shortcuts
+  use the unit's layout hands (re-cached on unit/armor switch, null-guarded for omitted hands);
+  active/preferred hand stored as handedness with save migration. Two hands per layout; N-hands deferred.
+  *(design: [plans/Feature-ConfigurableHandSlots.md](plans/Feature-ConfigurableHandSlots.md))*
 
 ## Phase 5: Firing & Accuracy (the combat loop)
 

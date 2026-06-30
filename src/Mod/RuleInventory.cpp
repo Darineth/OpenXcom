@@ -19,6 +19,7 @@
 #include "RuleInventory.h"
 #include <cmath>
 #include "RuleItem.h"
+#include "../Engine/Exception.h"
 #include "../Engine/Screen.h"
 #include "../Engine/ScriptBind.h"
 
@@ -59,8 +60,18 @@ void RuleInventory::load(const YAML::YamlNodeReader& reader)
 	reader.tryRead("allowCombatSwap", _allowCombatSwap);
 	reader.tryRead("countStats", _countStats);
 	reader.tryRead("listOrder", _listOrder);
-	if (_id == "STR_RIGHT_HAND")
+	std::string handStr;
+	if (reader.tryRead("hand", handStr))
 	{
+		// explicit handedness: any section can declare itself a hand, regardless of its id
+		if (handStr == "right")     _hand = 2;
+		else if (handStr == "left") _hand = 1;
+		else if (handStr == "none") _hand = 0;
+		else throw Exception("RuleInventory " + _id + ": invalid 'hand' value '" + handStr + "' (expected right, left, or none)");
+	}
+	else if (_id == "STR_RIGHT_HAND")
+	{
+		// legacy fallback: recognise the historical hand section ids when `hand:` is unset
 		_hand = 2;
 	}
 	else if (_id == "STR_LEFT_HAND")

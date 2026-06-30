@@ -133,7 +133,7 @@ items:
 #    STR_NONE_UC          -> LIGHT  (hands + ground + 3 typed test slots; no belt)
 #    STR_PERSONAL_ARMOR_UC-> RIG    (no backpack; adds a "satchel" slot)
 #    STR_POWER_SUIT_UC    -> CLONE  (refNode-inherits LIGHT; renders == LIGHT)
-#    STR_FLYING_SUIT_UC   -> ONEHAND (right hand + belt only; no left hand)
+#    STR_FLYING_SUIT_UC   -> ONEHAND (locked "integrated weapon" hand + belt; no left hand)
 #
 #  What to check:
 #    * LIGHT: backpack/legs/shoulders AND the belt are gone; auto-equip never fills
@@ -141,8 +141,8 @@ items:
 #      typed test slots: an AMMO pouch (clips only), a HOLSTER (firearms only), and
 #      a LOCKER (un-unequippable in combat). Try mis-placing items: a pistol in the
 #      AMMO pouch or a clip in the HOLSTER is rejected with STR_INVALID_ITEM_SLOT.
-#      For the LOCKER, stow something pre-battle, then in combat you can't even pick it
-#      up (click is rejected with STR_NOT_COMBAT_SWAPPABLE), nor drop anything in.
+#      For the LOCKER, stow something pre-battle, then in combat you can lift it but
+#      can't move it to another slot or drop anything in (STR_NOT_COMBAT_SWAPPABLE).
 #    * RIG: the satchel slot draws to the right and accepts items by
 #      hand (manual placement); backpack is absent. The satchel is countStats:false,
 #      so a stat-granting item stowed there grants NO bonus (move it to a hand/belt
@@ -150,10 +150,14 @@ items:
 #    * CLONE: power-suit inventory looks identical to LIGHT (hands+belt+ground),
 #      proving refNode inheritance loaded the parent's sections. (If refNode
 #      failed, you'd see only the ground slot.)
-#    * ONEHAND: only a right hand + belt (+ ground). Stress-tests unload, which
-#      historically assumes both hand slots exist: try unloading a loaded weapon
-#      held in the right hand and see where the ejected clip goes (belt/ground)
-#      or whether it refuses. Drives the companion unload-config feature.
+#    * ONEHAND: the only hand is a locked "integrated WEAPON" mount (a renamed,
+#      non-STR_RIGHT_HAND section flagged hand: right) + belt + ground. Tests three
+#      things at once: (1) configurable hand slots - a firearm still auto-equips here,
+#      fires, and reacts even though the section isn't STR_RIGHT_HAND; (2) the
+#      battleType filter - only firearms fit (a clip/grenade is rejected); (3)
+#      allowCombatSwap:false - in combat you can't pull the weapon out. Also
+#      exercises the missing-left-hand unload/reload fallbacks (ejected clips go to
+#      belt/ground since there's no off-hand).
 # =====================================================================
 # The DX typed-slot test sections are normal global `invs:` sections. They're simply not listed
 # in STR_STANDARD_INV, so they only appear in the layouts below that name them (not on every unit).
@@ -208,6 +212,20 @@ invs:
       STR_LEFT_HAND: 8
       STR_BELT: 12
       STR_GROUND: 10
+  # An "integrated weapon" hand: a built-in gun mount used as the unit's right hand. It is a real
+  # hand (hand: right -> auto-equips firearms, fires, reacts), only accepts firearms
+  # (battleType 1 = BT_FIREARM), and is locked once combat starts (allowCombatSwap: false) so the
+  # weapon can't be removed/swapped mid-mission. Sits in the normal right-hand spot.
+  - id: STR_DX_INTEGRATED_WEAPON
+    x: 0
+    y: 63
+    type: 1                 # INV_HAND
+    hand: right
+    battleType: 1           # firearms only
+    allowCombatSwap: false  # integrated: can't be pulled out or swapped in combat
+    costs:
+      STR_BELT: 8
+      STR_GROUND: 2
 
 inventoryLayouts:
   - id: STR_DX_LAYOUT_LIGHT
@@ -223,9 +241,11 @@ inventoryLayouts:
       invs: *dxLightInvs
 
   - id: STR_DX_LAYOUT_ONEHAND
-    # only a right hand + belt (ground is auto-added). For testing unload behavior
-    # when the left hand slot is absent.
-    invs: [STR_RIGHT_HAND, STR_BELT, STR_GROUND]
+    # The unit's only hand is a locked "integrated weapon" mount (firearms only, can't be removed
+    # in combat). No left hand. Exercises configurable hand slots (a renamed, non-STR_RIGHT_HAND
+    # section acting as the right hand) plus the typed-slot battleType/allowCombatSwap filters, and
+    # the missing-left-hand unload/reload fallbacks.
+    invs: [STR_DX_INTEGRATED_WEAPON, STR_BELT, STR_GROUND]
 
 armors:
   - type: STR_NONE_UC
@@ -244,6 +264,7 @@ extraStrings:
       STR_DX_AMMO_POUCH: "AMMO"
       STR_DX_HOLSTER: "HOLSTER"
       STR_DX_LOCKER: "LOCKER"
+      STR_DX_INTEGRATED_WEAPON: "WEAPON"
 
 # =====================================================================
 #  User options forced on while this test mod is active

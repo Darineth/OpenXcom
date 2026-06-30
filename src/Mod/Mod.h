@@ -189,6 +189,10 @@ private:
 	std::map<std::string, Armor*> _armors;
 	std::map<std::string, ArticleDefinition*> _ufopaediaArticles;
 	std::map<std::string, RuleInventory*> _invs;
+	/// The default layout's hand sections (vanilla STR_RIGHT_HAND/STR_LEFT_HAND unmodded). Global
+	/// convenience accessors; per-unit code resolves hands from the unit's own inventory layout.
+	RuleInventory* _inventoryRightHand = nullptr;
+	RuleInventory* _inventoryLeftHand = nullptr;
 	std::map<std::string, RuleInventoryLayout*> _inventoryLayouts;
 	RuleInventoryLayout* _defaultInventoryLayout = nullptr;
 	bool _inventoryOverlapsPaperdoll;
@@ -769,10 +773,10 @@ public:
 	std::map<std::string, RuleInventory*> *getInventories();
 	/// Gets the ruleset for a specific inventory.
 	RuleInventory *getInventory(const std::string &id, bool error = false) const;
-	/// Gets the ruleset for right hand inventory slot.
-	RuleInventory *getInventoryRightHand() const { return getInventory("STR_RIGHT_HAND", true); }
-	/// Gets the ruleset for left hand inventory slot.
-	RuleInventory *getInventoryLeftHand() const { return getInventory("STR_LEFT_HAND", true); }
+	/// Gets the ruleset for the right hand inventory slot (the section flagged `hand: right`).
+	RuleInventory *getInventoryRightHand() const { return _inventoryRightHand; }
+	/// Gets the ruleset for the left hand inventory slot (the section flagged `hand: left`).
+	RuleInventory *getInventoryLeftHand() const { return _inventoryLeftHand; }
 	/// Gets the ruleset for backpack inventory slot.
 	RuleInventory *getInventoryBackpack() const { return getInventory("STR_BACK_PACK", true); }
 	/// Gets the ruleset for belt inventory slot.

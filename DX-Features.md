@@ -87,14 +87,16 @@ invs:
 
 Behavior and details:
 
-- **`battleType` is always enforced** (pre-battle and in-combat), at manual drop, ctrl-click
-  quick-equip, `fitItem`, and the auto-place candidate scan. A rejected placement shows
-  `STR_INVALID_ITEM_SLOT`.
-- **`allowCombatSwap` only bites in combat** (`InventoryState` TU mode). In combat an item in a locked
-  slot can't even be *picked up* — clicking it shows `STR_NOT_COMBAT_SWAPPABLE` instead of lifting it
-  onto the cursor — and dropping anything *into* a locked slot is likewise rejected. (The same is
-  enforced at the drop/`fitItem`/ctrl-click-to-ground paths as a backstop, so a locked item can't be
-  popped out to the floor either.) Pre-battle equip / base inventory is unaffected.
+- **`battleType` is enforced when placing the item *as a slot occupant*** (pre-battle and in-combat),
+  at manual drop, ctrl-click quick-equip, `fitItem`, and the auto-place candidate scan. A rejected
+  placement shows `STR_INVALID_ITEM_SLOT`. It does **not** block loading ammo into a weapon already in
+  the slot — dropping a clip onto the weapon in a firearm-only slot still reloads it.
+- **`allowCombatSwap` only bites in combat** (`InventoryState` TU mode), and only on a *move between
+  slots*: a locked item can still be **picked up** (so you can unload it) and dropped back into the
+  same slot, but it can't be moved to a *different* slot, and nothing can be moved *into* a locked
+  slot — rejected with `STR_NOT_COMBAT_SWAPPABLE`. Enforced at the drop / `fitItem` /
+  ctrl-click-to-ground paths, so a locked item can't be popped out to the floor either. Pre-battle
+  equip / base inventory is unaffected.
 - **`costs` allow-list (lenient):** unlisted section pairs keep the existing `DEFAULT_MOVE_COST`
   fallback (so partially-specified custom layouts still work); only an **explicit `-1`** cost forbids
   that move while in combat (`STR_INVALID_TRANSFER`).
@@ -104,6 +106,50 @@ Behavior and details:
 
 This re-ports the legacy DX typed-slot behavior onto the current OXCE-Plus base and is the
 foundation for the follow-on **Utility equipment slots** (`INV_UTILITY`) feature.
+
+## Configurable Hand Slots
+
+A unit's **hand** is no longer hard-wired to the section ids `STR_RIGHT_HAND` / `STR_LEFT_HAND`.
+Any `invs:` section can declare its handedness, so a layout can use renamed or specialised hand
+slots (e.g. a creature's `STR_MAW`, a one-armed unit) and the engine treats them as real hands for
+auto-equip, firing, reactions, the active-hand toggle, and held-item rendering.
+
+```yaml
+invs:
+  - id: STR_MAW
+    hand: right        # right | left | none (default none)
+    type: 1
+    # ...
+```
+
+Behavior and details:
+
+- **`hand:` makes a section a hand.** `hand: right` / `hand: left` flag the slot as that hand;
+  `none` (the default) is a normal slot. Handedness is read from this property (`isRightHand()` /
+  `isLeftHand()`) instead of the literal ids, so weapon getters, sprites, reactions, and accuracy all
+  work on the flagged slot. Auto-equip and firing resolve "this unit's right/left hand" from the
+  unit's own **inventory layout**, so a unit with a renamed hand gets weapons placed correctly.
+- **Legacy fallback.** When a section sets no `hand:`, the historical ids still apply —
+  `STR_RIGHT_HAND` → right, `STR_LEFT_HAND` → left. So the base game and every existing mod behave
+  identically with no changes.
+- **Two hands per layout (not globally).** Handedness is validated **per inventory layout**: within
+  one layout at most one section may be `hand: right` and one `hand: left` (two of a side in the same
+  layout is a ruleset error). The same `hand: left` section — or different ones — can appear across
+  many layouts freely: a human layout can use `STR_LEFT_HAND` while a creature layout uses a
+  `hand: left` `STR_MAW`. (Only if you list *two* left hands in one layout — e.g. the vanilla
+  `STR_LEFT_HAND` plus a custom one — does that layout error; drop one from its `invs:`.) True N-hand
+  support (more than two hands in one layout) is a separate future feature; all the two-hand logic
+  (dual-wield accuracy, arm-wound mapping, left/right sprite placement, the reaction
+  active/preferred/disabled-hand UI) is unchanged and keyed off the property.
+- **Inventory-screen hand shortcuts** (reload off-hand placement, ctrl-click-to-hand) resolve the
+  *selected unit's* hands from its layout, re-cached whenever the inventory switches unit/armor. A
+  layout that omits a hand (e.g. a one-handed layout) yields a null hand, which every shortcut guards
+  for — the displaced ammo falls back to the ground / best-fit rather than a nonexistent slot.
+- **Save migration.** A unit's active hand and preferred-reaction hand are now stored as handedness
+  (`right`/`left`) rather than a section id. Old saves carrying `activeHand: STR_RIGHT_HAND` (etc.)
+  are migrated on load; new saves write the short form.
+- Script API is unchanged (`isRightHand`, `getRightHandWeapon`, `getRuleInventoryRightHand`, …) —
+  same names, now backed by the property.
 
 ## Inventory Ammo-Count Badges
 

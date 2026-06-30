@@ -45,6 +45,10 @@ private:
 	int _listOrder;
 	std::vector<std::string> _refs;                  // ordered global-section ids referenced by this layout
 	std::vector<const RuleInventory*> _sections;     // resolved, ordered section list
+	const RuleInventory* _rightHand = nullptr;       // this layout's right/left hand sections (by `hand:`)
+	const RuleInventory* _leftHand = nullptr;
+	/// Resolves _rightHand/_leftHand from _sections; throws if a layout has two same-side hands.
+	void resolveHands();
 public:
 	/// Creates a blank inventory layout ruleset.
 	RuleInventoryLayout(const std::string& id, int listOrder);
@@ -60,10 +64,14 @@ public:
 	int getListOrder() const { return _listOrder; }
 	/// Gets the resolved, ordered sections of this layout.
 	const std::vector<const RuleInventory*>& getSections() const { return _sections; }
+	/// Gets this layout's right-hand section (the one flagged `hand: right`), or null if it has none.
+	const RuleInventory* getRightHand() const { return _rightHand; }
+	/// Gets this layout's left-hand section (the one flagged `hand: left`), or null if it has none.
+	const RuleInventory* getLeftHand() const { return _leftHand; }
 	/// Checks whether a given inventory section belongs to this layout.
 	bool hasSection(const RuleInventory* section) const;
 	/// Directly sets the resolved sections (used by Mod to synthesize the implicit default layout).
-	void setSectionsDirectly(std::vector<const RuleInventory*> sections) { _sections = std::move(sections); }
+	void setSectionsDirectly(std::vector<const RuleInventory*> sections) { _sections = std::move(sections); resolveHands(); }
 };
 
 }
