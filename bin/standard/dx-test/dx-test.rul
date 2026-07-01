@@ -143,7 +143,9 @@ items:
 #      AMMO pouch, a clip in the HOLSTER, or a non-medikit in the MEDKIT slot is rejected with
 #      STR_INVALID_ITEM_SLOT. The MEDKIT is single-occupant and is the unit's getUtilityItem() slot;
 #      it's allowCombatSwap:false, so stow a medikit pre-battle, then in combat you can't move it
-#      in/out of the slot (STR_NOT_COMBAT_SWAPPABLE) - it's meant to be used in place.
+#      in/out of the slot (STR_NOT_COMBAT_SWAPPABLE) - it's meant to be used in place. Press the
+#      Use-Utility key (default Z) in combat to open its action menu and heal from the slot; note
+#      the Throw action is NOT offered (blocked for utility + combat-locked slots).
 #    * RIG: the satchel slot draws to the right and accepts items by
 #      hand (manual placement); backpack is absent. The satchel is countStats:false,
 #      so a stat-granting item stowed there grants NO bonus (move it to a hand/belt

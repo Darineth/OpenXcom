@@ -665,6 +665,7 @@ void createControlsDX()
 {
 	// DX controls
 	_info.push_back(OptionInfo(OPTION_DX, "keyBattleActionItem6", &keyBattleActionItem6, SDLK_6, "STR_ACTION_ITEM_6", "STR_BATTLESCAPE"));
+	_info.push_back(OptionInfo(OPTION_DX, "keyBattleUseUtility", &keyBattleUseUtility, SDLK_z, "STR_USE_UTILITY_ITEM", "STR_BATTLESCAPE"));
 }
 
 

@@ -197,7 +197,12 @@ Everything below is DX-specific work confirmed **absent** from the base.
     `INV_UTILITY` section; `BattleUnit::getUtilitySlot()`/`getUtilityItem()` expose it. Typed-slot
     rules (`battleType`/`allowCombatSwap`/`countStats`/`costs`) compose for free. No save-format
     change. `INV_EQUIP` ships as a usable sibling type; its per-unit handle is deferred until a
-    consumer defines it. No gameplay consumer yet (plumbing-only).
+    consumer defines it.
+  - ✅ **Use consumer.** A battlescape hotkey (`keyBattleUseUtility`, default `Z`) opens the utility
+    item's action menu in place (medikit/scanner/grenade/etc.) without moving it to a hand; combat-locked
+    slots stay usable-but-not-swappable. The action menu is already slot-agnostic, so this is just a
+    trigger routing `getUtilityItem()` into `handleItemClick`.
+    *(design: [plans/Feature-UtilitySlotUse.md](plans/Feature-UtilitySlotUse.md))*
 - [x] **Configurable hand slots** — handedness is now a slot property (`hand: right|left`) instead of
   the hard-coded `STR_RIGHT_HAND`/`STR_LEFT_HAND` ids, so renamed/layout-specific hand slots are real
   hands. Legacy id fallback keeps existing mods unchanged; hands validated/resolved **per layout** (the

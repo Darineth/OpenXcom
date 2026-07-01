@@ -59,6 +59,7 @@ OPT SDLKey keyGeoDailyPilotExperience, keyGeoUfoTracker, keyGeoTechTreeViewer, k
 	keyBattleUnitUp, keyBattleUnitDown,
 	keyBattleShowLayers,
 	keyBattleUseSpecial,
+	keyBattleUseUtility, // DX: use the item in the unit's INV_UTILITY slot
 	keyBattleActionItem1, keyBattleActionItem2, keyBattleActionItem3, keyBattleActionItem4, keyBattleActionItem5, keyBattleActionItem6,
 	keyNightVisionToggle, keyNightVisionHold, keySelectMusicTrack;
 OPT SDLKey keyBasescapeBuildNewBase, keyBasescapeBaseInfo, keyBasescapeSoldiers, keyBasescapeCrafts,

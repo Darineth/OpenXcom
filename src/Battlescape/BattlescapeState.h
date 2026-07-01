@@ -202,6 +202,8 @@ public:
 	void btnPsiClick(Action *action);
 	/// Handler for clicking the use special weapon button.
 	void btnSpecialClick(Action *action);
+	/// Handler for the "use utility-slot item" hotkey.
+	void btnUtilityItemClick(Action *action);
 	/// Handler for clicking the skills menu button.
 	void btnSkillsClick(Action *action);
 	/// Handler for clicking a reserved button.

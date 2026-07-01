@@ -643,6 +643,7 @@ BattlescapeState::BattlescapeState() :
 	_btnStats->onKeyboardPress((ActionHandler)&BattlescapeState::btnSelectMusicTrackClick, Options::keySelectMusicTrack);
 	_btnStats->onKeyboardPress((ActionHandler)&BattlescapeState::btnPersonalLightingClick, Options::keyBattlePersonalLighting);
 	_btnStats->onKeyboardPress((ActionHandler)&BattlescapeState::btnNightVisionClick, Options::keyNightVisionToggle);
+	_btnStats->onKeyboardPress((ActionHandler)&BattlescapeState::btnUtilityItemClick, Options::keyBattleUseUtility);
 	//_btnStats->onKeyboardPress((ActionHandler)&BattlescapeState::btnTouchButtonsClick, SDLK_t); // for debugging only
 
 	// automatic night vision
@@ -1910,6 +1911,38 @@ void BattlescapeState::btnSpecialClick(Action *action)
 		_map->draw();
 		bool middleClick = _game->isMiddleClick(action, true);
 		handleItemClick(specialItem, middleClick);
+	}
+	action->getDetails()->type = SDL_NOEVENT; // consume the event
+}
+
+/**
+ * Uses the item in the selected unit's utility slot (INV_UTILITY) by opening its action menu,
+ * without requiring the item to be moved into a hand. Mirrors the special-weapon hotkey: the
+ * action menu is slot-agnostic, so whatever the utility item is (medikit, scanner, grenade, ...)
+ * its available actions become selectable. Does not move the item, so a combat-locked
+ * (allowCombatSwap: false) utility slot still permits use.
+ * @param action Pointer to an action.
+ */
+void BattlescapeState::btnUtilityItemClick(Action *action)
+{
+	if (playableUnitSelected())
+	{
+		// click again while targeting to cancel, matching the hand/special hotkeys
+		if (_battleGame->getCurrentAction()->targeting)
+		{
+			_battleGame->cancelCurrentAction();
+			return;
+		}
+
+		BattleItem *utilityItem = _save->getSelectedUnit()->getUtilityItem();
+		if (!utilityItem)
+		{
+			return;
+		}
+
+		_map->draw();
+		bool middleClick = _game->isMiddleClick(action, true);
+		handleItemClick(utilityItem, middleClick);
 	}
 	action->getDetails()->type = SDL_NOEVENT; // consume the event
 }

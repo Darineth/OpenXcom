@@ -96,7 +96,8 @@ Behavior and details:
   same slot, but it can't be moved to a *different* slot, and nothing can be moved *into* a locked
   slot — rejected with `STR_NOT_COMBAT_SWAPPABLE`. Enforced at the drop / `fitItem` /
   ctrl-click-to-ground paths, so a locked item can't be popped out to the floor either. Pre-battle
-  equip / base inventory is unaffected.
+  equip / base inventory is unaffected. The battlescape **Throw** action is also withheld for items
+  in a combat-locked slot (throwing would move the item out, bypassing the lock).
 - **`costs` allow-list (lenient):** unlisted section pairs keep the existing `DEFAULT_MOVE_COST`
   fallback (so partially-specified custom layouts still work); only an **explicit `-1`** cost forbids
   that move while in combat (`STR_INVALID_TRANSFER`).
@@ -143,10 +144,17 @@ Behavior and details:
   apply to it with no extra wiring.
 - **`INV_EQUIP`** is recognized as a usable single-occupant sibling type (enum + geometry + fit), but
   its dedicated per-unit accessor is deferred until a concrete consumer defines what "equip" means.
-- **No gameplay consumer yet** (plumbing): no mechanic reads `getUtilityItem()` — this lays the
-  inventory plumbing for later features (effects/light equipment, roles, modular vehicles). The slot
-  type and per-unit handle are derived from rules at load, so there is **no save-format change**.
-  Exposed to Y-Script as the `INV_UTILITY`/`INV_EQUIP` consts on `RuleInventory`.
+- **Usable in battle** (first consumer): a battlescape hotkey (`keyBattleUseUtility`, default `Z`)
+  opens the action menu for the utility item **in place** — a utility medikit heals, a scanner
+  scans, etc. — without moving it to a hand. Because using an item doesn't rearrange it, a
+  combat-locked (`allowCombatSwap: false`) utility slot is still usable, just not swappable. The
+  action menu is slot-agnostic, so any utility item's `RuleItem` actions are offered — **except
+  Throw**, which is withheld for utility slots (gear is used in place, not thrown) and for any
+  combat-locked slot (throwing would move the item out, bypassing the lock).
+  *(design: [plans/Feature-UtilitySlotUse.md](plans/Feature-UtilitySlotUse.md))*
+- **No save-format change**: the slot type, per-unit handle, and use path are all derived from rules
+  at load. Exposed to Y-Script as the `INV_UTILITY`/`INV_EQUIP` consts on `RuleInventory`. Still lays
+  plumbing for later features (effects/light equipment, roles, modular vehicles).
 
 *(design: [plans/Feature-UtilityEquipmentSlots.md](plans/Feature-UtilityEquipmentSlots.md))*
 

@@ -27,6 +27,7 @@
 #include "../Mod/Mod.h"
 #include "../Mod/Armor.h"
 #include "../Mod/RuleItem.h"
+#include "../Mod/RuleInventory.h"
 #include "ActionMenuItem.h"
 #include "PrimeGrenadeState.h"
 #include "MedikitState.h"
@@ -75,8 +76,13 @@ ActionMenuState::ActionMenuState(BattleAction *action, int x, int y) : _action(a
 	int id = 0;
 	const RuleItem *weapon = _action->weapon->getRules();
 
-	// throwing (if not a fixed weapon)
-	if (!weapon->isFixed() && weapon->getCostThrow().Time > 0)
+	// throwing (if not a fixed weapon). Also blocked when the item's slot won't release it:
+	// a combat-locked slot (allowCombatSwap:false) forbids moving the item out during combat,
+	// and a utility slot holds "use in place" gear that shouldn't be thrown. Throwing removes
+	// the item from the slot, so it would otherwise bypass the combat-swap lock.
+	const RuleInventory *slot = _action->weapon->getSlot();
+	bool slotReleasesForThrow = !slot || (slot->getAllowCombatSwap() && slot->getType() != INV_UTILITY);
+	if (!weapon->isFixed() && weapon->getCostThrow().Time > 0 && slotReleasesForThrow)
 	{
 		addItem(BA_THROW, "STR_THROW", &id, Options::keyBattleActionItem5);
 	}
@@ -320,7 +326,7 @@ void ActionMenuState::handle(Action *action)
 	else if (action->getDetails()->type == SDL_KEYDOWN)
 	{
 		auto key = action->getDetails()->key.keysym.sym;
-		if (key == Options::keyCancel || key == Options::keyBattleUseLeftHand || key == Options::keyBattleUseRightHand)
+		if (key == Options::keyCancel || key == Options::keyBattleUseLeftHand || key == Options::keyBattleUseRightHand || key == Options::keyBattleUseUtility)
 		{
 			if (key != Options::keyBattleActionItem1 &&
 				key != Options::keyBattleActionItem2 &&
