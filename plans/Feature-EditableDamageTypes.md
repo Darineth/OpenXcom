@@ -185,4 +185,4 @@ makes the *numeric behavior* editable, reusing existing strings.
 ## Documentation Plan
 
 On implementation, update `DX-Features.md` with the new `damageTypes:` node and its keys, refresh
-this doc's status line, and tick the checklist item in `DX-Implementation-Checklist.md`.
+this doc's status line, and tick the checklist item in `DX-Roadmap.md`.

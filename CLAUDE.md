@@ -178,13 +178,13 @@ heavily template/macro-based.
 
 # Planning Features
 
-When preparing to build a feature, start by writing a design doc in `plans/` describing the feature, the motivation, and the implementation approach. Link to it from `DX-Implementation-Checklist.md` near its checklist item. This helps coordinate development and provides a reference for future maintainers.
+When preparing to build a feature, start by writing a design doc in `plans/` describing the feature, the motivation, and the implementation approach. Link to it from `DX-Roadmap.md` near its checklist item. This helps coordinate development and provides a reference for future maintainers.
 
 If a requested new feature is not clearly specified, create/update the feature plan doc first and ask clarifying questions until there is a concrete implementation plan before writing code.
 
 Before planning or implementing any feature, review current OXCE/OXCE-Plus behavior first (engine code plus `Extended.txt`) to confirm whether the feature already exists fully or partially. Capture that audit result in the design doc so DX only plans true deltas.
 
-If the feature is entirely new and is not in the checklist, add it to the checklist at the bottom in a "New Feature" section with a link to the design doc.
+If the feature is entirely new and is not in the roadmap, add it to `DX-Roadmap.md` at the bottom in the "New Features" section with a link to the design doc.
 
 ## Updating docs before committing
 
@@ -192,6 +192,6 @@ If the feature is entirely new and is not in the checklist, add it to the checkl
 
 - **`DX-Features.md`** — add or refresh the feature's entry (including any option names/defaults), matching the final behavior, not the original intent.
 - **The design doc in `plans/`** — update its status line and any details that changed during implementation (approaches tried, bugs fixed, final tuning).
-- **`DX-Implementation-Checklist.md`** and **`DX-Implementation-Plan.md`** — tick the relevant checkbox(es) and note anything discovered (e.g. "already provided by OXCE-Plus").
+- **`DX-Roadmap.md`** — tick the relevant checkbox(es) and note anything discovered (e.g. "already provided by OXCE-Plus").
 
 Keep the docs honest: describe the behavior that shipped (final colors, formulas, option names), and revise earlier wording if the implementation diverged from the plan.

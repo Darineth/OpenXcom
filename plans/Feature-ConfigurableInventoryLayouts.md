@@ -241,7 +241,7 @@ ground); layouts that omit a ground section get the global one appended implicit
 
 ### Milestone 5: Documentation
 - Update `DX-Features.md` (field names, defaults, resolution order) and tick
-  `DX-Implementation-Checklist.md`. DX-only strings (any new warnings) go in `Language/DX/`.
+  `DX-Roadmap.md`. DX-only strings (any new warnings) go in `Language/DX/`.
 
 ## Risks and Mitigations
 

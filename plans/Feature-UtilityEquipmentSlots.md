@@ -161,7 +161,7 @@ persisted. No `SavedGame`/`SavedBattleGame` schema change.
   hand-like.
 - `bin/standard/dx-test/dx-test.rul` — a `STR_UTILITY` section (`type: 3`) and a test layout
   that includes it, for manual verification.
-- `DX-Features.md`, `DX-Implementation-Checklist.md`, `DX-Implementation-Plan.md` — docs.
+- `DX-Features.md`, `DX-Roadmap.md` — docs.
 
 No new C++ player-facing string is strictly required (a utility section's `id` is its label, like
 any section); a default `STR_UTILITY` goes in the test ruleset, not engine code.

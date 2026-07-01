@@ -1,8 +1,12 @@
-# OpenXcom DX Implementation Order
+# OpenXcom DX Roadmap
 
-This document proposes an implementation order for the features in
-`DX-Implementation-Plan.md`. The sequencing philosophy is **UX-first, then mechanics in
-dependency order**:
+This is the **single source of truth** for OpenXcom DX feature planning: what's done, what's
+left, and the order to build it in. It merges the two former docs
+(`DX-Implementation-Plan.md`, the flat by-category checklist, and
+`DX-Implementation-Checklist.md`, the phase-ordered plan) into one phase-ordered roadmap with
+the granular per-feature sub-tasks folded in.
+
+The sequencing philosophy is **UX-first, then mechanics in dependency order**:
 
 1. **Front-load improvements that work on the *existing* engine** — UI, feedback, QoL,
    and standalone battlescape/geoscape tweaks that need none of the new combat systems.
@@ -16,6 +20,10 @@ A handful of UI features are genuinely *coupled* to a new mechanic (e.g. the liv
 preview and the effective-range action-menu readout both need the aim-cone). Those stay
 with their mechanic and are called out where they land.
 
+Each feature gets a design doc in `plans/` before implementation (see CLAUDE.md "Planning
+Features"). New features outside the original plan go in the **New Features** section at the
+bottom.
+
 ## ⚠️ Phase 0: Audit existing OXCE-Plus functionality (do this first)
 
 *Goal: Don't reimplement what the base engine already provides. Verify, wire up, adjust.*
@@ -23,7 +31,7 @@ with their mechanic and are called out where they land.
 A source audit (Jun 2026) confirmed these plan items **already exist in OXCE-Plus** —
 treat as *verify/configure*, not *implement*:
 
-- [x] **OXCE+ Integration (Plan §16) — confirmed present.** Verified in-tree (Jun 2026):
+- [x] **OXCE+ Integration — confirmed present.** Verified in-tree (Jun 2026):
   martial training (`AllocateTrainingState`, `RuleBaseFacility::trainingRooms`,
   `customTrainingFactor`), `refNode` inheritance (used across all `Rule*::load`),
   item categories (`RuleItemCategory`, `getUseCustomCategories`), tech-tree viewer
@@ -31,18 +39,28 @@ treat as *verify/configure*, not *implement*:
   craft pilots (`CraftPilotsState`), in-inventory armor/avatar (`SoldierArmorState`,
   `SoldierAvatarState`), alien inventories (`AlienInventory`/`AlienInventoryState`).
   → No work needed.
-- [x] **Manufacture / base UI (Plan §15) — confirmed present.** Verified: infinite "build
+- [x] **Manufacture / base UI — confirmed present.** Verified: infinite "build
   forever" and auto-sell (`Production::getInfiniteAmount`/`getSellItems`), sell readouts
   (`SellState`), vehicle-category gating + picker filters (`NewManufactureListState`),
   dependencies tree (`ManufactureDependenciesTreeState`). → No work needed.
-- [x] **Night-vision system (part of Plan §10) — base confirmed present.**
+- [x] **Night-vision system — base confirmed present.**
   `Armor.visibilityAtDark`/`visibilityAtDay` and OXCE night-vision options/toggle present
   (`Options`, `OptionsAdvancedState`, `TileEngine`, `Map`, `BattlescapeState`). DX-specific
-  remainder stays scheduled: **fog-of-war** (Phase 1) and **light equipment** (Phase 6,
+  remainder stays scheduled: **fog-of-war** (Phase 1) and **light equipment** (Phase 8,
   needs Effects).
-- [x] **Load rulesets from subdirectories (Plan §10) — confirmed present.** `FileMap`
+- [x] **Load rulesets from subdirectories — confirmed present.** `FileMap`
   `mapPlainDir` uses recursive `ls_r` + `isRuleset`, so `.rul` files load from any
   subdirectory of a mod. → No work needed.
+
+**OXCE+ integration — remaining deltas to verify (not yet confirmed done):**
+
+- [ ] **UFO mission retreat** — UFO abandon/retreat based on damage taken. Confirm whether
+  OXCE-Plus already models this before scheduling work.
+- [ ] **Craft equipment templates** — Phase 2 confirmed craft *loadout* templates (10 slots)
+  in OXCE-Plus; verify this is the same feature and not a separate gap.
+- [ ] **`RuleDamageType` / `ModScript` hooks** — core OXCE scripting is present; the DX
+  **Editable Damage Types** feature (see New Features) added the `damageTypes:` node. Confirm
+  nothing further is needed here.
 
 Everything below is DX-specific work confirmed **absent** from the base.
 
@@ -86,6 +104,8 @@ Everything below is DX-specific work confirmed **absent** from the base.
   - [x] **Instant-fuse option** — *already in OXCE-Plus.* `Options::battleInstantGrenade`
     ([BattleItem.cpp:344](src/Savegame/BattleItem.cpp#L344)) makes thrown grenades detonate without the prime dialog; per-item
     `fuseType: -2` (`BFT_INSTANT`) does the same per grenade. No work needed.
+  - [ ] **Reduced grenade accuracy penalty** — N/A on current base (OXCE has no throw penalty);
+    revisit with the aim-cone firing model (Phase 5).
 
 ## Phase 2: Base / Geoscape / Inventory UX
 
@@ -113,10 +133,11 @@ Everything below is DX-specific work confirmed **absent** from the base.
 - [x] **Loadout templates** — *already in OXCE-Plus.* Clipboard create/apply
   (`keyInvCreateTemplate`/`keyInvApplyTemplate`), a **named global equipment library** (50 slots,
   `InventoryLoadState`/`InventorySaveState`, number-key quick load / Ctrl+number save), and **craft
-  loadouts** (10 slots) all present. No work. *(reused later by Soldier Roles.)*
+  loadouts** (10 slots) all present. Clear / auto-equip actions present. No work. *(reused later by Soldier Roles.)*
 - [x] **Geoscape interface enhancements** — *already in OXCE-Plus.* `showFundsOnGeoscape` and
-  `oxceGeoShowScoreInsteadOfFunds` options cover both use cases. Score display is intentionally
-  not forced (it's a cheat in OXCE's own framing). → No DX work needed.
+  `oxceGeoShowScoreInsteadOfFunds` options cover both use cases (sidebar score + always-visible funds,
+  persistent info panel). Score display is intentionally not forced (it's a cheat in OXCE's own
+  framing). → No DX work needed.
 
 ---
 
@@ -216,7 +237,13 @@ Everything below is DX-specific work confirmed **absent** from the base.
 *Goal: The aim-cone shooting model and its shot modes.*
 
 - [ ] **Aim-Cone Trajectory Model** — soldier + weapon deflection cones, stacking error.
+  - [ ] 3D direction-vector cone for direct fire
+  - [ ] Soldier deflection cone (Gaussian/normal distribution)
+  - [ ] Weapon deflection cone (independent of soldier)
+  - [ ] Stacking of soldier and weapon error
 - [ ] **Accuracy Modifiers** — kneel/two-handed/exhaustion/smoke; shot-mode accuracy.
+  - [ ] Kneel / two-handed / exhaustion / smoke accuracy factors
+  - [ ] Shot-mode accuracy application (Snap/Aim/Auto/Burst)
 - [ ] **Throw-accuracy tuning (if needed)** — OXCE currently applies no throw LOS penalty
   (`accuracyThrow` default 100; `_noLOSAccuracyPenalty` is aimed-shot-only). Only add a
   reduced throw penalty if the aim-cone firing model introduces one that needs softening.
@@ -234,27 +261,42 @@ Everything below is DX-specific work confirmed **absent** from the base.
 
 - [ ] **Quick Reload**.
 - [ ] **Weight/slot-based Reload Costs**.
-- [ ] **`battleClipSize`** — individual round tracking, magazine packing at battle gen.
+- [ ] **`battleClipSize`** — individual round tracking, magazine packing at battle gen
+  (decouples stocked ammo count from loaded round count).
 - [ ] **Grenades-as-Ammo**.
 - [ ] **Base-Screen Ammo Counts**.
 
 ## Phase 7: Tactical Unit Systems
 
 - [ ] **Sprint Mode** — fast movement mode with blue pathing.
+  - [ ] High TU/energy cost, high speed, high hit chance
+  - [ ] Blue path-preview color when sprinting
+  - [ ] Accelerate unit motion when sprinting
+  - [ ] Prevent cancelling movement while sprinting
 - [ ] **Sneak Mode** — low-profile movement mode with purple pathing. *(final
   "no creeping while glowing" gate lands in Phase 8 with lighting)*
+  - [ ] Low speed, high alertness, maintains evasion
+  - [ ] Purple path-preview color when sneaking
 - [ ] **Overwatch System** — `BA_OVERWATCH`, held-fire behavior + indicators.
-- [ ] **Reaction Scoring Split** — `getReactionScore` / `getEvasionScore`.
+  - [ ] Held-fire state for units
+  - [ ] Per-weapon overwatch tuning (radius, range, shot type)
+  - [ ] On-map overwatch indicators
+- [ ] **Reaction Scoring Split** — offensive `getReactionScore` / defensive `getEvasionScore`.
 - [ ] **Bleedout & Indicators** — negative-health/bleedout state plus battlefield UI cues.
+  - [ ] Negative-health state
+  - [ ] Bleedout state (with fatal torso wounds)
+  - [ ] Battlefield bleeding indicators
 - [ ] **Medikit/Stabilization Rework** — revised field treatment flow.
 - [ ] **Proportional Wound Recovery + Field Surgery** — recovery scaling and research gate.
-- [ ] **Role Definitions & Templates** — `RuleRole`/`Role` + template loadouts.
-- [ ] **Role UI & Markers** — soldier/craft UI icons and battlescape marker.
+- [ ] **Role Definitions & Templates** — `RuleRole`/`Role` + template loadouts. *(reuses Phase 2
+  loadout-template plumbing)*
+- [ ] **Role UI & Markers** — soldier/craft/inventory UI icons and battlescape marker.
 - [ ] **Per-Role Armor Colors**. *(reuses Phase 2 loadout-template plumbing + Phase 4 inventory layouts)*
 
 ## Phase 8: Effects, Lighting & Psionics
 
-- [ ] **Effects Core Framework** — `RuleEffect` / `BattleEffect` / `EffectComponent`.
+- [ ] **Effects Core Framework** — `RuleEffect` / `BattleEffect` / `EffectComponent`
+  (initial/ongoing/final, duration, maxStack).
 - [ ] **Item Effect Hooks** — `hitEffect` / `equippedEffect`.
 - [ ] **Light / illumination equipment** — `EC_CIRCULAR_LIGHT`/`EC_DIRECTIONAL_LIGHT`;
   finalizes Sneak's light gate. *(needs Effects)*
@@ -263,15 +305,17 @@ Everything below is DX-specific work confirmed **absent** from the base.
   (inventory paperdoll wired, `UnitSprite::drawRecolored` still TODO). *(needs Effects; the
   inverse of light equipment)* *(legacy: [Legacy-DX-Features.md](Legacy-DX-Features.md) §15)*
 - [ ] **Channeled Mind Control** — with backlash/counter-control.
-- [ ] **Mind Blast** *(needs damage-model pieces).* 
-- [ ] **Clairvoyance** *(needs Phase 1 fog-of-war).* 
-- [ ] **Psi-Amp Ammo Mechanics** *(needs Phase 6 `battleClipSize`).*
+- [ ] **Mind Blast** — direct psychic damage *(needs damage-model pieces).*
+- [ ] **Clairvoyance** — area reveal power *(needs Phase 1 fog-of-war).*
+- [ ] **Psi-Amp Ammo Mechanics** — per-use round cost; percentage-based, armor-reducible
+  psychic damage *(needs Phase 6 `battleClipSize`).*
 
 ## Phase 9: AI
 
-- [ ] **Per-weapon AI targeting** — `aiRangeClose/Mid/Long/Max`, `aiAttackPriority*`.
-  *(needs firing system)*
-- [ ] **AI fixes** — normal TU-reserve logic, reaction-fire fixes, counter-mind-control.
+- [ ] **Per-weapon AI targeting** — engagement range bands (`aiRangeClose`/`Mid`/`Long`/`Max`)
+  + per-band target priorities (`aiAttackPriority*`). *(needs firing system)*
+- [ ] **AI fixes** — normal TU-reserve logic (drop custom percentages), reaction-fire fixes,
+  counter-mind-control behavior.
 
 ## Phase 10: Strategic Large Systems
 
@@ -282,8 +326,9 @@ Everything below is DX-specific work confirmed **absent** from the base.
     the soldier's stats/skills, expose it to crew casualties/bail-out, and let it gain experience —
     versus today's self-contained tank units. (Reuses the craft-pilot plumbing conceptually; the
     battlescape unit model would need a rider/occupant concept. Design TBD.)
-- [ ] **Air-Combat Minigame** — turn-based pursuit, enemy AI, armed UFOs/escorts; gated
-  behind `enableNewAirCombat` (off by default). *(largely independent)*
+- [ ] **Air-Combat Minigame** — turn-based pursuit, positional movement + TU/fuel costs, enemy
+  AI (snipe/berserk/escape), armed UFOs/escorts; gated behind `enableNewAirCombat` (off by
+  default). *(largely independent — design: [plans/Feature-NewAirCombat.md](plans/Feature-NewAirCombat.md))*
 
 ## Phase 11: Strategic Balance & Economy (new mechanic)
 
