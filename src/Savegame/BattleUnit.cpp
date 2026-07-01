@@ -3073,9 +3073,10 @@ bool BattleUnit::fitItemToInventory(const RuleInventory *slot, BattleItem *item)
 	{
 		return false;
 	}
-	if (slot->getType() == INV_HAND)
+	if (slot->isSingleItem())
 	{
-		if (!Inventory::overlapItems(this, item, slot))
+		// fitItemInSlot is unconditional for hands but size-checks utility/equip boxes
+		if (!Inventory::overlapItems(this, item, slot) && slot->fitItemInSlot(rule, 0, 0))
 		{
 			item->moveToOwner(this);
 			item->setSlot(slot);
@@ -3785,6 +3786,37 @@ BattleItem *BattleUnit::getLeftHandWeapon() const
 	{
 		auto* slot = bi->getSlot();
 		if (slot && slot->isLeftHand())
+		{
+			return bi;
+		}
+	}
+	return nullptr;
+}
+
+/**
+ * Gets this unit's utility section (the first INV_UTILITY section of its layout).
+ * @return The utility section, or null if the unit's layout defines none.
+ */
+const RuleInventory *BattleUnit::getUtilitySlot() const
+{
+	const RuleInventoryLayout *layout = getInventoryLayout();
+	return layout ? layout->getUtilitySlot() : nullptr;
+}
+
+/**
+ * Gets the item occupying this unit's utility slot.
+ * @return The utility item, or null if the slot is empty or the unit has no utility slot.
+ */
+BattleItem *BattleUnit::getUtilityItem() const
+{
+	const RuleInventory *utilitySlot = getUtilitySlot();
+	if (!utilitySlot)
+	{
+		return nullptr;
+	}
+	for (auto* bi : _inventory)
+	{
+		if (bi->getSlot() == utilitySlot)
 		{
 			return bi;
 		}

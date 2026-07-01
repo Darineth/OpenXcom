@@ -1,6 +1,5 @@
 # TODO
-- Hand-handling slots for weapon shenanigans.  Don't like the fixed left/right hand slots at all.
-- Don't let locked in combat items be picked up at all ideally.
+- Replace "locker" with a utility slot that only allows medikits as an example of a usable item.
 - let's add a note to the vehicle-related TODOs/future plans that vehicles could have PILOTS instead of being autonomous things.
 
 # Terror Defense Future Notes

@@ -595,7 +595,7 @@ int BattleItem::getMoveToCost(const RuleInventory *slot) const
 		// if move was free it stay free, required to prevent paying cost of move only for clicking on item in inventory
 		return 0;
 	}
-	else if (_inventorySlot->getType() == INV_HAND && slot->getType() == INV_GROUND)
+	else if (_inventorySlot->isSingleItem() && slot->getType() == INV_GROUND)
 	{
 		// this special case has two roles:
 		// * right now dropping ammo when reloading only uses default move cost, manually dropping should have same cost.
@@ -668,7 +668,7 @@ bool BattleItem::occupiesSlot(int x, int y, BattleItem *item) const
 {
 	if (item == this || !_inventorySlot)
 		return false;
-	if (_inventorySlot->getType() == INV_HAND)
+	if (_inventorySlot->isSingleItem())
 		return true;
 	if (item == 0)
 	{

@@ -31,7 +31,7 @@ namespace OpenXcom
  * type of inventory section.
  * @param id String defining the id.
  */
-RuleInventory::RuleInventory(const std::string &id, int listOrder): _id(id), _x(0), _y(0), _type(INV_SLOT), _listOrder(listOrder), _hand(0), _battleType(BT_NONE), _allowCombatSwap(true), _countStats(true)
+RuleInventory::RuleInventory(const std::string &id, int listOrder): _id(id), _x(0), _y(0), _type(INV_SLOT), _width(0), _height(0), _listOrder(listOrder), _hand(0), _battleType(BT_NONE), _allowCombatSwap(true), _countStats(true)
 {
 }
 
@@ -54,6 +54,8 @@ void RuleInventory::load(const YAML::YamlNodeReader& reader)
 	reader.tryRead("x", _x);
 	reader.tryRead("y", _y);
 	reader.tryRead("type", _type);
+	reader.tryRead("width", _width);
+	reader.tryRead("height", _height);
 	reader.tryRead("slots", _slots);
 	reader.tryRead("costs", _costs);
 	reader.tryRead("battleType", _battleType);
@@ -125,6 +127,48 @@ InventoryType RuleInventory::getType() const
 }
 
 /**
+ * Gets whether this section holds a single item (hand/utility/equip).
+ * These hold one occupant, any item always "fits", and they render as a single bounding box.
+ * Wielding/reaction-fire logic is NOT keyed off this (it uses isRightHand/isLeftHand),
+ * so utility/equip items are never treated as held-in-hand.
+ * @return True for INV_HAND, INV_UTILITY, INV_EQUIP.
+ */
+bool RuleInventory::isSingleItem() const
+{
+	return _type == INV_HAND || _type == INV_UTILITY || _type == INV_EQUIP;
+}
+
+/**
+ * Gets the bounding-box width (in slot cells) for a hand-family slot.
+ * @return Cell width, or 0 for non-hand-family types.
+ */
+int RuleInventory::getBoxWidth() const
+{
+	switch (_type)
+	{
+	case INV_HAND:    return HAND_W;
+	case INV_UTILITY: return _width > 0 ? _width : UTILITY_W;
+	case INV_EQUIP:   return _width > 0 ? _width : EQUIP_W;
+	default:          return 0;
+	}
+}
+
+/**
+ * Gets the bounding-box height (in slot cells) for a hand-family slot.
+ * @return Cell height, or 0 for non-hand-family types.
+ */
+int RuleInventory::getBoxHeight() const
+{
+	switch (_type)
+	{
+	case INV_HAND:    return HAND_H;
+	case INV_UTILITY: return _height > 0 ? _height : UTILITY_H;
+	case INV_EQUIP:   return _height > 0 ? _height : EQUIP_H;
+	default:          return 0;
+	}
+}
+
+/**
  * Gets if this slot is right hand.
  * @return This is right hand.
  */
@@ -160,11 +204,12 @@ const std::vector<struct RuleSlot> *RuleInventory::getSlots() const
 bool RuleInventory::checkSlotInPosition(int *x, int *y) const
 {
 	int mouseX = *x, mouseY = *y;
-	if (_type == INV_HAND)
+	if (isSingleItem())
 	{
-		for (int xx = 0; xx < HAND_W; ++xx)
+		const int boxW = getBoxWidth(), boxH = getBoxHeight();
+		for (int xx = 0; xx < boxW; ++xx)
 		{
-			for (int yy = 0; yy < HAND_H; ++yy)
+			for (int yy = 0; yy < boxH; ++yy)
 			{
 				if (mouseX >= _x + xx * SLOT_W && mouseX < _x + (xx + 1) * SLOT_W &&
 					mouseY >= _y + yy * SLOT_H && mouseY < _y + (yy + 1) * SLOT_H)
@@ -213,7 +258,14 @@ bool RuleInventory::fitItemInSlot(const RuleItem *item, int x, int y) const
 {
 	if (_type == INV_HAND)
 	{
+		// hands hold any item regardless of size (a 2x3 rifle fits a hand)
 		return true;
+	}
+	else if (_type == INV_UTILITY || _type == INV_EQUIP)
+	{
+		// utility/equip are single-occupant boxes, but unlike hands the item must fit
+		// within the box dimensions (an oversized item is rejected)
+		return item && item->getInventoryWidth() <= getBoxWidth() && item->getInventoryHeight() <= getBoxHeight();
 	}
 	else if (_type == INV_GROUND)
 	{
@@ -395,6 +447,8 @@ void RuleInventory::ScriptRegister(ScriptParserBase* parser)
 	bu.addCustomConst("INV_GROUND", INV_GROUND);
 	bu.addCustomConst("INV_SLOT", INV_SLOT);
 	bu.addCustomConst("INV_HAND", INV_HAND);
+	bu.addCustomConst("INV_UTILITY", INV_UTILITY);
+	bu.addCustomConst("INV_EQUIP", INV_EQUIP);
 }
 
 // helper overloads for deserialization-only

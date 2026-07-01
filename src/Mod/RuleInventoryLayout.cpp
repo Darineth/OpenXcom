@@ -21,6 +21,7 @@
 #include "Mod.h"
 #include "RuleInventory.h"
 #include "../Engine/Exception.h"
+#include "../Engine/Logger.h"
 
 namespace OpenXcom
 {
@@ -121,14 +122,17 @@ void RuleInventoryLayout::afterLoad(const Mod* mod)
 }
 
 /**
- * Resolves this layout's hand sections from its resolved section list, by the `hand:` property.
+ * Resolves this layout's cached hand and utility sections from its resolved section list.
  * Handedness is unique per layout: two sections of the same side in one layout is a ruleset error
  * (the same `hand: left` section is fine in many different layouts, just not twice in one).
+ * The utility slot is the first INV_UTILITY section (extras are ignored, not an error).
  */
 void RuleInventoryLayout::resolveHands()
 {
 	_rightHand = nullptr;
 	_leftHand = nullptr;
+	_utilitySlot = nullptr;
+	const RuleInventory* extraUtility = nullptr; // a second INV_UTILITY section, for the warning
 	for (const auto* s : _sections)
 	{
 		if (s->isRightHand())
@@ -143,6 +147,22 @@ void RuleInventoryLayout::resolveHands()
 				throw Exception("Inventory layout " + _id + " has two left-hand sections (" + _leftHand->getId() + ", " + s->getId() + "); only one is allowed per layout.");
 			_leftHand = s;
 		}
+		if (s->getType() == INV_UTILITY)
+		{
+			// Unlike hands, multiple utility sections aren't a correctness break: each still works
+			// as a normal single-item slot. Only the per-unit getUtilitySlot() handle picks one, so
+			// take the first and warn rather than throw.
+			if (!_utilitySlot)
+				_utilitySlot = s;
+			else if (!extraUtility)
+				extraUtility = s;
+		}
+	}
+	if (extraUtility)
+	{
+		Log(LOG_WARNING) << "Inventory layout " << _id << " has more than one INV_UTILITY section ("
+			<< _utilitySlot->getId() << ", " << extraUtility->getId() << ", ...); getUtilitySlot() uses "
+			<< "only the first (" << _utilitySlot->getId() << "). The others still work as normal slots.";
 	}
 }
 

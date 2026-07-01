@@ -186,7 +186,18 @@ Everything below is DX-specific work confirmed **absent** from the base.
     `costs` entry that forbids an in-combat transfer. (Legacy's `allowGenericItems` was dropped — see
     the design doc for why.)
   *(design: [plans/Feature-TypedInventorySlots.md](plans/Feature-TypedInventorySlots.md))*
-- [ ] **Utility equipment slots** — `INV_UTILITY`. *(needs typed slots)*
+- [x] **Utility equipment slots** — `INV_UTILITY`. *(needs typed slots)*
+  *(design: [plans/Feature-UtilityEquipmentSlots.md](plans/Feature-UtilityEquipmentSlots.md))*
+  - ✅ **Done (plumbing).** Added `INV_UTILITY`/`INV_EQUIP` as append-only `InventoryType` values
+    — single-item slots (one occupant, always-fit, single bounding box) keyed off a new
+    `RuleInventory::isSingleItem()` predicate, with per-type box-dim getters. Geometry/fit/draw/
+    ownership call sites (placement, `occupiesSlot`, move-cost, grid + item draw) switched to
+    `isSingleItem()`; wielding/reload paths stay strict `INV_HAND` (utility items are never wielded —
+    handedness is a separate property). Per-unit handle: `RuleInventoryLayout` caches the first
+    `INV_UTILITY` section; `BattleUnit::getUtilitySlot()`/`getUtilityItem()` expose it. Typed-slot
+    rules (`battleType`/`allowCombatSwap`/`countStats`/`costs`) compose for free. No save-format
+    change. `INV_EQUIP` ships as a usable sibling type; its per-unit handle is deferred until a
+    consumer defines it. No gameplay consumer yet (plumbing-only).
 - [x] **Configurable hand slots** — handedness is now a slot property (`hand: right|left`) instead of
   the hard-coded `STR_RIGHT_HAND`/`STR_LEFT_HAND` ids, so renamed/layout-specific hand slots are real
   hands. Legacy id fallback keeps existing mods unchanged; hands validated/resolved **per layout** (the

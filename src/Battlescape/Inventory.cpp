@@ -274,13 +274,13 @@ void Inventory::drawGrid()
 				_grid->drawRect(&r, 0);
 			}
 		}
-		else if (ruleInv->getType() == INV_HAND)
+		else if (ruleInv->isSingleItem())
 		{
 			SDL_Rect r;
 			r.x = ruleInv->getX();
 			r.y = ruleInv->getY();
-			r.w = RuleInventory::HAND_W * RuleInventory::SLOT_W;
-			r.h = RuleInventory::HAND_H * RuleInventory::SLOT_H;
+			r.w = ruleInv->getBoxWidth() * RuleInventory::SLOT_W;
+			r.h = ruleInv->getBoxHeight() * RuleInventory::SLOT_H;
 			_grid->drawRect(&r, color);
 			r.x++;
 			r.y++;
@@ -382,15 +382,23 @@ void Inventory::drawItems()
 				continue;
 
 			int x, y;
-			if (invItem->getSlot()->getType() == INV_SLOT)
+			if (invItem->getSlot()->getType() == INV_HAND)
+			{
+				// hands center the item in the 2x3 hand box via the item's hand sprite offset
+				x = (invItem->getSlot()->getX() + invItem->getRules()->getHandSpriteOffX());
+				y = (invItem->getSlot()->getY() + invItem->getRules()->getHandSpriteOffY());
+			}
+			else if (invItem->getSlot()->isSingleItem())
+			{
+				// utility/equip boxes center the item's sprite within the box (an item smaller
+				// than the box is offset by half the leftover cells; fitItemInSlot guarantees it fits)
+				x = (invItem->getSlot()->getX() + (invItem->getSlot()->getBoxWidth() - invItem->getRules()->getInventoryWidth()) * RuleInventory::SLOT_W / 2);
+				y = (invItem->getSlot()->getY() + (invItem->getSlot()->getBoxHeight() - invItem->getRules()->getInventoryHeight()) * RuleInventory::SLOT_H / 2);
+			}
+			else if (invItem->getSlot()->getType() == INV_SLOT)
 			{
 				x = (invItem->getSlot()->getX() + invItem->getSlotX() * RuleInventory::SLOT_W);
 				y = (invItem->getSlot()->getY() + invItem->getSlotY() * RuleInventory::SLOT_H);
-			}
-			else if (invItem->getSlot()->getType() == INV_HAND)
-			{
-				x = (invItem->getSlot()->getX() + invItem->getRules()->getHandSpriteOffX());
-				y = (invItem->getSlot()->getY() + invItem->getRules()->getHandSpriteOffY());
 			}
 			else
 			{
@@ -426,9 +434,10 @@ void Inventory::drawItems()
 			if (getInventoryAmmoCount(invItem, ammoCount, ammoCapacity))
 			{
 				int rightX, topY;
-				if (invItem->getSlot()->getType() == INV_HAND)
+				if (invItem->getSlot()->isSingleItem())
 				{
-					rightX = invItem->getSlot()->getX() + RuleInventory::HAND_W * RuleInventory::SLOT_W;
+					// hand/utility/equip: badge at the box's top-right corner
+					rightX = invItem->getSlot()->getX() + invItem->getSlot()->getBoxWidth() * RuleInventory::SLOT_W;
 					topY = invItem->getSlot()->getY();
 				}
 				else

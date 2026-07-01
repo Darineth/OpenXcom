@@ -161,8 +161,10 @@ This document serves as a high-level checklist of features from the original Ope
     - [ ] Implement positional movement and TU/fuel costs
     - [ ] Implement enemy AI (snipe/berserk/escape)
     - [ ] Implement armed UFOs and escorts
-- [ ] **Utility Equipment Slots**
-    - [ ] Implement `INV_UTILITY` slot type (dedicated quick-access slot)
+- [x] **Utility Equipment Slots** — *plumbing done* ([design](plans/Feature-UtilityEquipmentSlots.md))
+    - [x] Implement `INV_UTILITY` slot type (dedicated quick-access slot) — single-occupant
+      hand-family slot + reserved `INV_EQUIP`; per-unit `getUtilitySlot()`/`getUtilityItem()`;
+      typed-slot rules compose; no consumer wired yet.
 - [ ] **Grenade Improvements**
     - [x] Implement instant grenade fuse option — *already in OXCE-Plus* (`Options::battleInstantGrenade` / per-item `fuseType: -2`)
     - [ ] Implement reduced grenade accuracy penalty — N/A on current base (OXCE has no throw penalty); revisit with aim-cone firing (§5)

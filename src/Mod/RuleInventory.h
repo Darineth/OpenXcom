@@ -30,7 +30,21 @@ struct RuleSlot
 	int x, y;
 };
 
-enum InventoryType { INV_SLOT, INV_HAND, INV_GROUND };
+// Append-only: INV_SLOT/HAND/GROUND must stay 0/1/2 (saved games and rulesets use the
+// ordinals via `type:`). INV_UTILITY/INV_EQUIP are single-occupant "hand-family" slots.
+enum InventoryType
+{
+	// An inventory slot that can hold multiple items, and is drawn as a grid of slots.
+	INV_SLOT,
+	// A hand slot that can hold a single item, typically a weapon.  Displayed on the battlescape as an interactible item.
+	INV_HAND,
+	// A ground slot that can hold multiple items, and is drawn as a grid of slots.  Not unit-associated.
+	INV_GROUND, 
+	// A slot that can hold a single item, typically a utility item.  Displayed on the battlescape as an interactible item.
+	INV_UTILITY,
+	// A slot that can hold a single item, typically an equipment item.  Intended for equippable "gear" such as night vision goggles.
+	INV_EQUIP 
+};
 
 class RuleItem;
 class ScriptParserBase;
@@ -46,6 +60,8 @@ private:
 	std::string _id;
 	int _x, _y;
 	InventoryType _type;
+	/// Rule-defined box size (in slot cells) for utility/equip slots; 0 = use the type's default constant.
+	int _width, _height;
 	std::vector<RuleSlot> _slots;
 	std::map<std::string, int> _costs;
 	int _listOrder;
@@ -62,6 +78,11 @@ public:
 	static const int DEFAULT_MOVE_COST = 8;
 	static const int HAND_W = 2;
 	static const int HAND_H = 3;
+	/// Default box size for utility/equip slots when the rule sets no `width`/`height`.
+	static const int UTILITY_W = 2;
+	static const int UTILITY_H = 2;
+	static const int EQUIP_W = 2;
+	static const int EQUIP_H = 2;
 	static const int PAPERDOLL_W = 40;
 	static const int PAPERDOLL_H = 70;
 	static const int PAPERDOLL_X = 60;
@@ -86,6 +107,16 @@ public:
 	int getY() const;
 	/// Gets the inventory type.
 	InventoryType getType() const;
+	/// Gets whether this section holds a single item (hand/utility/equip): one occupant, drawn
+	/// as a single bounding box rather than an N×M slot grid. Hands accept any item size; utility/
+	/// equip size-check the item against their box dimensions (see fitItemInSlot).
+	bool isSingleItem() const;
+	/// Gets the bounding-box width (in slot cells) for a single-item slot; 0 for slot/ground.
+	/// Hands are fixed; utility/equip use the rule's `width` (defaulting to the type constant).
+	int getBoxWidth() const;
+	/// Gets the bounding-box height (in slot cells) for a single-item slot; 0 for slot/ground.
+	/// Hands are fixed; utility/equip use the rule's `height` (defaulting to the type constant).
+	int getBoxHeight() const;
 	/// Gets if this slot is right hand;
 	bool isRightHand() const;
 	/// Gets if this slot is left hand;

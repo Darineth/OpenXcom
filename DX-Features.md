@@ -107,6 +107,49 @@ Behavior and details:
 This re-ports the legacy DX typed-slot behavior onto the current OXCE-Plus base and is the
 foundation for the follow-on **Utility equipment slots** (`INV_UTILITY`) feature.
 
+## Utility Equipment Slots
+
+A new inventory **slot type**, `INV_UTILITY` (plus a reserved sibling `INV_EQUIP`), that gives a
+unit a dedicated single-occupant equipment slot distinct from its hands. It holds one item (no
+`slots:` grid to author) and renders as a single bounding box — like a hand — but the item is
+**not** wielded: it is never fired, reaction-fired, or treated as the active hand. **Unlike a hand,
+it size-checks the item**: only items that fit within the box dimensions are accepted; an oversized
+item is rejected (a hand, by contrast, accepts any size). The box size defaults to `2×2` but is
+**rule-defined** per section via `width:`/`height:` (in slot cells), so an equip slot for a larger
+piece of gear (e.g. `3×2`) is just a ruleset value.
+
+```yaml
+invs:
+  - id: STR_UTILITY
+    type: 3            # 3 = INV_UTILITY (4 = INV_EQUIP); appended to INV_SLOT/HAND/GROUND = 0/1/2
+    x: 256
+    y: 37
+    battleType: 10     # optional typed-slot rules still apply (here: flares only)
+    # no `slots:` list needed - single occupant
+```
+
+Behavior and details:
+
+- **Single-item geometry, not a hand.** A new `RuleInventory::isSingleItem()` predicate groups
+  `INV_HAND`/`INV_UTILITY`/`INV_EQUIP` for fit/placement/move-cost/overlap and for grid + item
+  rendering (per-type box dims: utility/equip are `2×2`, hands `2×3`). Wielding and reload logic stays
+  keyed strictly on `INV_HAND` and on handedness (`isRightHand()`/`isLeftHand()`), which utility/equip
+  slots never set — so a utility item is never held in hand.
+- **Per-unit handle.** Each inventory layout caches its first `INV_UTILITY` section;
+  `BattleUnit::getUtilitySlot()` returns it and `getUtilityItem()` returns whatever occupies it, so
+  later systems can ask "what's in this unit's utility slot" without knowing the modder's section id.
+- **Typed-slot rules compose.** Because a utility slot is just another section in a layout, the
+  typed-slot fields (`battleType` filter, `allowCombatSwap` lock, `countStats` gating, `costs`) all
+  apply to it with no extra wiring.
+- **`INV_EQUIP`** is recognized as a usable single-occupant sibling type (enum + geometry + fit), but
+  its dedicated per-unit accessor is deferred until a concrete consumer defines what "equip" means.
+- **No gameplay consumer yet** (plumbing): no mechanic reads `getUtilityItem()` — this lays the
+  inventory plumbing for later features (effects/light equipment, roles, modular vehicles). The slot
+  type and per-unit handle are derived from rules at load, so there is **no save-format change**.
+  Exposed to Y-Script as the `INV_UTILITY`/`INV_EQUIP` consts on `RuleInventory`.
+
+*(design: [plans/Feature-UtilityEquipmentSlots.md](plans/Feature-UtilityEquipmentSlots.md))*
+
 ## Configurable Hand Slots
 
 A unit's **hand** is no longer hard-wired to the section ids `STR_RIGHT_HAND` / `STR_LEFT_HAND`.

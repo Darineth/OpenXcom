@@ -138,15 +138,23 @@ items:
 #  What to check:
 #    * LIGHT: backpack/legs/shoulders AND the belt are gone; auto-equip never fills
 #      them; you cannot drop items there; hands/ground still work. Plus three DX
-#      typed test slots: an AMMO pouch (clips only), a HOLSTER (firearms only), and
-#      a LOCKER (un-unequippable in combat). Try mis-placing items: a pistol in the
-#      AMMO pouch or a clip in the HOLSTER is rejected with STR_INVALID_ITEM_SLOT.
-#      For the LOCKER, stow something pre-battle, then in combat you can lift it but
-#      can't move it to another slot or drop anything in (STR_NOT_COMBAT_SWAPPABLE).
+#      typed test slots: an AMMO pouch (an EQUIP-type 2x1 box, one clip only), a HOLSTER (firearms only), and
+#      a MEDKIT (a UTILITY-type 2x2 box, medikits only). Try mis-placing items: a pistol in the
+#      AMMO pouch, a clip in the HOLSTER, or a non-medikit in the MEDKIT slot is rejected with
+#      STR_INVALID_ITEM_SLOT. The MEDKIT is single-occupant and is the unit's getUtilityItem() slot;
+#      it's allowCombatSwap:false, so stow a medikit pre-battle, then in combat you can't move it
+#      in/out of the slot (STR_NOT_COMBAT_SWAPPABLE) - it's meant to be used in place.
 #    * RIG: the satchel slot draws to the right and accepts items by
 #      hand (manual placement); backpack is absent. The satchel is countStats:false,
 #      so a stat-granting item stowed there grants NO bonus (move it to a hand/belt
-#      slot and the bonus reappears) - check via the soldier's stats.
+#      slot and the bonus reappears) - check via the soldier's stats. RIG also has a
+#      UTILITY slot (INV_UTILITY, type 3, top-right): a single-occupant hand-family box
+#      that only accepts a flare (battleType BT_FLARE) and grants no wield (the item is
+#      not held in hand). Drop a flare there - it fills the whole box; a non-flare is
+#      rejected. This is the new utility-equipment-slot plumbing. RIG also has an EQUIP
+#      slot (INV_EQUIP, type 4) with a RULE-DEFINED 2x1 box (width/height): a wide, short
+#      box for gear, still single-occupant and size-checked (an item bigger than 2x1 is
+#      rejected).
 #    * CLONE: power-suit inventory looks identical to LIGHT (hands+belt+ground),
 #      proving refNode inheritance loaded the parent's sections. (If refNode
 #      failed, you'd see only the ground slot.)
@@ -162,14 +170,17 @@ items:
 # The DX typed-slot test sections are normal global `invs:` sections. They're simply not listed
 # in STR_STANDARD_INV, so they only appear in the layouts below that name them (not on every unit).
 invs:
-  # AMMO-ONLY pouch (2 wide). battleType 2 = BT_AMMO -> only clips fit; a weapon/grenade is
-  # rejected (STR_INVALID_ITEM_SLOT), and auto-equip won't dump non-ammo here.
+  # AMMO-ONLY pouch, now an EQUIP slot (INV_EQUIP, type 4) with a rule-defined 2x1 box instead of
+  # a slot grid: single-occupant (one clip, not two), size-checked. battleType 2 = BT_AMMO -> only
+  # clips fit; a weapon/grenade is rejected (STR_INVALID_ITEM_SLOT), and auto-equip won't dump
+  # non-ammo here.
   - id: STR_DX_AMMO_POUCH
     x: 16
     y: 37
-    type: 0
+    type: 4                 # INV_EQUIP
+    width: 2                # rule-defined 2x1 box (overrides the EQUIP_W/EQUIP_H default)
+    height: 1
     battleType: 2
-    slots: [ [0, 0], [1, 0] ]
     costs:
       STR_RIGHT_HAND: 8
       STR_LEFT_HAND: 8
@@ -186,15 +197,17 @@ invs:
       STR_RIGHT_HAND: 8
       STR_LEFT_HAND: 1     # quick-draw: 1 TU to whip the holstered weapon into the left hand
       STR_GROUND: 6
-  # un-unequippable "locker" backpack (2x2) in the normal backpack zone. allowCombatSwap:
-  # false -> load it freely on the pre-battle equip screen, but once combat is underway you
-  # can't move an item into OR out of it (STR_NOT_COMBAT_SWAPPABLE) - including ctrl-click to ground.
-  - id: STR_DX_LOCKER
+  # MEDIKIT-only utility slot (INV_UTILITY, 2x2) in the normal backpack zone. type: 3 -> a
+  # single-occupant, non-wielded box (no slots: grid), size-checked to the 2x2 UTILITY default.
+  # battleType 6 = BT_MEDIKIT -> only medikits fit; anything else is rejected. allowCombatSwap: false
+  # -> the medikit is meant to be used in place but NOT moved in/out once combat is underway
+  # (STR_NOT_COMBAT_SWAPPABLE). BattleUnit::getUtilityItem() returns whatever's here.
+  - id: STR_DX_MEDKIT
     x: 192
     y: 37
-    type: 0
-    allowCombatSwap: false
-    slots: [ [0, 0], [1, 0], [0, 1], [1, 1] ]
+    type: 3                 # INV_UTILITY (2x2 default box)
+    battleType: 6           # medikits only (BT_MEDIKIT)
+    allowCombatSwap: false  # usable in place, but locked in/out during combat
     costs:
       STR_RIGHT_HAND: 8
       STR_LEFT_HAND: 8
@@ -226,13 +239,43 @@ invs:
     costs:
       STR_BELT: 8
       STR_GROUND: 2
+  # A dedicated "utility" equipment slot (INV_UTILITY). type: 3 -> single-occupant box (one item,
+  # no slots: grid needed), but it is NOT a hand: the item is never wielded/fired/reacted from, and
+  # BattleUnit::getUtilityItem() returns whatever sits here. Unlike a hand it DOES size-check: only
+  # items up to the 2x2 box (UTILITY_W x UTILITY_H) fit; a larger item is rejected. The typed-slot
+  # rules still compose: battleType 10 = BT_FLARE -> only flares fit here.
+  - id: STR_DX_UTILITY
+    x: 256
+    y: 37
+    type: 3                 # INV_UTILITY
+    battleType: 10          # flares only (BT_FLARE) - exercises typed-slot composition on a utility slot
+    costs:
+      STR_RIGHT_HAND: 8
+      STR_LEFT_HAND: 8
+      STR_BELT: 8
+      STR_GROUND: 4
+  # An "equipment" slot (INV_EQUIP, type: 4) for equippable gear (e.g. night-vision goggles).
+  # Like utility it is a single-occupant, non-wielded box that size-checks its contents - but its
+  # box size is RULE-DEFINED via width/height (not the fixed 2x2 default). Here it's a wide, short
+  # 2x1 gear slot; an item taller/wider than 2x1 is rejected.
+  - id: STR_DX_EQUIP
+    x: 192
+    y: 72
+    type: 4                 # INV_EQUIP
+    width: 2                # rule-defined box (cells); overrides the EQUIP_W/EQUIP_H default
+    height: 1
+    costs:
+      STR_RIGHT_HAND: 8
+      STR_LEFT_HAND: 8
+      STR_BELT: 8
+      STR_GROUND: 4
 
 inventoryLayouts:
   - id: STR_DX_LAYOUT_LIGHT
-    invs: &dxLightInvs [STR_RIGHT_HAND, STR_LEFT_HAND, STR_GROUND, STR_DX_AMMO_POUCH, STR_DX_HOLSTER, STR_DX_LOCKER]
+    invs: &dxLightInvs [STR_RIGHT_HAND, STR_LEFT_HAND, STR_GROUND, STR_DX_AMMO_POUCH, STR_DX_HOLSTER, STR_DX_MEDKIT]
 
   - id: STR_DX_LAYOUT_RIG
-    invs: [STR_RIGHT_HAND, STR_LEFT_HAND, STR_BELT, STR_RIGHT_SHOULDER, STR_LEFT_SHOULDER, STR_GROUND, STR_DX_SATCHEL]
+    invs: [STR_RIGHT_HAND, STR_LEFT_HAND, STR_BELT, STR_RIGHT_SHOULDER, STR_LEFT_SHOULDER, STR_GROUND, STR_DX_SATCHEL, STR_DX_UTILITY, STR_DX_EQUIP]
 
   - id: STR_DX_LAYOUT_CLONE
     # refNode reuse: inherit LIGHT's invs list verbatim (no own `invs:`), so this renders
@@ -263,7 +306,7 @@ extraStrings:
       STR_DX_SATCHEL: "SATCHEL"
       STR_DX_AMMO_POUCH: "AMMO"
       STR_DX_HOLSTER: "HOLSTER"
-      STR_DX_LOCKER: "LOCKER"
+      STR_DX_MEDKIT: "MEDKIT"
       STR_DX_INTEGRATED_WEAPON: "WEAPON"
 
 # =====================================================================

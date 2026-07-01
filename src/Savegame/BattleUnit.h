@@ -485,6 +485,10 @@ public:
 	BattleItem *getRightHandWeapon() const;
 	/// Gets the item from left hand.
 	BattleItem *getLeftHandWeapon() const;
+	/// Gets this unit's utility section (the first INV_UTILITY section of its layout), or null.
+	const RuleInventory *getUtilitySlot() const;
+	/// Gets the item occupying this unit's utility slot, or null if empty / no utility slot.
+	BattleItem *getUtilityItem() const;
 	/// Set the right hand as main active hand.
 	void setActiveRightHand();
 	/// Set the left hand as main active hand.

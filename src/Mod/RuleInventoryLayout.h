@@ -47,7 +47,8 @@ private:
 	std::vector<const RuleInventory*> _sections;     // resolved, ordered section list
 	const RuleInventory* _rightHand = nullptr;       // this layout's right/left hand sections (by `hand:`)
 	const RuleInventory* _leftHand = nullptr;
-	/// Resolves _rightHand/_leftHand from _sections; throws if a layout has two same-side hands.
+	const RuleInventory* _utilitySlot = nullptr;     // this layout's first INV_UTILITY section, if any
+	/// Resolves the cached hand and utility sections from _sections; throws if a layout has two same-side hands.
 	void resolveHands();
 public:
 	/// Creates a blank inventory layout ruleset.
@@ -68,6 +69,8 @@ public:
 	const RuleInventory* getRightHand() const { return _rightHand; }
 	/// Gets this layout's left-hand section (the one flagged `hand: left`), or null if it has none.
 	const RuleInventory* getLeftHand() const { return _leftHand; }
+	/// Gets this layout's utility section (the first INV_UTILITY section), or null if it has none.
+	const RuleInventory* getUtilitySlot() const { return _utilitySlot; }
 	/// Checks whether a given inventory section belongs to this layout.
 	bool hasSection(const RuleInventory* section) const;
 	/// Directly sets the resolved sections (used by Mod to synthesize the implicit default layout).
