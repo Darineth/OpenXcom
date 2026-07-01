@@ -277,6 +277,11 @@ Everything below is DX-specific work confirmed **absent** from the base.
 
 - [ ] **Modular Vehicles (HWPs)** — chassis/engine/armor/weapon customization + weapon
   tree. *(needs inventory layouts, directional armor/sided slots, item stats)*
+  - *Future idea — piloted vehicles:* explore letting a vehicle carry a **pilot** (a crewing
+    soldier) instead of being a fully autonomous unit. A pilot could tie the HWP's effectiveness to
+    the soldier's stats/skills, expose it to crew casualties/bail-out, and let it gain experience —
+    versus today's self-contained tank units. (Reuses the craft-pilot plumbing conceptually; the
+    battlescape unit model would need a rider/occupant concept. Design TBD.)
 - [ ] **Air-Combat Minigame** — turn-based pursuit, enemy AI, armed UFOs/escorts; gated
   behind `enableNewAirCombat` (off by default). *(largely independent)*
 

@@ -1,6 +1,4 @@
 # TODO
-- Replace "locker" with a utility slot that only allows medikits as an example of a usable item.
-- let's add a note to the vehicle-related TODOs/future plans that vehicles could have PILOTS instead of being autonomous things.
 
 # Terror Defense Future Notes
 

@@ -154,6 +154,10 @@ This document serves as a high-level checklist of features from the original Ope
 - [ ] **Vehicle Customization**
     - [ ] Implement customizable HWP chassis/engines/armor/weapons
     - [ ] Implement vehicle weapon trees
+    - [ ] *Future idea:* vehicles could carry a **pilot** (a crewing soldier) instead of being
+      autonomous units — tying HWP performance to soldier stats/skills, allowing crew
+      casualties/bail-out, and letting the vehicle earn soldier experience. (Battlescape unit model
+      needs a rider/occupant concept; conceptually reuses the craft-pilot idea. Design TBD.)
 
 ## 13. Miscellaneous Battlescape Features
 - [ ] **Air-Combat Minigame**
