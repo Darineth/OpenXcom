@@ -640,6 +640,31 @@ in via `tuAuto`; weapons without it behave exactly as before.
   throwable firearms); the menu shows its shot count and flags an ammo warning when the loaded
   clip holds fewer rounds than the burst needs.
 
+## Live Trajectory Preview
+
+While a fire or throw action is being aimed, DX draws the **predicted physical path** of the shot
+directly on the battlescape — a straight line-of-fire for direct fire, a parabolic arc for throws and
+arcing weapons — so the player can see where the round will go (and what it will hit) before spending
+TUs. It complements the on-cursor accuracy readout the engine already shows. *(design:
+[plans/Feature-LiveTrajectoryPreview.md](plans/Feature-LiveTrajectoryPreview.md))*
+
+- **Ideal path.** The preview traces the *intended* line with accuracy deviation disabled, so it is
+  deterministic and stable as the cursor moves. It is independent of the aim-cone model and works for
+  every weapon. `Projectile::calculatePreviewTrajectory()` traces the straight case; `calculateThrow`
+  gained an `ignoreAccuracy` argument for the ideal arc.
+- **Same aim voxel as the real shot.** The direct-fire aim-voxel resolution (unit-center → object →
+  walls → floor priority) that lived inline in `ProjectileFlyBState` is factored into
+  `TileEngine::resolveFireTargetVoxel()` and shared by both the real shot and the preview, so the
+  drawn line matches what will actually be fired. The path stops at the first obstacle it hits.
+- **Rendering.** A dedicated preview `Projectile` (kept out of the in-flight collection) is rebuilt
+  only when the aim target/action/actor changes. It is drawn as spaced tracer sprites along the route
+  with an impact marker at the end, in a top pass — so a lobbed arc that rises above the current view
+  level is not hidden under higher floors. A single fixed tracer sprite is used for every preview
+  (direct fire and throws alike). The tracer sprite is **mod-configurable** via the `constants`
+  ruleset key `trajectoryPreviewSprite` (a Projectiles frame index, default `35` — the rifle-type
+  base bullet; standard xcom1 sets `35`, xcom2 sets `36`); the impact marker uses `HIT.PCK`.
+- Toggle: **Aim trajectory preview** (`battleTrajectoryPreview`, default on).
+
 ## Blast Radius Dropoff
 
 - **Blast radius dropoff** (`RuleItem.blastDropoff`, default `0.0`): explosion power can now taper

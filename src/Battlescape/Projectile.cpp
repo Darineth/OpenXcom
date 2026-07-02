@@ -205,6 +205,38 @@ int Projectile::calculateTrajectory(double accuracy, const Position& originVoxel
 }
 
 /**
+ * Traces the ideal (undeviated) straight line-of-fire and stores it, for the live aiming trajectory
+ * preview. Unlike calculateTrajectory it applies no accuracy deviation, so the drawn line is
+ * deterministic and shows the intended path. Like a real shot, the line is extended past the aim
+ * point out to maximum range and traced until it hits something (so a shot into empty air still
+ * draws a path to the map edge rather than nothing).
+ * @return The voxel type hit at the end of the trace (see calculateLineVoxel).
+ */
+int Projectile::calculatePreviewTrajectory()
+{
+	Position originVoxel = _save->getTileEngine()->getOriginVoxel(_action, _save->getTile(_origin));
+
+	// Extend the muzzle->target ray to maximum range along the ideal direction (mirrors the
+	// extendLine step in applyAccuracy, minus the accuracy deviation). The trace then stops at the
+	// first obstacle, or reaches the map edge on a clear shot into empty space.
+	Position target = _targetVoxel;
+	double rotation = atan2(double(target.y - originVoxel.y), double(target.x - originVoxel.x)) * 180 / M_PI;
+	double tilt = atan2(double(target.z - originVoxel.z),
+		sqrt(double(target.x - originVoxel.x) * double(target.x - originVoxel.x) + double(target.y - originVoxel.y) * double(target.y - originVoxel.y))) * 180 / M_PI;
+	const double maxRange = 16 * 1000; // 1000 tiles, matching applyAccuracy
+	double cos_fi = cos(Deg2Rad(tilt));
+	double sin_fi = sin(Deg2Rad(tilt));
+	double cos_te = cos(Deg2Rad(rotation));
+	double sin_te = sin(Deg2Rad(rotation));
+	target.x = (int)(originVoxel.x + maxRange * cos_te * cos_fi);
+	target.y = (int)(originVoxel.y + maxRange * sin_te * cos_fi);
+	target.z = (int)(originVoxel.z + maxRange * sin_fi);
+
+	_trajectory.clear();
+	return _save->getTileEngine()->calculateLineVoxel(originVoxel, target, true, &_trajectory, _action.actor);
+}
+
+/**
  * Re-traces an already-fired straight trajectory against the current terrain.
  *
  * The path and its impact point are computed once at fire time. When multiple projectiles
@@ -252,7 +284,7 @@ bool Projectile::recalculateImpact()
  * @param accuracy The unit's accuracy.
  * @return True when a trajectory is possible.
  */
-int Projectile::calculateThrow(double accuracy)
+int Projectile::calculateThrow(double accuracy, bool ignoreAccuracy)
 {
 	Tile *targetTile = _save->getTile(_action.target);
 
@@ -335,7 +367,12 @@ int Projectile::calculateThrow(double accuracy)
 		Position deltas = targetVoxel;
 		// apply some accuracy modifiers
 		_trajectory.clear();
-		if (_action.type == BA_THROW)
+		if (ignoreAccuracy)
+		{
+			// preview: trace the ideal arc with no deviation
+			deltas = Position(0, 0, 0);
+		}
+		else if (_action.type == BA_THROW)
 		{
 			applyAccuracy(originVoxel, &deltas, accuracy, true, false); //calling for best flavor
 			deltas -= targetVoxel;

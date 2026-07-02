@@ -39,6 +39,7 @@ constants: #done
   explosionOffset: 8
   smokeOffset: 56
   underwaterSmokeOffset: 8
+  trajectoryPreviewSprite: 36 # DX: Projectiles frame for the aiming trajectory preview tracer
   basescapeCursor: 42
   graphsCursor: 144
   goodDebriefingMusic: GMDEBGOO

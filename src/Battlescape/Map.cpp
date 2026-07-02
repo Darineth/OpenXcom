@@ -110,7 +110,9 @@ Map::Map(Game *game, int width, int height, int x, int y, int visibleMapHeight) 
 	_anyIndicator(false), _isAltPressed(false), _isCtrlPressed(false),
 	_selectorX(0), _selectorY(0), _mouseX(0), _mouseY(0), _cursorType(CT_NORMAL), _cursorSize(1), _animFrame(0),
 	_followProjectile(true), _projectileInFOV(false), _explosionInFOV(false), _launch(false), _visibleMapHeight(visibleMapHeight),
-	_unitDying(false), _smoothingEngaged(false), _flashScreen(false), _bgColor(15), _projectileSet(0), _showObstacles(false), _showInfoOnCursor(false)
+	_unitDying(false), _smoothingEngaged(false), _flashScreen(false), _bgColor(15), _projectileSet(0),
+	_targetingProjectile(0), _previewTarget(-1, -1, -1), _previewActionType(-1), _previewActor(0),
+	_showObstacles(false), _showInfoOnCursor(false)
 {
 	// TODO: extract to a better place later
 	for (const auto& pair : Options::mods)
@@ -270,6 +272,7 @@ Map::~Map()
 	delete _camera;
 	delete _txtAccuracy;
 	delete _txtUnitName;
+	delete _targetingProjectile;
 }
 
 /**
@@ -561,6 +564,10 @@ void Map::draw()
 	// we use colour 15 because that actually corresponds to the colour we DO want in all variations of the xcom and tftd palettes.
 	// Note: un-hardcoded the color from 15 to ruleset value, default 15
 	_redraw = false;
+
+	// DX: keep the live aiming trajectory preview in sync with the current cursor/action.
+	updateTargetingPreview();
+
 	ShaderDrawFunc(
 		[](Uint8& dest, Uint8 color)
 		{
@@ -2237,6 +2244,9 @@ void Map::drawTerrain(Surface *surface)
 		}
 	}
 
+	// DX: draw the live aiming trajectory preview on top of the scene.
+	drawTargetingPreview(surface);
+
 	surface->unlock();
 }
 
@@ -2696,6 +2706,10 @@ void Map::setCursorType(CursorType type, int size)
 		_cursorSize = size;
 	else
 		_cursorSize = 1;
+
+	// DX: leaving an aiming cursor discards any live trajectory preview.
+	if (_cursorType != CT_AIM && _cursorType != CT_THROW)
+		clearTargetingPreview();
 }
 
 /**
@@ -2705,6 +2719,155 @@ void Map::setCursorType(CursorType type, int size)
 CursorType Map::getCursorType() const
 {
 	return _cursorType;
+}
+
+/**
+ * Discards the live aiming trajectory preview projectile and resets its rebuild cache.
+ */
+void Map::clearTargetingPreview()
+{
+	delete _targetingProjectile;
+	_targetingProjectile = 0;
+	_previewTarget = Position(-1, -1, -1);
+	_previewActionType = -1;
+	_previewActor = 0;
+}
+
+/**
+ * DX: rebuilds the live aiming trajectory preview for the current fire/throw action and cursor
+ * position. Traces the ideal (undeviated) path - a straight line-of-fire for direct fire, a
+ * parabola for throws/arcing shots - into a dedicated projectile kept out of the in-flight
+ * collection. The trace is only re-run when the aim target, action or actor changes; otherwise the
+ * cached preview is kept. Clears the preview when no fire/throw action is being aimed.
+ */
+void Map::updateTargetingPreview()
+{
+	// Only while a fire/throw action is being aimed, and only if the player enabled the preview.
+	if (!Options::battleTrajectoryPreview
+		|| (_cursorType != CT_AIM && _cursorType != CT_THROW)
+		|| _save->getBattleState()->getMouseOverIcons())
+	{
+		clearTargetingPreview();
+		return;
+	}
+
+	BattleAction *action = _save->getBattleGame()->getCurrentAction();
+	if (!action || !action->actor || !action->weapon)
+	{
+		clearTargetingPreview();
+		return;
+	}
+
+	Position target(_selectorX, _selectorY, _camera->getViewLevel());
+	Tile *targetTile = _save->getTile(target);
+	if (!targetTile)
+	{
+		clearTargetingPreview();
+		return;
+	}
+
+	// Rebuild only when the aim target, action or actor changes (the voxel trace isn't free).
+	if (_targetingProjectile
+		&& target == _previewTarget
+		&& action->type == _previewActionType
+		&& (void*)action->actor == _previewActor)
+	{
+		return;
+	}
+	clearTargetingPreview();
+	_previewTarget = target;
+	_previewActionType = action->type;
+	_previewActor = (void*)action->actor;
+
+	// Work on a copy so off-centre origin resolution never mutates the live action.
+	BattleAction previewAction = *action;
+	previewAction.target = target;
+
+	Position origin = previewAction.actor->getPosition();
+	bool isThrow = (previewAction.type == BA_THROW);
+	bool isArc = isThrow || previewAction.weapon->getArcingShot(previewAction.type);
+
+	// Direct fire and arcing shots need ammo (the Projectile ctor asserts it); a pure throw doesn't.
+	BattleItem *ammo = isThrow ? nullptr : previewAction.weapon->getAmmoForAction(previewAction.type);
+	if (!isThrow && !ammo)
+	{
+		// empty weapon: nothing to preview
+		return;
+	}
+
+	Position targetVoxel(0, 0, 0);
+	if (!isArc)
+	{
+		// resolve the same aim voxel the real shot would use (no obstacle highlighting for a preview)
+		if (!_save->getTileEngine()->resolveFireTargetVoxel(previewAction, origin, false, &targetVoxel))
+		{
+			// no line of fire to the target: nothing meaningful to draw
+			return;
+		}
+	}
+
+	Projectile *proj = new Projectile(_game->getMod(), _save, previewAction, origin, targetVoxel, ammo);
+	int impact = isArc ? proj->calculateThrow(1.0, true) : proj->calculatePreviewTrajectory();
+
+	// A parabola that found no valid arc has nothing to draw. A direct-fire ray always yields a
+	// path - it flies to the first obstacle or on to the map edge, exactly like a real shot into
+	// empty air - so only discard it when the trace produced no points at all.
+	bool valid = isArc ? (impact != V_OUTOFBOUNDS) : true;
+	if (!valid || proj->getTrajectory().empty())
+	{
+		delete proj;
+		return;
+	}
+	_targetingProjectile = proj;
+}
+
+/**
+ * DX: draws the live aiming trajectory preview - tracer dots spaced along the predicted path with a
+ * distinct marker at the impact point. Drawn as a top pass so a lobbed throwing arc that rises above
+ * the current view level is not hidden under higher floors.
+ */
+void Map::drawTargetingPreview(Surface *surface)
+{
+	if (!_targetingProjectile || !_projectileSet)
+	{
+		return;
+	}
+
+	const std::vector<Position>& trajectory = _targetingProjectile->getTrajectory();
+	if (trajectory.empty())
+	{
+		return;
+	}
+
+	// Use a single fixed standard tracer for every preview (regardless of weapon or throw), so the
+	// line always reads the same. The Projectiles frame is mod-configurable via the "constants"
+	// ruleset key trajectoryPreviewSprite (default frame 35, the rifle-type base bullet). Comes from
+	// _projectileSet so it stays depth-correct for TFTD's underwater projectiles.
+	Surface *tracer = _projectileSet->getFrame(Mod::TRAJECTORY_PREVIEW_SPRITE);
+	if (!tracer)
+	{
+		return;
+	}
+
+	const int stride = 5; // one tracer dot every few voxel steps, so it reads as a dotted line
+	const int last = (int)trajectory.size() - 1;
+	Position screen;
+	for (int i = 0; i < last; i += stride)
+	{
+		_camera->convertVoxelToScreen(trajectory[i], &screen);
+		Surface::blitRaw(surface, tracer, screen.x - tracer->getWidth() / 2, screen.y - tracer->getHeight() / 2, 0, false, _nvColor);
+	}
+
+	// Impact marker at the end of the path: the engine's hit sprite (HIT.PCK, used for both UFO and
+	// TFTD hit rendering), falling back to the tracer if the set is missing.
+	_camera->convertVoxelToScreen(trajectory[last], &screen);
+	SurfaceSet *hitSet = _game->getMod()->getSurfaceSet("HIT.PCK");
+	Surface *impact = hitSet ? hitSet->getFrame(0) : nullptr;
+	if (!impact)
+	{
+		impact = tracer;
+	}
+	Surface::blitRaw(surface, impact, screen.x - impact->getWidth() / 2, screen.y - impact->getHeight() / 2, 0, false, _nvColor);
 }
 
 /**

@@ -2447,6 +2447,104 @@ bool TileEngine::canTargetTile(Position *originVoxel, Tile *tile, int part, Posi
 }
 
 /**
+ * Resolves the voxel a direct (non-arcing, non-launch) shot should aim at, using the
+ * unit-center -> object -> walls -> floor priority (falling back to tile center). This is the
+ * same selection ProjectileFlyBState uses when firing; it is factored out here so the live
+ * trajectory preview can trace the exact same aim voxel as the real shot.
+ *
+ * May adjust action.relativeOrigin when off-centre shooting retries are needed (callers that must
+ * not mutate the real action should pass a copy). Obstacle highlighting is only performed when
+ * rememberObstacles is true.
+ *
+ * @param action The firing action (actor, target, weapon).
+ * @param origin The shooter's tile position.
+ * @param rememberObstacles Whether canTarget* should mark obstacles for the drawing pass.
+ * @param targetVoxel [out] The resolved aim voxel (set to invalid when no line of fire is found).
+ * @return True if a line of fire to a real target was found; false when none exists.
+ */
+bool TileEngine::resolveFireTargetVoxel(BattleAction &action, Position origin, bool rememberObstacles, Position *targetVoxel)
+{
+	Tile *targetTile = _save->getTile(action.target);
+	BattleUnit *unit = action.actor;
+	Position originVoxel = getOriginVoxel(action, _save->getTile(origin));
+
+	if (targetTile->getUnit() &&
+		((unit->getFaction() != FACTION_PLAYER) ||
+		targetTile->getUnit()->getVisible()))
+	{
+		if (origin == action.target || targetTile->getUnit() == unit)
+		{
+			// don't shoot at yourself but shoot at the floor
+			*targetVoxel = action.target.toVoxel() + Position(8, 8, 0);
+		}
+		else
+		{
+			bool foundLoF = canTargetUnit(&originVoxel, targetTile, targetVoxel, unit, rememberObstacles);
+
+			if (!foundLoF && Options::oxceEnableOffCentreShooting)
+			{
+				// If we can't target from the standard shooting position, try a bit left and right from the centre.
+				for (auto& rel_pos : { BattleActionOrigin::LEFT, BattleActionOrigin::RIGHT })
+				{
+					action.relativeOrigin = rel_pos;
+					originVoxel = getOriginVoxel(action, _save->getTile(origin));
+					foundLoF = canTargetUnit(&originVoxel, targetTile, targetVoxel, unit, rememberObstacles);
+					if (foundLoF)
+					{
+						break;
+					}
+				}
+			}
+
+			if (!foundLoF)
+			{
+				// Failed to find LOF
+				action.relativeOrigin = BattleActionOrigin::CENTRE; // reset to the normal origin
+				*targetVoxel = TileEngine::invalid.toVoxel(); // out of bounds, even after voxel to tile calculation.
+				return false;
+			}
+		}
+	}
+	else if (targetTile->getMapData(O_OBJECT) != 0)
+	{
+		if (!canTargetTile(&originVoxel, targetTile, O_OBJECT, targetVoxel, unit, rememberObstacles))
+		{
+			*targetVoxel = action.target.toVoxel() + Position(8, 8, 10);
+		}
+	}
+	else if (targetTile->getMapData(O_NORTHWALL) != 0)
+	{
+		if (!canTargetTile(&originVoxel, targetTile, O_NORTHWALL, targetVoxel, unit, rememberObstacles))
+		{
+			*targetVoxel = action.target.toVoxel() + Position(8, 0, 9);
+		}
+	}
+	else if (targetTile->getMapData(O_WESTWALL) != 0)
+	{
+		if (!canTargetTile(&originVoxel, targetTile, O_WESTWALL, targetVoxel, unit, rememberObstacles))
+		{
+			*targetVoxel = action.target.toVoxel() + Position(0, 8, 9);
+		}
+	}
+	else if (targetTile->getMapData(O_FLOOR) != 0)
+	{
+		if (!canTargetTile(&originVoxel, targetTile, O_FLOOR, targetVoxel, unit, rememberObstacles))
+		{
+			*targetVoxel = action.target.toVoxel() + Position(8, 8, 2);
+		}
+	}
+	else
+	{
+		// dummy attempt (only to highlight obstacles)
+		canTargetTile(&originVoxel, targetTile, MapData::O_DUMMY, targetVoxel, unit, rememberObstacles);
+
+		// target nothing, targets the middle of the tile
+		*targetVoxel = action.target.toVoxel() + TileEngine::voxelTileCenter;
+	}
+	return true;
+}
+
+/**
  * Calculates line of sight of a soldiers within range of the Position
  * (used when terrain has changed, which can reveal new parts of terrain or units).
  * @param position Position of the changed terrain.

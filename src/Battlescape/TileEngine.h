@@ -269,6 +269,8 @@ public:
 	bool canTargetUnit(Position *originVoxel, Tile *tile, Position *scanVoxel, BattleUnit *excludeUnit, bool rememberObstacles, BattleUnit *potentialUnit = 0);
 	/// Check validity for targetting a tile.
 	bool canTargetTile(Position *originVoxel, Tile *tile, int part, Position *scanVoxel, BattleUnit *excludeUnit, bool rememberObstacles);
+	/// Resolves the aim voxel for a direct (non-arcing) shot (unit->object->walls->floor priority); returns false if no line of fire.
+	bool resolveFireTargetVoxel(BattleAction &action, Position origin, bool rememberObstacles, Position *targetVoxel);
 	/// Calculates the z voxel for shadows.
 	int castedShade(Position voxel);
 	/// Checks the visibility of a given voxel.

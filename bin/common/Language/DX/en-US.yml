@@ -44,6 +44,7 @@ en-US:
 #=================== DX On-Map Overlays ===================
 #Options.cpp
   STR_HOVERED_UNIT_NAME: "Hovered unit name"
+  STR_TRAJECTORY_PREVIEW: "Aim trajectory preview"
   STR_GRENADE_INDICATOR: "Primed grenade indicator"
   STR_UNIT_STATUS_INDICATOR: "Unit status indicators"
   STR_MOTION_DETECTOR_OVERLAY: "Motion detector readings on map"

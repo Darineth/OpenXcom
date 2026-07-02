@@ -70,7 +70,9 @@ public:
 	int calculateTrajectory(double accuracy);
 	int calculateTrajectory(double accuracy, const Position& originVoxel, bool excludeUnit = true);
 	/// Calculates the trajectory for a curved path.
-	int calculateThrow(double accuracy);
+	int calculateThrow(double accuracy, bool ignoreAccuracy = false);
+	/// Traces the ideal (undeviated) straight line-of-fire for the aiming preview and stores it.
+	int calculatePreviewTrajectory();
 	/// Re-traces a straight trajectory against the current terrain (e.g. after a prior impact destroyed an obstacle); returns true if the path now extends further.
 	bool recalculateImpact();
 	/// Moves the projectile one step in its trajectory.
@@ -81,6 +83,8 @@ public:
 	LastPositions getLastPositions(int offset = 0) const { return LastPositions(getPosition(offset), getPosition(offset + ItemDropVoxelOffset)); }
 	/// Gets the impact position from the precomputed trajectory (valid right after calculateTrajectory/Throw).
 	Position getImpactPosition(int offset = 0) const { return getPositionFromEnd(_trajectory, offset); }
+	/// Gets the full precomputed voxel trajectory (used to draw the aiming preview).
+	const std::vector<Position>& getTrajectory() const { return _trajectory; }
 	/// Gets a particle from the particle array.
 	int getParticle(int i) const;
 	/// Gets the item.

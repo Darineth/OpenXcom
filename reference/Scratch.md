@@ -1,4 +1,8 @@
 # TODO
+- Fix offscreen/pre-battle events appearing in combat log
+
+# TFTD
+- Unit stats colors are wrong in inventory
 
 # Terror Defense Future Notes
 

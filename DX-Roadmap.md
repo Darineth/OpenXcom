@@ -263,7 +263,9 @@ Everything below is DX-specific work confirmed **absent** from the base.
   with spread, each resolving its own impact via the async projectile system.
 - [ ] **Dual-Fire** — simultaneous projectile spawning from both hands. *(needs
   async projectile + aim-cone; shotgun pellet flight/spread already implemented)*
-- [ ] **Live Trajectory Preview** — tracer sprites. *(coupled UI — needs aim-cone)*
+- [x] **Live Trajectory Preview** — tracer sprites for the predicted line-of-fire / throw arc while
+  aiming (ideal-path preview, shipped independently of the aim-cone). *(design:
+  [plans/Feature-LiveTrajectoryPreview.md](plans/Feature-LiveTrajectoryPreview.md))*
 - [ ] **Hover Accuracy Readout** — color-graded percentage + distance. *(coupled UI — needs aim-cone)*
 - [ ] **Throw Reach Scaling** — strength vs weight readout/scaling. *(coupled UI — needs aim-cone)*
 - [ ] **Action-menu effective-range readout** — the deferred Phase 1 piece. *(needs

@@ -85,8 +85,8 @@ items:
   - type: STR_RIFLE
     fireInterval: 60       # DX: very fast cadence to keep several rounds visible at once
     # --- Aimed ---
-    accuracyAimed: 110
-    tuAimed: 80
+    accuracyAimed: 200     # DX: Aimed fire is (almost) perfect accuracy and cheap for testing projectile trajectory
+    tuAimed: 10
     aimRange: 200
     # --- Snap ---
     accuracySnap: 60

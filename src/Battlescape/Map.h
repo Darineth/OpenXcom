@@ -110,8 +110,21 @@ private:
 	Text *_txtAccuracy;
 	Text *_txtUnitName;
 	SurfaceSet *_projectileSet;
+	// DX: live aiming trajectory preview - a dedicated projectile (kept out of the in-flight
+	// _projectiles collection) whose stored ideal trajectory is drawn as tracer sprites while a
+	// fire/throw action is being targeted. Rebuilt only when the aim target/action changes.
+	Projectile *_targetingProjectile;
+	Position _previewTarget;
+	int _previewActionType;
+	void *_previewActor;
 
 	void drawUnit(UnitSprite &unitSprite, Tile *unitTile, Tile *currTile, Position tileScreenPosition, bool topLayer, BattleUnit* movingUnit = nullptr);
+	/// Rebuilds the live aiming trajectory preview for the current cursor/action (or clears it).
+	void updateTargetingPreview();
+	/// Discards the live aiming trajectory preview.
+	void clearTargetingPreview();
+	/// Draws the live aiming trajectory preview (tracer dots + impact marker).
+	void drawTargetingPreview(Surface *surface);
 	void drawTerrain(Surface *surface);
 	int getTerrainLevel(const Position& pos, int size) const;
 	int getWallShade(TilePart part, Tile* tileFrot);

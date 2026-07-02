@@ -411,6 +411,7 @@ public:
 	static int EXPLOSION_OFFSET;
 	static int SMOKE_OFFSET;
 	static int UNDERWATER_SMOKE_OFFSET;
+	static int TRAJECTORY_PREVIEW_SPRITE; // DX: Projectiles frame used for the live aiming trajectory preview tracer
 
 	/// Empty surface.
 	constexpr static int NO_SURFACE = -1;

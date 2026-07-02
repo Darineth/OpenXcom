@@ -310,85 +310,10 @@ void ProjectileFlyBState::init()
 		// determine the target voxel.
 		// aim at the center of the unit, the object, the walls or the floor (in that priority)
 		// if there is no LOF to the center, try elsewhere (more outward).
-		// Store this target voxel.
-		Tile *targetTile = _parent->getSave()->getTile(_action.target);
-		Position originVoxel = _parent->getTileEngine()->getOriginVoxel(_action, _parent->getSave()->getTile(_origin));
-		if (targetTile->getUnit() &&
-			((_unit->getFaction() != FACTION_PLAYER) ||
-			targetTile->getUnit()->getVisible()))
+		// Store this target voxel. (Shared with the live trajectory preview - see TileEngine.)
+		if (!_parent->getTileEngine()->resolveFireTargetVoxel(_action, _origin, isPlayer, &_targetVoxel) && isPlayer)
 		{
-			if (_origin == _action.target || targetTile->getUnit() == _unit)
-			{
-				// don't shoot at yourself but shoot at the floor
-				_targetVoxel = _action.target.toVoxel() + Position(8, 8, 0);
-			}
-			else
-			{
-				bool foundLoF = _parent->getTileEngine()->canTargetUnit(&originVoxel, targetTile, &_targetVoxel, _unit, isPlayer);
-
-				if (!foundLoF && Options::oxceEnableOffCentreShooting)
-				{
-					// If we can't target from the standard shooting position, try a bit left and right from the centre.
-					for (auto& rel_pos : { BattleActionOrigin::LEFT, BattleActionOrigin::RIGHT })
-					{
-						_action.relativeOrigin = rel_pos;
-						originVoxel = _parent->getTileEngine()->getOriginVoxel(_action, _parent->getSave()->getTile(_origin));
-						foundLoF = _parent->getTileEngine()->canTargetUnit(&originVoxel, targetTile, &_targetVoxel, _unit, isPlayer);
-						if (foundLoF)
-						{
-							break;
-						}
-					}
-				}
-
-				if (!foundLoF)
-				{
-					// Failed to find LOF
-					_action.relativeOrigin = BattleActionOrigin::CENTRE; // reset to the normal origin
-
-					_targetVoxel = TileEngine::invalid.toVoxel(); // out of bounds, even after voxel to tile calculation.
-					if (isPlayer)
-					{
-						forceEnableObstacles = true;
-					}
-				}
-			}
-		}
-		else if (targetTile->getMapData(O_OBJECT) != 0)
-		{
-			if (!_parent->getTileEngine()->canTargetTile(&originVoxel, targetTile, O_OBJECT, &_targetVoxel, _unit, isPlayer))
-			{
-				_targetVoxel = _action.target.toVoxel() + Position(8, 8, 10);
-			}
-		}
-		else if (targetTile->getMapData(O_NORTHWALL) != 0)
-		{
-			if (!_parent->getTileEngine()->canTargetTile(&originVoxel, targetTile, O_NORTHWALL, &_targetVoxel, _unit, isPlayer))
-			{
-				_targetVoxel = _action.target.toVoxel() + Position(8, 0, 9);
-			}
-		}
-		else if (targetTile->getMapData(O_WESTWALL) != 0)
-		{
-			if (!_parent->getTileEngine()->canTargetTile(&originVoxel, targetTile, O_WESTWALL, &_targetVoxel, _unit, isPlayer))
-			{
-				_targetVoxel = _action.target.toVoxel() + Position(0, 8, 9);
-			}
-		}
-		else if (targetTile->getMapData(O_FLOOR) != 0)
-		{
-			if (!_parent->getTileEngine()->canTargetTile(&originVoxel, targetTile, O_FLOOR, &_targetVoxel, _unit, isPlayer))
-			{
-				_targetVoxel = _action.target.toVoxel() + Position(8, 8, 2);
-			}
-		}
-		else
-		{
-			// dummy attempt (only to highlight obstacles)
-			_parent->getTileEngine()->canTargetTile(&originVoxel, targetTile, MapData::O_DUMMY, &_targetVoxel, _unit, isPlayer);
-
-			// target nothing, targets the middle of the tile
-			_targetVoxel = _action.target.toVoxel() + TileEngine::voxelTileCenter;
+			forceEnableObstacles = true;
 		}
 	}
 

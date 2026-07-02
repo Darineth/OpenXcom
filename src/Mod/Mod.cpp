@@ -161,6 +161,7 @@ int Mod::LARGE_EXPLOSION;
 int Mod::EXPLOSION_OFFSET;
 int Mod::SMOKE_OFFSET;
 int Mod::UNDERWATER_SMOKE_OFFSET;
+int Mod::TRAJECTORY_PREVIEW_SPRITE;
 int Mod::ITEM_DROP;
 int Mod::ITEM_THROW;
 int Mod::ITEM_RELOAD;
@@ -229,6 +230,7 @@ void Mod::resetGlobalStatics()
 	EXPLOSION_OFFSET = 0;
 	SMOKE_OFFSET = 8;
 	UNDERWATER_SMOKE_OFFSET = 0;
+	TRAJECTORY_PREVIEW_SPRITE = 35; // Projectiles frame index (rifle-type base bullet)
 	ITEM_DROP = 38;
 	ITEM_THROW = 39;
 	ITEM_RELOAD = 17;
@@ -2741,6 +2743,7 @@ void Mod::loadConstants(const YAML::YamlNodeReader &reader)
 	loadSpriteOffset("constants", EXPLOSION_OFFSET, reader["explosionOffset"], "X1.PCK");
 	loadSpriteOffset("constants", SMOKE_OFFSET, reader["smokeOffset"], "SMOKE.PCK");
 	loadSpriteOffset("constants", UNDERWATER_SMOKE_OFFSET, reader["underwaterSmokeOffset"], "SMOKE.PCK");
+	loadSpriteOffset("constants", TRAJECTORY_PREVIEW_SPRITE, reader["trajectoryPreviewSprite"], "Projectiles");
 
 	loadSoundOffset("constants", ITEM_DROP, reader["itemDrop"], "BATTLE.CAT");
 	loadSoundOffset("constants", ITEM_THROW, reader["itemThrow"], "BATTLE.CAT");
