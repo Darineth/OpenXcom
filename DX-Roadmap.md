@@ -248,6 +248,7 @@ Everything below is DX-specific work confirmed **absent** from the base.
 *Goal: The aim-cone shooting model and its shot modes.*
 
 - [ ] **Aim-Cone Trajectory Model** — soldier + weapon deflection cones, stacking error.
+  *(design: [plans/Feature-AimConeTrajectory.md](plans/Feature-AimConeTrajectory.md))*
   - [ ] 3D direction-vector cone for direct fire
   - [ ] Soldier deflection cone (Gaussian/normal distribution)
   - [ ] Weapon deflection cone (independent of soldier)
