@@ -76,12 +76,16 @@ CraftEquipmentState::CraftEquipmentState(Base *base, size_t craft) :
 	// Create objects
 	_window = new Window(this, 320, 200, 0, 0);
 	_btnQuickSearch = new TextEdit(this, 48, 9, Options::oxceBaseTouchButtons ? 10 : 264, Options::oxceBaseTouchButtons ? 13 : 12);
-	_btnOk = new TextButton((craftHasACrew || _isNewBattle)?30:140, 16, (craftHasACrew || _isNewBattle)?274:164, 176);
-	// In New Battle the row holds Inventory + Unload Craft + Fill, so it is laid out tighter
-	// (narrower filter combo below) than the normal single wide-button layout.
-	_btnClear = new TextButton(78, 16, 162, 176);
-	_btnFill = new TextButton(30, 16, 242, 176);
-	_btnInventory = new TextButton(_isNewBattle ? 62 : 102, 16, _isNewBattle ? 98 : 164, 176);
+	// The bottom button row is widened toward the x312 edge so the loadout Save/Load buttons fit
+	// alongside the existing controls. Save/Load/OK occupy the same fixed right-aligned slots in every
+	// context; the left portion (filter combo + Inventory, plus the New-Battle-only Unload + Fill stock
+	// buttons) flexes to fill the remaining space.
+	_btnOk = new TextButton(30, 16, 282, 176);
+	_btnSave = new TextButton(30, 16, 218, 176);
+	_btnLoad = new TextButton(30, 16, 250, 176);
+	_btnClear = new TextButton(42, 16, 142, 176);
+	_btnFill = new TextButton(30, 16, 186, 176);
+	_btnInventory = new TextButton(_isNewBattle ? 56 : 88, 16, _isNewBattle ? 84 : 128, 176);
 	_txtTitle = new Text(300, 17, 16, 7);
 	_txtItem = new Text(144, 9, 16, 32);
 	_txtStores = new Text(150, 9, 160, 32);
@@ -89,7 +93,7 @@ CraftEquipmentState::CraftEquipmentState(Base *base, size_t craft) :
 	_txtUsed = new Text(110, 9, 130, 24);
 	_txtCrew = new Text(71, 9, 244, 24);
 	_lstEquipment = new TextList(288, 128, 8, 40);
-	_cbxFilterBy = new ComboBox(this, _isNewBattle ? 80 : 140, 16, 16, 176, true);
+	_cbxFilterBy = new ComboBox(this, _isNewBattle ? 66 : (craftHasACrew ? 110 : 200), 16, 16, 176, true);
 
 	touchComponentsCreate(_txtTitle);
 
@@ -103,6 +107,8 @@ CraftEquipmentState::CraftEquipmentState(Base *base, size_t craft) :
 	add(_btnOk, "button", "craftEquipment");
 	add(_btnClear, "button", "craftEquipment");
 	add(_btnFill, "button", "craftEquipment");
+	add(_btnSave, "button", "craftEquipment");
+	add(_btnLoad, "button", "craftEquipment");
 	add(_btnInventory, "button", "craftEquipment");
 	add(_txtTitle, "text", "craftEquipment");
 	add(_txtItem, "text", "craftEquipment");
@@ -136,6 +142,15 @@ CraftEquipmentState::CraftEquipmentState(Base *base, size_t craft) :
 	_btnFill->setText(tr("STR_DX_CRAFT_FILL"));
 	_btnFill->onMouseClick((ActionHandler)&CraftEquipmentState::btnFillClick);
 	_btnFill->setVisible(_isNewBattle);
+
+	// Visible entry points for the craft loadout templates (also reachable via the F5/F9 hotkeys
+	// on _btnOk below). Shown in every context -- New Battle has a live SavedGame, so save/load work
+	// there too (within the session).
+	_btnSave->setText(tr("STR_DX_CRAFT_LOADOUT_SAVE"));
+	_btnSave->onMouseClick((ActionHandler)&CraftEquipmentState::btnSaveClick);
+
+	_btnLoad->setText(tr("STR_DX_CRAFT_LOADOUT_LOAD"));
+	_btnLoad->onMouseClick((ActionHandler)&CraftEquipmentState::btnLoadClick);
 
 	_btnInventory->setText(tr("STR_INVENTORY"));
 	_btnInventory->onMouseClick((ActionHandler)&CraftEquipmentState::btnInventoryClick);
@@ -1204,7 +1219,8 @@ void CraftEquipmentState::btnLoadClick(Action *)
 */
 void CraftEquipmentState::btnSaveClick(Action *)
 {
-	if (!_isNewBattle)
+	// New Battle has a live (in-memory) SavedGame, so saving a template works within the session
+	// (it just isn't persisted after New Battle ends) -- matches btnLoadClick being available too.
 	{
 		_game->pushState(new CraftEquipmentSaveState(this));
 		_returningFromGlobalTemplates = true;

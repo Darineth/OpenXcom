@@ -41,7 +41,7 @@ class Base;
 class CraftEquipmentState : public TouchState
 {
 private:
-	TextButton *_btnOk, *_btnClear, *_btnInventory, *_btnFill;
+	TextButton *_btnOk, *_btnClear, *_btnInventory, *_btnFill, *_btnSave, *_btnLoad;
 	TextEdit *_btnQuickSearch;
 	Window *_window;
 	Text *_txtTitle, *_txtItem, *_txtStores, *_txtAvailable, *_txtUsed, *_txtCrew;

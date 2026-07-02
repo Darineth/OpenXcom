@@ -744,6 +744,26 @@ void saveVector(YAML::YamlNodeWriter& writer, const std::vector<T*>& vector, con
 		item->save(sequenceWriter.write(), args...);
 }
 
+void SavedGame::saveTemplates(YAML::YamlNodeWriter writer) const
+{
+	for (int j = 0; j < Options::oxceMaxEquipmentLayoutTemplates; ++j)
+	{
+		if (!_globalEquipmentLayout[j].empty())
+			saveVector(writer, _globalEquipmentLayout[j], writer.saveString("globalEquipmentLayout" + std::to_string(j)));
+		if (!_globalEquipmentLayoutName[j].empty())
+			writer.write(writer.saveString("globalEquipmentLayoutName" + std::to_string(j)), _globalEquipmentLayoutName[j]);
+		if (!_globalEquipmentLayoutArmor[j].empty())
+			writer.write(writer.saveString("globalEquipmentLayoutArmor" + std::to_string(j)), _globalEquipmentLayoutArmor[j]);
+	}
+	for (int j = 0; j < MAX_CRAFT_LOADOUT_TEMPLATES; ++j)
+	{
+		if (!_globalCraftLoadout[j]->getContents()->empty())
+			_globalCraftLoadout[j]->save(writer[writer.saveString("globalCraftLoadout" + std::to_string(j))]);
+		if (!_globalCraftLoadoutName[j].empty())
+			writer.write(writer.saveString("globalCraftLoadoutName" + std::to_string(j)), _globalCraftLoadoutName[j]);
+	}
+}
+
 /**
  * Saves a saved game's contents to a YAML file.
  * @param filename YAML filename.
@@ -857,22 +877,7 @@ void SavedGame::save(const std::string &filename, Mod *mod) const
 	_alienStrategy->save(writer["alienStrategy"]);
 
 	saveVector(writer, _deadSoldiers, "deadSoldiers", mod->getScriptGlobal());
-	for (int j = 0; j < Options::oxceMaxEquipmentLayoutTemplates; ++j)
-	{
-		if (!_globalEquipmentLayout[j].empty())
-			saveVector(writer, _globalEquipmentLayout[j], writer.saveString("globalEquipmentLayout" + std::to_string(j)));
-		if (!_globalEquipmentLayoutName[j].empty())
-			writer.write(writer.saveString("globalEquipmentLayoutName" + std::to_string(j)), _globalEquipmentLayoutName[j]);
-		if (!_globalEquipmentLayoutArmor[j].empty())
-			writer.write(writer.saveString("globalEquipmentLayoutArmor" + std::to_string(j)), _globalEquipmentLayoutArmor[j]);
-	}
-	for (int j = 0; j < MAX_CRAFT_LOADOUT_TEMPLATES; ++j)
-	{
-		if (!_globalCraftLoadout[j]->getContents()->empty())
-			_globalCraftLoadout[j]->save(writer[writer.saveString("globalCraftLoadout" + std::to_string(j))]);
-		if (!_globalCraftLoadoutName[j].empty())
-			writer.write(writer.saveString("globalCraftLoadoutName" + std::to_string(j)), _globalCraftLoadoutName[j]);
-	}
+	saveTemplates(writer);
 	if (Options::soldierDiaries)
 		saveVector(writer, _missionStatistics, "missionStatistics");
 

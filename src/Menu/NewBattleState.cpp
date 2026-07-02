@@ -388,6 +388,7 @@ void NewBattleState::init()
 void NewBattleState::load(const std::string &filename)
 {
 	std::string s = Options::getMasterUserFolder() + filename + ".cfg";
+	bool templatesLoaded = false;
 	if (!CrossPlatform::fileExists(s))
 	{
 		initSave();
@@ -447,6 +448,14 @@ void NewBattleState::load(const std::string &filename)
 				}
 
 				_game->setSavedGame(save);
+
+				// Restore loadout templates saved during a previous New Battle session (both the
+				// craft loadouts and the soldier equipment layouts live in these global templates).
+				if (const auto& savedTemplates = cfgReader["globalTemplates"])
+				{
+					_game->getSavedGame()->loadTemplates(savedTemplates, _game->getMod());
+					templatesLoaded = true;
+				}
 			}
 			else
 			{
@@ -461,9 +470,14 @@ void NewBattleState::load(const std::string &filename)
 	}
 
 	YAML::YamlRootNodeReader starterBaseReader(_game->getMod()->getDefaultStartingBase(), "(starting base template)");
-	if (const auto& globalTemplates = starterBaseReader["globalTemplates"])
+	// Only seed templates from the mod's starting base when the New Battle .cfg didn't already
+	// restore them, so user-saved templates aren't overwritten by (or duplicated with) the defaults.
+	if (!templatesLoaded)
 	{
-		_game->getSavedGame()->loadTemplates(globalTemplates, _game->getMod());
+		if (const auto& globalTemplates = starterBaseReader["globalTemplates"])
+		{
+			_game->getSavedGame()->loadTemplates(globalTemplates, _game->getMod());
+		}
 	}
 	if (const auto& ufopediaRuleStatus = starterBaseReader["ufopediaRuleStatus"])
 	{
@@ -489,6 +503,11 @@ void NewBattleState::save(const std::string &filename)
 	writer.write("difficulty", _cbxDifficulty->getSelected());
 	writer.write("alienTech", _slrAlienTech->getValue());
 	_game->getSavedGame()->getBases()->front()->save(writer["base"]);
+
+	// Persist loadout templates so craft/equipment templates created in New Battle survive a restart.
+	auto templatesWriter = writer["globalTemplates"];
+	templatesWriter.setAsMap();
+	_game->getSavedGame()->saveTemplates(templatesWriter);
 
 	std::string filepath = Options::getMasterUserFolder() + filename + ".cfg";
 	if (!CrossPlatform::writeFile(filepath, writer.emit().yaml))

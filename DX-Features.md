@@ -237,6 +237,24 @@ In New Battle, the **Equip Craft → Equipment** screen gains a **Fill** button 
 Both buttons appear only in New Battle, where the loadout is a sandbox — the real geoscape craft
 screen, bound by base storage and the economy, is unaffected.
 
+## Craft Loadout Save/Load Buttons
+
+The craft equipment screen's **loadout templates** (10 named slots that store a whole craft's item
+loadout) now have visible **Save** and **Load** buttons in the bottom button row, on both the geoscape
+**Equip Craft → Equipment** screen and the New Battle version. Previously this feature was reachable
+only via hidden hotkeys (`keyCraftLoadoutSave` / `keyCraftLoadoutLoad`, default **F5** / **F9**), which
+remain bound.
+
+- **Save** stores the craft's current loadout to a named template slot.
+- **Load** applies a saved template to the craft.
+- Both work in **New Battle** too. New Battle now **persists** its loadout templates (the craft
+  loadouts *and* the soldier equipment layouts) in its `.cfg`, so templates you create there survive
+  exiting and restarting New Battle — previously they were discarded. Existing New-Battle configs
+  without saved templates fall back to the mod's starting-base defaults.
+
+(DX prefers surfacing features as discoverable on-screen controls rather than hotkey-only. The
+"Unload" button was narrowed to make room; its label is unchanged.)
+
 ## Contextual Inventory Info Panel
 
 Hovering an item in the inventory replaces the soldier stat panel with information about that item, in

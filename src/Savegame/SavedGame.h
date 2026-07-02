@@ -193,6 +193,8 @@ public:
 	void load(const std::string &filename, Mod *mod, Language *lang);
 	void loadTemplates(const YAML::YamlNodeReader& reader, const Mod* mod);
 	void loadUfopediaRuleStatus(const YAML::YamlNodeReader& reader);
+	/// Saves the global equipment/craft loadout templates into the given (map) node.
+	void saveTemplates(YAML::YamlNodeWriter writer) const;
 	/// Saves a saved game to YAML.
 	void save(const std::string &filename, Mod *mod) const;
 	/// Gets the game name.

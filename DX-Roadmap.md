@@ -52,15 +52,26 @@ treat as *verify/configure*, not *implement*:
   `mapPlainDir` uses recursive `ls_r` + `isRuleset`, so `.rul` files load from any
   subdirectory of a mod. → No work needed.
 
-**OXCE+ integration — remaining deltas to verify (not yet confirmed done):**
+**OXCE+ integration — remaining deltas verified (audit Jun 2026):**
 
-- [ ] **UFO mission retreat** — UFO abandon/retreat based on damage taken. Confirm whether
-  OXCE-Plus already models this before scheduling work.
-- [ ] **Craft equipment templates** — Phase 2 confirmed craft *loadout* templates (10 slots)
-  in OXCE-Plus; verify this is the same feature and not a separate gap.
-- [ ] **`RuleDamageType` / `ModScript` hooks** — core OXCE scripting is present; the DX
-  **Editable Damage Types** feature (see New Features) added the `damageTypes:` node. Confirm
-  nothing further is needed here.
+- [x] **UFO mission retreat** — *already in OXCE-Plus.* Damage-driven dogfight escape is present:
+  a per-UFO `breakOffTime` escape countdown (`RuleUfo`), plus a damage-threshold abort — a UFO past
+  `damageMax/3` (>33%) breaks off unless the player craft is more damaged, maximizes speed to flee,
+  and hunter-killers revert to their original destination ([DogfightState.cpp:985-1018](src/Geoscape/DogfightState.cpp#L985-L1018)).
+  Crash at >50% (`Ufo::isCrashed`) / destroyed at 100% (`Ufo::isDestroyed`) thresholds also apply
+  ([Ufo.cpp:590-613](src/Savegame/Ufo.cpp#L590-L613)); `huntBehavior == 1` kamikaze UFOs ignore
+  damage escape. No ground-battle UFO takeoff exists, but that was never planned. → No work needed.
+- [x] **Craft equipment templates** — *already in OXCE-Plus, same feature.* 10 named per-craft
+  loadout slots (`MAX_CRAFT_LOADOUT_TEMPLATES`), each an `ItemContainer` of item type→qty (incl.
+  HWPs), saved to the game (`globalCraftLoadout0..9` + names) via `CraftEquipmentSaveState`/
+  `CraftEquipmentLoadState` with `keyInvCreateTemplate`/`keyInvApplyTemplate` and numbered quick-slots.
+  Identical to the planned feature; not a separate gap. → No work needed.
+- [x] **`RuleDamageType` / `ModScript` hooks** — *complete; nothing further needed.* The DX
+  **Editable Damage Types** feature (see New Features) added the global `damageTypes:` node covering
+  all `RuleDamageType` fields, applied in a load-order-independent pre-pass. The full OXCE ModScript
+  engine is present with damage-path hooks (`damageUnit`, `damageUnitAmmo`, `damageSpecialUnit`,
+  `healUnit`) plus the broad unit/item/bonus-stat hook groups. Damage types are static-by-design
+  (tuned via the ruleset node, not runtime callbacks). → No work needed.
 
 Everything below is DX-specific work confirmed **absent** from the base.
 
@@ -427,3 +438,18 @@ implementation (see CLAUDE.md "Planning Features").*
     ammo/grenade/proximity-grenade/flare and 10 of every other recoverable, non-corpse inventory item,
     then refreshes the list. Existing Unload Craft kept as the clear; bottom row re-laid-out (narrower
     filter combo) to fit Inventory + Unload Craft + Fill + OK. New `STR_DX_CRAFT_FILL` string.
+
+- [x] **Visible craft loadout save/load buttons** — surface the craft equipment template save/load,
+  which OXCE-Plus shipped only as hidden hotkeys (`keyCraftLoadoutSave`/`keyCraftLoadoutLoad`, default
+  F5/F9), as real on-screen buttons on `CraftEquipmentState`. *(DX philosophy: prefer visible,
+  discoverable UI over hidden hotkey-only features. Keep the hotkeys too.)*
+  *(design: [plans/Feature-CraftLoadoutButtons.md](plans/Feature-CraftLoadoutButtons.md))*
+  - ✅ **Done.** Added compact **Save** / **Load** buttons wired to the existing `btnSaveClick`/
+    `btnLoadClick` (→ `CraftEquipmentSaveState`/`CraftEquipmentLoadState`, 10 named slots), shown in both
+    the geoscape and New-Battle screens at fixed right-aligned slots; the row was rebalanced (narrower
+    combo/Inventory, "Unload" button narrowed but text unchanged). Also **un-gated Save in New Battle**
+    (`btnSaveClick` no longer `!_isNewBattle`) since New Battle has a live in-memory `SavedGame`, so
+    save/load work within the session. F5/F9 hotkeys retained. New `STR_DX_CRAFT_LOADOUT_SAVE`/`_LOAD`
+    strings. Also made **New Battle persist its loadout templates** (craft loadouts + soldier equipment
+    layouts) in its `.cfg` — factored `SavedGame::saveTemplates`, wired into `NewBattleState` save/load —
+    so templates created in New Battle survive a restart (previously discarded).

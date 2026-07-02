@@ -127,6 +127,9 @@ en-US:
   STR_INVALID_TRANSFER: "You can't move the item there."
 #CraftEquipmentState.cpp - New Battle quick stock button
   STR_DX_CRAFT_FILL: "Fill"
+#CraftEquipmentState.cpp - visible craft loadout template save/load buttons
+  STR_DX_CRAFT_LOADOUT_SAVE: "Save"
+  STR_DX_CRAFT_LOADOUT_LOAD: "Load"
 #=================== DX Geoscape Activity Display ===================
 #GeoscapeState.cpp / Options.cpp
   STR_ACTIVITY_DISPLAY: "Geoscape activity display"
