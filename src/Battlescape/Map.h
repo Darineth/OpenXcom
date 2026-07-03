@@ -99,6 +99,7 @@ private:
 	int _cacheHitChanceCtrl; // -1 = unknown, else 0/1
 	const void* _cacheHitChanceWeapon;
 	int _cacheHitChanceActionType;
+	int _cacheHitChanceKneeled; // -1 = unknown, else 0/1 (stance affects muzzle height + accuracy)
 	int _animFrame;
 	std::vector<Projectile*> _projectiles;
 	bool _followProjectile;

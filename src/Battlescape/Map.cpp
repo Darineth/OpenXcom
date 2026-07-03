@@ -197,6 +197,7 @@ Map::Map(Game *game, int width, int height, int x, int y, int visibleMapHeight) 
 	_cacheHitChanceCtrl = -1;
 	_cacheHitChanceWeapon = nullptr;
 	_cacheHitChanceActionType = -1;
+	_cacheHitChanceKneeled = -1;
 
 	_nightVisionOn = false;
 	if (Options::oxceToggleNightVisionType == 2)
@@ -1736,11 +1737,13 @@ void Map::drawTerrain(Surface *surface)
 									// recompute only when the aim changes (cursor tile / ctrl / weapon / action).
 									int chance;
 									Position cursorPos(itX, itY, itZ);
+									int kneeled = (action->actor && action->actor->isKneeled()) ? 1 : 0;
 									if (_cacheHitChance != -1
 										&& cursorPos == _cacheHitChancePosition
 										&& (_isCtrlPressed ? 1 : 0) == _cacheHitChanceCtrl
 										&& action->weapon == _cacheHitChanceWeapon
-										&& (int)action->type == _cacheHitChanceActionType)
+										&& (int)action->type == _cacheHitChanceActionType
+										&& kneeled == _cacheHitChanceKneeled)
 									{
 										chance = _cacheHitChance;
 									}
@@ -1754,6 +1757,7 @@ void Map::drawTerrain(Surface *surface)
 										_cacheHitChanceCtrl = _isCtrlPressed ? 1 : 0;
 										_cacheHitChanceWeapon = action->weapon;
 										_cacheHitChanceActionType = (int)action->type;
+										_cacheHitChanceKneeled = kneeled;
 									}
 
 									// color-grade the readout red -> yellow -> green by hit chance
