@@ -1,8 +1,26 @@
 # Feature: Aim-Cone Trajectory Model
 
-**Status:** Planned (Phase 5 — Firing & Accuracy). Not yet implemented; the current engine still
-uses the native OXCE scatter-the-aimpoint model described below. **Design review complete
-(Jul 2026)** — all open questions resolved; see *Resolved design decisions* at the bottom.
+**Status:** **Implemented (Jul 2026)** — core model shipped per the *Resolved design decisions*
+below; pending in-game validation. The supporting UI calculators (effective-range readout, hover
+hit-chance) are separate Phase 5 items and are **not** implemented yet.
+
+**Implementation notes (what shipped, and where):**
+- `RuleItem::_baseAccuracy` (`baseAccuracy` ruleset key, default `0`) — the opt-in sentinel;
+  shown in Stats for Nerds ([RuleItem.cpp](../src/Mod/RuleItem.cpp)).
+- `RNG::boxMuller(mean, stddev)` — Box–Muller Gaussian sampler on the seeded battle stream
+  ([RNG.cpp](../src/Engine/RNG.cpp)).
+- `Projectile::useAimCone()` / `applyAimCone()` — the model itself; tuning constants with full
+  provenance comments at the top of [Projectile.cpp](../src/Battlescape/Projectile.cpp), the
+  deflection helpers (`sampleConeAngle`, `rotateVectorRandomly`, `AimVector`) alongside.
+  `calculateTrajectory` branches to it; the deflected ray's max-range endpoint is stored in
+  `_targetVoxel` so `recalculateImpact()` works unchanged. The no-LOS check was factored into
+  `getNoLOSAccuracyPenaltyFactor()`, shared by both paths (native behavior preserved
+  bit-identically via a `!= 100` guard).
+- Shotgun volley sharing via `Projectile::set/getConeTrueAim()`; the pellet loop in
+  [ProjectileFlyBState.cpp](../src/Battlescape/ProjectileFlyBState.cpp) presets each pellet with
+  the lead's soldier-cone roll (gated on `hasConeTrueAim()`, so scatter-model shotguns keep the
+  behaviorType/choke logic untouched).
+- No new files; no language strings needed (no UI surface yet).
 
 ## Motivation
 

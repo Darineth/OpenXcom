@@ -1941,6 +1941,9 @@ void StatsForNerdsState::initItemList()
 	int dropoffDefault = itemBattleType == BT_PSIAMP ? 1 : 2;
 	addInteger(ss, itemRule->getDropoff(), "dropoff", dropoffDefault);
 
+	// DX aim-cone model opt-in: 0 (default) = native scatter model
+	addInteger(ss, itemRule->getBaseAccuracy(), "baseAccuracy", 0);
+
 	addRuleStatBonus(ss, *itemRule->getAccuracyMultiplierRaw(), "accuracyMultiplier");
 	addIntegerPercent(ss, itemRule->getConfigAimed()->accuracy, "accuracyAimed");
 	addIntegerPercent(ss, itemRule->getConfigAuto()->accuracy, "accuracyAuto");

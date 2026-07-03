@@ -247,12 +247,14 @@ Everything below is DX-specific work confirmed **absent** from the base.
 
 *Goal: The aim-cone shooting model and its shot modes.*
 
-- [ ] **Aim-Cone Trajectory Model** — soldier + weapon deflection cones, stacking error.
+- [x] **Aim-Cone Trajectory Model** — soldier + weapon deflection cones, stacking error.
+  Per-weapon opt-in via `baseAccuracy` (0 = native scatter model, unchanged); shotgun volleys
+  share one soldier roll; Monte-Carlo calibrated (`reference/aimcone_montecarlo.py`).
   *(design: [plans/Feature-AimConeTrajectory.md](plans/Feature-AimConeTrajectory.md))*
-  - [ ] 3D direction-vector cone for direct fire
-  - [ ] Soldier deflection cone (Gaussian/normal distribution)
-  - [ ] Weapon deflection cone (independent of soldier)
-  - [ ] Stacking of soldier and weapon error
+  - [x] 3D direction-vector cone for direct fire
+  - [x] Soldier deflection cone (Gaussian/normal distribution)
+  - [x] Weapon deflection cone (independent of soldier)
+  - [x] Stacking of soldier and weapon error
 - [ ] **Accuracy Modifiers** — kneel/two-handed/exhaustion/smoke; shot-mode accuracy.
   - [ ] Kneel / two-handed / exhaustion / smoke accuracy factors
   - [ ] Shot-mode accuracy application (Snap/Aim/Auto/Burst)

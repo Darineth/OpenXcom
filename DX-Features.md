@@ -680,3 +680,42 @@ TUs. It complements the on-cursor accuracy readout the engine already shows. *(d
 - Big vs small explosion sound selection is now keyed to radius as well, keeping audio behavior
   aligned with visual blast size.
 
+
+## Aim-Cone Trajectory Model
+
+Direct fire can now use a **3D direction-vector cone** model instead of the native
+scatter-the-aimpoint deviation: the ideal muzzle→target ray is deflected by two independent,
+Gaussian-sampled angular errors and the shot flies down the deflected line until it hits
+something. Misses fan out from the muzzle and error grows naturally with distance. *(design +
+full math/constants provenance: [plans/Feature-AimConeTrajectory.md](plans/Feature-AimConeTrajectory.md);
+calibration: [reference/aimcone_montecarlo.py](reference/aimcone_montecarlo.py))*
+
+- **Per-weapon opt-in:** new `RuleItem` key **`baseAccuracy`** (default `0`). `0` keeps the weapon
+  on the native scatter model, byte-for-byte unchanged — all existing content is unaffected.
+  `> 0` opts the weapon into the cone model and sets its intrinsic precision (higher = tighter;
+  `75` is the calibration reference point). Shown in Stats for Nerds.
+- **Two stacking cones** (all constants documented in `Projectile.cpp` and the design doc):
+  - **Soldier cone** — everything about the shooter's aim (Firing skill × shot-mode × kneel ×
+    one-handed × wounds × berserk, i.e. the folded `getFiringAccuracy` result), with
+    σ = `0.437 / (soldierAcc²/50) · 1.4826 · 2` radians, accuracy floored at 20. Rolled once
+    per round.
+  - **Weapon cone** — driven only by `baseAccuracy`, σ = `0.437 / (baseAccuracy²/75) · 1.4826`
+    radians. Rolled per projectile. The quadratic-in-`baseAccuracy` shape is a DX change from the
+    legacy linear scaling (Monte-Carlo calibrated so `75` matches legacy exactly while the knob
+    has real reach).
+  - Every sampled deflection is clamped at 3σ of its own cone (no freak backwards shots).
+- **No linear range dropoff on the cone path** — distance falloff is purely geometric. For
+  opted-in weapons the `aimRange`/`snapRange`/`autoRange`/`minRange`/`dropoff` fields and
+  `battleUFOExtenderAccuracy` no longer alter the shot (they will feed UI readouts).
+- **No-LOS penalty** (`noLOSAccuracyPenalty`) widens the *soldier* cone (applied before the
+  accuracy floor); weapon precision is unaffected.
+- **Shotguns:** the whole volley shares one soldier-cone roll (the shooter's "true aim" line);
+  each pellet then rolls its own weapon-cone deflection, scaled by the ammo's `shotgunSpread`
+  (`100` = neutral). `shotgunBehaviorType` and `shotgunChoke` intentionally don't apply on the
+  cone path — choke's pattern-tightness role is subsumed by `baseAccuracy`.
+- **Auto/burst:** every round re-rolls both cones, so a burst walks around the target.
+- **Unchanged by design:** throwing and arcing shots (parabola + scatter model), `BA_LAUNCH`
+  guided missiles (faction-based drift), melee. The live trajectory preview already draws the
+  cone's central axis and needed no changes.
+- Gaussian sampling via a new `RNG::boxMuller()` on the seeded battle stream (deterministic
+  for a given seed).

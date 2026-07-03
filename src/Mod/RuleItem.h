@@ -471,6 +471,10 @@ private:
 	int _loadOrder;
 	int _listOrder, _maxRange, _minRange, _dropoff, _bulletSpeed, _explosionSpeed, _shotgunPellets;
 	int _shotgunBehaviorType, _shotgunSpread, _shotgunChoke;
+	/// Intrinsic weapon precision (DX aim-cone model). 0 (default) = weapon uses the native
+	/// scatter model unchanged; > 0 = opt into the aim-cone model, driving the weapon cone.
+	/// See plans/Feature-AimConeTrajectory.md.
+	int _baseAccuracy;
 	int _fireInterval;
 
 	std::map<std::string, std::string> _zombieUnitByArmorMale, _zombieUnitByArmorFemale, _zombieUnitByType;
@@ -1013,6 +1017,8 @@ public:
 	int getDropoff() const;
 	/// Helper function to calculate limits and dropoff.
 	int calculateLimits(int& upperLimit, int& lowerLimit, int depth, BattleActionType type) const;
+	/// Gets the weapon's intrinsic accuracy (aim-cone model opt-in; 0 = native scatter model).
+	int getBaseAccuracy() const { return _baseAccuracy; }
 	/// Get the number of projectiles to trace.
 	int getShotgunPellets() const;
 	/// Get the shotgun behavior type.

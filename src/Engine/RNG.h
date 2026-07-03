@@ -70,6 +70,8 @@ namespace RNG
 	int generate(int min, int max);
 	/// Generates a random floating-point number.
 	double generate(double min, double max);
+	/// Generates a normally-distributed random number (Box-Muller transform) from the seeded stream.
+	double boxMuller(double mean = 0.0, double stddev = 1.0);
 	/// Generates a random integer number, inclusive (non-seed version).
 	int seedless(int min, int max);
 	/// Generates a percentage chance.

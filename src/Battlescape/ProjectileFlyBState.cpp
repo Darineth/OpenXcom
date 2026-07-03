@@ -560,10 +560,16 @@ bool ProjectileFlyBState::createNewProjectile()
 		const Position leadImpact = projectile->getImpactPosition(-2);
 		const Position firingOriginVoxel = _parent->getSave()->getTileEngine()->getOriginVoxel(_action, _parent->getSave()->getTile(_origin));
 
+		// DX aim-cone weapons (baseAccuracy > 0): hasConeTrueAim() is set iff the lead pellet
+		// actually took the cone path, in which case the whole volley shares its soldier-cone
+		// "true aim" line and the per-pellet spread comes from each pellet's own weapon-cone
+		// roll instead of the diminishing-accuracy / choke tricks below.
+		const bool aimConeVolley = projectile->hasConeTrueAim();
+
 		for (int i = 1; i < pelletCount; ++i)
 		{
 			Position pelletTarget = originalTarget;
-			if (behaviorType == 1)
+			if (behaviorType == 1 && !aimConeVolley)
 			{
 				// spread around the lead pellet's impact (unless it landed on the firing voxel)
 				pelletTarget = (leadImpact != firingOriginVoxel) ? leadImpact : originalTarget;
@@ -571,7 +577,16 @@ bool ProjectileFlyBState::createNewProjectile()
 
 			Projectile *pellet = new Projectile(_parent->getMod(), _parent->getSave(), _action, _origin, pelletTarget, _ammo);
 			int pelletImpact;
-			if (behaviorType == 1)
+			if (aimConeVolley)
+			{
+				// share the volley's soldier deflection; the pellet then rolls only its own
+				// weapon-cone deflection (scaled by the ammo's shotgunSpread inside the cone
+				// path - behaviorType and shotgunChoke intentionally don't apply there).
+				// The accuracy argument only feeds the soldier cone, which this pellet skips.
+				pellet->setConeTrueAim(projectile->getConeTrueAim());
+				pelletImpact = pellet->calculateTrajectory(BattleUnit::getFiringAccuracy(attack, _parent->getMod()) / 100.0);
+			}
+			else if (behaviorType == 1)
 			{
 				// pellet spread based on spread and choke values
 				pelletImpact = pellet->calculateTrajectory(std::max(0.0, (1.0 - spread / 100.0) * choke / 100.0));

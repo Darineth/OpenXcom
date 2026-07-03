@@ -36,6 +36,106 @@
 namespace OpenXcom
 {
 
+namespace
+{
+
+// ==================== Aim-cone firing model: tuning constants ====================
+// The full model, the calibration data, and the reasoning behind every value below live in
+// plans/Feature-AimConeTrajectory.md ("Resolved design decisions" 1-3 and 11) and in the
+// Monte-Carlo simulation reference/aimcone_montecarlo.py. Re-run that script when touching
+// any of these.
+//
+// Cone stddevs produced by these constants, for orientation:
+//   soldier cone: ~9.3 deg at the accuracy floor (20), ~2.9 deg at 36 (Firing 60, snap 60%),
+//                 ~0.9 deg at 66 (Firing 60, aimed 110%)
+//   weapon cone:  ~1.7 deg at baseAccuracy 40, ~0.5 deg at 75, ~0.28 deg at 100
+
+/// Base angular tuning constant, carried over unchanged from the legacy OpenXcom+ fork's
+/// aim-cone implementation. Expressed there as a median absolute deviation (MAD) in radians;
+/// together with CONE_MAD_TO_SIGMA it converts an accuracy percentage into a Gaussian stddev.
+const double CONE_TUNING = 0.437;
+
+/// MAD -> stddev consistency constant for a normal distribution (sigma = 1.4826 * MAD).
+/// Purely a unit conversion: CONE_TUNING is a MAD, boxMuller() wants a sigma.
+const double CONE_MAD_TO_SIGMA = 1.4826;
+
+/// Extra widening multiplier on the soldier cone (legacy value). This is the "global
+/// lethality" dial: lowering it makes every shooter in the game more accurate. It is
+/// deliberately separate from the weapon-cone shape (the "modding knob strength" dial).
+const double SOLDIER_CONE_MULT = 2.0;
+
+/// Shaping divisor for the soldier cone: sigma is driven by soldierAcc^2 / 50 (legacy
+/// value). Squaring the accuracy makes shooter skill tighten the cone sharply - going from
+/// Firing 40 to 80 quarters the cone width, not halves it.
+const double SOLDIER_CONE_SHAPING = 50.0;
+
+/// Normalization point for the weapon cone: sigma is driven by baseAccuracy^2 / 75.
+/// The quadratic shape is a DX change - the legacy fork scaled linearly (0.437/baseAccuracy)
+/// and a Monte-Carlo sweep showed that made baseAccuracy a nearly invisible knob (sweeping
+/// it 40->300 moved long-range hit rates by only ~6 points, because the soldier cone
+/// dominates). Squaring, normalized at the legacy default of 75, keeps baseAccuracy 75
+/// exactly identical to legacy while values away from 75 spread much harder ("V3" in the
+/// design doc's decision 11).
+const double WEAPON_CONE_NORM = 75.0;
+
+/// Hard floor on effective soldier accuracy (legacy value). soldierAcc is squared in the
+/// sigma denominator, so small values explode the cone width and 0 would divide by zero;
+/// a badly wounded, one-handed, berserking rookie bottoms out at a ~9.3 deg sigma spray
+/// instead. The legacy tuning constants were calibrated against this floor.
+const double SOLDIER_ACC_FLOOR = 20.0;
+
+/// Guard floor on the weapon cone input (protects against degenerate ruleset data; the
+/// cone path is only entered at baseAccuracy > 0 anyway).
+const double WEAPON_ACC_FLOOR = 1.0;
+
+/// Every sampled deflection is clamped at this many stddevs of its own cone. boxMuller()
+/// is unbounded, so over thousands of shots a freak tail roll would eventually send a round
+/// sideways or backwards out of the muzzle; clamping at 3 sigma keeps 99.7% of the
+/// distribution untouched and stays scale-free (a bad shooter's worst shot is still wilder
+/// than a good shooter's).
+const double CONE_CLAMP_SIGMAS = 3.0;
+
+/**
+ * Samples one cone deflection angle: Gaussian with the given stddev, clamped to
+ * +/- CONE_CLAMP_SIGMAS * sigma. The sign is redundant with the azimuth roll in
+ * rotateVectorRandomly (both half-angles cover the full circle), which is harmless.
+ * @param sigma The cone's standard deviation in radians.
+ * @return Deflection angle in radians.
+ */
+double sampleConeAngle(double sigma)
+{
+	return Clamp(RNG::boxMuller(0.0, sigma), -CONE_CLAMP_SIGMAS * sigma, CONE_CLAMP_SIGMAS * sigma);
+}
+
+/**
+ * Deflects a unit direction vector by a polar angle around a uniformly random azimuth:
+ * builds an orthonormal basis (v, e1, e2) and returns
+ *   v' = v*cos(theta) + (e1*cos(phi) + e2*sin(phi)) * sin(theta),   phi ~ U[0, 2*pi)
+ * i.e. a direction picked uniformly on the circle of half-angle theta around v.
+ * @param v Unit direction vector to deflect.
+ * @param theta Deflection (polar) angle in radians.
+ * @return The deflected unit vector.
+ */
+AimVector rotateVectorRandomly(const AimVector &v, double theta)
+{
+	// reference axis least aligned with v, so the cross product below can't degenerate
+	const AimVector ref = std::abs(v.x) < 0.9 ? AimVector{ 1.0, 0.0, 0.0 } : AimVector{ 0.0, 1.0, 0.0 };
+	const AimVector e1 = VectNormalize(VectCrossProduct(v, ref, 1.0), 1.0);
+	const AimVector e2 = VectCrossProduct(v, e1, 1.0);
+	const double phi = RNG::generate(0.0, 2.0 * M_PI);
+	const double ct = std::cos(theta);
+	const double st = std::sin(theta);
+	const double cp = std::cos(phi);
+	const double sp = std::sin(phi);
+	return {
+		v.x * ct + (e1.x * cp + e2.x * sp) * st,
+		v.y * ct + (e1.y * cp + e2.y * sp) * st,
+		v.z * ct + (e1.z * cp + e2.z * sp) * st,
+	};
+}
+
+}
+
 /**
  * Sets up a UnitSprite with the specified size and position.
  * @param mod Pointer to mod.
@@ -198,10 +298,37 @@ int Projectile::calculateTrajectory(double accuracy, const Position& originVoxel
 
 	// apply some accuracy modifiers.
 	// This will results in a new target voxel
-	applyAccuracy(originVoxel, &_targetVoxel, accuracy, false, extendLine);
+	if (useAimCone())
+	{
+		// DX aim-cone model (per-weapon opt-in via baseAccuracy > 0). The accuracy parameter
+		// arrives divided by the call site's accuracyDivider (100 normally, 200 when
+		// berserking), so *100 recovers the percent-scale effective soldier accuracy - with
+		// the berserk halving usefully folded in as a soldier-cone widener.
+		applyAimCone(originVoxel, &_targetVoxel, accuracy * 100.0);
+	}
+	else
+	{
+		applyAccuracy(originVoxel, &_targetVoxel, accuracy, false, extendLine);
+	}
 
 	// finally do a line calculation and store this trajectory.
 	return _save->getTileEngine()->calculateLineVoxel(originVoxel, _targetVoxel, true, &_trajectory, bu);
+}
+
+/**
+ * Whether this shot uses the DX aim-cone model instead of the native scatter model.
+ * Per-weapon opt-in: baseAccuracy > 0 (see plans/Feature-AimConeTrajectory.md). Direct fire
+ * only - throws and arcing shots keep the scatter model by design (they go through
+ * calculateThrow anyway), waypoint-guided BA_LAUNCH keeps its faction-based drift model,
+ * and BA_HIT melee has no meaningful trajectory to deflect.
+ */
+bool Projectile::useAimCone() const
+{
+	return _action.weapon
+		&& _action.weapon->getRules()->getBaseAccuracy() > 0
+		&& _action.type != BA_THROW
+		&& _action.type != BA_LAUNCH
+		&& _action.type != BA_HIT;
 }
 
 /**
@@ -465,30 +592,11 @@ void Projectile::applyAccuracy(Position origin, Position *target, double accurac
 		zShift = xyShift + zDist / 2;
 
 	// Apply penalty for having no LOS to target
-	int noLOSAccuracyPenalty = _action.weapon->getRules()->getNoLOSAccuracyPenalty(_mod);
-	if (noLOSAccuracyPenalty != -1)
+	// (guarded so the no-penalty case leaves accuracy bit-identical to the historical code)
+	int noLOSPenaltyFactor = getNoLOSAccuracyPenaltyFactor(*target);
+	if (noLOSPenaltyFactor != 100)
 	{
-		Tile *t = _save->getTile(target->toTile());
-		if (t)
-		{
-			bool hasLOS = false;
-			BattleUnit *bu = _action.actor;
-			BattleUnit *targetUnit = t->getUnit(); // we can call TileEngine::visible() only if the target unit is on the same tile
-
-			if (targetUnit)
-			{
-				hasLOS = _save->getTileEngine()->visible(bu, t);
-			}
-			else
-			{
-				hasLOS = _save->getTileEngine()->isTileInLOS(&_action, t, false);
-			}
-
-			if (!hasLOS)
-			{
-				accuracy = accuracy * noLOSAccuracyPenalty / 100;
-			}
-		}
+		accuracy = accuracy * noLOSPenaltyFactor / 100;
 	}
 
 	int deviation = RNG::generate(0, 100) - (accuracy * 100);
@@ -556,6 +664,135 @@ void Projectile::applyAccuracy(Position origin, Position *target, double accurac
 		target->y = (int)(origin.y + maxRange * sin_te * cos_fi);
 		target->z = (int)(origin.z + maxRange * sin_fi);
 	}
+}
+
+/**
+ * Returns the weapon's no-line-of-sight accuracy multiplier for a target voxel: the
+ * ruleset's noLOSAccuracyPenalty (a percentage) when the target tile is not in the
+ * shooter's line of sight, or 100 (no change) when it is - or when the weapon defines no
+ * penalty. Shared by the native scatter path (multiplies the folded accuracy) and the
+ * aim-cone path (widens the soldier cone).
+ * @param targetVoxel The intended target position in voxels.
+ * @return Accuracy multiplier in percent (100 = unchanged).
+ */
+int Projectile::getNoLOSAccuracyPenaltyFactor(const Position &targetVoxel)
+{
+	int noLOSAccuracyPenalty = _action.weapon->getRules()->getNoLOSAccuracyPenalty(_mod);
+	if (noLOSAccuracyPenalty != -1)
+	{
+		Tile *t = _save->getTile(targetVoxel.toTile());
+		if (t)
+		{
+			bool hasLOS = false;
+			BattleUnit *bu = _action.actor;
+			BattleUnit *targetUnit = t->getUnit(); // we can call TileEngine::visible() only if the target unit is on the same tile
+
+			if (targetUnit)
+			{
+				hasLOS = _save->getTileEngine()->visible(bu, t);
+			}
+			else
+			{
+				hasLOS = _save->getTileEngine()->isTileInLOS(&_action, t, false);
+			}
+
+			if (!hasLOS)
+			{
+				return noLOSAccuracyPenalty;
+			}
+		}
+	}
+	return 100;
+}
+
+/**
+ * DX aim-cone firing model: replaces the native scatter-the-aimpoint deviation for weapons
+ * opted in via baseAccuracy > 0 (see plans/Feature-AimConeTrajectory.md).
+ *
+ * Instead of jittering the target point and flying dead-straight at it, two independent
+ * angular errors are stacked onto the ideal muzzle->target ray:
+ *
+ *  1. the SOLDIER cone - everything about the shooter's aim, folded into one percentage
+ *     (firing skill x shot-mode x kneel x one-handed x wounds x berserk - i.e. the
+ *     getFiringAccuracy result). Rolled ONCE per round; a shotgun volley shares this one
+ *     roll as its "true aim" line, so all pellets carry the same shooter error.
+ *  2. the WEAPON cone - the weapon's intrinsic precision (the baseAccuracy ruleset field),
+ *     independent of the shooter and shot mode. Rolled PER projectile (per pellet).
+ *
+ * The deflected ray is extended to maximum range and traced until it hits something, so
+ * misses fan out from the muzzle and error grows naturally with distance. Consequently this
+ * path applies NO linear range dropoff - for opted-in weapons the aimRange/snapRange/
+ * autoRange/minRange/dropoff ruleset fields only feed UI readouts (design doc, decision 1).
+ *
+ * @param origin Start position of the trajectory in voxels.
+ * @param target The intended target position in voxels; overwritten with the deflected
+ *               ray's max-range endpoint (which keeps recalculateImpact() deterministic).
+ * @param soldierAcc Effective soldier accuracy, percent scale (60.0 = "60%", not 0.6).
+ */
+void Projectile::applyAimCone(Position origin, Position *target, double soldierAcc)
+{
+	// No-LOS penalty degrades the *shooter's* aim - it widens the soldier cone and leaves
+	// the weapon's intrinsic precision untouched. Applied before the accuracy floor so a
+	// heavy penalty can push a shooter down onto the floor (design doc, decision 6).
+	soldierAcc = soldierAcc * getNoLOSAccuracyPenaltyFactor(*target) / 100.0;
+
+	AimVector dir = {
+		double(target->x - origin.x),
+		double(target->y - origin.y),
+		double(target->z - origin.z),
+	};
+	if (VectDotProduct(dir, dir, 1.0) <= 0.0)
+	{
+		// degenerate aim (target voxel == origin voxel): no direction to deflect, leave the
+		// target as-is and let the voxel trace produce its usual point-blank result
+		return;
+	}
+	dir = VectNormalize(dir, 1.0);
+
+	if (_hasConeTrueAim)
+	{
+		// Follow-up shotgun pellet: reuse the volley's soldier deflection (preset via
+		// setConeTrueAim from the lead pellet) instead of rolling a new one.
+		dir = _coneTrueAim;
+	}
+	else
+	{
+		// Soldier cone: sigma = 0.437 / (soldierAcc^2 / 50) * 1.4826 * 2 radians.
+		// (constants and their provenance documented at the top of this file)
+		const double acc = std::max(SOLDIER_ACC_FLOOR, soldierAcc);
+		const double sigma = CONE_TUNING / (acc * acc / SOLDIER_CONE_SHAPING) * CONE_MAD_TO_SIGMA * SOLDIER_CONE_MULT;
+		dir = rotateVectorRandomly(dir, sampleConeAngle(sigma));
+
+		// remember the deflected "true aim" so a shotgun volley's other pellets share it
+		_coneTrueAim = dir;
+		_hasConeTrueAim = true;
+	}
+
+	// Weapon cone: sigma = 0.437 / (baseAccuracy^2 / 75) * 1.4826 radians - quadratic in
+	// baseAccuracy, normalized so 75 reproduces the legacy fork's linear model exactly.
+	{
+		const double acc = std::max(WEAPON_ACC_FLOOR, double(_action.weapon->getRules()->getBaseAccuracy()));
+		double sigma = CONE_TUNING / (acc * acc / WEAPON_CONE_NORM) * CONE_MAD_TO_SIGMA;
+
+		// Multi-pellet ammo: the ammo's shotgunSpread scales the per-pellet weapon cone
+		// (100 = neutral, the ruleset default), so buckshot vs. slug from the same gun still
+		// patterns differently. The weapon's shotgunChoke is intentionally NOT applied here:
+		// choke is a flat per-weapon pattern-tightness multiplier, which on the cone path is
+		// the same axis as baseAccuracy itself (design doc, decision 4).
+		if (_ammo && _ammo->getRules()->getShotgunPellets() != 0)
+		{
+			sigma = sigma * _ammo->getRules()->getShotgunSpread() / 100.0;
+		}
+		dir = rotateVectorRandomly(dir, sampleConeAngle(sigma));
+	}
+
+	// Extend the deflected ray out to maximum range; the voxel trace stops at the first
+	// thing it hits. 16*1000 voxels = 1000 tiles = "farther than any map", the same cap
+	// applyAccuracy uses for its extendLine step.
+	const double maxRange = 16 * 1000;
+	target->x = (int)(origin.x + dir.x * maxRange);
+	target->y = (int)(origin.y + dir.y * maxRange);
+	target->z = (int)(origin.z + dir.z * maxRange);
 }
 
 /**

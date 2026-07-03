@@ -31,6 +31,15 @@ class Tile;
 class Mod;
 
 /**
+ * A double-precision 3D direction vector used by the aim-cone firing model
+ * (Position is integer voxels; cone deflection needs sub-voxel angular precision).
+ */
+struct AimVector
+{
+	double x, y, z;
+};
+
+/**
  * A class that represents a projectile. Map is the owner of an instance of this class during its short life.
  * It calculates its own trajectory and then moves along this pre-calculated trajectory in voxel space.
  */
@@ -60,7 +69,17 @@ private:
 	bool _reversed;
 	int _vaporColor, _vaporDensity, _vaporProbability;
 	int _impact = 0;
+	/// Aim-cone model: the soldier-cone-deflected "true aim" line of the volley (unit vector).
+	/// Shared across a shotgun volley so every pellet deviates off the same shooter error.
+	AimVector _coneTrueAim = { 0.0, 0.0, 0.0 };
+	bool _hasConeTrueAim = false;
 	void applyAccuracy(Position origin, Position *target, double accuracy, bool keepRange, bool extendLine);
+	/// Aim-cone model: replaces the scatter deviation for opted-in weapons (baseAccuracy > 0).
+	void applyAimCone(Position origin, Position *target, double soldierAcc);
+	/// The weapon's no-LOS accuracy multiplier for the current target tile (100 = no penalty).
+	int getNoLOSAccuracyPenaltyFactor(const Position &targetVoxel);
+	/// Whether this shot uses the aim-cone model instead of the native scatter model.
+	bool useAimCone() const;
 public:
 	/// Creates a new Projectile.
 	Projectile(Mod *mod, SavedBattleGame *save, BattleAction action, Position origin, Position target, BattleItem *ammo);
@@ -105,6 +124,13 @@ public:
 	bool isReversed() const;
 	/// adds a cloud of particles at the projectile's location
 	void addVaporCloud();
+	/// Aim-cone model: did this projectile roll (or receive) a volley "true aim" line?
+	bool hasConeTrueAim() const { return _hasConeTrueAim; }
+	/// Aim-cone model: gets the soldier-cone-deflected volley aim line (valid after calculateTrajectory).
+	AimVector getConeTrueAim() const { return _coneTrueAim; }
+	/// Aim-cone model: presets the volley aim line, so this projectile (a follow-up shotgun
+	/// pellet) skips the soldier cone and only rolls its own weapon-cone deflection.
+	void setConeTrueAim(const AimVector &aim) { _coneTrueAim = aim; _hasConeTrueAim = true; }
 };
 
 }

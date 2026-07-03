@@ -18,6 +18,7 @@
  */
 #include "RNG.h"
 #include <time.h>
+#include "../fmath.h" // sqrt/log/cos + portable M_PI for boxMuller()
 #ifndef UINT64_MAX
 #define UINT64_MAX 0xffffffffffffffffULL
 #endif
@@ -154,6 +155,27 @@ double generate(double min, double max)
 {
 	double num = x.next();
 	return (num / ((double)UINT64_MAX / (max - min)) + min);
+}
+
+/**
+ * Generates a normally-distributed (Gaussian) random number via the
+ * Box-Muller transform: z = sqrt(-2 ln u1) * cos(2*pi*u2) is a standard
+ * normal sample when u1, u2 are independent uniforms on (0,1].
+ * Draws from the seeded game stream (two draws per call) so battles
+ * replayed from the same seed stay deterministic.
+ * Used by the aim-cone firing model (see plans/Feature-AimConeTrajectory.md).
+ * @param mean Mean of the distribution.
+ * @param stddev Standard deviation of the distribution.
+ * @return Generated number.
+ */
+double boxMuller(double mean, double stddev)
+{
+	// u1 must be strictly positive (log(0) is undefined); generate() can
+	// return exactly 0, so clamp to a tiny epsilon. This truncates the
+	// distribution at a harmless ~9.6 sigma.
+	double u1 = std::max(generate(0.0, 1.0), 1e-20);
+	double u2 = generate(0.0, 1.0);
+	return mean + stddev * std::sqrt(-2.0 * std::log(u1)) * std::cos(2.0 * M_PI * u2);
 }
 
 /**
