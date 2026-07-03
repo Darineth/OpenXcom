@@ -32,6 +32,7 @@
 #include "../Engine/RNG.h"
 #include "../Engine/Options.h"
 #include "../fmath.h"
+#include <limits>
 
 namespace OpenXcom
 {
@@ -116,13 +117,12 @@ double sampleConeAngle(double sigma)
  * @param theta Deflection (polar) angle in radians.
  * @return The deflected unit vector.
  */
-AimVector rotateVectorRandomly(const AimVector &v, double theta)
+AimVector deflectVector(const AimVector &v, double theta, double phi)
 {
 	// reference axis least aligned with v, so the cross product below can't degenerate
 	const AimVector ref = std::abs(v.x) < 0.9 ? AimVector{ 1.0, 0.0, 0.0 } : AimVector{ 0.0, 1.0, 0.0 };
 	const AimVector e1 = VectNormalize(VectCrossProduct(v, ref, 1.0), 1.0);
 	const AimVector e2 = VectCrossProduct(v, e1, 1.0);
-	const double phi = RNG::generate(0.0, 2.0 * M_PI);
 	const double ct = std::cos(theta);
 	const double st = std::sin(theta);
 	const double cp = std::cos(phi);
@@ -132,6 +132,29 @@ AimVector rotateVectorRandomly(const AimVector &v, double theta)
 		v.y * ct + (e1.y * cp + e2.y * sp) * st,
 		v.z * ct + (e1.z * cp + e2.z * sp) * st,
 	};
+}
+
+AimVector rotateVectorRandomly(const AimVector &v, double theta)
+{
+	// deflect by theta around a uniformly random azimuth drawn from the game stream
+	return deflectVector(v, theta, RNG::generate(0.0, 2.0 * M_PI));
+}
+
+/// Uniform double in [0, 1) from a RandomState (used by the seedless hit-chance estimator).
+double unitDouble(RNG::RandomState &rng)
+{
+	return rng.next() * (1.0 / (double(std::numeric_limits<uint64_t>::max()) + 1.0));
+}
+
+/// One clamped cone deflection angle, mirroring sampleConeAngle() but drawn from a caller-owned
+/// RandomState instead of the game stream (so the hit-chance estimate is deterministic per hover
+/// and never perturbs game randomness). Box-Muller, clamped at +/- CONE_CLAMP_SIGMAS * sigma.
+double seededConeAngle(RNG::RandomState &rng, double sigma)
+{
+	const double u1 = std::max(unitDouble(rng), 1e-20);
+	const double u2 = unitDouble(rng);
+	const double g = sigma * std::sqrt(-2.0 * std::log(u1)) * std::cos(2.0 * M_PI * u2);
+	return Clamp(g, -CONE_CLAMP_SIGMAS * sigma, CONE_CLAMP_SIGMAS * sigma);
 }
 
 }
@@ -757,33 +780,24 @@ void Projectile::applyAimCone(Position origin, Position *target, double soldierA
 	}
 	else
 	{
-		// Soldier cone: sigma = 0.437 / (soldierAcc^2 / 50) * 1.4826 * 2 radians.
-		// (constants and their provenance documented at the top of this file)
-		const double acc = std::max(SOLDIER_ACC_FLOOR, soldierAcc);
-		const double sigma = CONE_TUNING / (acc * acc / SOLDIER_CONE_SHAPING) * CONE_MAD_TO_SIGMA * SOLDIER_CONE_MULT;
-		dir = rotateVectorRandomly(dir, sampleConeAngle(sigma));
+		// Soldier cone (sigma computed by soldierConeSigma; constants documented at file top).
+		dir = rotateVectorRandomly(dir, sampleConeAngle(soldierConeSigma(soldierAcc)));
 
 		// remember the deflected "true aim" so a shotgun volley's other pellets share it
 		_coneTrueAim = dir;
 		_hasConeTrueAim = true;
 	}
 
-	// Weapon cone: sigma = 0.437 / (baseAccuracy^2 / 75) * 1.4826 radians - quadratic in
-	// baseAccuracy, normalized so 75 reproduces the legacy fork's linear model exactly.
+	// Weapon cone. Multi-pellet ammo scales the cone by the ammo's shotgunSpread (100 = neutral),
+	// so buckshot vs. slug from the same gun patterns differently; shotgunChoke is intentionally
+	// NOT applied (on the cone path it is the same axis as baseAccuracy - design doc, decision 4).
 	{
-		const double acc = std::max(WEAPON_ACC_FLOOR, double(_action.weapon->getRules()->getBaseAccuracy()));
-		double sigma = CONE_TUNING / (acc * acc / WEAPON_CONE_NORM) * CONE_MAD_TO_SIGMA;
-
-		// Multi-pellet ammo: the ammo's shotgunSpread scales the per-pellet weapon cone
-		// (100 = neutral, the ruleset default), so buckshot vs. slug from the same gun still
-		// patterns differently. The weapon's shotgunChoke is intentionally NOT applied here:
-		// choke is a flat per-weapon pattern-tightness multiplier, which on the cone path is
-		// the same axis as baseAccuracy itself (design doc, decision 4).
+		int spread = 100;
 		if (_ammo && _ammo->getRules()->getShotgunPellets() != 0)
 		{
-			sigma = sigma * _ammo->getRules()->getShotgunSpread() / 100.0;
+			spread = _ammo->getRules()->getShotgunSpread();
 		}
-		dir = rotateVectorRandomly(dir, sampleConeAngle(sigma));
+		dir = rotateVectorRandomly(dir, sampleConeAngle(weaponConeSigma(_action.weapon->getRules()->getBaseAccuracy(), spread)));
 	}
 
 	// Extend the deflected ray out to maximum range; the voxel trace stops at the first
@@ -793,6 +807,171 @@ void Projectile::applyAimCone(Position origin, Position *target, double soldierA
 	target->x = (int)(origin.x + dir.x * maxRange);
 	target->y = (int)(origin.y + dir.y * maxRange);
 	target->z = (int)(origin.z + dir.z * maxRange);
+}
+
+/**
+ * Aim-cone model: soldier-cone standard deviation (radians) for a percent-scale effective
+ * soldier accuracy. sigma = 0.437 / (soldierAcc^2 / 50) * 1.4826 * 2, with soldierAcc floored
+ * at 20. Constants and their provenance are documented at the top of this file.
+ */
+double Projectile::soldierConeSigma(double soldierAcc)
+{
+	const double acc = std::max(SOLDIER_ACC_FLOOR, soldierAcc);
+	return CONE_TUNING / (acc * acc / SOLDIER_CONE_SHAPING) * CONE_MAD_TO_SIGMA * SOLDIER_CONE_MULT;
+}
+
+/**
+ * Aim-cone model: weapon-cone standard deviation (radians) for a weapon's baseAccuracy, scaled
+ * by the ammo's shotgunSpread percentage (100 = neutral). sigma = 0.437 / (baseAccuracy^2 / 75)
+ * * 1.4826 - quadratic in baseAccuracy, normalized so 75 reproduces the legacy fork's linear
+ * model exactly. Constants documented at the top of this file.
+ */
+double Projectile::weaponConeSigma(int baseAccuracy, int shotgunSpread)
+{
+	const double acc = std::max(WEAPON_ACC_FLOOR, double(baseAccuracy));
+	const double sigma = CONE_TUNING / (acc * acc / WEAPON_CONE_NORM) * CONE_MAD_TO_SIGMA;
+	return sigma * shotgunSpread / 100.0;
+}
+
+/**
+ * Aim-cone model: estimates the physical probability (0-100%) that a direct-fire shot lands on
+ * the target, for the aiming crosshair readout. Unlike the native scatter model's displayed
+ * "accuracy", this is a true geometric hit chance: it stacks the same soldier + weapon cones the
+ * real shot uses and traces each sampled ray through the actual voxel terrain, so it falls off
+ * naturally with distance, rewards tighter weapons / steadier aim, AND accounts for cover -
+ * intervening walls/objects block shots exactly as they would in play, and partial cover (only
+ * part of the target exposed) reduces the estimate rather than reading full odds.
+ *
+ * Method: a Monte-Carlo over the two cones. Each trial deflects the ideal muzzle->target ray by a
+ * soldier deflection (once per shot/volley) and then, per pellet, a weapon deflection, extends the
+ * deflected ray to max range, and voxel-traces it (TileEngine::calculateLineVoxel) against current
+ * terrain. A trial counts as a hit if the trace's first impact is the intended target: the target
+ * unit's own voxel silhouette (for a unit) or the target tile (for terrain). A shotgun trial hits
+ * if ANY pellet reaches the target. Because it uses the unit's real LOFT and the real trace, cover
+ * and silhouette are exact - no rectangle approximation.
+ *
+ * Cost: samples x pellets voxel traces, so callers should cache the result per aim (it is
+ * recomputed only when the cursor/target/action changes, not every frame). The sampler uses a
+ * private RandomState seeded deterministically from the (quantized) inputs, so the readout is
+ * stable for a given aim and never consumes the game RNG stream (no effect on actual shots / saves).
+ *
+ * @param save The battle save (for the tile engine, tiles, and origin/target voxel resolution).
+ * @param action The aiming action (actor, weapon, type). Its own target is ignored in favour of...
+ * @param targetPos ...the tile actually being aimed at (the hovered crosshair tile), so the readout
+ *                  tracks the cursor rather than the action's last-committed target.
+ * @param ammo The resolved ammo (for shotgun pellet count / spread), or nullptr.
+ * @param mod The mod (for getFiringAccuracy / no-LOS penalty lookups).
+ * @param hasLOS Whether the shooter has line of sight to the target tile (widens the soldier cone).
+ * @return Estimated hit chance, 0-100.
+ */
+int Projectile::calculateHitChancePercent(SavedBattleGame* save, BattleAction* action, Position targetPos, BattleItem* ammo, Mod* mod, bool hasLOS)
+{
+	if (!action->weapon || !action->actor)
+	{
+		return 0;
+	}
+	const RuleItem* weaponRule = action->weapon->getRules();
+	TileEngine* te = save->getTileEngine();
+	BattleUnit* shooter = action->actor;
+
+	// Effective soldier accuracy (percent scale) - the same folded value the shot feeds its
+	// soldier cone. No line of sight widens that cone (mirrors getNoLOSAccuracyPenaltyFactor).
+	BattleActionAttack attack = BattleActionAttack::GetBeforeShoot(*action);
+	double soldierAcc = BattleUnit::getFiringAccuracy(attack, mod);
+	const int noLOSAccuracyPenalty = weaponRule->getNoLOSAccuracyPenalty(mod);
+	if (!hasLOS && noLOSAccuracyPenalty != -1)
+	{
+		soldierAcc = soldierAcc * noLOSAccuracyPenalty / 100.0;
+	}
+
+	// Weapon cone (+ ammo spread) and pellet count.
+	int spread = 100;
+	int pellets = 1;
+	if (ammo && ammo->getRules()->getShotgunPellets() != 0)
+	{
+		spread = ammo->getRules()->getShotgunSpread();
+		pellets = ammo->getRules()->getShotgunPellets();
+	}
+	const double sigmaS = soldierConeSigma(soldierAcc);
+	const double sigmaW = weaponConeSigma(weaponRule->getBaseAccuracy(), spread);
+
+	// Resolve origin + aim voxels exactly as the real shot does (so the traced rays start and point
+	// where actual fire would). Use a copy of the action - retargeted at the hovered tile - so the
+	// readout follows the cursor and nothing mutates the live current action.
+	BattleAction probe = *action;
+	probe.target = targetPos;
+	const Position originVoxel = te->getOriginVoxel(probe, save->getTile(shooter->getPosition()));
+	Position aimVoxel;
+	if (!te->resolveFireTargetVoxel(probe, originVoxel, false, &aimVoxel))
+	{
+		aimVoxel = targetPos.toVoxel() + TileEngine::voxelTileCenter;
+	}
+
+	AimVector ideal = { double(aimVoxel.x - originVoxel.x), double(aimVoxel.y - originVoxel.y), double(aimVoxel.z - originVoxel.z) };
+	if (VectDotProduct(ideal, ideal, 1.0) <= 0.0)
+	{
+		return 100; // target voxel == origin voxel: point blank, always on target
+	}
+	ideal = VectNormalize(ideal, 1.0);
+
+	// Deterministic seed from the aim geometry + cones: stable for a given aim, no game-RNG draws.
+	uint64_t seed = 0x9e3779b97f4a7c15ull;
+	auto mix = [&seed](uint64_t v) { seed ^= v + 0x9e3779b97f4a7c15ull + (seed << 6) + (seed >> 2); };
+	mix((uint64_t)((originVoxel.x * 73856093) ^ (originVoxel.y * 19349663) ^ (originVoxel.z * 83492791)));
+	mix((uint64_t)((aimVoxel.x * 73856093) ^ (aimVoxel.y * 19349663) ^ (aimVoxel.z * 83492791)));
+	mix((uint64_t)(sigmaS * 1e6));
+	mix((uint64_t)(sigmaW * 1e6));
+	mix((uint64_t)pellets);
+	RNG::RandomState rng(seed);
+
+	// Trace budget shared across pellets, so a shotgun volley costs roughly the same as a single
+	// shot rather than pelletCount times as much.
+	const int traceBudget = 600;
+	const int trials = std::max(80, traceBudget / pellets);
+	const double maxRange = 16 * 1000;
+
+	std::vector<Position> traj;
+	int hits = 0;
+	for (int i = 0; i < trials; ++i)
+	{
+		// One soldier deflection for the whole shot/volley...
+		const AimVector aim = deflectVector(ideal, seededConeAngle(rng, sigmaS), 2.0 * M_PI * unitDouble(rng));
+
+		// ...then each pellet its own weapon deflection, traced against real terrain.
+		bool anyHit = false;
+		for (int p = 0; p < pellets; ++p)
+		{
+			const AimVector dir = deflectVector(aim, seededConeAngle(rng, sigmaW), 2.0 * M_PI * unitDouble(rng));
+			const Position far = originVoxel + Position((int)(dir.x * maxRange), (int)(dir.y * maxRange), (int)(dir.z * maxRange));
+
+			// Trace and classify the hit exactly as the engine's line-of-fire check does
+			// (Projectile::calculateTrajectory / TileEngine::canTargetUnit): with
+			// storeTrajectory=false the impact voxel is trajectory[0]; a V_UNIT impact whose tile
+			// has no unit is one tile too high (tall unit), so drop it a level; then a hit is
+			// simply "impact tile == the aimed-at tile".
+			traj.clear();
+			VoxelType vt = te->calculateLineVoxel(originVoxel, far, false, &traj, shooter);
+			if (vt == V_EMPTY || vt == V_OUTOFBOUNDS || traj.empty())
+			{
+				continue;
+			}
+			Position hitTile = traj.at(0).toTile();
+			if (vt == V_UNIT && save->getTile(hitTile) && save->getTile(hitTile)->getUnit() == nullptr)
+			{
+				hitTile = Position(hitTile.x, hitTile.y, hitTile.z - 1);
+			}
+			if (hitTile == targetPos)
+			{
+				anyHit = true;
+				break;
+			}
+		}
+		if (anyHit)
+		{
+			++hits;
+		}
+	}
+	return (int)Round(100.0 * hits / trials);
 }
 
 /**

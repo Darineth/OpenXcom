@@ -268,7 +268,11 @@ Everything below is DX-specific work confirmed **absent** from the base.
 - [x] **Live Trajectory Preview** — tracer sprites for the predicted line-of-fire / throw arc while
   aiming (ideal-path preview, shipped independently of the aim-cone). *(design:
   [plans/Feature-LiveTrajectoryPreview.md](plans/Feature-LiveTrajectoryPreview.md))*
-- [ ] **Hover Accuracy Readout** — color-graded percentage + distance. *(coupled UI — needs aim-cone)*
+- [~] **Hover Accuracy Readout** — color-graded percentage + distance. *(coupled UI — needs aim-cone)*
+  - [x] Physical hit-chance % on the aiming crosshair for cone weapons (deterministic Monte-Carlo
+    that voxel-traces each sample, so it's cover-aware; shotgun-aware, no-LOS widening), color-graded
+    red→green; shown without UFOExtender; cached per aim.
+  - [ ] Separately-broken-out cover-reduction term `(-<cover>%)` and `@ <distance>` suffix.
 - [ ] **Throw Reach Scaling** — strength vs weight readout/scaling. *(coupled UI — needs aim-cone)*
 - [ ] **Action-menu effective-range readout** — the deferred Phase 1 piece. *(needs
   aim-cone)*

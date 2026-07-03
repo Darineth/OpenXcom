@@ -192,6 +192,11 @@ Map::Map(Game *game, int width, int height, int x, int y, int visibleMapHeight) 
 	_cacheIsCtrlPressed = false;
 	_cacheCursorPosition = TileEngine::invalid;
 	_cacheHasLOS = -1;
+	_cacheHitChance = -1;
+	_cacheHitChancePosition = TileEngine::invalid;
+	_cacheHitChanceCtrl = -1;
+	_cacheHitChanceWeapon = nullptr;
+	_cacheHitChanceActionType = -1;
 
 	_nightVisionOn = false;
 	if (Options::oxceToggleNightVisionType == 2)
@@ -1678,8 +1683,18 @@ void Map::drawTerrain(Surface *surface)
 							tmpSurface = _game->getMod()->getSurfaceSet("CURSOR.PCK")->getFrame(frameNumber);
 							Surface::blitRaw(surface, tmpSurface, screenPosition.x, screenPosition.y, 0);
 
+							// DX aim-cone weapons show a physical hit-chance readout even when UFO Extender
+							// accuracy is off (the cone produces range falloff intrinsically, so the number
+							// is meaningful regardless) - as long as the player hasn't disabled crosshair info.
+							bool coneInfoReadout = false;
+							if (_cursorType == CT_AIM && Options::oxceShowAccuracyOnCrosshair != 0)
+							{
+								BattleAction *ca = _save->getBattleGame()->getCurrentAction();
+								coneInfoReadout = ca && ca->weapon && ca->weapon->getRules()->getBaseAccuracy() > 0;
+							}
+
 							// UFO extender accuracy: display adjusted accuracy value on crosshair in real-time.
-							if (_cursorType >= CT_AIM && _showInfoOnCursor && (_cursorType != CT_THROW || !Options::oxceDisableInfoOnThrowCursor))
+							if (_cursorType >= CT_AIM && (_showInfoOnCursor || coneInfoReadout) && (_cursorType != CT_THROW || !Options::oxceDisableInfoOnThrowCursor))
 							{
 								BattleAction *action = _save->getBattleGame()->getCurrentAction();
 								const RuleItem *weapon = action->weapon->getRules();
@@ -1689,6 +1704,69 @@ void Map::drawTerrain(Surface *surface)
 								int distance = (int)std::ceil(sqrt(float(distanceSq)));
 
 								if (_cursorType == CT_AIM || _cursorType == CT_THROW)
+								{
+								// DX aim-cone weapons: show the estimated *physical* hit chance instead of
+								// the native folded accuracy (which is only the soldier-cone input, and whose
+								// dropoff/range terms don't apply on the cone path).
+								bool coneModel = _cursorType == CT_AIM
+									&& weapon->getBaseAccuracy() > 0
+									&& action->type != BA_THROW
+									&& action->type != BA_LAUNCH
+									&& action->type != BA_HIT;
+								if (coneModel)
+								{
+									// Line of sight (cached, keyed on cursor tile + ctrl) widens the soldier cone.
+									bool hasLOS = false;
+									if (Position(itX, itY, itZ) == _cacheCursorPosition && _isCtrlPressed == _cacheIsCtrlPressed && _cacheHasLOS != -1)
+									{
+										hasLOS = (_cacheHasLOS == 1);
+									}
+									else
+									{
+										if (unit && (unit->getVisible() || _save->getDebugMode()))
+											hasLOS = _save->getTileEngine()->visible(action->actor, tile);
+										else
+											hasLOS = _save->getTileEngine()->isTileInLOS(action, tile, true);
+										_cacheIsCtrlPressed = _isCtrlPressed;
+										_cacheCursorPosition = Position(itX, itY, itZ);
+										_cacheHasLOS = hasLOS ? 1 : 0;
+									}
+
+									// The hit-chance estimate voxel-traces hundreds of rays, so cache it and
+									// recompute only when the aim changes (cursor tile / ctrl / weapon / action).
+									int chance;
+									Position cursorPos(itX, itY, itZ);
+									if (_cacheHitChance != -1
+										&& cursorPos == _cacheHitChancePosition
+										&& (_isCtrlPressed ? 1 : 0) == _cacheHitChanceCtrl
+										&& action->weapon == _cacheHitChanceWeapon
+										&& (int)action->type == _cacheHitChanceActionType)
+									{
+										chance = _cacheHitChance;
+									}
+									else
+									{
+										chance = weapon->isOutOfRange(distanceSq)
+											? 0
+											: Projectile::calculateHitChancePercent(_save, action, cursorPos, attack.damage_item, _game->getMod(), hasLOS);
+										_cacheHitChance = chance;
+										_cacheHitChancePosition = cursorPos;
+										_cacheHitChanceCtrl = _isCtrlPressed ? 1 : 0;
+										_cacheHitChanceWeapon = action->weapon;
+										_cacheHitChanceActionType = (int)action->type;
+									}
+
+									// color-grade the readout red -> yellow -> green by hit chance
+									if (chance >= 65)
+										_txtAccuracy->setColor(Palette::blockOffset(Pathfinding::green - 1) - 1);
+									else if (chance >= 35)
+										_txtAccuracy->setColor(Palette::blockOffset(Pathfinding::yellow - 1) - 1);
+									else
+										_txtAccuracy->setColor(Palette::blockOffset(Pathfinding::red - 1) - 1);
+
+									ss << chance << "%";
+								}
+								else
 								{
 									int accuracy = BattleUnit::getFiringAccuracy(attack, _game->getMod());
 
@@ -1763,8 +1841,10 @@ void Map::drawTerrain(Surface *surface)
 									ss << "%";
 								}
 
-								//TODO: merge this code with `InventoryState::calculateCurrentDamageTooltip` as 90% is same or should be same
-								// display additional damage and psi-effectiveness info
+								} // end cone-model vs native accuracy readout
+
+									//TODO: merge this code with `InventoryState::calculateCurrentDamageTooltip` as 90% is same or should be same
+									// display additional damage and psi-effectiveness info
 								if (_isAltPressed)
 								{
 									// step 1: determine rule

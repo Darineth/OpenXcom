@@ -719,3 +719,15 @@ calibration: [reference/aimcone_montecarlo.py](reference/aimcone_montecarlo.py))
   cone's central axis and needed no changes.
 - Gaussian sampling via a new `RNG::boxMuller()` on the seeded battle stream (deterministic
   for a given seed).
+- **Physical hit-chance crosshair readout.** For cone-model weapons the aiming crosshair shows the
+  estimated *physical odds of hitting the target* (color-graded red→yellow→green), replacing the
+  native folded-accuracy number. It stacks the same two cones the shot uses and, via a deterministic
+  Monte-Carlo, **voxel-traces each sampled shot against the real terrain** — counting only rays that
+  actually reach the target's own voxel silhouette. So it's fully **cover-aware**: a wall or object
+  between shooter and target drops the reading toward zero (a target behind a wall no longer reads a
+  false high %), and partial cover reduces it proportionally, all on top of the natural distance
+  falloff and weapon/skill differences. Shotgun-aware (any pellet reaching the target counts),
+  no-LOS widens the estimate, and it's shown even without UFO Extender accuracy. The estimator is
+  deterministic per aim, cached in `Map` (recomputed only when the aim changes, since tracing is
+  expensive), and never perturbs the game RNG. *(A separately-broken-out cover-% term, the
+  `@ <distance>` suffix, and the 50%-hit effective-range readout are still to come.)*

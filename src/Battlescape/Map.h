@@ -92,6 +92,13 @@ private:
 	bool _cacheIsCtrlPressed;
 	Position _cacheCursorPosition;
 	int _cacheHasLOS; // -1 = unknown, 0 = no LOS, 1 = has LOS
+	// Cache for the DX aim-cone hit-chance crosshair readout (expensive: voxel-traced Monte-Carlo);
+	// recomputed only when the aim (cursor tile / ctrl / weapon / action type) changes, not every frame.
+	int _cacheHitChance; // -1 = unknown, else 0-100
+	Position _cacheHitChancePosition;
+	int _cacheHitChanceCtrl; // -1 = unknown, else 0/1
+	const void* _cacheHitChanceWeapon;
+	int _cacheHitChanceActionType;
 	int _animFrame;
 	std::vector<Projectile*> _projectiles;
 	bool _followProjectile;

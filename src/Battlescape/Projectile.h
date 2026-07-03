@@ -25,10 +25,12 @@ namespace OpenXcom
 {
 
 class BattleItem;
+class BattleUnit;
 class SavedBattleGame;
 class Surface;
 class Tile;
 class Mod;
+struct BattleActionAttack;
 
 /**
  * A double-precision 3D direction vector used by the aim-cone firing model
@@ -53,6 +55,14 @@ public:
 	static Position getPositionFromStart(const std::vector<Position>& trajectory, int pos);
 	/// Get Position at offset from end from trajectory vector.
 	static Position getPositionFromEnd(const std::vector<Position>& trajectory, int pos);
+
+	/// Aim-cone model: soldier-cone stddev (radians) for a percent-scale effective soldier accuracy.
+	static double soldierConeSigma(double soldierAcc);
+	/// Aim-cone model: weapon-cone stddev (radians) for a weapon baseAccuracy (scaled by ammo shotgunSpread%).
+	static double weaponConeSigma(int baseAccuracy, int shotgunSpread = 100);
+	/// Aim-cone model: estimated physical hit chance (0-100%) against a target, for the crosshair
+	/// readout. Voxel-traces sampled shots against real terrain (cover-aware); cache the result per aim.
+	static int calculateHitChancePercent(SavedBattleGame* save, BattleAction* action, Position targetPos, BattleItem* ammo, Mod* mod, bool hasLOS);
 
 private:
 	Mod *_mod;

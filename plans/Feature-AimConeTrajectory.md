@@ -259,6 +259,59 @@ Replaces steps 3–5 of `applyAccuracy` **for direct fire only**. Conceptually
   for the hover readout `<acc>% (-<cover>%) @ <distance>` (shown even without UFOExtender mode,
   color-graded red→green). See `Feature-ActionMenuRevamp.md` (effective-range readout was deferred
   here) and the Phase 5 "Hover Accuracy Readout" item.
+  **Implemented (Jul 2026)** as `Projectile::calculateHitChancePercent(attack, mod, distanceTiles,
+  targetUnit, hasLOS)` — the crosshair hit-chance half. See *Hover hit-chance readout* below. The
+  cover-reduction term and the `calculateEffectiveRange` 50%-range readout remain TODO.
+
+### Hover hit-chance readout — implemented (Jul 2026)
+
+For cone-model weapons the aiming crosshair now shows the **physical probability the shot lands on
+the target**, replacing the native folded-accuracy number (which for cone weapons is only the
+soldier-cone *input*, and whose dropoff/range terms don't even apply on the cone path).
+
+- **Method — Monte-Carlo that voxel-traces each sample against real terrain (cover-aware).**
+  `calculateHitChancePercent` stacks the *same two cones the real shot uses* (via the shared
+  `soldierConeSigma` / `weaponConeSigma` helpers), and for each sampled shot it deflects the ideal
+  muzzle→target ray, extends it to max range, and runs the **real** `TileEngine::calculateLineVoxel`
+  trace. A trial counts as a hit using the **engine's own line-of-fire test**, mirrored exactly from
+  `Projectile::calculateTrajectory` / `TileEngine::canTargetUnit`: the impact voxel is `trajectory[0]`
+  (traced with `storeTrajectory=false`); a `V_UNIT` impact whose tile has no unit is dropped one tile
+  (tall/floating units); and it's a hit iff that impact **tile equals the aimed-at tile**
+  (`action->target`). (An earlier attempt read `trajectory.back()` and compared unit *pointers*,
+  which misfired — reading ~0% on makeable shots — whenever the cursor tile's unit was null or on a
+  different tile than the impact. Matching the engine's tile comparison fixed it.) This means:
+  - **Cover is exact, not approximated.** A wall/object between shooter and target blocks shots just
+    as in play (fixing the earlier bug where a target behind a wall still read a high %), and
+    *partial* cover — only the target's head exposed, say — reduces the estimate because the rays
+    toward the covered part hit terrain first.
+  - **The silhouette is the unit's real voxel model,** not a rectangle. (An earlier version sampled a
+    stance/size rectangle in the 2D tangent plane; the voxel trace supersedes it and also handles
+    obstruction, so the rectangle approximation was dropped.)
+  - Origin and aim voxels come from the same `getOriginVoxel` / `resolveFireTargetVoxel` resolution
+    the actual shot uses, so the traced rays start and point where real fire would.
+  - A closed-form isotropic-Gaussian approximation was tried and **rejected**: each cone's tangent
+    offset is `θ·(cosφ,sinφ)` with `θ` a *half-normal* radius (not a 2D Gaussian), so the true
+    distribution is much more centrally peaked and the Gaussian formula under-read the hit chance by
+    up to ~10 points in wide-cone cases.
+- **Shotgun-aware.** A volley shares one soldier roll, then each pellet rolls its own weapon cone and
+  traces independently; the readout counts a trial as a hit if **any** pellet reaches the target (so
+  buckshot reads higher than a single slug up close).
+- **Deterministic & side-effect-free.** The sampler uses a private `RNG::RandomState` seeded from the
+  quantized aim geometry + cones, so the number is stable for a given aim (no frame flicker) and
+  **never draws from the game RNG stream** (no effect on actual shots or save determinism). A copy of
+  the action is used for voxel resolution so the live action is never mutated.
+- **Performance.** Tracing is far heavier than arithmetic, so the result is **cached in `Map`** and
+  recomputed only when the aim changes (cursor tile / ctrl / weapon / action type), not every frame.
+  A shared trace budget (~600 traces) keeps a shotgun volley roughly as cheap as a single shot
+  (fewer volley-trials, `pellets` traces each) rather than costing `pelletCount`× more.
+- **Inputs mirror the shot.** Effective soldier accuracy = `getFiringAccuracy`; no line of sight
+  widens the soldier cone (same `noLOSAccuracyPenalty` factor); out-of-range reads `0%`.
+- **UI.** Rendered by the existing crosshair `_txtAccuracy` text in `Map.cpp`, color-graded
+  red (<35%) → yellow (35–64%) → green (≥65%). Shown even when `battleUFOExtenderAccuracy` is off,
+  as long as the player hasn't disabled crosshair info (`oxceShowAccuracyOnCrosshair != 0`).
+- **Not yet done:** the *explicit* cover-reduction term `(-<cover>%)` (cover is folded into the
+  single % today rather than shown separately), the `@ <distance>` suffix, and the 50%-hit
+  **effective-range** readout (`calculateEffectiveRange`).
 
 ## Vanilla weapon compatibility & code-path swap
 
