@@ -56,73 +56,130 @@ damageTypes:
     ToArmorOverPenThreshold: 2.0
 
 items:
-  # -------------------------------------------------------------------
-  #  Pistol -> auto-firing shotgun
-  #  Tests: async shotgun pellets flying as individual projectiles,
-  #         shotgun spread, and timer-based burst cadence all at once.
-  #  Fire the auto shot and watch the pellet fan fly out per round.
-  # -------------------------------------------------------------------
+
+# =====================================================================
+#  DX: aim-cone trajectory model (baseAccuracy opt-in)
+#  Opts the starter conventional weapons into the aim-cone firing model
+#  (plans/Feature-AimConeTrajectory.md). baseAccuracy > 0 switches the
+#  weapon from the native scatter model to the two-cone model and sets
+#  the weapon cone's width: 75 = calibration reference (~0.5 deg sigma),
+#  lower = sloppier, higher = tighter. Weapon-cone sigmas for the values
+#  below (soldier aim error stacks on top):
+#    45 -> ~1.4 deg   55 -> ~0.9 deg   65 -> ~0.7 deg
+#    70 -> ~0.6 deg   85 -> ~0.4 deg   150 -> ~0.1 deg
+#
+#  What to check:
+#    * Rifle vs pistol at range: same soldier, snap shots at 15+ tiles -
+#      the rifle should land noticeably more hits; up close (<8 tiles)
+#      they should feel similar (soldier cone dominates).
+#    * Auto-cannon bursts walk around the target (every round re-rolls
+#      both cones) and spray hard at distance.
+#    * Heavy sniper (reframed heavy cannon): baseAccuracy 150 makes the
+#      weapon cone negligible, so an AIMED shot's reach is set almost
+#      entirely by the shooter's skill. A high-Firing soldier should tag
+#      targets at extreme range that every other weapon here misses; its
+#      snap is deliberately bad (don't hip-fire a sniper). This is the
+#      top-end counterpart to the auto-cannon's wide spray.
+#    * Misses streak past/over the target toward the horizon instead of
+#      landing in a disc around it; miss spread visibly grows with range.
+#    * Rocket launcher misses still sail somewhere plausible downrange
+#      (3-sigma clamp - no backwards rockets).
+#    * Vanilla dropoff no longer applies to these six (aim/snap/auto
+#      range fields are inert on the cone path, even with UFOExtender
+#      Accuracy on).
+# =====================================================================
   - type: STR_PISTOL
-    shotgunChoke: 100      # DX: tightness of the pellet cone (with shotgunBehavior 1)
-    fireInterval: 80       # DX: ms between burst shots (lower = more rounds airborne)
-    autoShots: 3
-    accuracyAuto: 50
-    tuAuto: 33
-    statModifiers:
-      reactions: 25        # DX: +25% reactions (0 baseline)
-
-  - type: STR_PISTOL_CLIP
-    shotgunPellets: 6      # DX: launches 6 real projectiles per shot
-    shotgunBehavior: 0     # 0 = diminishing-accuracy spread (vanilla-like), 1 = spread+choke
-    shotgunSpread: 100     # spread width (100 = vanilla baseline)
-
-  # -------------------------------------------------------------------
-  #  Rifle -> long fast-cadence auto fire (non-shotgun)
-  #  Tests: many normal bullets overlapping in flight via fireInterval.
-  #  Also adds Burst: a fourth fire mode (3-round controlled volley)
-  #  sitting between snap and auto. Opt-in via accuracyBurst.
-  # -------------------------------------------------------------------
+    baseAccuracy: 55        # sloppy sidearm: short-range weapon, loose pattern
   - type: STR_RIFLE
-    fireInterval: 60       # DX: very fast cadence to keep several rounds visible at once
-    # --- Aimed ---
-    accuracyAimed: 200     # DX: Aimed fire is (almost) perfect accuracy and cheap for testing projectile trajectory
-    tuAimed: 10
-    aimRange: 200
-    # --- Snap ---
-    accuracySnap: 60
-    tuSnap: 25
-    snapRange: 15
-    # --- Burst (DX): controlled 3-round volley between snap and auto ---
-    accuracyBurst: 45      # DX: enables the Burst fire mode (per-shot, above auto, below snap)
-    tuBurst: 33            # DX: TU cost (percentage of unit TUs) - between snap and auto
-    burstShots: 3          # DX: 3-round controlled volley
-    burstRange: 12         # DX: effective range band
-    ## --- Auto: high-volume suppression spray ---
-    ## vanilla STR_RIFLE Auto: accuracyAuto 35, tuAuto 35, autoShots 3 (autoRange 7)
-    ##accuracyAuto: 30       # was 35 - low per-shot accuracy to offset the round count
-    ##tuAuto: 50             # was 35 - pricier than burst for the longer volley
-    ##autoShots: 6           # was 3  - now a 6-round auto burst
-    ##autoRange: 7           # unchanged (engine default)
-    # --- Auto: Many shots with high accuracy to test async projectile flight ---
-    accuracyAuto: 200      # DX: high per-shot accuracy to see many rounds in flight
-    tuAuto: 20             # DX: low TU cost to allow many rounds in a single turn
-    autoRange: 200         # DX: long range to allow many rounds hitting multiple targets in a line
-    autoShots: 10          # DX: many rounds in a single turn to test async projectile flight
-
-  # -------------------------------------------------------------------
-  #  Basic grenade -> full radius falloff
-  #  Tests: blastDropoff at 100% (center strong, edge minimal/zero)
-  # -------------------------------------------------------------------
-  - type: STR_GRENADE
-    blastDropoff: 1.0
-
-  # -------------------------------------------------------------------
-  #  Rocket launcher -> TU penalty test item
-  #  Tests: flat TU penalty using item stats
-  # -------------------------------------------------------------------
+    baseAccuracy: 85        # precision rifle: tightest of the conventional set
+    # Multi-shot testing: auto becomes a long 6-round spray and costs more (45TU, up
+    # from vanilla 35), with a new DX Burst mode (3 rounds) taking auto's old slot:
+    # snap 25TU/60% -> burst 35TU/45% -> auto 45TU/35%. Every round of a spray/burst
+    # re-rolls BOTH cones, so autos/bursts should visibly walk around the target.
+    autoShots: 6
+    tuAuto: 45
+    tuBurst: 35
+    accuracyBurst: 45
+    burstShots: 3
+  - type: STR_AUTO_CANNON
+    baseAccuracy: 45        # spray support gun: widest cone of the set
+  - type: STR_HEAVY_CANNON  # reframed as a heavy sniper (renamed in extraStrings below)
+    baseAccuracy: 150       # laser-precise weapon cone (~0.1 deg): at range the shot is
+                            # limited almost entirely by the shooter's aim, not the gun
+    accuracySnap: 40        # poor hip-fire...
+    tuSnap: 45              # ...and expensive: a genuine last resort
+    accuracyAimed: 150      # the star: a big deliberate-aim bonus that tightens the SOLDIER
+    tuAimed: 80             #   cone hard, so a skilled sniper reaches far out
   - type: STR_ROCKET_LAUNCHER
-    stats:
-      tu: -10
+    baseAccuracy: 70        # aimed launcher: near reference precision
+
+# ---------------------------------------------------------------------
+#  DX: test shotgun (new item; borrows the rifle's graphics and size).
+#  Exercises the aim-cone shotgun rules: the whole volley shares ONE
+#  soldier-cone roll (the pattern's center moves shot to shot), then each
+#  pellet rolls its own weapon cone scaled by the ammo's shotgunSpread.
+#  shotgunChoke/shotgunBehaviorType are deliberately unset - they don't
+#  apply on the cone path (choke is subsumed by baseAccuracy).
+#
+#  What to check:
+#    * Buckshot: 6-pellet cloud; pellet cluster lands together around a
+#      center that wanders with the shooter's aim error. Devastating
+#      close, pellets spread wide at range (spread 150 = 1.5x weapon cone).
+#    * Slug: single round, tighter than buckshot (spread doesn't apply -
+#      no pellets), hits like a heavy rifle round.
+#    * Same gun, same soldier: buckshot vs slug should pattern visibly
+#      differently - that's the per-ammo spread axis working.
+# ---------------------------------------------------------------------
+  - type: STR_SHOTGUN
+    size: 0.2
+    costBuy: 2000
+    costSell: 1500
+    weight: 8
+    bigSprite: 1            # rifle graphics
+    floorSprite: 1
+    handSprite: 0
+    bulletSprite: 2
+    fireSound: 4
+    compatibleAmmo:
+      - STR_SHOTGUN_BUCKSHOT
+      - STR_SHOTGUN_SLUG
+    accuracySnap: 55
+    accuracyAimed: 85
+    tuSnap: 25
+    tuAimed: 55
+    battleType: 1
+    twoHanded: true
+    invWidth: 1
+    invHeight: 3
+    baseAccuracy: 65        # decent smoothbore: between heavy cannon (60) and launcher (70)
+  - type: STR_SHOTGUN_BUCKSHOT
+    size: 0.1
+    costBuy: 250
+    costSell: 180
+    weight: 3
+    bigSprite: 2            # rifle clip graphics
+    floorSprite: 2
+    hitSound: 22
+    hitAnimation: 26
+    power: 20               # per pellet (6 pellets = up to 120 total up close)
+    damageType: 1
+    clipSize: 8
+    battleType: 2
+    shotgunPellets: 6
+    shotgunSpread: 150      # per-pellet weapon cone x1.5 (100 = neutral)
+  - type: STR_SHOTGUN_SLUG
+    size: 0.1
+    costBuy: 300
+    costSell: 220
+    weight: 3
+    bigSprite: 4            # pistol clip graphics (distinguishes slugs from buckshot)
+    floorSprite: 4
+    hitSound: 22
+    hitAnimation: 26
+    power: 45               # single heavy round
+    damageType: 1
+    clipSize: 8
+    battleType: 2
 
 # =====================================================================
 #  DX: configurable inventory layouts (per-armor)
@@ -239,8 +296,34 @@ invs:
     battleType: 1           # firearms only
     allowCombatSwap: false  # integrated: can't be pulled out or swapped in combat
     costs:
-      STR_BELT: 8
       STR_GROUND: 2
+  # AMMO-ONLY "heavy ammo satchel": a big 4x3 slot grid (type 0) that replaces the belt in the
+  # ONEHAND layout. battleType 2 = BT_AMMO -> only clips fit (a weapon/grenade is rejected,
+  # STR_INVALID_ITEM_SLOT, and auto-equip won't dump non-ammo here). Sized to hold a deep
+  # reserve of reloads for the single integrated weapon that has no off-hand to juggle clips.
+  # Positioned where the left hand would normally sit (x:128, y:63), extending right.
+  - id: STR_DX_AMMO_SATCHEL
+    x: 128
+    y: 63
+    type: 0                 # INV_SLOT (grid)
+    battleType: 2           # ammo only (BT_AMMO)
+    slots:
+      - [0, 0]
+      - [1, 0]
+      - [2, 0]
+      - [3, 0]
+      - [0, 1]
+      - [1, 1]
+      - [2, 1]
+      - [3, 1]
+      - [0, 2]
+      - [1, 2]
+      - [2, 2]
+      - [3, 2]
+    costs:
+      STR_RIGHT_HAND: 8
+      STR_LEFT_HAND: 8
+      STR_GROUND: 6
   # A dedicated "utility" equipment slot (INV_UTILITY). type: 3 -> single-occupant box (one item,
   # no slots: grid needed), but it is NOT a hand: the item is never wielded/fired/reacted from, and
   # BattleUnit::getUtilityItem() returns whatever sits here. Unlike a hand it DOES size-check: only
@@ -277,7 +360,7 @@ inventoryLayouts:
     invs: &dxLightInvs [STR_RIGHT_HAND, STR_LEFT_HAND, STR_GROUND, STR_DX_AMMO_POUCH, STR_DX_HOLSTER, STR_DX_MEDKIT]
 
   - id: STR_DX_LAYOUT_RIG
-    invs: [STR_RIGHT_HAND, STR_LEFT_HAND, STR_BELT, STR_RIGHT_SHOULDER, STR_LEFT_SHOULDER, STR_GROUND, STR_DX_SATCHEL, STR_DX_UTILITY, STR_DX_EQUIP]
+    invs: [STR_RIGHT_HAND, STR_LEFT_HAND, STR_BELT, STR_RIGHT_SHOULDER, STR_LEFT_SHOULDER, STR_GROUND, STR_DX_SATCHEL]
 
   - id: STR_DX_LAYOUT_CLONE
     # refNode reuse: inherit LIGHT's invs list verbatim (no own `invs:`), so this renders
@@ -289,8 +372,9 @@ inventoryLayouts:
     # The unit's only hand is a locked "integrated weapon" mount (firearms only, can't be removed
     # in combat). No left hand. Exercises configurable hand slots (a renamed, non-STR_RIGHT_HAND
     # section acting as the right hand) plus the typed-slot battleType/allowCombatSwap filters, and
-    # the missing-left-hand unload/reload fallbacks.
-    invs: [STR_DX_INTEGRATED_WEAPON, STR_BELT, STR_GROUND]
+    # the missing-left-hand unload/reload fallbacks. Instead of a belt it carries a big 4x3
+    # ammo-only satchel (STR_DX_AMMO_SATCHEL) - a deep clip reserve for the single integrated gun.
+    invs: [STR_DX_INTEGRATED_WEAPON, STR_DX_AMMO_SATCHEL, STR_GROUND]
 
 armors:
   - type: STR_NONE_UC
@@ -305,11 +389,16 @@ armors:
 extraStrings:
   - type: en-US
     strings:
+      STR_HEAVY_CANNON: "Heavy Sniper"
+      STR_SHOTGUN: "Shotgun"
+      STR_SHOTGUN_BUCKSHOT: "Shotgun Buckshot"
+      STR_SHOTGUN_SLUG: "Shotgun Slug"
       STR_DX_SATCHEL: "SATCHEL"
       STR_DX_AMMO_POUCH: "AMMO"
       STR_DX_HOLSTER: "HOLSTER"
       STR_DX_MEDKIT: "MEDKIT"
       STR_DX_INTEGRATED_WEAPON: "WEAPON"
+      STR_DX_AMMO_SATCHEL: "AMMO SATCHEL"
 
 # =====================================================================
 #  User options forced on while this test mod is active
