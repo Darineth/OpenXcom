@@ -1,7 +1,8 @@
 # Feature: Aim-Cone Trajectory Model
 
 **Status:** Planned (Phase 5 — Firing & Accuracy). Not yet implemented; the current engine still
-uses the native OXCE scatter-the-aimpoint model described below.
+uses the native OXCE scatter-the-aimpoint model described below. **Design review complete
+(Jul 2026)** — all open questions resolved; see *Resolved design decisions* at the bottom.
 
 ## Motivation
 
@@ -109,17 +110,30 @@ and should be **reused** by the aim-cone (feeding the effective-range readout).
   `TileEngine::validateThrow`. **The aim-cone does not touch throwing** — it stays on the scatter
   model. (Legacy-DX-Features.md §1 confirms throwing was intentionally left on the legacy path.)
 - **`BA_LAUNCH` guided missiles** — hard-code accuracy 0.55/0.60 by faction and drift via the same
-  `applyAccuracy`. Decide whether launch stays scatter-based or joins the cone.
+  `applyAccuracy`. **Resolved: launch stays on the scatter model** — waypoint legs fire with
+  `extendLine = false` and homing semantics don't fit a fly-down-a-ray model. Revisit only if it
+  feels wrong in play.
 - **Shotgun pellets** — DX already flies pellets as individual concurrent projectiles
   ([ProjectileFlyBState.cpp:649-659](../src/Battlescape/ProjectileFlyBState.cpp#L649)), but each
   pellet currently calls `calculateTrajectory` with a **reduced per-pellet accuracy** feeding the
-  *native scatter model* — not a boxMuller cone. Under the aim-cone this should converge on a single
-  per-pellet cone deflection (`boxMuller(0, 0.437 / shotgunAcc · 1.4826)` per the legacy design),
-  replacing the diminishing-accuracy trick.
-- **`recalculateImpact`** ([Projectile.cpp:219](../src/Battlescape/Projectile.cpp#L219)) re-traces a
+  *native scatter model* — not a boxMuller cone. Under the aim-cone this converges on a single
+  per-pellet weapon-cone deflection (the *Weapon cone* formula in *Mechanics*), replacing the
+  diminishing-accuracy trick. **Resolved: the per-pellet cone is scaled by the ammo's
+  `shotgunSpread`** (buckshot vs. slug from the same gun still patterns differently; exact mapping
+  settled during tuning), while **`shotgunChoke` is subsumed by `baseAccuracy`** — choke is already
+  a flat per-weapon pattern-tightness multiplier ([ProjectileFlyBState.cpp:574-583](../src/Battlescape/ProjectileFlyBState.cpp#L574)),
+  i.e. the same axis as intrinsic weapon precision, so an opted-in tight-choked shotgun just sets a
+  higher `baseAccuracy`. The cone path ignores choke (document this on the field); scatter-model
+  shotguns (`baseAccuracy: 0`) keep both fields working exactly as today.
+- **`recalculateImpact`** ([Projectile.cpp:251](../src/Battlescape/Projectile.cpp#L251)) re-traces a
   *stored* trajectory against changed terrain. It re-runs `calculateLineVoxel` from the stored
   origin to `_targetVoxel`. For the cone model the stored `_targetVoxel` must be the **already
-  deflected** endpoint so the re-trace stays deterministic — same requirement as today.
+  deflected, max-range-extended** endpoint of the ray — then the existing `recalculateImpact`
+  works **unchanged** (no port of the legacy `recalculateTrajectoryFromVector` needed).
+- **Live trajectory preview** (`Projectile::calculatePreviewTrajectory`,
+  [Projectile.cpp:215](../src/Battlescape/Projectile.cpp#L215)) — already traces the ideal
+  undeviated muzzle→target ray, which *is* the cone's central axis. **No change needed** under the
+  cone model.
 
 ### What is NOT present yet (confirmed)
 
@@ -178,11 +192,36 @@ Replaces steps 3–5 of `applyAccuracy` **for direct fire only**. Conceptually
      above (firing skill × shot-type × kneel × one-handed × wounds). It is **squared** in the
      denominator, so high effective aim tightens the cone sharply. **Applied once per round** — for
      shotguns, once for the whole volley.
-   - **Weapon cone** — `angle = boxMuller(0, 0.437 / weaponAcc · 1.4826)`, driven only by the
-     weapon's intrinsic accuracy and *nothing else*. **Applied per projectile** (per pellet for
-     shotguns). The two cones **stack**: shooter error then weapon error.
+   - **Weapon cone** — `angle = boxMuller(0, 0.437 / (weaponAcc² / 75) · 1.4826)`, driven only by
+     the weapon's intrinsic accuracy (`baseAccuracy`) and *nothing else*. **Applied per projectile**
+     (per pellet for shotguns). The two cones **stack**: shooter error then weapon error.
+     **DX deviation from legacy:** the legacy fork scaled this cone *linearly*
+     (`0.437 / weaponAcc · 1.4826`); DX squares `weaponAcc` and normalizes at 75, so
+     `baseAccuracy: 75` (the legacy default) behaves identically to legacy while values away from
+     75 spread much harder. See decision 11 for the calibration data behind this.
    - `boxMuller(mean, stddev)` = a Gaussian/normal sample (Box–Muller transform); `1.4826` is the
      MAD→σ consistency constant; `0.437` is the tuning constant carried over from the legacy fork.
+   - **Percent scale:** both accuracies enter these formulas as *percent-scale* integers (60, not
+     0.60). The existing call sites divide by `accuracyDivider` (100) before passing accuracy into
+     the projectile — the cone path must receive the **undivided** values, or `soldierAcc²/50`
+     silently produces a ~180-radian stddev.
+   - **Floors:** clamp effective `soldierAcc` to **≥ 20** (legacy's hard floor — the constants were
+     calibrated against it; at 20 the soldier-cone stddev is ~3.7°) *after* all multipliers,
+     including the no-LOS penalty. Guard `weaponAcc` to **≥ 1**.
+   - **Tail clamp:** each sampled deflection angle is clamped at **3σ of its own cone** — scale-free
+     (good shooters stay tight, bad shooters stay wild), keeps 99.7% of the distribution untouched,
+     and prevents freak outliers from exiting sideways/backwards.
+   - **RNG determinism:** the `boxMuller` sampler must draw from the battle `RNG` stream (not a
+     separate generator) so seeded saves stay reproducible.
+   - **Range dropoff: none.** The cone path applies **no linear range dropoff** — distance falloff
+     comes purely from cone geometry (a fixed angular error covers more voxels the further it
+     travels). The `aimRange`/`snapRange`/`autoRange`/`minRange`/`dropoff` fields feed only the
+     effective-range readout for opted-in weapons. (With default field values and
+     `battleUFOExtenderAccuracy` off, dropoff never triggers today anyway — `aimRange` defaults to
+     200 tiles, larger than any map — so this matches default-settings vanilla behavior.)
+   - **No-LOS penalty:** `noLOSAccuracyPenalty` multiplies into effective `soldierAcc` (before the
+     floor-20 clamp) — "can't see it, your aim suffers"; weapon precision is untouched. The
+     existing ruleset field is reused unchanged.
 3. **Trace as a ray.** `direction *= 16000`, then
    `TileEngine::calculateLineFromVector(origin, direction, ...)` flies the bullet down the deflected
    line until impact — no target-point homing. `recalculateTrajectoryFromVector()` re-traces the
@@ -219,9 +258,10 @@ nothing changes until a weapon opts in.** This is the primary migration mechanis
   driving the weapon cone. Modders opt weapons in one at a time.
 
 `Projectile::calculateTrajectory` branches on the weapon's `baseAccuracy` (0 → today's code, >0 →
-the cone path). Both paths share the up-front pieces — the LOS sanity pre-trace, range dropoff
-(`calculateLimits`), and the LOS penalty — and diverge only at the deviation stage
-(`applyAccuracy`'s steps 3–5 vs. the direction-vector cone). Keeping the native path fully intact
+the cone path). Both paths share the LOS sanity pre-trace, then diverge: the native path keeps its
+full `applyAccuracy` (range dropoff, LOS penalty, scatter), while the cone path applies **no linear
+range dropoff** (falloff is geometric) and folds the no-LOS penalty into `soldierAcc` instead
+(see *Mechanics*). Keeping the native path fully intact
 also de-risks the rollout: the cone can be developed and tuned against a handful of test weapons
 while the campaign content stays on the proven model.
 
@@ -234,8 +274,8 @@ new field:
   `getFiringAccuracy`: `_accuracyMulti` (Firing-stat scaling) × the per-mode `RuleItemAction.accuracy`
   (snap 60 / aimed 110 / auto 40 / burst) × kneel × one-handed × wounds. Every weapon already
   expresses "aim quality" through these fields, so the soldier cone works untouched. The range fields
-  (`aimRange`/`snapRange`/`autoRange`/`minRange`/`dropoff`) carry straight into the dropoff and
-  effective-range math.
+  (`aimRange`/`snapRange`/`autoRange`/`minRange`/`dropoff`) feed only the **effective-range readout**
+  for opted-in weapons — the cone applies no linear dropoff (see *Mechanics*).
 - **Weapon cone — driven by `baseAccuracy`.** This is the genuinely new axis: no intrinsic per-weapon
   *precision/spread* field existed before (`RuleItemAction.accuracy` is the aim/mode number, not a
   spread number). A higher `baseAccuracy` → tighter weapon cone.
@@ -246,9 +286,9 @@ new field:
 Because opted-in behavior only appears when a modder sets `baseAccuracy`, the calibration burden is
 scoped to *those* weapons rather than being a global re-balance — pick `baseAccuracy` values (and the
 boxMuller constants) so an opted-in weapon at a representative shot (e.g. Firing 60 / snap 60) lands a
-sensible hit rate. (`battleUFOExtenderAccuracy` becomes largely redundant for opted-in weapons since
-the cone produces range falloff intrinsically — decide whether to honor its per-mode ranges or ignore
-the option under the cone model.)
+sensible hit rate. (`battleUFOExtenderAccuracy` is **ignored mechanically** for opted-in weapons —
+the cone produces range falloff intrinsically; its per-mode ranges surface only through the
+effective-range readout.)
 
 ## Implementation approach (delta)
 
@@ -260,9 +300,10 @@ the option under the cone model.)
    (`calculateLineVoxel`) that takes a direction instead of an endpoint.
 3. **`Projectile::calculateTrajectory`.** Branch on the weapon's `baseAccuracy`: `0` keeps the
    current native path untouched; `> 0` takes the cone path. Both keep the shared LOS sanity
-   pre-trace, range-dropoff (`calculateLimits`), and LOS penalty; they diverge only at the deviation
-   stage. Store the deflected `_targetVoxel` (endpoint of the traced ray) so `recalculateImpact`
-   stays deterministic. Leave `calculateThrow` untouched.
+   pre-trace; the cone path applies **no range dropoff** and folds the no-LOS penalty into
+   `soldierAcc` (see *Mechanics*). Store the deflected, max-range-extended ray endpoint in
+   `_targetVoxel` so the existing `recalculateImpact` works unchanged. Leave `calculateThrow`
+   untouched.
 4. **Feed both accuracies separately.** Split today's single folded `getFiringAccuracy` into two
    numbers threaded into the projectile:
    - **`soldierAcc`** = effective soldier accuracy = Firing skill (`getAccuracyMultiplier`) ×
@@ -278,7 +319,8 @@ the option under the cone model.)
 5. **Shotgun convergence.** Soldier cone once for the volley (shared true aim line); then per-pellet
    weapon cone. Replace the current diminishing-per-pellet-accuracy trick
    ([ProjectileFlyBState.cpp:649-659](../src/Battlescape/ProjectileFlyBState.cpp#L649)) with the
-   independent per-pellet weapon deflection.
+   independent per-pellet weapon deflection, scaled by the ammo's `shotgunSpread`; `shotgunChoke`
+   is ignored on the cone path (subsumed by `baseAccuracy`).
 6. **UI calculators.** Implement `calculateEffectiveRange` / `calculateChanceToHit`; wire the
    deferred action-menu effective-range readout and the hover readout (separate Phase 5 items but
    depend on this).
@@ -286,24 +328,82 @@ the option under the cone model.)
    a global `Options` toggle to force *all* weapons back to the native scatter model (ignoring
    `baseAccuracy`) is optional insurance, not the main switch.
 
-## Open questions
+## Resolved design decisions (design review, Jul 2026)
 
-- **Balance vs. vanilla.** The tuning constants (`0.437`, the `soldierAcc²/50` shaping, the `·2` on
-  the soldier cone) were tuned for the legacy fork's stat ranges. Re-validate against DX's current
-  weapon accuracy values so mods don't silently rebalance. Capture final constants here once tuned.
-- **Split of `getFiringAccuracy` — resolved (design).** All shooter-side terms — Firing skill,
-  **shot-type factor** (`accuracySnap`/`Aimed`/`Auto`/`Burst`), kneel bonus, one-handed penalty, and
-  the wound/health modifier — feed the **soldier** cone (they modify the shooter's aim). The
-  **weapon** cone is driven *only* by the new intrinsic per-weapon `baseAccuracy`, independent of all
-  of the above.
-- **Model selection — resolved (design).** New `RuleItem` field **`baseAccuracy`, default `0`**.
-  `0` = keep the native scatter mechanics for that weapon (no behavior change; all existing content
-  stays here); `> 0` = opt into the aim-cone model and use the value as the weapon cone input. Both
-  code paths coexist and are selected per weapon in `Projectile::calculateTrajectory`. This scopes
-  balancing to opted-in weapons rather than a global re-tune.
-- **Launch/guided.** Keep `BA_LAUNCH` on the scatter drift model or move it to a (wide) cone?
-- **LOS penalty form.** The native penalty multiplies accuracy (which shrinks the scatter radius).
-  Under a cone, decide whether no-LOS *widens the cone* or reduces effective range.
+All open questions were walked through and resolved; details live in the sections above.
+
+1. **Range dropoff — geometry only.** Opted-in weapons apply no linear dropoff; distance falloff
+   comes purely from cone geometry. `aimRange`/`snapRange`/`autoRange`/`minRange`/`dropoff` feed
+   only the effective-range readout; `battleUFOExtenderAccuracy` is ignored mechanically. (With
+   default field values dropoff never triggers today anyway.)
+2. **Accuracy floors.** Effective `soldierAcc` clamped to **≥ 20** (legacy's floor, applied after
+   all multipliers including the no-LOS penalty); `weaponAcc` guarded to **≥ 1**. Both enter the
+   cone formulas at *percent scale* (60, not 0.60).
+3. **Gaussian tail clamp.** Each sampled deflection angle is clamped at **3σ of its own cone** —
+   scale-free, keeps 99.7% of the distribution, no freak sideways/backwards shots.
+4. **Shotguns.** Per-pellet weapon cone scaled by the ammo's `shotgunSpread` (buckshot vs. slug
+   stays meaningful); `shotgunChoke` is subsumed by `baseAccuracy` and ignored on the cone path.
+5. **`BA_LAUNCH` stays on scatter.** Waypoint homing doesn't fit a ray model; revisit only if it
+   plays badly.
+6. **No-LOS penalty widens the soldier cone.** `noLOSAccuracyPenalty` multiplies into effective
+   `soldierAcc` before the floor clamp; the ruleset field is reused unchanged.
+7. **Split of `getFiringAccuracy`.** All shooter-side terms — Firing skill, shot-type factor
+   (`accuracySnap`/`Aimed`/`Auto`/`Burst`), kneel bonus, one-handed penalty, wound/health modifier —
+   feed the **soldier** cone. The **weapon** cone is driven *only* by the new per-weapon
+   `baseAccuracy`, independent of all of the above.
+8. **Model selection.** New `RuleItem` field **`baseAccuracy`, default `0`**. `0` = native scatter
+   mechanics unchanged (all existing content); `> 0` = opt into the aim-cone and drive the weapon
+   cone. Selected per weapon in `Projectile::calculateTrajectory`.
+9. **Tuning validation — Monte-Carlo first.** Before hardcoding constants (`0.437`, `acc²/50`, the
+   `·2`), validate with the simulation script **`reference/aimcone_montecarlo.py`** (kept in the
+   repo for future balance passes; run with plain `python`, no dependencies). It replicates the
+   native `applyAccuracy` scatter exactly (classic spread, integer math) and the cone model with
+   decisions 1–3 baked in, printing hit-probability vs. distance tables plus the 50%-hit effective
+   ranges. First results (Jul 2026, legacy constants, 40k shots/cell, standing-soldier target):
+   - The models cross at ~8–15 tiles: the cone is more generous up close, much harsher at range
+     (Average F60 snap @40 tiles: 38% native → 15% cone; the native model's flat long-range tail is
+     gone). Effective ranges: Rookie snap ≈ 6 tiles, Average snap ≈ 13, Veteran aimed ≈ 49.
+   - The initial run exposed a tuning problem: with the legacy *linear* weapon cone, `baseAccuracy`
+     was nearly invisible for average shooters — sweeping it 40→300 at F60/snap moved the 40-tile
+     hit rate only 12%→18%, because the soldier cone (σ≈2.9°) dwarfed the weapon cone (σ≈0.5°).
+     **Resolved by decision 11.**
+10. **RNG determinism.** `boxMuller` draws from the battle `RNG` stream so seeded saves reproduce.
+11. **Weapon-cone scaling — quadratic, normalized at 75 ("V3").** A follow-up variant sweep
+    (Jul 2026) compared the two candidate fixes for the weak `baseAccuracy` knob: tightening the
+    soldier `·2` multiplier vs. steepening how σ_w scales with `baseAccuracy`. Measured at snap
+    60%, `baseAccuracy` 75 unless noted, 40k shots/cell:
+
+    | Variant | Global balance (F60 hit% @10 tiles) | Knob spread (baseAcc 40→150, @15 tiles) | Eff. range F60 snap |
+    |---|---|---|---|
+    | V0 legacy (soldier ×2.0, weapon linear) | 61.5% | +4.8 pts | 12.9 tiles |
+    | V1 soldier ×1.5, weapon linear | 73.0% | +6.8 pts | 16.9 tiles |
+    | V2 soldier ×1.0, weapon linear | 87.1% | +9.2 pts | 23.5 tiles |
+    | **V3 soldier ×2.0, weapon quad@75 — adopted** | 60.9% (≈V0) | **+12.3 pts** | 12.9 tiles |
+    | V4 soldier ×1.5, weapon quad@75 | 72.9% | +16.6 pts | 16.9 tiles |
+
+    Tightening the soldier multiplier (V1/V2) mostly re-tunes *global lethality* — everyone hits
+    far more, effective ranges balloon — while only weakly strengthening the knob. Squaring the
+    weapon term instead (V3) is pinned to legacy behavior at `baseAccuracy: 75`, so the global
+    balance and effective ranges are untouched, while the knob's reach more than doubles. The
+    spread also works mostly *downward*: `baseAccuracy: 40` (σ_w 1.74°) drops F60's 15-tile hit
+    rate 44%→33%, while values above 75 give diminishing returns (45.1%→45.4% up to 150) because
+    the soldier cone dominates once the weapon is tight. That preserves the design philosophy: a
+    modder can make a weapon meaningfully *bad*, but a laser-precise weapon cannot fix a mediocre
+    shooter — precision only shines in skilled, deliberate hands.
+
+    **Concepts (for future balance passes):** the soldier `·2` multiplier is the *global lethality*
+    dial; the weapon exponent/normalization is the *knob strength* dial. They are orthogonal —
+    re-tune one without disturbing the other, using `reference/aimcone_montecarlo.py`.
+
+    **Final adopted constants:** tuning `0.437`; MAD→σ `1.4826`;
+    soldier σ = `0.437 / (soldierAcc²/50) · 1.4826 · 2` (floor 20);
+    weapon σ = `0.437 / (weaponAcc²/75) · 1.4826` (floor 1); each sample clamped at 3σ.
+
+## Remaining open items
+
+- **In-game validation of the adopted constants** (decision 11) during implementation playtesting —
+  the Monte-Carlo tables predict hit rates against an idealized standing target; real maps add
+  cover, elevation, and unit-size variety.
 - **Reaction/AI paths.** `AIModule` and reaction fire also call `getFiringAccuracy`
   ([ProjectileFlyBState.cpp:1048](../src/Battlescape/ProjectileFlyBState.cpp#L1048)); confirm the AI
   hit-chance estimate uses the same cone-aware calculator so AI target selection stays coherent
