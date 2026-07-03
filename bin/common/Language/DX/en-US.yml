@@ -64,6 +64,9 @@ en-US:
   STR_ACTION_PELLETS_SHORT: "({0} pellets)"
   STR_ACTION_NO_TU: "No TU"
   STR_ACTION_NO_AMMO: "No Ammo"
+# aim-cone weapons show a 50%-hit effective range (tiles) in place of the accuracy %
+# (mirrors the TU>/Acc> action-menu format: "Rng>{ALT}{0}")
+  STR_EFFECTIVE_RANGE_SHORT: "Rng>{ALT}{0}"
 #=================== DX Burst Fire ===================
 #RuleItem.cpp - burst shot mode name
   STR_BURST_SHOT: "Burst Shot"

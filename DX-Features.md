@@ -729,5 +729,12 @@ calibration: [reference/aimcone_montecarlo.py](reference/aimcone_montecarlo.py))
   falloff and weapon/skill differences. Shotgun-aware (any pellet reaching the target counts),
   no-LOS widens the estimate, and it's shown even without UFO Extender accuracy. The estimator is
   deterministic per aim, cached in `Map` (recomputed only when the aim changes, since tracing is
-  expensive), and never perturbs the game RNG. *(A separately-broken-out cover-% term, the
-  `@ <distance>` suffix, and the 50%-hit effective-range readout are still to come.)*
+  expensive), and never perturbs the game RNG. *(A separately-broken-out cover-% term and the
+  `@ <distance>` suffix are still to come.)*
+- **Effective-range action-menu readout.** For cone-model weapons, the battlescape action menu shows
+  each direct-fire mode's **50%-hit effective range** (in tiles, `Rng:{N}`) in place of the accuracy
+  `%` — because a cone weapon's per-mode `%` is only the soldier-cone input, not a hit chance, so the
+  reliable-range number is the meaningful one. It's computed from the same two cones against a
+  standard target in the open (`Projectile::calculateEffectiveRange`, target/terrain-independent, no
+  tracing), reflects the mode's kneel/one-hand/wound/shot-type accuracy, and accounts for shotgun
+  ammo spread. Vanilla (`baseAccuracy: 0`) weapons keep the classic accuracy `%` unchanged.

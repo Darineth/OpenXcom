@@ -247,14 +247,12 @@ Replaces steps 3–5 of `applyAccuracy` **for direct fire only**. Conceptually
 
 ### Supporting calculators (needed by Phase 5 UI, build alongside)
 
-- `BattleUnit::calculateEffectiveRange(soldierAcc, weaponAcc)` — the distance at which the combined
-  cone keeps a shot reliable; feeds the action-menu **effective-range** readout and
-  `calculateEffectiveRangeForAction`. **Legacy DX defined a weapon's "effective range" as the
-  distance at which the aim-cone yields a 50% hit chance** — i.e. the range where the combined
-  soldier+weapon deflection puts the shot on target half the time. Use that same 50%-hit-rate
-  definition as the readout's meaning. This is "fancy math" over **both** accuracies: the combined
-  cone half-angle (soldier + weapon) vs. the angular size a target subtends at distance `d`; solve
-  for the `d` where the on-target probability crosses 50%.
+- `Projectile::calculateEffectiveRange(soldierAcc, baseAccuracy, shotgunSpread)` — **implemented
+  (Jul 2026)**, feeds the action-menu **effective-range** readout. Returns the distance (tiles) at
+  which the combined soldier+weapon cone lands a shot on a standard standing target **half the time,
+  in the open** (the legacy 50%-hit-rate definition). It is a property of shooter+weapon+shot-mode
+  only — target/terrain-independent, no voxel tracing — so it can be shown before a target is picked.
+  See *Effective-range readout* below.
 - `Projectile::calculateChanceToHit(...)` — estimated hit chance **plus** a cover-reduction term,
   for the hover readout `<acc>% (-<cover>%) @ <distance>` (shown even without UFOExtender mode,
   color-graded red→green). See `Feature-ActionMenuRevamp.md` (effective-range readout was deferred
@@ -310,8 +308,30 @@ soldier-cone *input*, and whose dropoff/range terms don't even apply on the cone
   red (<35%) → yellow (35–64%) → green (≥65%). Shown even when `battleUFOExtenderAccuracy` is off,
   as long as the player hasn't disabled crosshair info (`oxceShowAccuracyOnCrosshair != 0`).
 - **Not yet done:** the *explicit* cover-reduction term `(-<cover>%)` (cover is folded into the
-  single % today rather than shown separately), the `@ <distance>` suffix, and the 50%-hit
-  **effective-range** readout (`calculateEffectiveRange`).
+  single % today rather than shown separately) and the `@ <distance>` suffix.
+
+### Effective-range readout — implemented (Jul 2026)
+
+The battlescape **action menu** now shows each cone-weapon shot mode's **50%-hit effective range**
+(in tiles) in place of the accuracy `%`. For a cone weapon the per-mode "60% snap / 110% aimed"
+figure is only the *soldier-cone input*, not a hit chance, so it's replaced by the number that
+actually means something: how far that mode stays reliable. (Vanilla `baseAccuracy: 0` weapons keep
+the accuracy `%` unchanged.)
+
+- **Calculator — `Projectile::calculateEffectiveRange(soldierAcc, baseAccuracy, shotgunSpread)`.**
+  Target/terrain-independent (no tracing): it samples the same two cones (`soldierConeSigma` /
+  `weaponConeSigma`) against the model's standard standing-soldier silhouette and returns the 50%-hit
+  distance. It avoids any search via a clean identity: for one sampled shot with small-angle tangent
+  offset `(ax, az)` radians, the shot stays on the `W×H` silhouette out to `dMax = min(halfW/|ax|,
+  halfH/|az|)`; a shot hits at distance `d` iff `dMax ≥ d`, so `P(hit at d)` crosses 0.5 exactly at
+  the **median of the per-sample `dMax` values**. So the effective range is just that median — no
+  bisection, monotonic by construction. Validated against `reference/aimcone_montecarlo.py`'s
+  effective-range table to within ~0.5 tile (e.g. Rookie snap ≈ 6, Average snap ≈ 13, Veteran aimed
+  ≈ 49, Elite aimed ≈ 63). Deterministically seeded, so the readout is stable per shooter/weapon/mode.
+- **UI.** In `ActionMenuState::addItem`, cone direct-fire modes (snap/aimed/auto/burst) set the
+  accuracy slot to `STR_EFFECTIVE_RANGE_SHORT` (`"Rng:{N}"`) instead of `STR_ACCURACY_SHORT`. Uses
+  the per-mode `getFiringAccuracy` as `soldierAcc` (so each mode's kneel/one-hand/wound/shot-type
+  factors are reflected) and the ammo's `shotgunSpread` for multi-pellet weapons.
 
 ## Vanilla weapon compatibility & code-path swap
 

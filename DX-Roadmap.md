@@ -274,8 +274,10 @@ Everything below is DX-specific work confirmed **absent** from the base.
     red→green; shown without UFOExtender; cached per aim.
   - [ ] Separately-broken-out cover-reduction term `(-<cover>%)` and `@ <distance>` suffix.
 - [ ] **Throw Reach Scaling** — strength vs weight readout/scaling. *(coupled UI — needs aim-cone)*
-- [ ] **Action-menu effective-range readout** — the deferred Phase 1 piece. *(needs
-  aim-cone)*
+- [x] **Action-menu effective-range readout** — the deferred Phase 1 piece. Cone weapons show each
+  direct-fire mode's 50%-hit effective range (tiles) in place of the accuracy %
+  (`Projectile::calculateEffectiveRange`, target-independent median-of-per-sample-range; validated
+  against `reference/aimcone_montecarlo.py`). Vanilla weapons keep the accuracy %.
 
 ## Phase 6: Ammo & Reloading
 

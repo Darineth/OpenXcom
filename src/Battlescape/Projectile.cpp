@@ -975,6 +975,70 @@ int Projectile::calculateHitChancePercent(SavedBattleGame* save, BattleAction* a
 }
 
 /**
+ * Aim-cone model: the "effective range" of a shot - the distance (in tiles) at which the combined
+ * soldier + weapon cone still lands on a standard standing target HALF the time, with the target in
+ * the open (no cover). This is a property of the shooter + weapon + shot-mode only (independent of
+ * any particular target or terrain), so unlike calculateHitChancePercent it needs no voxel tracing
+ * and is suitable for the action-menu readout shown before a target is even picked.
+ *
+ * It uses the same two cones the shot uses (soldierConeSigma / weaponConeSigma) against the model's
+ * calibration silhouette. Rather than searching for the 50% distance, it exploits a clean identity:
+ * for one sampled shot with small-angle tangent offset (ax, az) in radians, the shot stays on the
+ * WxH silhouette out to the distance where |ax|*d = halfW or |az|*d = halfH, whichever binds first,
+ * i.e. dMax = min(halfW/|ax|, halfH/|az|). A shot hits at distance d iff dMax >= d, so P(hit at d)
+ * is the fraction of samples with dMax >= d - which crosses 0.5 exactly at the MEDIAN of the
+ * per-sample dMax values. So the effective range is just that median: no bisection, monotonic by
+ * construction, and consistent with reference/aimcone_montecarlo.py's effective-range table.
+ *
+ * @param soldierAcc Effective soldier accuracy, percent scale (e.g. getFiringAccuracy for the mode).
+ * @param baseAccuracy The weapon's intrinsic accuracy (RuleItem baseAccuracy).
+ * @param shotgunSpread The ammo's shotgunSpread% (100 = neutral) for multi-pellet weapons.
+ * @return Effective range in tiles.
+ */
+int Projectile::calculateEffectiveRange(double soldierAcc, int baseAccuracy, int shotgunSpread)
+{
+	const double sigmaS = soldierConeSigma(soldierAcc);
+	const double sigmaW = weaponConeSigma(baseAccuracy, shotgunSpread);
+
+	// Standard standing-soldier silhouette half-dimensions in voxels - the same calibration target
+	// reference/aimcone_montecarlo.py uses, so these numbers match the design doc's decision-11 table.
+	const double halfW = 4.5;
+	const double halfH = 11.0;
+	const double voxelsPerTile = 16.0;
+
+	// Deterministic seed from the cones so the readout is stable for a given shooter/weapon/mode.
+	uint64_t seed = 0x9e3779b97f4a7c15ull;
+	auto mix = [&seed](uint64_t v) { seed ^= v + 0x9e3779b97f4a7c15ull + (seed << 6) + (seed >> 2); };
+	mix((uint64_t)(sigmaS * 1e6));
+	mix((uint64_t)(sigmaW * 1e6));
+	RNG::RandomState rng(seed);
+
+	const int samples = 2000;
+	std::vector<double> dMaxTiles;
+	dMaxTiles.reserve(samples);
+	for (int i = 0; i < samples; ++i)
+	{
+		// Combined small-angle tangent offset (radians) of one shot: soldier + weapon deflection.
+		const double sTheta = seededConeAngle(rng, sigmaS);
+		const double sPhi = 2.0 * M_PI * unitDouble(rng);
+		const double wTheta = seededConeAngle(rng, sigmaW);
+		const double wPhi = 2.0 * M_PI * unitDouble(rng);
+		const double ax = std::abs(sTheta * std::cos(sPhi) + wTheta * std::cos(wPhi));
+		const double az = std::abs(sTheta * std::sin(sPhi) + wTheta * std::sin(wPhi));
+
+		// Distance (voxels) at which this shot leaves the silhouette on whichever axis binds first.
+		const double dx = ax > 1e-9 ? halfW / ax : 1e9;
+		const double dz = az > 1e-9 ? halfH / az : 1e9;
+		dMaxTiles.push_back(std::min(dx, dz) / voxelsPerTile);
+	}
+
+	// Effective range = median of the per-sample max ranges.
+	const size_t mid = dMaxTiles.size() / 2;
+	std::nth_element(dMaxTiles.begin(), dMaxTiles.begin() + mid, dMaxTiles.end());
+	return (int)Round(dMaxTiles[mid]);
+}
+
+/**
  * Moves further in the trajectory.
  * @return false if the trajectory is finished - no new position exists in the trajectory.
  */

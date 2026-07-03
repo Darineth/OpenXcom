@@ -29,6 +29,7 @@
 #include "../Mod/RuleItem.h"
 #include "../Mod/RuleInventory.h"
 #include "ActionMenuItem.h"
+#include "Projectile.h"
 #include "PrimeGrenadeState.h"
 #include "MedikitState.h"
 #include "ScannerState.h"
@@ -237,7 +238,22 @@ void ActionMenuState::addItem(BattleActionType ba, const std::string &name, int 
 	int acc = BattleUnit::getFiringAccuracy(BattleActionAttack::GetBeforeShoot(ba, _action->actor, _action->weapon), _game->getMod());
 	int tu = _action->actor->getActionTUs(ba, _action->weapon).Time;
 
-	if (ba == BA_THROW || ba == BA_AIMEDSHOT || ba == BA_SNAPSHOT || ba == BA_AUTOSHOT || ba == BA_BURSTSHOT || ba == BA_LAUNCH || ba == BA_HIT)
+	const RuleItem *weaponRule = _action->weapon->getRules();
+	// aim-cone weapons: the per-mode "accuracy %" is only the soldier-cone input, not a hit chance,
+	// so for direct-fire modes show the 50%-hit effective range (tiles) instead - the number that
+	// actually tells the player how far this mode stays reliable.
+	bool coneShot = weaponRule->getBaseAccuracy() > 0
+		&& (ba == BA_SNAPSHOT || ba == BA_AIMEDSHOT || ba == BA_AUTOSHOT || ba == BA_BURSTSHOT);
+	if (coneShot)
+	{
+		int spread = 100;
+		const BattleItem *coneAmmo = _action->weapon->getAmmoForAction(ba);
+		if (coneAmmo && coneAmmo->getRules()->getShotgunPellets() != 0)
+			spread = coneAmmo->getRules()->getShotgunSpread();
+		int effRange = Projectile::calculateEffectiveRange(acc, weaponRule->getBaseAccuracy(), spread);
+		s1 = tr("STR_EFFECTIVE_RANGE_SHORT").arg(effRange);
+	}
+	else if (ba == BA_THROW || ba == BA_AIMEDSHOT || ba == BA_SNAPSHOT || ba == BA_AUTOSHOT || ba == BA_BURSTSHOT || ba == BA_LAUNCH || ba == BA_HIT)
 		s1 = tr("STR_ACCURACY_SHORT").arg(Unicode::formatPercentage(acc));
 	s2 = tr("STR_TIME_UNITS_SHORT").arg(tu);
 	_actionMenu[*id]->setAction(ba, tr(name), s1, s2, tu);
