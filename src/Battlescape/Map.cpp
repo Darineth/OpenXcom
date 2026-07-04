@@ -175,8 +175,10 @@ Map::Map(Game *game, int width, int height, int x, int y, int visibleMapHeight) 
 	_obstacleTimer->onTimer((SurfaceHandler)&Map::disableObstacles);
 
 	_showInfoOnCursor = (Options::oxceShowAccuracyOnCrosshair == 1 && Options::battleUFOExtenderAccuracy) || Options::oxceShowAccuracyOnCrosshair == 2;
-	_txtAccuracy = new Text(44, 18, 0, 0);
+	// Wide and centered so the one-line "X% (-Y%) @ Zm" readout fits and sits centered over the tile.
+	_txtAccuracy = new Text(90, 18, 0, 0);
 	_txtAccuracy->setSmall();
+	_txtAccuracy->setAlign(ALIGN_CENTER);
 	_txtAccuracy->setPalette(_game->getScreen()->getPalette());
 	_txtAccuracy->setHighContrast(true);
 	_txtAccuracy->initText(_game->getMod()->getFont("FONT_BIG"), _game->getMod()->getFont("FONT_SMALL"), _game->getLanguage());
@@ -193,6 +195,7 @@ Map::Map(Game *game, int width, int height, int x, int y, int visibleMapHeight) 
 	_cacheCursorPosition = TileEngine::invalid;
 	_cacheHasLOS = -1;
 	_cacheHitChance = -1;
+	_cacheHitChanceCover = 0;
 	_cacheHitChancePosition = TileEngine::invalid;
 	_cacheHitChanceCtrl = -1;
 	_cacheHitChanceWeapon = nullptr;
@@ -996,6 +999,7 @@ void Map::drawTerrain(Surface *surface)
 {
 	_isAltPressed = _game->isAltPressed(true);
 	_isCtrlPressed = _game->isCtrlPressed(true);
+	_cursorAccuracyShown = false; // set when the crosshair accuracy readout is drawn (below)
 	int frameNumber = 0;
 	SurfaceRaw<const Uint8> tmpSurface;
 	Tile *tile;
@@ -1733,9 +1737,10 @@ void Map::drawTerrain(Surface *surface)
 										_cacheHasLOS = hasLOS ? 1 : 0;
 									}
 
-									// The hit-chance estimate voxel-traces hundreds of rays, so cache it and
-									// recompute only when the aim changes (cursor tile / ctrl / weapon / action).
-									int chance;
+									// The hit-chance estimate voxel-traces hundreds of rays, so cache it (and its
+									// cover term) and recompute only when the aim changes (cursor / ctrl / weapon /
+									// action / stance).
+									int chance, cover;
 									Position cursorPos(itX, itY, itZ);
 									int kneeled = (action->actor && action->actor->isKneeled()) ? 1 : 0;
 									if (_cacheHitChance != -1
@@ -1746,13 +1751,16 @@ void Map::drawTerrain(Surface *surface)
 										&& kneeled == _cacheHitChanceKneeled)
 									{
 										chance = _cacheHitChance;
+										cover = _cacheHitChanceCover;
 									}
 									else
 									{
+										cover = 0;
 										chance = weapon->isOutOfRange(distanceSq)
 											? 0
-											: Projectile::calculateHitChancePercent(_save, action, cursorPos, attack.damage_item, _game->getMod(), hasLOS);
+											: Projectile::calculateHitChancePercent(_save, action, cursorPos, attack.damage_item, _game->getMod(), hasLOS, &cover);
 										_cacheHitChance = chance;
+										_cacheHitChanceCover = cover;
 										_cacheHitChancePosition = cursorPos;
 										_cacheHitChanceCtrl = _isCtrlPressed ? 1 : 0;
 										_cacheHitChanceWeapon = action->weapon;
@@ -1768,7 +1776,12 @@ void Map::drawTerrain(Surface *surface)
 									else
 										_txtAccuracy->setColor(Palette::blockOffset(Pathfinding::red - 1) - 1);
 
+									// one line: "X% (-Y%) @ Zm" (cover term omitted when zero): e.g.
+									// "45% (-20%) @ 12m" or "72% @ 8m".
 									ss << chance << "%";
+									if (cover > 0)
+										ss << " (-" << cover << "%)";
+									ss << " @ " << distance << "m";
 								}
 								else
 								{
@@ -1952,7 +1965,9 @@ void Map::drawTerrain(Surface *surface)
 
 								_txtAccuracy->setText(ss.str());
 								_txtAccuracy->draw();
-								_txtAccuracy->blitNShade(surface, screenPosition.x, screenPosition.y, 0);
+								// centered over the tile (90px box) and lifted just above the crosshair
+								_txtAccuracy->blitNShade(surface, screenPosition.x + 16 - 45, screenPosition.y - 10, 0);
+								_cursorAccuracyShown = true;
 							}
 						}
 						else if (_camera->getViewLevel() > itZ)
@@ -1975,7 +1990,8 @@ void Map::drawTerrain(Surface *surface)
 									_txtAccuracy->setColor(Palette::blockOffset(Pathfinding::red - 1) - 1);
 									_txtAccuracy->setText("0%");
 									_txtAccuracy->draw();
-									_txtAccuracy->blitNShade(surface, screenPosition.x, screenPosition.y, 0);
+									_txtAccuracy->blitNShade(surface, screenPosition.x + 16 - 45, screenPosition.y - 10, 0);
+									_cursorAccuracyShown = true;
 								}
 							}
 							if (!ignore)
@@ -2005,8 +2021,10 @@ void Map::drawTerrain(Surface *surface)
 						_txtUnitName->setColor(nameColor);
 						_txtUnitName->setText(_save->getCombatLogName(unit));
 						_txtUnitName->draw();
-						// Center the 120px label over the 32px tile and lift it above the unit's head.
-						_txtUnitName->blitNShade(surface, screenPosition.x + 16 - 60, screenPosition.y - 10, 0);
+						// Center the 120px label over the 32px tile and lift it above the unit's head -
+						// and higher still (above the accuracy readout) when that readout is being drawn.
+						int nameY = screenPosition.y - (_cursorAccuracyShown ? 20 : 10);
+						_txtUnitName->blitNShade(surface, screenPosition.x + 16 - 60, nameY, 0);
 					}
 
 					// Draw waypoints if any on this tile

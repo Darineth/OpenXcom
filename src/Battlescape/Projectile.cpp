@@ -25,6 +25,7 @@
 #include "../Mod/Mod.h"
 #include "../Mod/RuleItem.h"
 #include "../Mod/MapData.h"
+#include "../Mod/Armor.h"
 #include "../Savegame/BattleUnit.h"
 #include "../Savegame/BattleItem.h"
 #include "../Savegame/SavedBattleGame.h"
@@ -862,10 +863,18 @@ double Projectile::weaponConeSigma(int baseAccuracy, int shotgunSpread)
  * @param ammo The resolved ammo (for shotgun pellet count / spread), or nullptr.
  * @param mod The mod (for getFiringAccuracy / no-LOS penalty lookups).
  * @param hasLOS Whether the shooter has line of sight to the target tile (widens the soldier cone).
- * @return Estimated hit chance, 0-100.
+ * @param outCoverReduction If non-null, receives the cover-reduction term (percentage points): how
+ *        many of the shots that would have landed in the open are instead stopped by intervening
+ *        terrain. The returned chance already has this subtracted (it's the real, post-cover odds);
+ *        this is the informational "(-N%)" the readout shows. Unit targets only (0 for terrain).
+ * @return Estimated hit chance, 0-100 (cover already applied).
  */
-int Projectile::calculateHitChancePercent(SavedBattleGame* save, BattleAction* action, Position targetPos, BattleItem* ammo, Mod* mod, bool hasLOS)
+int Projectile::calculateHitChancePercent(SavedBattleGame* save, BattleAction* action, Position targetPos, BattleItem* ammo, Mod* mod, bool hasLOS, int* outCoverReduction)
 {
+	if (outCoverReduction)
+	{
+		*outCoverReduction = 0;
+	}
 	if (!action->weapon || !action->actor)
 	{
 		return 0;
@@ -908,11 +917,29 @@ int Projectile::calculateHitChancePercent(SavedBattleGame* save, BattleAction* a
 	}
 
 	AimVector ideal = { double(aimVoxel.x - originVoxel.x), double(aimVoxel.y - originVoxel.y), double(aimVoxel.z - originVoxel.z) };
-	if (VectDotProduct(ideal, ideal, 1.0) <= 0.0)
+	const double targetDistVox = std::sqrt(VectDotProduct(ideal, ideal, 1.0));
+	if (targetDistVox <= 0.0)
 	{
 		return 100; // target voxel == origin voxel: point blank, always on target
 	}
 	ideal = VectNormalize(ideal, 1.0);
+
+	// Cover breakout (unit targets only): set up the geometry to distinguish a shot that would have
+	// hit in the open from one blocked by terrain. halfW/halfH are the target's silhouette
+	// half-extents (voxels); htan/vtan span the plane perpendicular to the aim line, so a deflected
+	// ray's on-target offset can be measured as (dir.htan, dir.vtan) * targetDist.
+	BattleUnit* targetUnit = save->getTile(targetPos) ? save->getTile(targetPos)->getUnit() : nullptr;
+	const bool computeCover = (outCoverReduction != nullptr) && targetUnit != nullptr;
+	double halfW = 0.0, halfH = 0.0;
+	AimVector htan{ 0.0, 0.0, 0.0 }, vtan{ 0.0, 0.0, 0.0 };
+	if (computeCover)
+	{
+		halfW = 4.5 * targetUnit->getArmor()->getSize();
+		halfH = std::max(4.0, targetUnit->getHeight() / 2.0);
+		const AimVector up = (std::abs(ideal.z) < 0.99) ? AimVector{ 0.0, 0.0, 1.0 } : AimVector{ 0.0, 1.0, 0.0 };
+		htan = VectNormalize(VectCrossProduct(ideal, up, 1.0), 1.0);
+		vtan = VectCrossProduct(ideal, htan, 1.0); // unit: ideal ⟂ htan, both already unit vectors
+	}
 
 	// Deterministic seed from the aim geometry + cones: stable for a given aim, no game-RNG draws.
 	uint64_t seed = 0x9e3779b97f4a7c15ull;
@@ -932,6 +959,7 @@ int Projectile::calculateHitChancePercent(SavedBattleGame* save, BattleAction* a
 
 	std::vector<Position> traj;
 	int hits = 0;
+	int coverBlocked = 0;
 	for (int i = 0; i < trials; ++i)
 	{
 		// One soldier deflection for the whole shot/volley...
@@ -939,6 +967,7 @@ int Projectile::calculateHitChancePercent(SavedBattleGame* save, BattleAction* a
 
 		// ...then each pellet its own weapon deflection, traced against real terrain.
 		bool anyHit = false;
+		bool volleyCovered = false; // some pellet would have hit in the open but terrain blocked it
 		for (int p = 0; p < pellets; ++p)
 		{
 			const AimVector dir = deflectVector(aim, seededConeAngle(rng, sigmaW), 2.0 * M_PI * unitDouble(rng));
@@ -955,7 +984,8 @@ int Projectile::calculateHitChancePercent(SavedBattleGame* save, BattleAction* a
 			{
 				continue;
 			}
-			Position hitTile = traj.at(0).toTile();
+			const Position impact = traj.at(0);
+			Position hitTile = impact.toTile();
 			if (vt == V_UNIT && save->getTile(hitTile) && save->getTile(hitTile)->getUnit() == nullptr)
 			{
 				hitTile = Position(hitTile.x, hitTile.y, hitTile.z - 1);
@@ -965,11 +995,39 @@ int Projectile::calculateHitChancePercent(SavedBattleGame* save, BattleAction* a
 				anyHit = true;
 				break;
 			}
+
+			// Cover accounting: this pellet missed the target. If it was aimed *on* the target
+			// silhouette (would hit in the open) but stopped by terrain nearer than the target,
+			// it's blocked by cover rather than a genuine aim miss.
+			if (computeCover && !volleyCovered)
+			{
+				const double offX = VectDotProduct(dir, htan, 1.0) * targetDistVox;
+				const double offZ = VectDotProduct(dir, vtan, 1.0) * targetDistVox;
+				if (std::abs(offX) < halfW && std::abs(offZ) < halfH)
+				{
+					const double dx = impact.x - originVoxel.x, dy = impact.y - originVoxel.y, dz = impact.z - originVoxel.z;
+					const double impactDistVox = std::sqrt(dx * dx + dy * dy + dz * dz);
+					if (impactDistVox < targetDistVox - 1.0)
+					{
+						volleyCovered = true;
+					}
+				}
+			}
 		}
 		if (anyHit)
 		{
 			++hits;
 		}
+		else if (volleyCovered)
+		{
+			++coverBlocked;
+		}
+	}
+
+	if (outCoverReduction)
+	{
+		// base (open) chance = hits + coverBlocked; the reduction from cover is coverBlocked/trials
+		*outCoverReduction = (int)Round(100.0 * coverBlocked / trials);
 	}
 	return (int)Round(100.0 * hits / trials);
 }

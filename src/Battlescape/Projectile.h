@@ -62,7 +62,7 @@ public:
 	static double weaponConeSigma(int baseAccuracy, int shotgunSpread = 100);
 	/// Aim-cone model: estimated physical hit chance (0-100%) against a target, for the crosshair
 	/// readout. Voxel-traces sampled shots against real terrain (cover-aware); cache the result per aim.
-	static int calculateHitChancePercent(SavedBattleGame* save, BattleAction* action, Position targetPos, BattleItem* ammo, Mod* mod, bool hasLOS);
+	static int calculateHitChancePercent(SavedBattleGame* save, BattleAction* action, Position targetPos, BattleItem* ammo, Mod* mod, bool hasLOS, int* outCoverReduction = nullptr);
 	/// Aim-cone model: the 50%-hit "effective range" (tiles) against a standard target in the open -
 	/// a target/terrain-independent property of the shooter+weapon, for the action-menu readout.
 	static int calculateEffectiveRange(double soldierAcc, int baseAccuracy, int shotgunSpread = 100);

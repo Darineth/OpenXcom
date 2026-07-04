@@ -95,11 +95,14 @@ private:
 	// Cache for the DX aim-cone hit-chance crosshair readout (expensive: voxel-traced Monte-Carlo);
 	// recomputed only when the aim (cursor tile / ctrl / weapon / action type) changes, not every frame.
 	int _cacheHitChance; // -1 = unknown, else 0-100
+	int _cacheHitChanceCover; // cover-reduction term (percentage points) paired with _cacheHitChance
 	Position _cacheHitChancePosition;
 	int _cacheHitChanceCtrl; // -1 = unknown, else 0/1
 	const void* _cacheHitChanceWeapon;
 	int _cacheHitChanceActionType;
 	int _cacheHitChanceKneeled; // -1 = unknown, else 0/1 (stance affects muzzle height + accuracy)
+	bool _cursorAccuracyShown; // per-frame: was the crosshair accuracy readout drawn this pass?
+	                          // (lets the hovered-unit name stack above it)
 	int _animFrame;
 	std::vector<Projectile*> _projectiles;
 	bool _followProjectile;

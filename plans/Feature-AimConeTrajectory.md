@@ -304,11 +304,23 @@ soldier-cone *input*, and whose dropoff/range terms don't even apply on the cone
   (fewer volley-trials, `pellets` traces each) rather than costing `pelletCount`× more.
 - **Inputs mirror the shot.** Effective soldier accuracy = `getFiringAccuracy`; no line of sight
   widens the soldier cone (same `noLOSAccuracyPenalty` factor); out-of-range reads `0%`.
-- **UI.** Rendered by the existing crosshair `_txtAccuracy` text in `Map.cpp`, color-graded
-  red (<35%) → yellow (35–64%) → green (≥65%). Shown even when `battleUFOExtenderAccuracy` is off,
-  as long as the player hasn't disabled crosshair info (`oxceShowAccuracyOnCrosshair != 0`).
-- **Not yet done:** the *explicit* cover-reduction term `(-<cover>%)` (cover is folded into the
-  single % today rather than shown separately) and the `@ <distance>` suffix.
+- **Cover-reduction term + distance (Jul 2026).** The readout shows the legacy
+  `<acc>% (-<cover>%) @ <distance>m` breakdown on **one line** (e.g. `45% (-20%) @ 12m`, or
+  `72% @ 8m` with no cover), centered over the tile just above the crosshair. When aiming at a unit,
+  the hovered-unit name label stacks **above** the readout (name → readout → crosshair). `<acc>%` is
+  the **real, post-cover** hit chance (unchanged meaning);
+  `(-<cover>%)` is the *informational* reduction — how many of the shots that would have landed in
+  the open are instead stopped by intervening terrain (so open chance = acc + cover). It's computed
+  in the same trace pass: a sampled shot counts toward cover only if it was aimed **on the target
+  silhouette** (a geometric tangent-plane test, so it *would* have hit in the open) **but** its
+  trace was **blocked by terrain nearer than the target**. That construction guarantees cover ≥ 0
+  and exactly 0 in the open. Cover is computed for **unit targets only** (it's meaningless when
+  aiming at a wall/tile). The `@ <distance>` is the range in tiles.
+- **UI.** Rendered by the crosshair `_txtAccuracy` text in `Map.cpp` (widened to 90px and
+  centre-aligned for the one-line format), color-graded red (<35%) → yellow (35–64%) →
+  green (≥65%), positioned just above the aiming crosshair. The hovered-unit name label lifts to sit
+  above it via a per-frame `_cursorAccuracyShown` flag. Shown even when `battleUFOExtenderAccuracy`
+  is off, as long as the player hasn't disabled crosshair info (`oxceShowAccuracyOnCrosshair != 0`).
 
 ### Effective-range readout — implemented (Jul 2026)
 

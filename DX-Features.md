@@ -729,8 +729,11 @@ calibration: [reference/aimcone_montecarlo.py](reference/aimcone_montecarlo.py))
   falloff and weapon/skill differences. Shotgun-aware (any pellet reaching the target counts),
   no-LOS widens the estimate, and it's shown even without UFO Extender accuracy. The estimator is
   deterministic per aim, cached in `Map` (recomputed only when the aim changes, since tracing is
-  expensive), and never perturbs the game RNG. *(A separately-broken-out cover-% term and the
-  `@ <distance>` suffix are still to come.)*
+  expensive), and never perturbs the game RNG. The readout shows the full
+  `<acc>% (-<cover>%) @ <distance>m` breakdown on one line (e.g. `45% (-20%) @ 12m`), centered just
+  above the aiming crosshair with the hovered-unit name stacked above it: `<acc>%` is the real
+  post-cover chance, `(-<cover>%)` is the informational reduction from intervening terrain (unit
+  targets only; open chance = acc + cover), and `@<distance>m` is the range in tiles.
 - **Effective-range action-menu readout.** For cone-model weapons, the battlescape action menu shows
   each direct-fire mode's **50%-hit effective range** (in tiles, `Rng:{N}`) in place of the accuracy
   `%` — because a cone weapon's per-mode `%` is only the soldier-cone input, not a hit chance, so the
