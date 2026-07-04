@@ -751,3 +751,20 @@ calibration: [reference/aimcone_montecarlo.py](reference/aimcone_montecarlo.py))
     summed along the LOF (mirroring the visibility smoke model), floored so heavy smoke degrades but
     never fully blinds. Applied on the shot and the hover hit-chance readout (not the effective-range
     readout, which is a clear-air property). Penalty constants are provisional pending tuning.
+
+## Realistic Throwing Accuracy
+
+Optional physical throw-error model (the throwing analog of the aim-cone), replacing the native
+"scatter the landing point into a symmetric disc" deviation. A thrown item now errs mostly in
+**force** — short/long *along* the throw line — with a smaller **lateral** (left/right) error, and
+the spread grows with distance and with **strain** (how close the throw is to the thrower's maximum
+range for the item's weight, from `getMaxThrowDistance`). It reuses the existing parabola/reach and
+`getFiringAccuracy(BA_THROW)` (Throwing stat × `accuracyThrow`); only the deviation stage changes,
+so throw *range* is unchanged. *(design:
+[plans/Feature-ThrowAccuracyRealism.md](plans/Feature-ThrowAccuracyRealism.md))*
+
+- **Option:** `battleRealisticThrowing` (**default off**) — a DX battlescape option. When off,
+  throwing is byte-for-byte vanilla (the native scatter deviation).
+- **Model:** Gaussian offset along the throw direction (dominant) + a ~0.4× lateral Gaussian, each
+  scaled by distance, throw accuracy (floored), and a mild strain factor; clamped at 3σ. Vertical aim
+  is left true (the arc + terrain set landing height). Tuning constants are provisional.

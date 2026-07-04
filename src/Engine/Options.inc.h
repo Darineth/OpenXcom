@@ -154,6 +154,7 @@ OPT bool combatLogVerbose;
 OPT int combatLogDuration;
 OPT bool hoveredUnitNameEnabled;
 OPT bool battleTrajectoryPreview;
+OPT bool battleRealisticThrowing;
 OPT bool grenadeIndicatorEnabled;
 OPT bool unitStatusIndicatorEnabled;
 OPT bool motionDetectorOverlayEnabled;

@@ -1,4 +1,5 @@
 # TODO
+- Visualize aim/throw cone/landing area?
 - Fix offscreen/pre-battle events appearing in combat log
 
 # TFTD

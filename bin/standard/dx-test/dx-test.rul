@@ -404,5 +404,6 @@ extraStrings:
 #  User options forced on while this test mod is active
 # =====================================================================
 fixedUserOptions:
-  combatLogVerbose: true   # DX: extra detail in the combat log (hidden option)
+  combatLogVerbose: true          # DX: extra detail in the combat log (hidden option)
+  battleRealisticThrowing: true   # DX: physical launch-error throw accuracy (short/long along the throw line)
 

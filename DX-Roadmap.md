@@ -261,9 +261,11 @@ Everything below is DX-specific work confirmed **absent** from the base.
   - [x] Exhaustion (low-energy) + smoke-on-LOF accuracy factors — DX delta, cone weapons only
     (exhaustion in `getFiringAccuracy`; smoke in the cone path). Smoke constants pending tuning.
   - [x] Shot-mode accuracy application (Snap/Aim/Auto/Burst) — feeds the soldier cone via `getFiringAccuracy`.
-- [ ] **Throw-accuracy tuning (if needed)** — OXCE currently applies no throw LOS penalty
-  (`accuracyThrow` default 100; `_noLOSAccuracyPenalty` is aimed-shot-only). Only add a
-  reduced throw penalty if the aim-cone firing model introduces one that needs softening.
+- [x] **Realistic throwing accuracy** — replaces the native disc-scatter throw deviation with a
+  physical launch-error model (short/long along the throw line + lateral, scaling with distance and
+  strength-vs-weight strain). The throwing analog of the aim-cone; reach/curvature unchanged. Behind
+  the `battleRealisticThrowing` option (default off). Constants pending in-play tuning.
+  *(design: [plans/Feature-ThrowAccuracyRealism.md](plans/Feature-ThrowAccuracyRealism.md))*
 - [x] **Shotgun Pellet Flight & Spread** — pellets now fly as individual concurrent projectiles
   with spread, each resolving its own impact via the async projectile system.
 - [ ] **Dual-Fire** — simultaneous projectile spawning from both hands. *(needs

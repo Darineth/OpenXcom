@@ -1783,6 +1783,46 @@ void Map::drawTerrain(Surface *surface)
 										ss << " (-" << cover << "%)";
 									ss << " @ " << distance << "m";
 								}
+								else if (_cursorType == CT_THROW && Options::battleRealisticThrowing && action->type == BA_THROW)
+								{
+									// DX realistic throwing: show the estimated chance the item lands on the
+									// exact target tile (not the abstract throw-accuracy stat). Cached like the
+									// hit-chance readout, since it Monte-Carlos the parabola.
+									int chance;
+									Position cursorPos(itX, itY, itZ);
+									int kneeled = (action->actor && action->actor->isKneeled()) ? 1 : 0;
+									if (_cacheHitChance != -1
+										&& cursorPos == _cacheHitChancePosition
+										&& (_isCtrlPressed ? 1 : 0) == _cacheHitChanceCtrl
+										&& action->weapon == _cacheHitChanceWeapon
+										&& (int)action->type == _cacheHitChanceActionType
+										&& kneeled == _cacheHitChanceKneeled)
+									{
+										chance = _cacheHitChance;
+									}
+									else
+									{
+										chance = weapon->isOutOfThrowRange(distanceSq, _save->getDepth())
+											? 0
+											: Projectile::calculateThrowLandChancePercent(_save, action, cursorPos, _game->getMod());
+										_cacheHitChance = chance;
+										_cacheHitChanceCover = 0;
+										_cacheHitChancePosition = cursorPos;
+										_cacheHitChanceCtrl = _isCtrlPressed ? 1 : 0;
+										_cacheHitChanceWeapon = action->weapon;
+										_cacheHitChanceActionType = (int)action->type;
+										_cacheHitChanceKneeled = kneeled;
+									}
+
+									if (chance >= 65)
+										_txtAccuracy->setColor(Palette::blockOffset(Pathfinding::green - 1) - 1);
+									else if (chance >= 35)
+										_txtAccuracy->setColor(Palette::blockOffset(Pathfinding::yellow - 1) - 1);
+									else
+										_txtAccuracy->setColor(Palette::blockOffset(Pathfinding::red - 1) - 1);
+
+									ss << chance << "% @ " << distance << "m";
+								}
 								else
 								{
 									int accuracy = BattleUnit::getFiringAccuracy(attack, _game->getMod());

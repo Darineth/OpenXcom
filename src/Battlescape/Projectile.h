@@ -66,6 +66,9 @@ public:
 	/// Aim-cone model: the 50%-hit "effective range" (tiles) against a standard target in the open -
 	/// a target/terrain-independent property of the shooter+weapon, for the action-menu readout.
 	static int calculateEffectiveRange(double soldierAcc, int baseAccuracy, int shotgunSpread = 100);
+	/// Realistic throwing: estimated chance (0-100%) a thrown item lands on the exact target tile,
+	/// for the throw-cursor readout. Monte-Carlos the launch error through the real parabola.
+	static int calculateThrowLandChancePercent(SavedBattleGame* save, BattleAction* action, Position targetPos, Mod* mod);
 
 private:
 	Mod *_mod;
@@ -87,6 +90,8 @@ private:
 	AimVector _coneTrueAim = { 0.0, 0.0, 0.0 };
 	bool _hasConeTrueAim = false;
 	void applyAccuracy(Position origin, Position *target, double accuracy, bool keepRange, bool extendLine);
+	/// Realistic throwing (battleRealisticThrowing): launch-error landing offset (short/long + lateral).
+	Position computeThrowLaunchError(Position originVoxel, Position targetVoxel, double accuracy) const;
 	/// Aim-cone model: replaces the scatter deviation for opted-in weapons (baseAccuracy > 0).
 	void applyAimCone(Position origin, Position *target, double soldierAcc);
 	/// The weapon's no-LOS accuracy multiplier for the current target tile (100 = no penalty).

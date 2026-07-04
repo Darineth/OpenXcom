@@ -22,6 +22,7 @@
 #include "Camera.h"
 #include "Particle.h"
 #include "Pathfinding.h"
+#include "ProjectileFlyBState.h"
 #include "../Mod/Mod.h"
 #include "../Mod/RuleItem.h"
 #include "../Mod/MapData.h"
@@ -156,6 +157,38 @@ double seededConeAngle(RNG::RandomState &rng, double sigma)
 	const double u2 = unitDouble(rng);
 	const double g = sigma * std::sqrt(-2.0 * std::log(u1)) * std::cos(2.0 * M_PI * u2);
 	return Clamp(g, -CONE_CLAMP_SIGMAS * sigma, CONE_CLAMP_SIGMAS * sigma);
+}
+
+// ==================== Realistic throwing: launch-error spread ====================
+// Provisional tuning constants (see plans/Feature-ThrowAccuracyRealism.md).
+const double THROW_K_RANGE = 3.5;       // short/long (elevation) error coefficient - dominant
+const double THROW_K_LAT = 1.4;         // lateral (azimuth) error coefficient (~0.4x range)
+const double THROW_STRAIN_RANGE = 0.6;  // extra short/long error near the thrower's max range
+const double THROW_STRAIN_LAT = 0.3;    // extra lateral error near the thrower's max range
+const double THROW_ACC_FLOOR = 20.0;
+const double THROW_CLAMP_SIGMAS = 3.0;
+
+/**
+ * Computes the launch-error stddevs (in calculateParabolaHelper `delta` units) for a throw.
+ * sigmaLat drives `delta.x` (azimuth / left-right); sigmaRange drives `delta.y` (elevation ->
+ * short/long). Both scale with horizontal distance (so the *angular* spread is ~constant and the
+ * *landing* spread grows with range), shrink with throw accuracy, and widen with strain (distance
+ * as a fraction of the thrower's max range for the item's weight). Shared by the actual throw
+ * (computeThrowLaunchError) and the landing-chance readout so they can never drift apart.
+ */
+void throwLaunchSigmas(int weight, int strength, Position originVoxel, Position targetVoxel, double accuracy, double &sigmaRange, double &sigmaLat)
+{
+	const double dx = targetVoxel.x - originVoxel.x;
+	const double dy = targetVoxel.y - originVoxel.y;
+	const double horizDist = std::sqrt(dx * dx + dy * dy);
+	const double throwAcc = std::max(THROW_ACC_FLOOR, accuracy * 100.0);
+
+	const int zd = originVoxel.z - targetVoxel.z;
+	const int maxThrowVox = ProjectileFlyBState::getMaxThrowDistance(weight, strength, zd);
+	const double strain = (maxThrowVox > 0) ? Clamp(horizDist / (double)maxThrowVox, 0.0, 1.0) : 0.0;
+
+	sigmaRange = horizDist * (THROW_K_RANGE / throwAcc) * (1.0 + THROW_STRAIN_RANGE * strain);
+	sigmaLat   = horizDist * (THROW_K_LAT   / throwAcc) * (1.0 + THROW_STRAIN_LAT   * strain);
 }
 
 }
@@ -525,8 +558,16 @@ int Projectile::calculateThrow(double accuracy, bool ignoreAccuracy)
 		}
 		else if (_action.type == BA_THROW)
 		{
-			applyAccuracy(originVoxel, &deltas, accuracy, true, false); //calling for best flavor
-			deltas -= targetVoxel;
+			if (Options::battleRealisticThrowing)
+			{
+				// DX: physical launch-error deviation instead of the native target-disc scatter.
+				deltas = computeThrowLaunchError(originVoxel, targetVoxel, accuracy);
+			}
+			else
+			{
+				applyAccuracy(originVoxel, &deltas, accuracy, true, false); //calling for best flavor
+				deltas -= targetVoxel;
+			}
 		}
 		else
 		{
@@ -688,6 +729,113 @@ void Projectile::applyAccuracy(Position origin, Position *target, double accurac
 		target->y = (int)(origin.y + maxRange * sin_te * cos_fi);
 		target->z = (int)(origin.z + maxRange * sin_fi);
 	}
+}
+
+/**
+ * Realistic throwing (Options::battleRealisticThrowing): computes a physical launch-error landing
+ * offset for a thrown item, replacing the native symmetric target-disc scatter. A real throw errs
+ * mostly in force (short/long *along* the throw line) and less in direction (lateral), so the offset
+ * is a Gaussian along the horizontal throw direction plus a smaller Gaussian perpendicular to it.
+ * Both grow with distance, shrink with throw accuracy, and widen with "strain" - how close the throw
+ * is to the thrower's maximum range for the item's weight (a heavy item or weak thrower is less
+ * controllable). Vertical aim is left true (z offset 0); the parabola + terrain set the landing
+ * height. See plans/Feature-ThrowAccuracyRealism.md. Constants are provisional (tune in play).
+ * @param originVoxel Thrower's release position (voxels).
+ * @param targetVoxel Intended landing position (voxels).
+ * @param accuracy Throw accuracy already divided by accuracyDivider ([0,1+]); *100 = percent.
+ * @return Landing-point offset in voxels (x/y; z = 0), for calculateParabolaVoxel's deviation.
+ */
+Position Projectile::computeThrowLaunchError(Position originVoxel, Position targetVoxel, double accuracy) const
+{
+	double sigmaRange, sigmaLat;
+	throwLaunchSigmas(_action.weapon->getTotalWeight(), _action.actor->getBaseStats()->strength,
+		originVoxel, targetVoxel, accuracy, sigmaRange, sigmaLat);
+
+	// calculateParabolaHelper reads delta.x as an azimuth (left/right) perturbation and
+	// delta.y (+ delta.z) as an elevation perturbation (which lands the throw short/long). So the
+	// lateral error goes in x and the range error in y - NOT a world-axis projection of the throw
+	// line, which would swap the two for axis-aligned throws.
+	const double eLat   = Clamp(RNG::boxMuller(0.0, sigmaLat),   -THROW_CLAMP_SIGMAS * sigmaLat,   THROW_CLAMP_SIGMAS * sigmaLat);
+	const double eRange = Clamp(RNG::boxMuller(0.0, sigmaRange), -THROW_CLAMP_SIGMAS * sigmaRange, THROW_CLAMP_SIGMAS * sigmaRange);
+
+	return Position((int)eLat, (int)eRange, 0);
+}
+
+/**
+ * Realistic throwing: estimates the probability a thrown item lands on the EXACT target tile, for
+ * the throw-cursor readout. Because the launch error is injected as an azimuth/elevation deviation
+ * (see computeThrowLaunchError), the delta->landing mapping goes through the parabola, so this
+ * Monte-Carlos the actual arc: it finds the reaching curvature via validateThrow, then samples the
+ * launch error (deterministic seedless RNG - stable per hover, no game-RNG draws) and runs
+ * calculateParabolaVoxel for each, counting how often the item lands on targetPos.
+ *
+ * TODO (future): evaluate if this should be based on the exact tile instead of some other metric.
+ *
+ * @return Estimated exact-tile landing chance, 0-100 (0 if the tile isn't a reachable throw).
+ */
+int Projectile::calculateThrowLandChancePercent(SavedBattleGame* save, BattleAction* action, Position targetPos, Mod* mod)
+{
+	if (!action->weapon || !action->actor)
+	{
+		return 0;
+	}
+	TileEngine* te = save->getTileEngine();
+	BattleUnit* shooter = action->actor;
+	Tile* targetTile = save->getTile(targetPos);
+	if (!targetTile)
+	{
+		return 0;
+	}
+
+	BattleActionAttack attack = BattleActionAttack::GetBeforeShoot(BA_THROW, shooter, action->weapon);
+	const double accuracy = BattleUnit::getFiringAccuracy(attack, mod) / 100.0;
+
+	BattleAction probe = *action;
+	probe.target = targetPos;
+	const Position originVoxel = te->getOriginVoxel(probe, 0);
+	const Position targetVoxel = targetPos.toVoxel() + Position(8, 8, 1 + -targetTile->getTerrainLevel());
+
+	// Find the arc that reaches this tile (with no error); if none, it isn't a valid throw here.
+	double curvature = 0.0;
+	int voxelType = 0;
+	if (!te->validateThrow(probe, originVoxel, targetVoxel, save->getDepth(), &curvature, &voxelType, false))
+	{
+		return 0;
+	}
+
+	double sigmaRange, sigmaLat;
+	throwLaunchSigmas(action->weapon->getTotalWeight(), shooter->getBaseStats()->strength,
+		originVoxel, targetVoxel, accuracy, sigmaRange, sigmaLat);
+
+	// Deterministic seed from the aim geometry + spread: stable per hover, no game-RNG draws.
+	uint64_t seed = 0x9e3779b97f4a7c15ull;
+	auto mix = [&seed](uint64_t v) { seed ^= v + 0x9e3779b97f4a7c15ull + (seed << 6) + (seed >> 2); };
+	mix((uint64_t)((originVoxel.x * 73856093) ^ (originVoxel.y * 19349663) ^ (originVoxel.z * 83492791)));
+	mix((uint64_t)((targetVoxel.x * 73856093) ^ (targetVoxel.y * 19349663) ^ (targetVoxel.z * 83492791)));
+	mix((uint64_t)(sigmaRange * 1e6));
+	mix((uint64_t)(sigmaLat * 1e6));
+	RNG::RandomState rng(seed);
+
+	const int samples = 300;
+	int hits = 0;
+	std::vector<Position> traj;
+	for (int i = 0; i < samples; ++i)
+	{
+		// delta.x = lateral (azimuth), delta.y = range (elevation); seededConeAngle is a clamped
+		// Gaussian from our private stream (same clamp as the real throw's).
+		const Position delta((int)seededConeAngle(rng, sigmaLat), (int)seededConeAngle(rng, sigmaRange), 0);
+		traj.clear();
+		te->calculateParabolaVoxel(originVoxel, targetVoxel, true, &traj, shooter, curvature, delta);
+		if (traj.empty())
+		{
+			continue;
+		}
+		if (getPositionFromEnd(traj, ItemDropVoxelOffset).toTile() == targetPos)
+		{
+			++hits;
+		}
+	}
+	return (int)Round(100.0 * hits / samples);
 }
 
 /**

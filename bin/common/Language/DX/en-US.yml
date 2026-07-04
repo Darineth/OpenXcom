@@ -45,6 +45,8 @@ en-US:
 #Options.cpp
   STR_HOVERED_UNIT_NAME: "Hovered unit name"
   STR_TRAJECTORY_PREVIEW: "Aim trajectory preview"
+  STR_REALISTIC_THROWING: "Realistic throwing accuracy"
+  STR_REALISTIC_THROWING_DESC: "Thrown items err short/long along the throw line (plus some lateral), scaling with distance and how hard the throw strains the thrower's strength, instead of scattering evenly around the target."
   STR_GRENADE_INDICATOR: "Primed grenade indicator"
   STR_UNIT_STATUS_INDICATOR: "Unit status indicators"
   STR_MOTION_DETECTOR_OVERLAY: "Motion detector readings on map"
