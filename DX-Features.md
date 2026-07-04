@@ -667,9 +667,10 @@ TUs. It complements the on-cursor accuracy readout the engine already shows. *(d
 - **Spread dot cloud (hold Alt).** While aiming, holding **Alt** replaces the single ideal tracer
   line with a **cloud of sampled impact dots** showing where the shots would actually land — the
   aim-cone spread for cone-model direct fire, and the launch-error scatter for realistic throwing
-  (elongated short/long along the throw line). Dots are coloured **green where the round lands on the
-  target** (its unit/wall/tile, or the target tile for throws) and **red where it misses**, so you
-  can see how much of the spread connects. It reuses the already-cached hit-chance / landing-chance
+  (elongated short/long along the throw line). Dots are coloured by outcome — **green** where the
+  round lands on the target (its unit/wall/tile, or the target tile for throws), **yellow** where it
+  was aimed on target but stopped by cover, and **red** for a genuine miss — so you can see how much
+  of the spread connects and how much cover is eating. It reuses the already-cached hit-chance / landing-chance
   Monte-Carlos (each sampled round's real voxel impact, cover included), so it's truthful to the
   model and updates live with distance/kneel/cover. Combines with the existing Alt damage readout as
   a "detailed aim" mode. *(design:

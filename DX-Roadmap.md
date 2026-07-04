@@ -410,8 +410,8 @@ implementation (see CLAUDE.md "Planning Features").*
   aim-cone / throw launch-error spread actually goes. *(design: [plans/Feature-TargetingVisualization.md](plans/Feature-TargetingVisualization.md))*
   - [x] **Sampled impact/landing dots** — hold Alt while aiming to swap the ideal tracer line for a
     dot cloud of where shots/throws would land (reuses the cached hit-chance / landing-chance MCs;
-    cone-model fire + realistic throwing). Dots are **green on-target, red miss**.
-  - [ ] Distinct colour for cover-blocked shots; probability tile-heatmap; grenade blast-radius footprint.
+    cone-model fire + realistic throwing). Dots coloured **green = hit, yellow = cover-blocked, red = miss**.
+  - [ ] Probability tile-heatmap; grenade blast-radius footprint.
 
 - [ ] **Overrush / TU debt** — let a unit spend past 0 into negative TUs during its turn to
   push an extra action ("over rush"), at the cost of starting the next turn with reduced TUs

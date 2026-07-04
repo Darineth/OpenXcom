@@ -1001,6 +1001,7 @@ void Map::drawTerrain(Surface *surface)
 	_isAltPressed = _game->isAltPressed(true);
 	_isCtrlPressed = _game->isCtrlPressed(true);
 	_cursorAccuracyShown = false; // set when the crosshair accuracy readout is drawn (below)
+	_pendingAccuracyText = _pendingUnitName = false; // deferred crosshair text (blitted after tracers)
 	int frameNumber = 0;
 	SurfaceRaw<const Uint8> tmpSurface;
 	Tile *tile;
@@ -2086,8 +2087,11 @@ void Map::drawTerrain(Surface *surface)
 
 								_txtAccuracy->setText(ss.str());
 								_txtAccuracy->draw();
-								// centered over the tile (90px box) and lifted just above the crosshair
-								_txtAccuracy->blitNShade(surface, screenPosition.x + 16 - 45, screenPosition.y - 10, 0);
+								// centered over the tile (90px box) and lifted just above the crosshair;
+								// the actual blit is deferred until after the targeting tracers/dots (below).
+								_accuracyTextX = screenPosition.x + 16 - 45;
+								_accuracyTextY = screenPosition.y - 10;
+								_pendingAccuracyText = true;
 								_cursorAccuracyShown = true;
 							}
 						}
@@ -2111,7 +2115,9 @@ void Map::drawTerrain(Surface *surface)
 									_txtAccuracy->setColor(Palette::blockOffset(Pathfinding::red - 1) - 1);
 									_txtAccuracy->setText("0%");
 									_txtAccuracy->draw();
-									_txtAccuracy->blitNShade(surface, screenPosition.x + 16 - 45, screenPosition.y - 10, 0);
+									_accuracyTextX = screenPosition.x + 16 - 45;
+									_accuracyTextY = screenPosition.y - 10;
+									_pendingAccuracyText = true;
 									_cursorAccuracyShown = true;
 								}
 							}
@@ -2144,8 +2150,10 @@ void Map::drawTerrain(Surface *surface)
 						_txtUnitName->draw();
 						// Center the 120px label over the 32px tile and lift it above the unit's head -
 						// and higher still (above the accuracy readout) when that readout is being drawn.
-						int nameY = screenPosition.y - (_cursorAccuracyShown ? 20 : 10);
-						_txtUnitName->blitNShade(surface, screenPosition.x + 16 - 60, nameY, 0);
+						// Blit is deferred until after the targeting tracers/dots (below) so it stays on top.
+						_unitNameX = screenPosition.x + 16 - 60;
+						_unitNameY = screenPosition.y - (_cursorAccuracyShown ? 20 : 10);
+						_pendingUnitName = true;
 					}
 
 					// Draw waypoints if any on this tile
@@ -2469,6 +2477,17 @@ void Map::drawTerrain(Surface *surface)
 
 	// DX: draw the live aiming trajectory preview on top of the scene.
 	drawTargetingPreview(surface);
+
+	// DX: crosshair text (hovered-unit name + accuracy/hit-chance readout) is prepared during the
+	// tile pass but blitted here, AFTER the tracers/dots, so it stays legible on top of the cloud.
+	if (_pendingUnitName)
+	{
+		_txtUnitName->blitNShade(surface, _unitNameX, _unitNameY, 0);
+	}
+	if (_pendingAccuracyText)
+	{
+		_txtAccuracy->blitNShade(surface, _accuracyTextX, _accuracyTextY, 0);
+	}
 
 	surface->unlock();
 }
@@ -3107,19 +3126,25 @@ void Map::drawTargetingPreview(Surface *surface)
 
 	// DX spread visualization (Alt held): draw the sampled impact/landing dot cloud INSTEAD of the
 	// ideal tracer line. A readable subset of the samples so the cloud doesn't turn to mush; rounds
-	// that land ON the target (its unit/wall/tile, or the target tile for throws) are drawn green,
-	// misses red - so you can see at a glance how much of the spread actually connects.
+	// are coloured by outcome - green = landed on the target (unit/wall/tile, or target tile for
+	// throws), yellow = aimed on target but stopped by cover, red = genuine miss - so you can see at
+	// a glance how much of the spread connects and how much cover is eating.
 	if (!_targetingDots.empty())
 	{
 		// blitRaw's newBaseColor is a palette-block index+1 (it does (v-1)<<4 internally), NOT a raw
 		// palette offset - so pass the Pathfinding block constants directly.
-		const int hitColor = Pathfinding::green;
-		const int missColor = Pathfinding::red;
 		const int stride = std::max<int>(1, (int)_targetingDots.size() / 40);
 		for (size_t i = 0; i < _targetingDots.size(); i += (size_t)stride)
 		{
+			int color;
+			switch (_targetingDots[i].outcome)
+			{
+			case SPREAD_HIT:   color = Pathfinding::green;  break;
+			case SPREAD_COVER: color = Pathfinding::yellow; break;
+			default:           color = Pathfinding::red;    break;
+			}
 			_camera->convertVoxelToScreen(_targetingDots[i].pos, &screen);
-			Surface::blitRaw(surface, tracer, screen.x - tracer->getWidth() / 2, screen.y - tracer->getHeight() / 2, 0, false, _targetingDots[i].onTarget ? hitColor : missColor);
+			Surface::blitRaw(surface, tracer, screen.x - tracer->getWidth() / 2, screen.y - tracer->getHeight() / 2, 0, false, color);
 		}
 		return;
 	}

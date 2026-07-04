@@ -14,9 +14,11 @@ the shots (aim-cone) or throw (launch error) would actually land.
   outSampleLandings)`) that collects each sampled round's **real voxel impact** (target, wall, ground,
   or — for a flew-past shot — the target-plane crossing). No extra tracing: it's the same MC the
   readout runs.
-- Each sample is tagged **on-target vs miss** (`SpreadSample{ pos, onTarget }`): a shot is on-target
-  when its traced impact tile is the aimed unit/wall/tile (for throws, the target tile). Dots are
-  drawn **green for hits, red for misses**, so you see at a glance how much of the spread connects.
+- Each sample is tagged with a 3-way outcome (`SpreadSample{ pos, outcome }`): **hit** (impact tile
+  is the aimed unit/wall/tile; the target tile for throws), **cover-blocked** (aimed on the target
+  silhouette but stopped by nearer terrain — reuses the cover-reduction geometry), or **miss**. Dots
+  are drawn **green (hit) / yellow (cover) / red (miss)**, so you see at a glance how much of the
+  spread connects and how much cover is eating. (Throws arc over cover, so they're only hit/miss.)
 - `Map::updateTargetingPreview` computes the cloud when Alt is held (Alt is part of the rebuild key,
   so toggling re-traces), for **cone-model direct fire** (`baseAccuracy > 0`) and **realistic
   throwing** only — the models that actually have a physical spread. `drawTargetingPreview` blits a
@@ -24,13 +26,15 @@ the shots (aim-cone) or throw (launch error) would actually land.
   `blitRaw`'s `newBaseColor`), **in place of** the line.
 - Dual-fire shows the display (cone-preferred) hand's cloud, matching the single tracer line.
 - Deterministic (seeded MC) so the cloud is stable per aim; recomputed only on aim/Alt change.
+- **Crosshair text stays on top.** The accuracy/hit-chance readout and hovered-unit name are prepared
+  during the tile pass but their blits are **deferred** until after the tracers/dots, so the tooltip
+  text remains legible over the dot cloud instead of being buried under it.
 
 *Note:* Alt already shows the crosshair damage readout, so holding Alt is now a combined
 "detailed aim" mode (damage numbers + spread cloud).
 
-Follow-ups from the options below remain open: a distinct third colour for **cover-blocked** shots
-(would-have-hit but stopped by terrain, vs. genuine aim misses), the probability tile-heatmap (C/F),
-and the grenade blast-radius footprint (E).
+Follow-ups from the options below remain open: the probability tile-heatmap (C/F) and the grenade
+blast-radius footprint (E).
 
 ## Motivation
 

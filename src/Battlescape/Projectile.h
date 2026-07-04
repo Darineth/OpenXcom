@@ -41,15 +41,22 @@ struct AimVector
 	double x, y, z;
 };
 
+/// Outcome of one sampled shot/throw, for colouring the spread dot cloud.
+enum SpreadOutcome
+{
+	SPREAD_MISS = 0,  ///< genuine aim miss (landed off the target, not blocked by cover)
+	SPREAD_HIT,       ///< landed on the intended target (its unit/wall/tile; the target tile for throws)
+	SPREAD_COVER,     ///< aimed on the target but stopped by intervening terrain (cover)
+};
+
 /**
  * One sampled shot/throw outcome for the spread visualization (Alt dot cloud): the voxel where the
- * round came down, and whether that's on the intended target (the aimed unit/wall/tile for fire, the
- * target tile for throws) so hits and misses can be drawn in different colours.
+ * round came down and how it turned out, so hits / cover-blocks / misses can be drawn differently.
  */
 struct SpreadSample
 {
 	Position pos;
-	bool onTarget;
+	SpreadOutcome outcome;
 };
 
 /**

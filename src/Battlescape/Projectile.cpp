@@ -834,7 +834,8 @@ int Projectile::calculateThrowLandChancePercent(SavedBattleGame* save, BattleAct
 		const bool onTarget = (landVoxel.toTile() == targetPos);
 		if (outSampleLandings)
 		{
-			outSampleLandings->push_back({ landVoxel, onTarget }); // where this throw lands, hit vs miss
+			// throws arc over cover, so it's simply hit vs miss (no cover-blocked category)
+			outSampleLandings->push_back({ landVoxel, onTarget ? SPREAD_HIT : SPREAD_MISS });
 		}
 		if (onTarget)
 		{
@@ -1092,7 +1093,9 @@ int Projectile::calculateHitChancePercent(SavedBattleGame* save, BattleAction* a
 	// half-extents (voxels); htan/vtan span the plane perpendicular to the aim line, so a deflected
 	// ray's on-target offset can be measured as (dir.htan, dir.vtan) * targetDist.
 	BattleUnit* targetUnit = save->getTile(targetPos) ? save->getTile(targetPos)->getUnit() : nullptr;
-	const bool computeCover = (outCoverReduction != nullptr) && targetUnit != nullptr;
+	// The cover geometry is needed both for the readout's cover term and to tag dot-cloud samples as
+	// cover-blocked, so enable it when either is requested (unit targets only - a wall IS its target).
+	const bool computeCover = (outCoverReduction != nullptr || outSampleImpacts != nullptr) && targetUnit != nullptr;
 	double halfW = 0.0, halfH = 0.0;
 	AimVector htan{ 0.0, 0.0, 0.0 }, vtan{ 0.0, 0.0, 0.0 };
 	if (computeCover)
@@ -1149,7 +1152,7 @@ int Projectile::calculateHitChancePercent(SavedBattleGame* save, BattleAction* a
 				// (where this shot crossed the target's distance) so a near-miss still shows.
 				if (outSampleImpacts)
 				{
-					outSampleImpacts->push_back({ originVoxel + Position((int)(dir.x * targetDistVox), (int)(dir.y * targetDistVox), (int)(dir.z * targetDistVox)), false });
+					outSampleImpacts->push_back({ originVoxel + Position((int)(dir.x * targetDistVox), (int)(dir.y * targetDistVox), (int)(dir.z * targetDistVox)), SPREAD_MISS });
 				}
 				continue;
 			}
@@ -1160,33 +1163,38 @@ int Projectile::calculateHitChancePercent(SavedBattleGame* save, BattleAction* a
 				hitTile = Position(hitTile.x, hitTile.y, hitTile.z - 1);
 			}
 			const bool onTarget = (hitTile == targetPos);
-			if (outSampleImpacts)
-			{
-				// where this round lands (target/wall/ground), tagged hit vs miss for colouring
-				outSampleImpacts->push_back({ impact, onTarget });
-			}
-			if (onTarget)
-			{
-				anyHit = true;
-				if (!outSampleImpacts) break; // when drawing dots, keep tracing pellets for the full pattern
-			}
 
-			// Cover accounting: this pellet missed the target. If it was aimed *on* the target
-			// silhouette (would hit in the open) but stopped by terrain nearer than the target,
-			// it's blocked by cover rather than a genuine aim miss.
-			if (computeCover && !volleyCovered)
+			// Cover: a non-hit pellet aimed *on* the target silhouette (would hit in the open) but
+			// stopped by terrain nearer than the target is cover-blocked, not a genuine aim miss.
+			bool pelletCovered = false;
+			if (computeCover && !onTarget)
 			{
 				const double offX = VectDotProduct(dir, htan, 1.0) * targetDistVox;
 				const double offZ = VectDotProduct(dir, vtan, 1.0) * targetDistVox;
 				if (std::abs(offX) < halfW && std::abs(offZ) < halfH)
 				{
 					const double dx = impact.x - originVoxel.x, dy = impact.y - originVoxel.y, dz = impact.z - originVoxel.z;
-					const double impactDistVox = std::sqrt(dx * dx + dy * dy + dz * dz);
-					if (impactDistVox < targetDistVox - 1.0)
+					if (std::sqrt(dx * dx + dy * dy + dz * dz) < targetDistVox - 1.0)
 					{
-						volleyCovered = true;
+						pelletCovered = true;
 					}
 				}
+			}
+
+			if (outSampleImpacts)
+			{
+				// where this round lands, tagged hit / cover-blocked / miss for colouring
+				outSampleImpacts->push_back({ impact, onTarget ? SPREAD_HIT : (pelletCovered ? SPREAD_COVER : SPREAD_MISS) });
+			}
+
+			if (onTarget)
+			{
+				anyHit = true;
+				if (!outSampleImpacts) break; // when drawing dots, keep tracing pellets for the full pattern
+			}
+			else if (pelletCovered)
+			{
+				volleyCovered = true;
 			}
 		}
 		if (anyHit)

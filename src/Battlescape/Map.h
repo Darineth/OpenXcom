@@ -105,6 +105,10 @@ private:
 	int _cacheHitChanceKneeled; // -1 = unknown, else 0/1 (stance affects muzzle height + accuracy)
 	bool _cursorAccuracyShown; // per-frame: was the crosshair accuracy readout drawn this pass?
 	                          // (lets the hovered-unit name stack above it)
+	// Deferred crosshair text: the accuracy readout and hovered-unit name are prepared during the
+	// tile pass but blitted AFTER the targeting tracers/dots, so the text stays legible on top.
+	bool _pendingAccuracyText, _pendingUnitName;
+	int _accuracyTextX, _accuracyTextY, _unitNameX, _unitNameY;
 	int _animFrame;
 	std::vector<Projectile*> _projectiles;
 	bool _followProjectile;
