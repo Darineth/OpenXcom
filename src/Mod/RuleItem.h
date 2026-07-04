@@ -88,6 +88,10 @@ enum BattleActionType : Uint8
 	// DX: Burst fire — a fourth firing mode (snap/auto/aimed/burst). Appended to keep
 	// existing serialized BattleActionType values stable.
 	BA_BURSTSHOT = 20,
+
+	// DX: Dual-fire — fire both hands' weapons at once (each hand its own weapon/ammo/mode).
+	// Appended to keep serialized values stable.
+	BA_DUALFIRE = 21,
 };
 
 enum class BattleActionOrigin { CENTRE = 0, LEFT, RIGHT }; // Used for off-centre shooting.
@@ -794,6 +798,9 @@ public:
 	RuleItemUseCost getCostMelee() const;
 	/// Gets the item's burst shot cost.
 	RuleItemUseCost getCostBurst() const;
+	/// DX dual-fire: the fire mode this weapon contributes to a dual-fire (first of
+	/// auto/burst/snap/aimed it has configured), or BA_NONE if it has no direct-fire mode.
+	BattleActionType getDualFireMode() const;
 	/// Gets the item's use cost.
 	RuleItemUseCost getCostUse() const;
 	/// Gets the item's mind control cost.

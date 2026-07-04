@@ -65,7 +65,7 @@ ActionMenuState::ActionMenuState(BattleAction *action, int x, int y) : _action(a
 	// Set palette
 	_game->getSavedGame()->getSavedBattle()->setPaletteByDepth(this);
 
-	for (int i = 0; i < 6; ++i)
+	for (int i = 0; i < 8; ++i)
 	{
 		_actionMenu[i] = new ActionMenuItem(i, _game, x, y);
 		add(_actionMenu[i]);
@@ -128,6 +128,18 @@ ActionMenuState::ActionMenuState(BattleAction *action, int x, int y) : _action(a
 		int slotSnap = _action->weapon->getActionConf(BA_SNAPSHOT)->ammoSlot;
 		int slotAuto = _action->weapon->getActionConf(BA_AUTOSHOT)->ammoSlot;
 		int slotBurst = _action->weapon->getActionConf(BA_BURSTSHOT)->ammoSlot;
+
+		// Menu rows stack with later-added items HIGHER on screen (y - id*25). Add order here is
+		// bottom-to-top, so the displayed order (top->bottom) is: Aimed, Snap, Burst, Auto, Dual,
+		// then Throw (Throw was added above this block, so it sits at the very bottom).
+
+		// DX dual-fire: fire both hands at once (shown when the unit holds two loaded, fire-capable
+		// firearms). Each hand fires its own best mode; both hands are involved regardless of which
+		// weapon this menu was opened for.
+		if (_action->actor->canDualFire())
+		{
+			addItem(BA_DUALFIRE, "STR_DUAL_FIRE", &id, Options::keyBattleActionItem7);
+		}
 
 		if ((!isLauncher || slotLauncher != slotAuto) && weapon->getCostAuto().Time > 0)
 		{
@@ -235,6 +247,28 @@ void ActionMenuState::init()
 void ActionMenuState::addItem(BattleActionType ba, const std::string &name, int *id, SDLKey key)
 {
 	std::string s1, s2;
+
+	// DX dual-fire spans both hands (its own weapon/ammo/mode each), so it doesn't fit the
+	// single-weapon accuracy/ammo/shots machinery below - give it its own compact row.
+	if (ba == BA_DUALFIRE)
+	{
+		int dualTu = _action->actor->getDualFireCost().Time;
+		s2 = tr("STR_TIME_UNITS_SHORT").arg(dualTu);
+		_actionMenu[*id]->setAction(ba, tr(name), s1, s2, dualTu); // s1 empty: no single accuracy for two weapons
+		_actionMenu[*id]->setVisible(true);
+		if (key != SDLK_UNKNOWN)
+		{
+			_actionMenu[*id]->setHotkey(SDL_GetKeyName(key));
+			_actionMenu[*id]->onKeyboardPress((ActionHandler)&ActionMenuState::btnActionMenuItemClick, key);
+		}
+		if (_action->actor->getTimeUnits() < dualTu)
+		{
+			_actionMenu[*id]->setUnaffordable(tr("STR_ACTION_NO_TU"));
+		}
+		(*id)++;
+		return;
+	}
+
 	int acc = BattleUnit::getFiringAccuracy(BattleActionAttack::GetBeforeShoot(ba, _action->actor, _action->weapon), _game->getMod());
 	int tu = _action->actor->getActionTUs(ba, _action->weapon).Time;
 

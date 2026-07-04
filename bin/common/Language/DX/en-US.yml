@@ -58,6 +58,9 @@ en-US:
   STR_ENGINE_DX: "DX"
 #Options.cpp
   STR_ACTION_ITEM_6: "Item Action 6 (Burst)"
+  STR_ACTION_ITEM_7: "Item Action 7 (Dual-Fire)"
+#ActionMenuState.cpp - DX dual-fire action label
+  STR_DUAL_FIRE: "Dual Fire"
 #=================== DX Utility Equipment Slots ===================
 #Options.cpp - battlescape control to use the item in the unit's INV_UTILITY slot
   STR_USE_UTILITY_ITEM: "Use Utility Item"

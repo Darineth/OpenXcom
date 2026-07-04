@@ -368,6 +368,14 @@ public:
 	RuleItemUseCost getActionTUs(BattleActionType actionType, const BattleItem *item) const;
 	/// Get the number of time units a certain action takes.
 	RuleItemUseCost getActionTUs(BattleActionType actionType, const RuleItem *item) const;
+	/// DX dual-fire: combined cost of firing both hands at once (max of the two hands' chosen-mode
+	/// costs x1.1, TU capped at 96); zero if the unit isn't holding two dual-fire-capable firearms.
+	RuleItemUseCost getDualFireCost() const;
+	/// DX dual-fire: whether this unit can dual-fire (two loaded firearms, each with a fire mode).
+	bool canDualFire() const;
+	/// DX dual-fire: the hand to represent in targeting displays (trajectory/accuracy). Prefers a
+	/// cone-model weapon (its hit-chance readout updates with distance/cover); right hand otherwise.
+	BattleItem* getDualFireDisplayWeapon() const;
 	/// Get the number of time units a certain skill action takes.
 	RuleItemUseCost getActionTUs(BattleActionType actionType, const RuleSkill *skillRules) const;
 	/// Spend time units if it can.

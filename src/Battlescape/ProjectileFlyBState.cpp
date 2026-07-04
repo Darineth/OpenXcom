@@ -59,6 +59,84 @@ ProjectileFlyBState::ProjectileFlyBState(BattlescapeGame *parent, BattleAction a
  */
 ProjectileFlyBState::~ProjectileFlyBState()
 {
+	delete _dualState;
+}
+
+/**
+ * DX dual-fire: converts this (primary) state to fire the RIGHT hand's best mode, and builds the
+ * off-hand (LEFT) sub-state to fire concurrently. The sub-state is configured manually and never
+ * run through init() (so it can't pop the queue or spend TU); the primary drives it. The primary
+ * keeps _action's cost = the combined dual-fire cost (set by updateTU), so spendTU pays once.
+ */
+void ProjectileFlyBState::setupDualFire()
+{
+	BattleUnit *actor = _action.actor;
+	BattleItem *rWeapon = actor->getRightHandWeapon();
+	BattleItem *lWeapon = actor->getLeftHandWeapon();
+	if (!rWeapon || !lWeapon)
+	{
+		return; // defensive: canDualFire() was checked before dispatch
+	}
+	const BattleActionType rMode = rWeapon->getRules()->getDualFireMode();
+	const BattleActionType lMode = lWeapon->getRules()->getDualFireMode();
+
+	// Primary fires the right hand's mode (its cost field stays the dual cost for spendTU).
+	_action.weapon = rWeapon;
+	_action.type = rMode;
+
+	// Off-hand sub-state fires the left hand's mode at the same target, concurrently.
+	BattleAction offAction = _action;
+	offAction.weapon = lWeapon;
+	offAction.type = lMode;
+	_dualState = new ProjectileFlyBState(_parent, offAction);
+	_dualState->_subState = true;
+	_dualState->_initialized = true; // never run its init()
+	_dualState->_unit = actor;
+	_dualState->_ammo = lWeapon->getAmmoForAction(lMode);
+	if (!_dualState->_ammo)
+	{
+		_dualState->_cannotFire = true;
+	}
+}
+
+/**
+ * Ticks this state's inter-shot cadence and fires its next shot if one is due, independently of
+ * whether earlier rounds are still airborne. Returns true while the sequence is still going (more
+ * shots queued or a cadence timer pending), false once it's exhausted. Called for the primary and,
+ * under dual-fire, the off-hand sub-state; each uses its own weapon/ammo/counter/cooldown.
+ */
+bool ProjectileFlyBState::advanceFiring()
+{
+	if (_cannotFire)
+	{
+		return false;
+	}
+	if (_shotCooldown > 0)
+	{
+		--_shotCooldown;
+	}
+	const bool hasFloor = _action.actor->haveNoFloorBelow() == false;
+	const bool unitCanFly = _action.actor->getMovementType() == MT_FLY;
+	const bool canFireMore =
+		_action.weapon->haveNextShotsForAction(_action.type, _action.autoShotCounter)
+		&& !_action.actor->isOut()
+		&& _ammo && _ammo->getAmmoQuantity() != 0
+		&& (hasFloor || unitCanFly);
+
+	if (canFireMore)
+	{
+		if (_shotCooldown <= 0)
+		{
+			createNewProjectile();
+			if (_action.cameraPosition.z != -1)
+			{
+				_parent->getMap()->getCamera()->setMapOffset(_action.cameraPosition);
+				_parent->getMap()->invalidate();
+			}
+		}
+		return true; // still shooting (or waiting on the cadence timer)
+	}
+	return false;
 }
 
 /**
@@ -93,6 +171,15 @@ void ProjectileFlyBState::init()
 	}
 
 	_unit = _action.actor;
+
+	// DX dual-fire: split into the right-hand primary mode + a left-hand sub-state now, before the
+	// rest of init reads _action.type/weapon for ammo, range, and firing. _action's cost stays the
+	// combined dual cost (from updateTU) so the primary's spendTU pays once for both hands.
+	if (_action.type == BA_DUALFIRE)
+	{
+		setupDualFire();
+		weapon = _action.weapon; // now the right-hand weapon
+	}
 
 	bool reactionShoot = _unit->getFaction() != _parent->getSave()->getSide();
 	if (_action.type != BA_THROW)
@@ -317,6 +404,19 @@ void ProjectileFlyBState::init()
 		}
 	}
 
+	// DX dual-fire: stage the off-hand at the same target voxel, but start it a few think-cycles
+	// AFTER the primary so the two weapons fire with a slight stagger instead of in lockstep. The
+	// primary fires its first shot below (this init pass); the off-hand's first shot fires once its
+	// staggered cooldown ticks out in advanceFiring() (its createNewProjectile failure path is
+	// _subState-guarded, so a blocked off-hand can't pop/abort the primary).
+	if (_dualState && !_dualState->_cannotFire)
+	{
+		const int DUAL_FIRE_STAGGER = 6; // think-cycles (~100 ms at 60/s)
+		_dualState->_origin = _origin;
+		_dualState->_targetVoxel = _targetVoxel;
+		_dualState->_shotCooldown = DUAL_FIRE_STAGGER;
+	}
+
 	if (createNewProjectile())
 	{
 		auto* conf = weapon->getActionConf(_action.type);
@@ -451,6 +551,10 @@ bool ProjectileFlyBState::createNewProjectile()
 		{
 			// no line of fire
 			_parent->getMap()->removeProjectile(projectile);
+			if (_subState)
+			{
+				return false; // dual-fire off-hand: just don't fire; never abort/pop the primary
+			}
 			if (_parent->getPanicHandled())
 			{
 				_action.result = "STR_NO_TRAJECTORY";
@@ -492,6 +596,10 @@ bool ProjectileFlyBState::createNewProjectile()
 		{
 			// no line of fire
 			_parent->getMap()->removeProjectile(projectile);
+			if (_subState)
+			{
+				return false; // dual-fire off-hand: just don't fire; never abort/pop the primary
+			}
 			if (_parent->getPanicHandled())
 			{
 				_action.result = "STR_NO_LINE_OF_FIRE";
@@ -656,13 +764,17 @@ void ProjectileFlyBState::think()
 	// First, advance and resolve every projectile already in flight.
 	if (_parent->getMap()->hasProjectiles())
 	{
-		BattleActionAttack attack = BattleActionAttack::GetAferShoot(_action, _ammo);
 		// snapshot the list: removeProjectile() modifies the live vector, so iterate a copy
 		const std::vector<Projectile*> inFlight(_parent->getMap()->getProjectiles());
 		for (Projectile* flyingProj : inFlight)
 		{
 			if (!flyingProj->move())
 			{
+				// Resolve each impact using the projectile's OWN weapon/ammo, not the state's.
+				// For a single weapon (or shotgun) this equals the state's attack; under dual-fire
+				// the two hands fire different weapons at once, so a left-hand round must apply the
+				// left weapon's damage.
+				BattleActionAttack attack = BattleActionAttack::GetAferShoot(flyingProj->getAction(), const_cast<BattleItem*>(flyingProj->getAmmo()));
 				// The trajectory (and its impact point) is precomputed at fire time. With
 				// several rounds airborne at once, an earlier impact may have destroyed the
 				// obstacle this round was going to hit. Re-trace straight shots against the
@@ -754,7 +866,8 @@ void ProjectileFlyBState::think()
 					{
 						int offset = 0;
 						// explosions impact not inside the voxel but two steps back (projectiles generally move 2 voxels at a time)
-						if (_ammo && _ammo->getRules()->getExplosionRadius(attack) != 0 && impact != V_UNIT)
+						// use the projectile's own ammo (attack.damage_item) so dual-fire hands resolve independently
+						if (attack.damage_item && attack.damage_item->getRules()->getExplosionRadius(attack) != 0 && impact != V_UNIT)
 						{
 							offset = -2;
 						}
@@ -796,33 +909,16 @@ void ProjectileFlyBState::think()
 		return;
 	}
 
-	// Tick down the inter-shot cooldown, then fire the next shot on a timer -
-	// independently of whether earlier shots are still airborne.
-	if (_shotCooldown > 0)
+	// Advance both hands' shot sequences on their own cadence (the off-hand sub-state exists only
+	// under dual-fire). We only wrap up once BOTH are exhausted and no projectiles remain airborne.
+	bool stillFiring = advanceFiring();
+	if (_dualState)
 	{
-		--_shotCooldown;
+		stillFiring |= _dualState->advanceFiring();
 	}
-
-	bool hasFloor = _action.actor->haveNoFloorBelow() == false;
-	bool unitCanFly = _action.actor->getMovementType() == MT_FLY;
-	bool canFireMore =
-		_action.weapon->haveNextShotsForAction(_action.type, _action.autoShotCounter)
-		&& !_action.actor->isOut()
-		&& _ammo->getAmmoQuantity() != 0
-		&& (hasFloor || unitCanFly);
-
-	if (canFireMore)
+	if (stillFiring)
 	{
-		if (_shotCooldown <= 0)
-		{
-			createNewProjectile();
-			if (_action.cameraPosition.z != -1)
-			{
-				_parent->getMap()->getCamera()->setMapOffset(_action.cameraPosition);
-				_parent->getMap()->invalidate();
-			}
-		}
-		// still shooting (or waiting for the cadence timer) - don't wrap up yet
+		// still shooting (or waiting for a cadence timer) - don't wrap up yet
 		return;
 	}
 

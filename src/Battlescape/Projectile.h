@@ -126,6 +126,11 @@ public:
 	int getParticle(int i) const;
 	/// Gets the item.
 	BattleItem *getItem() const;
+	/// Gets the action that fired this projectile (its own weapon/type - needed to resolve impacts
+	/// per-projectile when different weapons fly at once, e.g. dual-fire).
+	const BattleAction& getAction() const { return _action; }
+	/// Gets the ammo that fired this projectile (may differ per projectile under dual-fire).
+	const BattleItem* getAmmo() const { return _ammo; }
 	/// Skips the bullet flight.
 	void skipTrajectory();
 	/// Gets the Position of origin for the projectile.

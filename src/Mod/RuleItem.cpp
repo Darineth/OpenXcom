@@ -2439,6 +2439,20 @@ int RuleItem::getDropoff() const
 }
 
 /**
+ * DX dual-fire: the fire mode this weapon uses when dual-wielded, chosen as the first configured
+ * mode in priority order Auto -> Burst -> Snap -> Aimed (a mode is "configured" when its TU cost is
+ * set). Returns BA_NONE if the weapon has no direct-fire mode.
+ */
+BattleActionType RuleItem::getDualFireMode() const
+{
+	if (getCostAuto().Time > 0) return BA_AUTOSHOT;
+	if (getCostBurst().Time > 0) return BA_BURSTSHOT;
+	if (getCostSnap().Time > 0) return BA_SNAPSHOT;
+	if (getCostAimed().Time > 0) return BA_AIMEDSHOT;
+	return BA_NONE;
+}
+
+/**
  * Helper function to calculate limits and dropoff.
  * @return The per-tile dropoff.
  */

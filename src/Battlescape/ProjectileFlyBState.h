@@ -45,6 +45,16 @@ private:
 	bool _initialized, _targetFloor;
 	/// Think-cycles remaining before the next burst/spray shot may be fired (timer-based cadence).
 	int _shotCooldown = 0;
+	// DX dual-fire: the primary state owns a second sub-state for the off (left) hand. The primary
+	// drives both sequences and resolves all projectiles; the sub-state only fires its own shots and
+	// never advances projectiles, spends TU, runs reaction fire, or pops the queue.
+	ProjectileFlyBState *_dualState = nullptr;
+	bool _subState = false;   // this is a dual-fire off-hand sub-state
+	bool _cannotFire = false; // sub-state couldn't get a shot off (no LOF/ammo); contributes nothing
+	/// DX dual-fire: convert this (primary) state to the right-hand mode and build the off-hand sub-state.
+	void setupDualFire();
+	/// DX dual-fire: tick the cadence and fire this state's next shot if ready; true while still firing.
+	bool advanceFiring();
 
 public:
 	/// Creates a new ProjectileFly class

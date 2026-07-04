@@ -195,6 +195,7 @@ Map::Map(Game *game, int width, int height, int x, int y, int visibleMapHeight) 
 	_cacheCursorPosition = TileEngine::invalid;
 	_cacheHasLOS = -1;
 	_cacheHitChance = -1;
+	_cacheHitChance2 = -1;
 	_cacheHitChanceCover = 0;
 	_cacheHitChancePosition = TileEngine::invalid;
 	_cacheHitChanceCtrl = -1;
@@ -1695,7 +1696,10 @@ void Map::drawTerrain(Surface *surface)
 							if (_cursorType == CT_AIM && Options::oxceShowAccuracyOnCrosshair != 0)
 							{
 								BattleAction *ca = _save->getBattleGame()->getCurrentAction();
-								coneInfoReadout = ca && ca->weapon && ca->weapon->getRules()->getBaseAccuracy() > 0;
+								// dual-fire has no weapon of its own; gate on the display (cone-preferred) hand
+								const BattleItem *caWeapon = (ca && ca->type == BA_DUALFIRE && ca->actor)
+									? ca->actor->getDualFireDisplayWeapon() : (ca ? ca->weapon : nullptr);
+								coneInfoReadout = caWeapon && caWeapon->getRules()->getBaseAccuracy() > 0;
 							}
 
 							// UFO extender accuracy: display adjusted accuracy value on crosshair in real-time.
@@ -1710,15 +1714,92 @@ void Map::drawTerrain(Surface *surface)
 
 								if (_cursorType == CT_AIM || _cursorType == CT_THROW)
 								{
+								// DX dual-fire fires both hands at once; show each hand's own chance (R: right,
+								// L: left) since the two weapons/modes can differ. Otherwise fall through to
+								// the single-shot aim-cone / native readout below.
+								bool dualFire = _cursorType == CT_AIM && action->type == BA_DUALFIRE && action->actor;
 								// DX aim-cone weapons: show the estimated *physical* hit chance instead of
 								// the native folded accuracy (which is only the soldier-cone input, and whose
 								// dropoff/range terms don't apply on the cone path).
-								bool coneModel = _cursorType == CT_AIM
+								bool coneModel = !dualFire && _cursorType == CT_AIM
 									&& weapon->getBaseAccuracy() > 0
 									&& action->type != BA_THROW
 									&& action->type != BA_LAUNCH
 									&& action->type != BA_HIT;
-								if (coneModel)
+								if (dualFire)
+								{
+									// Line of sight (cached, keyed on cursor tile + ctrl) - shared by both hands.
+									bool hasLOS = false;
+									if (Position(itX, itY, itZ) == _cacheCursorPosition && _isCtrlPressed == _cacheIsCtrlPressed && _cacheHasLOS != -1)
+										hasLOS = (_cacheHasLOS == 1);
+									else
+									{
+										if (unit && (unit->getVisible() || _save->getDebugMode()))
+											hasLOS = _save->getTileEngine()->visible(action->actor, tile);
+										else
+											hasLOS = _save->getTileEngine()->isTileInLOS(action, tile, true);
+										_cacheIsCtrlPressed = _isCtrlPressed;
+										_cacheCursorPosition = Position(itX, itY, itZ);
+										_cacheHasLOS = hasLOS ? 1 : 0;
+									}
+
+									// Both hands' hit-chances are voxel-traced, so cache them (R in _cacheHitChance,
+									// L in _cacheHitChance2) and recompute only when the aim changes.
+									Position cursorPos(itX, itY, itZ);
+									int kneeled = action->actor->isKneeled() ? 1 : 0;
+									int rChance, lChance;
+									if (_cacheHitChance != -1
+										&& cursorPos == _cacheHitChancePosition
+										&& (_isCtrlPressed ? 1 : 0) == _cacheHitChanceCtrl
+										&& action->weapon == _cacheHitChanceWeapon
+										&& (int)action->type == _cacheHitChanceActionType
+										&& kneeled == _cacheHitChanceKneeled)
+									{
+										rChance = _cacheHitChance;
+										lChance = _cacheHitChance2;
+									}
+									else
+									{
+										// Per-hand display percent at the hovered tile: aim-cone hit-chance for a
+										// cone weapon, folded accuracy for a vanilla one.
+										auto handPercent = [&](BattleItem *hw) -> int
+										{
+											if (!hw) return 0;
+											const RuleItem *hr = hw->getRules();
+											BattleActionType mode = hr->getDualFireMode();
+											int dSq = action->actor->distance3dToPositionSq(cursorPos);
+											if (hr->isOutOfRange(dSq)) return 0;
+											BattleAction ha = *action;
+											ha.weapon = hw;
+											ha.type = mode;
+											if (hr->getBaseAccuracy() > 0)
+												return Projectile::calculateHitChancePercent(_save, &ha, cursorPos, hw->getAmmoForAction(mode), _game->getMod(), hasLOS);
+											return BattleUnit::getFiringAccuracy(BattleActionAttack::GetBeforeShoot(ha), _game->getMod());
+										};
+										rChance = handPercent(action->actor->getRightHandWeapon());
+										lChance = handPercent(action->actor->getLeftHandWeapon());
+										_cacheHitChance = rChance;
+										_cacheHitChance2 = lChance;
+										_cacheHitChanceCover = 0;
+										_cacheHitChancePosition = cursorPos;
+										_cacheHitChanceCtrl = _isCtrlPressed ? 1 : 0;
+										_cacheHitChanceWeapon = action->weapon;
+										_cacheHitChanceActionType = (int)action->type;
+										_cacheHitChanceKneeled = kneeled;
+									}
+
+									// color-grade by the better hand (the player's best shot)
+									int best = std::max(rChance, lChance);
+									if (best >= 65)
+										_txtAccuracy->setColor(Palette::blockOffset(Pathfinding::green - 1) - 1);
+									else if (best >= 35)
+										_txtAccuracy->setColor(Palette::blockOffset(Pathfinding::yellow - 1) - 1);
+									else
+										_txtAccuracy->setColor(Palette::blockOffset(Pathfinding::red - 1) - 1);
+
+									ss << "R:" << rChance << "% L:" << lChance << "% @" << distance << "m";
+								}
+								else if (coneModel)
 								{
 									// Line of sight (cached, keyed on cursor tile + ctrl) widens the soldier cone.
 									bool hasLOS = false;
@@ -2924,6 +3005,18 @@ void Map::updateTargetingPreview()
 	// Work on a copy so off-centre origin resolution never mutates the live action.
 	BattleAction previewAction = *action;
 	previewAction.target = target;
+
+	// DX dual-fire has no single weapon/mode of its own; preview one hand's shot (prefer the
+	// cone-model hand so the previewed line/readout is the meaningful one).
+	if (previewAction.type == BA_DUALFIRE)
+	{
+		BattleItem *dispWeapon = previewAction.actor->getDualFireDisplayWeapon();
+		if (dispWeapon)
+		{
+			previewAction.weapon = dispWeapon;
+			previewAction.type = dispWeapon->getRules()->getDualFireMode();
+		}
+	}
 
 	Position origin = previewAction.actor->getPosition();
 	bool isThrow = (previewAction.type == BA_THROW);

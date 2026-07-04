@@ -94,7 +94,8 @@ private:
 	int _cacheHasLOS; // -1 = unknown, 0 = no LOS, 1 = has LOS
 	// Cache for the DX aim-cone hit-chance crosshair readout (expensive: voxel-traced Monte-Carlo);
 	// recomputed only when the aim (cursor tile / ctrl / weapon / action type) changes, not every frame.
-	int _cacheHitChance; // -1 = unknown, else 0-100
+	int _cacheHitChance; // -1 = unknown, else 0-100 (right/primary hand under dual-fire)
+	int _cacheHitChance2; // dual-fire: the left/off hand's paired value (-1 if n/a)
 	int _cacheHitChanceCover; // cover-reduction term (percentage points) paired with _cacheHitChance
 	Position _cacheHitChancePosition;
 	int _cacheHitChanceCtrl; // -1 = unknown, else 0/1

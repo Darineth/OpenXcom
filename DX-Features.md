@@ -752,6 +752,26 @@ calibration: [reference/aimcone_montecarlo.py](reference/aimcone_montecarlo.py))
     never fully blinds. Applied on the shot and the hover hit-chance readout (not the effective-range
     readout, which is a clear-air property). Penalty constants are provisional pending tuning.
 
+## Dual-Fire
+
+A soldier holding a firearm in **each hand** can fire **both at once** with a new **Dual Fire**
+action (`BA_DUALFIRE`, action-menu hotkey `7`). Each hand fires its own weapon, ammo, and **best
+available fire mode** (first of Auto → Burst → Snap → Aimed it has), firing that mode's **full**
+sequence — so two auto weapons spray simultaneously — both aimed at the same target, each with its
+own aim-cone. *(design: [plans/Feature-DualFire.md](plans/Feature-DualFire.md))*
+
+- **Shown when eligible:** offered whenever the unit holds two loaded, fire-capable firearms
+  (`canDualFire()`); no option/flag — it's a player action.
+- **Cost:** the higher of the two hands' chosen-mode TU × 1.1 (they fire simultaneously), capped at
+  96 — `min(96, round(max(handTU_L, handTU_R) × 1.1))`.
+- **Accuracy:** each hand uses its chosen mode's accuracy (the low auto/hip-fire accuracy is the
+  dual-wield tradeoff); the two-handed occupancy penalty still applies.
+- **Concurrent & independent:** both hands' full sequences fly at once via the async projectile
+  system; each round resolves with its **own** weapon's damage, spends its own ammo, and awards its
+  own firing experience. If one hand has no line of fire it simply sits out; the other still fires.
+- Built on the async projectile system and reuses the standard per-mode firing pipeline (a nested
+  off-hand sub-state driven by the primary).
+
 ## Realistic Throwing Accuracy
 
 Optional physical throw-error model (the throwing analog of the aim-cone), replacing the native

@@ -33,7 +33,7 @@ class ActionMenuState : public State
 {
 protected:
 	BattleAction *_action;
-	ActionMenuItem *_actionMenu[6];
+	ActionMenuItem *_actionMenu[8]; // up to throw + prime + dual-fire + auto/burst/snap/aimed
 	/// Guards against firing more than one action (e.g. two menu items sharing a hotkey).
 	bool _actionChosen = false;
 	/// Adds a new menu item for an action.

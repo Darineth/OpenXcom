@@ -2202,6 +2202,64 @@ RuleItemUseCost BattleUnit::getActionTUs(BattleActionType actionType, const Batt
 }
 
 /**
+ * DX dual-fire: whether this unit can fire both hands at once - both hands hold a firearm that has a
+ * usable dual-fire mode (auto/burst/snap/aimed) and loaded ammo for it.
+ */
+bool BattleUnit::canDualFire() const
+{
+	BattleItem *r = getRightHandWeapon();
+	BattleItem *l = getLeftHandWeapon();
+	if (!r || !l)
+	{
+		return false;
+	}
+	const BattleActionType rm = r->getRules()->getDualFireMode();
+	const BattleActionType lm = l->getRules()->getDualFireMode();
+	if (rm == BA_NONE || lm == BA_NONE)
+	{
+		return false;
+	}
+	// both hands must have usable ammo for their chosen mode
+	return r->getAmmoForAction(rm) != nullptr && l->getAmmoForAction(lm) != nullptr;
+}
+
+/**
+ * DX dual-fire: the hand whose weapon should drive the targeting display (trajectory preview and
+ * crosshair readout). Prefers a hand using the aim-cone model, whose hit-chance readout varies with
+ * distance/cover; falls back to the right hand (a vanilla weapon's accuracy is tile-independent).
+ */
+BattleItem* BattleUnit::getDualFireDisplayWeapon() const
+{
+	BattleItem *r = getRightHandWeapon();
+	BattleItem *l = getLeftHandWeapon();
+	if (r && r->getRules()->getBaseAccuracy() > 0) return r;
+	if (l && l->getRules()->getBaseAccuracy() > 0) return l;
+	return r ? r : l;
+}
+
+/**
+ * DX dual-fire: combined cost of firing both hands simultaneously - the higher of the two hands'
+ * chosen-mode costs, x1.1 (they fire at once, not in sequence), with TU capped at 96. Both the 1.1
+ * multiplier and the 96 cap are carried over from the legacy fork. Returns 0 if not dual-fire-capable.
+ */
+RuleItemUseCost BattleUnit::getDualFireCost() const
+{
+	if (!canDualFire())
+	{
+		return 0;
+	}
+	BattleItem *r = getRightHandWeapon();
+	BattleItem *l = getLeftHandWeapon();
+	const RuleItemUseCost rc = getActionTUs(r->getRules()->getDualFireMode(), r);
+	const RuleItemUseCost lc = getActionTUs(l->getRules()->getDualFireMode(), l);
+
+	RuleItemUseCost cost;
+	cost.Time = std::min(96, (int)(std::max(rc.Time, lc.Time) * 1.1 + 0.5));
+	cost.Energy = (int)(std::max(rc.Energy, lc.Energy) * 1.1 + 0.5);
+	return cost;
+}
+
+/**
  * Get the number of time units a certain skill action takes.
  * @param actionType
  * @param skillRules

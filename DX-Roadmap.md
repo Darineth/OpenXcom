@@ -268,8 +268,10 @@ Everything below is DX-specific work confirmed **absent** from the base.
   *(design: [plans/Feature-ThrowAccuracyRealism.md](plans/Feature-ThrowAccuracyRealism.md))*
 - [x] **Shotgun Pellet Flight & Spread** — pellets now fly as individual concurrent projectiles
   with spread, each resolving its own impact via the async projectile system.
-- [ ] **Dual-Fire** — simultaneous projectile spawning from both hands. *(needs
-  async projectile + aim-cone; shotgun pellet flight/spread already implemented)*
+- [x] **Dual-Fire** — fire both hands' weapons at once (`BA_DUALFIRE`), each hand its own
+  weapon/ammo/best-mode (Auto→Burst→Snap→Aimed), concurrent full sequences at the same target.
+  Cost = `min(96, round(max(handTU) × 1.1))`; nested off-hand sub-state; per-projectile impact
+  resolution. *(design: [plans/Feature-DualFire.md](plans/Feature-DualFire.md))*
 - [x] **Live Trajectory Preview** — tracer sprites for the predicted line-of-fire / throw arc while
   aiming (ideal-path preview, shipped independently of the aim-cone). *(design:
   [plans/Feature-LiveTrajectoryPreview.md](plans/Feature-LiveTrajectoryPreview.md))*
