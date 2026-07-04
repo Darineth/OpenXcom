@@ -741,3 +741,13 @@ calibration: [reference/aimcone_montecarlo.py](reference/aimcone_montecarlo.py))
   standard target in the open (`Projectile::calculateEffectiveRange`, target/terrain-independent, no
   tracing), reflects the mode's kneel/one-hand/wound/shot-type accuracy, and accounts for shotgun
   ammo spread. Vanilla (`baseAccuracy: 0`) weapons keep the classic accuracy `%` unchanged.
+- **Extra accuracy modifiers (exhaustion & smoke).** Cone weapons add two soldier-cone penalties
+  OXCE lacks (native scatter weapons are unaffected). *(design:
+  [plans/Feature-AccuracyModifiers.md](plans/Feature-AccuracyModifiers.md))*
+  - **Exhaustion** — below 50% energy a tired shooter's aim widens: multiplier `0.5 + energy/stamina`
+    (1.0 at 50% energy, floored at 0.5 when spent). Direct fire only; folded into `getFiringAccuracy`
+    so it flows through the shot, both readouts, and AI/reaction.
+  - **Smoke on the line of fire** — smoke between shooter and target widens the soldier cone,
+    summed along the LOF (mirroring the visibility smoke model), floored so heavy smoke degrades but
+    never fully blinds. Applied on the shot and the hover hit-chance readout (not the effective-range
+    readout, which is a clear-air property). Penalty constants are provisional pending tuning.

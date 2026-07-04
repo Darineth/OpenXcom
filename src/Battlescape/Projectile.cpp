@@ -781,6 +781,11 @@ void Projectile::applyAimCone(Position origin, Position *target, double soldierA
 	}
 	else
 	{
+		// Smoke on the line of fire widens the soldier cone too (like the no-LOS penalty).
+		// Computed here in the soldier-cone branch, so it's rolled once per volley (shotgun
+		// pellets then share it via the stored true-aim). See plans/Feature-AccuracyModifiers.md.
+		soldierAcc *= _save->getTileEngine()->getSmokeAccuracyFactor(origin, *target);
+
 		// Soldier cone (sigma computed by soldierConeSigma; constants documented at file top).
 		dir = rotateVectorRandomly(dir, sampleConeAngle(soldierConeSigma(soldierAcc)));
 
@@ -901,8 +906,6 @@ int Projectile::calculateHitChancePercent(SavedBattleGame* save, BattleAction* a
 		spread = ammo->getRules()->getShotgunSpread();
 		pellets = ammo->getRules()->getShotgunPellets();
 	}
-	const double sigmaS = soldierConeSigma(soldierAcc);
-	const double sigmaW = weaponConeSigma(weaponRule->getBaseAccuracy(), spread);
 
 	// Resolve origin + aim voxels exactly as the real shot does (so the traced rays start and point
 	// where actual fire would). Use a copy of the action - retargeted at the hovered tile - so the
@@ -915,6 +918,12 @@ int Projectile::calculateHitChancePercent(SavedBattleGame* save, BattleAction* a
 	{
 		aimVoxel = targetPos.toVoxel() + TileEngine::voxelTileCenter;
 	}
+
+	// Smoke on the line of fire widens the soldier cone too (mirrors the shot; like no-LOS above).
+	soldierAcc *= te->getSmokeAccuracyFactor(originVoxel, aimVoxel);
+
+	const double sigmaS = soldierConeSigma(soldierAcc);
+	const double sigmaW = weaponConeSigma(weaponRule->getBaseAccuracy(), spread);
 
 	AimVector ideal = { double(aimVoxel.x - originVoxel.x), double(aimVoxel.y - originVoxel.y), double(aimVoxel.z - originVoxel.z) };
 	const double targetDistVox = std::sqrt(VectDotProduct(ideal, ideal, 1.0));

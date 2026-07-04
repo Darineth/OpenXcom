@@ -205,6 +205,8 @@ public:
 	int closeUfoDoors();
 	/// Calculates a line trajectory in tile space.
 	int calculateLineTile(Position origin, Position target, std::vector<Position> &trajectory);
+	/// Aim-cone: accuracy multiplier (0-1) from smoke along the shooter->target line of fire.
+	double getSmokeAccuracyFactor(Position originVoxel, Position targetVoxel);
 	/// Calculates a line trajectory in voxel space.
 	VoxelType calculateLineVoxel(Position origin, Position target, bool storeTrajectory, std::vector<Position> *trajectory, BattleUnit *excludeUnit, BattleUnit *excludeAllBut = 0, bool onlyVisible = false);
 	/// Calculates a parabola trajectory.

@@ -4466,6 +4466,36 @@ int TileEngine::calculateLineTile(Position origin, Position target, std::vector<
 }
 
 /**
+ * Aim-cone model: accuracy multiplier from smoke on the line of fire. Sums the smoke of the tiles
+ * between shooter and target (mirroring the visibility smoke model) and reduces accuracy by a
+ * tunable amount per unit of smoke, floored so heavy smoke degrades but never fully blinds.
+ * See plans/Feature-AccuracyModifiers.md.
+ * @param originVoxel Shooter's muzzle position (voxels).
+ * @param targetVoxel Target position (voxels).
+ * @return Accuracy multiplier in [SMOKE_ACC_FLOOR, 1.0].
+ */
+double TileEngine::getSmokeAccuracyFactor(Position originVoxel, Position targetVoxel)
+{
+	// Provisional constants (tune in play): each unit of summed smoke shaves 1% off accuracy,
+	// floored at 0.30 so a shot through heavy smoke still has a chance.
+	const double SMOKE_ACC_PER_UNIT = 0.01;
+	const double SMOKE_ACC_FLOOR = 0.30;
+
+	std::vector<Position> tiles;
+	calculateLineTile(originVoxel.toTile(), targetVoxel.toTile(), tiles);
+	int sumSmoke = 0;
+	for (const auto& p : tiles)
+	{
+		Tile* t = _save->getTile(p);
+		if (t)
+		{
+			sumSmoke += t->getSmoke();
+		}
+	}
+	return std::max(SMOKE_ACC_FLOOR, 1.0 - sumSmoke * SMOKE_ACC_PER_UNIT);
+}
+
+/**
  * Calculates a line trajectory, using bresenham algorithm in 3D.
  * @param origin Origin in voxel.
  * @param target Target in voxel.

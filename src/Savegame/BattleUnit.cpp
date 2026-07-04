@@ -2609,6 +2609,25 @@ int BattleUnit::getFiringAccuracy(BattleActionAttack::ReadOnly attack, const Mod
 		}
 	}
 
+	// DX aim-cone weapons: exhaustion penalty - a tired shooter's aim shakes (soldier-cone widener).
+	// Direct fire only; throwing/melee are unaffected. Below 50% energy the multiplier is
+	// 0.5 + energyRatio (so 1.0 at 50% energy, floored at 0.5 when spent). Native scatter weapons
+	// (baseAccuracy 0) are unchanged. See plans/Feature-AccuracyModifiers.md.
+	if (item->getRules()->getBaseAccuracy() > 0
+		&& (actionType == BA_SNAPSHOT || actionType == BA_AIMEDSHOT || actionType == BA_AUTOSHOT
+			|| actionType == BA_BURSTSHOT || actionType == BA_LAUNCH))
+	{
+		const int stamina = attack.attacker->getBaseStats()->stamina;
+		if (stamina > 0)
+		{
+			const double energyRatio = (double)attack.attacker->getEnergy() / stamina;
+			if (energyRatio < 0.5)
+			{
+				result = (int)(result * (0.5 + energyRatio));
+			}
+		}
+	}
+
 	return result * modifier / 100;
 }
 

@@ -255,9 +255,12 @@ Everything below is DX-specific work confirmed **absent** from the base.
   - [x] Soldier deflection cone (Gaussian/normal distribution)
   - [x] Weapon deflection cone (independent of soldier)
   - [x] Stacking of soldier and weapon error
-- [ ] **Accuracy Modifiers** — kneel/two-handed/exhaustion/smoke; shot-mode accuracy.
-  - [ ] Kneel / two-handed / exhaustion / smoke accuracy factors
-  - [ ] Shot-mode accuracy application (Snap/Aim/Auto/Burst)
+- [x] **Accuracy Modifiers** — kneel/two-handed/exhaustion/smoke; shot-mode accuracy.
+  *(design: [plans/Feature-AccuracyModifiers.md](plans/Feature-AccuracyModifiers.md))*
+  - [x] Kneel / two-handed / shot-mode / wounds — already in OXCE `getFiringAccuracy` (feed the soldier cone).
+  - [x] Exhaustion (low-energy) + smoke-on-LOF accuracy factors — DX delta, cone weapons only
+    (exhaustion in `getFiringAccuracy`; smoke in the cone path). Smoke constants pending tuning.
+  - [x] Shot-mode accuracy application (Snap/Aim/Auto/Burst) — feeds the soldier cone via `getFiringAccuracy`.
 - [ ] **Throw-accuracy tuning (if needed)** — OXCE currently applies no throw LOS penalty
   (`accuracyThrow` default 100; `_noLOSAccuracyPenalty` is aimed-shot-only). Only add a
   reduced throw penalty if the aim-cone firing model introduces one that needs softening.
