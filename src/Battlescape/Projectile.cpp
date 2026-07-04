@@ -773,7 +773,7 @@ Position Projectile::computeThrowLaunchError(Position originVoxel, Position targ
  *
  * @return Estimated exact-tile landing chance, 0-100 (0 if the tile isn't a reachable throw).
  */
-int Projectile::calculateThrowLandChancePercent(SavedBattleGame* save, BattleAction* action, Position targetPos, Mod* mod)
+int Projectile::calculateThrowLandChancePercent(SavedBattleGame* save, BattleAction* action, Position targetPos, Mod* mod, std::vector<SpreadSample>* outSampleLandings)
 {
 	if (!action->weapon || !action->actor)
 	{
@@ -830,7 +830,13 @@ int Projectile::calculateThrowLandChancePercent(SavedBattleGame* save, BattleAct
 		{
 			continue;
 		}
-		if (getPositionFromEnd(traj, ItemDropVoxelOffset).toTile() == targetPos)
+		const Position landVoxel = getPositionFromEnd(traj, ItemDropVoxelOffset);
+		const bool onTarget = (landVoxel.toTile() == targetPos);
+		if (outSampleLandings)
+		{
+			outSampleLandings->push_back({ landVoxel, onTarget }); // where this throw lands, hit vs miss
+		}
+		if (onTarget)
 		{
 			++hits;
 		}
@@ -1022,7 +1028,7 @@ double Projectile::weaponConeSigma(int baseAccuracy, int shotgunSpread)
  *        this is the informational "(-N%)" the readout shows. Unit targets only (0 for terrain).
  * @return Estimated hit chance, 0-100 (cover already applied).
  */
-int Projectile::calculateHitChancePercent(SavedBattleGame* save, BattleAction* action, Position targetPos, BattleItem* ammo, Mod* mod, bool hasLOS, int* outCoverReduction)
+int Projectile::calculateHitChancePercent(SavedBattleGame* save, BattleAction* action, Position targetPos, BattleItem* ammo, Mod* mod, bool hasLOS, int* outCoverReduction, std::vector<SpreadSample>* outSampleImpacts)
 {
 	if (outCoverReduction)
 	{
@@ -1139,6 +1145,12 @@ int Projectile::calculateHitChancePercent(SavedBattleGame* save, BattleAction* a
 			VoxelType vt = te->calculateLineVoxel(originVoxel, far, false, &traj, shooter);
 			if (vt == V_EMPTY || vt == V_OUTOFBOUNDS || traj.empty())
 			{
+				// flew past everything: for the dot cloud, drop a (miss) sample at the target plane
+				// (where this shot crossed the target's distance) so a near-miss still shows.
+				if (outSampleImpacts)
+				{
+					outSampleImpacts->push_back({ originVoxel + Position((int)(dir.x * targetDistVox), (int)(dir.y * targetDistVox), (int)(dir.z * targetDistVox)), false });
+				}
 				continue;
 			}
 			const Position impact = traj.at(0);
@@ -1147,10 +1159,16 @@ int Projectile::calculateHitChancePercent(SavedBattleGame* save, BattleAction* a
 			{
 				hitTile = Position(hitTile.x, hitTile.y, hitTile.z - 1);
 			}
-			if (hitTile == targetPos)
+			const bool onTarget = (hitTile == targetPos);
+			if (outSampleImpacts)
+			{
+				// where this round lands (target/wall/ground), tagged hit vs miss for colouring
+				outSampleImpacts->push_back({ impact, onTarget });
+			}
+			if (onTarget)
 			{
 				anyHit = true;
-				break;
+				if (!outSampleImpacts) break; // when drawing dots, keep tracing pellets for the full pattern
 			}
 
 			// Cover accounting: this pellet missed the target. If it was aimed *on* the target

@@ -23,6 +23,7 @@
 #include "../Mod/MapData.h"
 #include "Position.h"
 #include "Particle.h"
+#include "Projectile.h" // SpreadSample (aim-cone/throw spread visualization)
 #include <vector>
 
 namespace OpenXcom
@@ -129,6 +130,10 @@ private:
 	Position _previewTarget;
 	int _previewActionType;
 	void *_previewActor;
+	// DX aim-cone / throw spread visualization: Alt-held sampled impacts/landings (voxel + hit flag)
+	// to draw as a dot cloud (in place of the single tracer line). Rebuilt with the preview.
+	std::vector<SpreadSample> _targetingDots;
+	bool _previewAlt;
 
 	void drawUnit(UnitSprite &unitSprite, Tile *unitTile, Tile *currTile, Position tileScreenPosition, bool topLayer, BattleUnit* movingUnit = nullptr);
 	/// Rebuilds the live aiming trajectory preview for the current cursor/action (or clears it).

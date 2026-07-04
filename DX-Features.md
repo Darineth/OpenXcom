@@ -664,6 +664,16 @@ TUs. It complements the on-cursor accuracy readout the engine already shows. *(d
   ruleset key `trajectoryPreviewSprite` (a Projectiles frame index, default `35` — the rifle-type
   base bullet; standard xcom1 sets `35`, xcom2 sets `36`); the impact marker uses `HIT.PCK`.
 - Toggle: **Aim trajectory preview** (`battleTrajectoryPreview`, default on).
+- **Spread dot cloud (hold Alt).** While aiming, holding **Alt** replaces the single ideal tracer
+  line with a **cloud of sampled impact dots** showing where the shots would actually land — the
+  aim-cone spread for cone-model direct fire, and the launch-error scatter for realistic throwing
+  (elongated short/long along the throw line). Dots are coloured **green where the round lands on the
+  target** (its unit/wall/tile, or the target tile for throws) and **red where it misses**, so you
+  can see how much of the spread connects. It reuses the already-cached hit-chance / landing-chance
+  Monte-Carlos (each sampled round's real voxel impact, cover included), so it's truthful to the
+  model and updates live with distance/kneel/cover. Combines with the existing Alt damage readout as
+  a "detailed aim" mode. *(design:
+  [plans/Feature-TargetingVisualization.md](plans/Feature-TargetingVisualization.md))*
 
 ## Blast Radius Dropoff
 

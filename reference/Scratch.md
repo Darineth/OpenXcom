@@ -1,5 +1,4 @@
 # TODO
-- Visualize aim/throw cone/landing area?
 - Fix offscreen/pre-battle events appearing in combat log
 - Inventory grid and item rendering happens in clearly separate frames, and can sometimes get stuck with the wrong inventory layout showing?
 

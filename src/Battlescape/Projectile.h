@@ -42,6 +42,17 @@ struct AimVector
 };
 
 /**
+ * One sampled shot/throw outcome for the spread visualization (Alt dot cloud): the voxel where the
+ * round came down, and whether that's on the intended target (the aimed unit/wall/tile for fire, the
+ * target tile for throws) so hits and misses can be drawn in different colours.
+ */
+struct SpreadSample
+{
+	Position pos;
+	bool onTarget;
+};
+
+/**
  * A class that represents a projectile. Map is the owner of an instance of this class during its short life.
  * It calculates its own trajectory and then moves along this pre-calculated trajectory in voxel space.
  */
@@ -62,13 +73,13 @@ public:
 	static double weaponConeSigma(int baseAccuracy, int shotgunSpread = 100);
 	/// Aim-cone model: estimated physical hit chance (0-100%) against a target, for the crosshair
 	/// readout. Voxel-traces sampled shots against real terrain (cover-aware); cache the result per aim.
-	static int calculateHitChancePercent(SavedBattleGame* save, BattleAction* action, Position targetPos, BattleItem* ammo, Mod* mod, bool hasLOS, int* outCoverReduction = nullptr);
+	static int calculateHitChancePercent(SavedBattleGame* save, BattleAction* action, Position targetPos, BattleItem* ammo, Mod* mod, bool hasLOS, int* outCoverReduction = nullptr, std::vector<SpreadSample>* outSampleImpacts = nullptr);
 	/// Aim-cone model: the 50%-hit "effective range" (tiles) against a standard target in the open -
 	/// a target/terrain-independent property of the shooter+weapon, for the action-menu readout.
 	static int calculateEffectiveRange(double soldierAcc, int baseAccuracy, int shotgunSpread = 100);
 	/// Realistic throwing: estimated chance (0-100%) a thrown item lands on the exact target tile,
 	/// for the throw-cursor readout. Monte-Carlos the launch error through the real parabola.
-	static int calculateThrowLandChancePercent(SavedBattleGame* save, BattleAction* action, Position targetPos, Mod* mod);
+	static int calculateThrowLandChancePercent(SavedBattleGame* save, BattleAction* action, Position targetPos, Mod* mod, std::vector<SpreadSample>* outSampleLandings = nullptr);
 
 private:
 	Mod *_mod;

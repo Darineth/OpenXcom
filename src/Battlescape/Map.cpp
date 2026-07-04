@@ -111,7 +111,7 @@ Map::Map(Game *game, int width, int height, int x, int y, int visibleMapHeight) 
 	_selectorX(0), _selectorY(0), _mouseX(0), _mouseY(0), _cursorType(CT_NORMAL), _cursorSize(1), _animFrame(0),
 	_followProjectile(true), _projectileInFOV(false), _explosionInFOV(false), _launch(false), _visibleMapHeight(visibleMapHeight),
 	_unitDying(false), _smoothingEngaged(false), _flashScreen(false), _bgColor(15), _projectileSet(0),
-	_targetingProjectile(0), _previewTarget(-1, -1, -1), _previewActionType(-1), _previewActor(0),
+	_targetingProjectile(0), _previewTarget(-1, -1, -1), _previewActionType(-1), _previewActor(0), _previewAlt(false),
 	_showObstacles(false), _showInfoOnCursor(false)
 {
 	// TODO: extract to a better place later
@@ -2954,6 +2954,7 @@ void Map::clearTargetingPreview()
 	_previewTarget = Position(-1, -1, -1);
 	_previewActionType = -1;
 	_previewActor = 0;
+	_targetingDots.clear();
 }
 
 /**
@@ -2989,11 +2990,16 @@ void Map::updateTargetingPreview()
 		return;
 	}
 
-	// Rebuild only when the aim target, action or actor changes (the voxel trace isn't free).
+	// Alt shows the spread as a sampled dot cloud (in place of the tracer line); include it in the
+	// rebuild key so toggling Alt re-traces.
+	const bool altHeld = _game->isAltPressed(true);
+
+	// Rebuild only when the aim target, action, actor, or Alt state changes (the voxel trace isn't free).
 	if (_targetingProjectile
 		&& target == _previewTarget
 		&& action->type == _previewActionType
-		&& (void*)action->actor == _previewActor)
+		&& (void*)action->actor == _previewActor
+		&& altHeld == _previewAlt)
 	{
 		return;
 	}
@@ -3001,6 +3007,7 @@ void Map::updateTargetingPreview()
 	_previewTarget = target;
 	_previewActionType = action->type;
 	_previewActor = (void*)action->actor;
+	_previewAlt = altHeld;
 
 	// Work on a copy so off-centre origin resolution never mutates the live action.
 	BattleAction previewAction = *action;
@@ -3054,6 +3061,24 @@ void Map::updateTargetingPreview()
 		return;
 	}
 	_targetingProjectile = proj;
+
+	// DX spread visualization: with Alt held, sample where the shots (aim-cone) or the throw
+	// (launch error) would actually land, and stash the voxels as a dot cloud - drawTargetingPreview
+	// draws these in place of the single ideal tracer line. Only for models that HAVE a spread:
+	// cone-model direct fire, and realistic throwing. (Both reuse their already-cached Monte-Carlos.)
+	if (altHeld)
+	{
+		if (isThrow)
+		{
+			if (Options::battleRealisticThrowing)
+				Projectile::calculateThrowLandChancePercent(_save, &previewAction, target, _game->getMod(), &_targetingDots);
+		}
+		else if (!isArc && previewAction.weapon->getRules()->getBaseAccuracy() > 0)
+		{
+			bool hasLOS = _save->getTileEngine()->isTileInLOS(&previewAction, targetTile, false);
+			Projectile::calculateHitChancePercent(_save, &previewAction, target, ammo, _game->getMod(), hasLOS, nullptr, &_targetingDots);
+		}
+	}
 }
 
 /**
@@ -3068,12 +3093,6 @@ void Map::drawTargetingPreview(Surface *surface)
 		return;
 	}
 
-	const std::vector<Position>& trajectory = _targetingProjectile->getTrajectory();
-	if (trajectory.empty())
-	{
-		return;
-	}
-
 	// Use a single fixed standard tracer for every preview (regardless of weapon or throw), so the
 	// line always reads the same. The Projectiles frame is mod-configurable via the "constants"
 	// ruleset key trajectoryPreviewSprite (default frame 35, the rifle-type base bullet). Comes from
@@ -3084,9 +3103,35 @@ void Map::drawTargetingPreview(Surface *surface)
 		return;
 	}
 
+	Position screen;
+
+	// DX spread visualization (Alt held): draw the sampled impact/landing dot cloud INSTEAD of the
+	// ideal tracer line. A readable subset of the samples so the cloud doesn't turn to mush; rounds
+	// that land ON the target (its unit/wall/tile, or the target tile for throws) are drawn green,
+	// misses red - so you can see at a glance how much of the spread actually connects.
+	if (!_targetingDots.empty())
+	{
+		// blitRaw's newBaseColor is a palette-block index+1 (it does (v-1)<<4 internally), NOT a raw
+		// palette offset - so pass the Pathfinding block constants directly.
+		const int hitColor = Pathfinding::green;
+		const int missColor = Pathfinding::red;
+		const int stride = std::max<int>(1, (int)_targetingDots.size() / 40);
+		for (size_t i = 0; i < _targetingDots.size(); i += (size_t)stride)
+		{
+			_camera->convertVoxelToScreen(_targetingDots[i].pos, &screen);
+			Surface::blitRaw(surface, tracer, screen.x - tracer->getWidth() / 2, screen.y - tracer->getHeight() / 2, 0, false, _targetingDots[i].onTarget ? hitColor : missColor);
+		}
+		return;
+	}
+
+	const std::vector<Position>& trajectory = _targetingProjectile->getTrajectory();
+	if (trajectory.empty())
+	{
+		return;
+	}
+
 	const int stride = 5; // one tracer dot every few voxel steps, so it reads as a dotted line
 	const int last = (int)trajectory.size() - 1;
-	Position screen;
 	for (int i = 0; i < last; i += stride)
 	{
 		_camera->convertVoxelToScreen(trajectory[i], &screen);
