@@ -2054,7 +2054,13 @@ void DebriefingState::prepareDebriefing()
 	for (const auto& pair : _rounds)
 	{
 		int total_clips = 0;
-		if (_game->getMod()->getStatisticalBulletConservation())
+		if (pair.first->getBattleClipSize() > 0)
+		{
+			// DX battleClipSize: ammo is stocked one round at a time, so recovered rounds return raw
+			// (this also avoids dividing by clipSize, which is forced to 0 under this model).
+			total_clips = pair.second;
+		}
+		else if (_game->getMod()->getStatisticalBulletConservation())
 		{
 			total_clips = (pair.second + RNG::generate(0, (pair.first->getClipSize() - 1))) / pair.first->getClipSize();
 		}
@@ -2429,11 +2435,11 @@ void DebriefingState::recoverItems(std::vector<BattleItem*> *from, Base *base, C
 
 	auto recoveryAmmo = [&](BattleItem* clip, const RuleItem *rule)
 	{
-		if (rule->getBattleType() == BT_AMMO && rule->getClipSize() > 0)
+		if (rule->getBattleType() == BT_AMMO && rule->getBattleMagazineSize() > 0)
 		{
-			// It's a clip, count any rounds left.
+			// It's a clip (or a DX battleClipSize magazine), count any rounds left.
 			if (rule->isAmmoRechargeable())
-				_rounds[rule] += rule->getClipSize(); // restore 100% of clip capacity (i.e. the clip will be recharged at the base)
+				_rounds[rule] += rule->getBattleMagazineSize(); // restore 100% of clip capacity (i.e. the clip will be recharged at the base)
 			else
 				_rounds[rule] += clip->getAmmoQuantity();
 		}
@@ -2547,10 +2553,10 @@ void DebriefingState::recoverItems(std::vector<BattleItem*> *from, Base *base, C
 					case BT_FIREARM:
 					case BT_MELEE:
 						// Special case: built-in ammo (e.g. throwing knives or bamboo stick)
-						if (!bi->needsAmmoForSlot(0) && rule->getClipSize() > 0)
+						if (!bi->needsAmmoForSlot(0) && rule->getBattleMagazineSize() > 0)
 						{
 							if (rule->isAmmoRechargeable())
-								_rounds[rule] += rule->getClipSize(); // restore 100% of clip capacity (i.e. the clip will be recharged at the base)
+								_rounds[rule] += rule->getBattleMagazineSize(); // restore 100% of clip capacity (i.e. the clip will be recharged at the base)
 							else
 								_rounds[rule] += bi->getAmmoQuantity();
 							recoverWeapon = false;

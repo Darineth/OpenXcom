@@ -160,7 +160,7 @@ RuleItem::RuleItem(const std::string &type, int listOrder) :
 	_noLOSAccuracyPenalty(-1),
 	_explodeInventory(-1),
 	_costUse(25), _costMind({}, {}), _costPanic({}, {}), _costThrow(25), _costPrime(50), _costUnprime(25),
-	_clipSize(0), _specialChance(100), _tuLoad{ }, _tuUnload{ },
+	_clipSize(0), _battleClipSize(0), _specialChance(100), _tuLoad{ }, _tuUnload{ },
 	_battleType(BT_NONE), _fuseType(BFT_NONE), _fuseTriggerEvents{ }, _hiddenOnMinimap(false),
 	_painKillerActionName("STR_PAIN_KILLER"), _stimulantActionName("STR_STIMULANT"), _healActionName("STR_HEAL"),
 	_medikitActionName("STR_USE_MEDI_KIT"),
@@ -494,6 +494,14 @@ void RuleItem::load(const YAML::YamlNodeReader& node, Mod *mod, const ModScript&
 	reader.tryRead("fuseType", _fuseType);
 	reader.tryRead("hiddenOnMinimap", _hiddenOnMinimap);
 	reader.tryRead("clipSize", _clipSize);
+	// DX: battleClipSize decouples the economy unit (a single round in stores) from the loaded
+	// magazine capacity. It is mutually exclusive with clipSize — setting it forces clipSize to 0,
+	// so an ammo item uses one model or the other, never both.
+	reader.tryRead("battleClipSize", _battleClipSize);
+	if (_battleClipSize > 0)
+	{
+		_clipSize = 0;
+	}
 
 	loadConfFuse(_fuseTriggerEvents, reader, "fuseTriggerEvents");
 
@@ -1839,6 +1847,28 @@ int RuleItem::getInventoryHeight() const
 int RuleItem::getClipSize() const
 {
 	return _clipSize;
+}
+
+/**
+ * Gets the per-round stock size (DX). Non-zero means the ammo is stocked, bought, sold, and
+ * recovered one round at a time, and packed into magazines of this many rounds at battle generation.
+ * @return The battle clip size (0 when the normal clipSize economy model is used).
+ */
+int RuleItem::getBattleClipSize() const
+{
+	return _battleClipSize;
+}
+
+/**
+ * Gets the effective loaded-magazine capacity (DX): battleClipSize if set, otherwise clipSize.
+ * Field logic (initial fill, spend/refill gating, the loaded ammo bar) uses this so a
+ * battleClipSize magazine behaves like any normal magazine, while getClipSize() stays the
+ * economy / base-store unit (0 under the battleClipSize model).
+ * @return The magazine capacity in rounds.
+ */
+int RuleItem::getBattleMagazineSize() const
+{
+	return _battleClipSize > 0 ? _battleClipSize : _clipSize;
 }
 
 /**

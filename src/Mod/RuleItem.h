@@ -427,7 +427,7 @@ private:
 	int _noLOSAccuracyPenalty;
 	int _explodeInventory;
 	RuleItemUseCostRule _costUse, _costMind, _costPanic, _costThrow, _costPrime, _costUnprime;
-	int _clipSize, _specialChance, _tuLoad[AmmoSlotMax], _tuUnload[AmmoSlotMax];
+	int _clipSize, _battleClipSize, _specialChance, _tuLoad[AmmoSlotMax], _tuUnload[AmmoSlotMax];
 	BattleType _battleType;
 	BattleFuseType _fuseType;
 	RuleItemFuseTrigger _fuseTriggerEvents;
@@ -873,8 +873,13 @@ public:
 	int getInventoryWidth() const;
 	/// Gets the item's inventory height.
 	int getInventoryHeight() const;
-	/// Gets the ammo amount.
+	/// Gets the ammo amount (economy / base-store unit; 0 under the battleClipSize model).
 	int getClipSize() const;
+	/// Gets the per-round stock size (DX): non-zero means ammo is stocked/bought/recovered one round
+	/// at a time and packed into magazines of this many rounds at battle generation.
+	int getBattleClipSize() const;
+	/// Gets the effective loaded-magazine capacity: battleClipSize if set, else clipSize (DX).
+	int getBattleMagazineSize() const;
 	/// Gets the chance of special effect like zombify or corpse explosion or mine triggering.
 	int getSpecialChance() const;
 	/// Draws the item's hand sprite onto a surface.

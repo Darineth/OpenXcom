@@ -963,6 +963,37 @@ void BattlescapeGenerator::run()
 }
 
 /**
+ * Creates the battle items for a stored stack of a given rule, placing them on a tile (DX).
+ * For normal items this is one BattleItem per stored unit. For battleClipSize ammo (stocked one
+ * round at a time) the loose rounds are packed into magazines of up to battleClipSize rounds each,
+ * so an economy tracked per shot still loads as a proper multi-round magazine in the field.
+ * @param rule The item rule.
+ * @param count Number of stored units (rounds, for battleClipSize ammo).
+ * @param tile The tile to place the created items on.
+ */
+void BattlescapeGenerator::createStoredItemsForTile(const RuleItem *rule, int count, Tile *tile)
+{
+	int battleClipSize = rule->getBattleClipSize();
+	if (battleClipSize > 0)
+	{
+		while (count > 0)
+		{
+			int rounds = std::min(count, battleClipSize);
+			BattleItem *bi = _save->createItemForTile(rule, tile);
+			bi->setAmmoQuantity(rounds);
+			count -= rounds;
+		}
+	}
+	else
+	{
+		for (int i = 0; i < count; ++i)
+		{
+			_save->createItemForTile(rule, tile);
+		}
+	}
+}
+
+/**
  * Deploys all the X-COM units and equipment based on the Geoscape base / craft.
  */
 void BattlescapeGenerator::deployXCOM(const RuleStartingCondition* startingCondition, const RuleEnviroEffects* enviro)
@@ -1240,10 +1271,7 @@ void BattlescapeGenerator::deployXCOM(const RuleStartingCondition* startingCondi
 			}
 			else
 			{
-				for (int count = 0; count < pair.second; count++)
-				{
-					_save->createItemForTile(pair.first, _craftInventoryTile);
-				}
+				createStoredItemsForTile(pair.first, pair.second, _craftInventoryTile);
 			}
 		}
 	}
@@ -1267,10 +1295,7 @@ void BattlescapeGenerator::deployXCOM(const RuleStartingCondition* startingCondi
 					// we know how to use this item
 					_game->getSavedGame()->isResearched(rule->getRequirements()))
 				{
-					for (int count = 0; count < i->second; count++)
-					{
-						_save->createItemForTile(i->first, _craftInventoryTile);
-					}
+					createStoredItemsForTile(i->first, i->second, _craftInventoryTile);
 					auto tmp = i; // copy
 					++i;
 					if (!_baseInventory)
@@ -1291,10 +1316,7 @@ void BattlescapeGenerator::deployXCOM(const RuleStartingCondition* startingCondi
 				continue;
 			for (const auto& pair : *craft->getItems()->getContents())
 			{
-				for (int count = 0; count < pair.second; count++)
-				{
-					_save->createItemForTile(pair.first, _craftInventoryTile);
-				}
+				createStoredItemsForTile(pair.first, pair.second, _craftInventoryTile);
 			}
 		}
 	}

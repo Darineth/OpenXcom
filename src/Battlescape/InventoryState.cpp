@@ -2128,7 +2128,7 @@ void InventoryState::invMouseOver(Action *)
 		}
 
 		_selAmmo->clear();
-		bool hasSelfAmmo = item->getRules()->getBattleType() != BT_AMMO && item->getRules()->getClipSize() > 0;
+		bool hasSelfAmmo = item->getRules()->getBattleType() != BT_AMMO && item->getRules()->getBattleMagazineSize() > 0;
 		bool isAmmoItem = item->getRules()->getBattleType() == BT_AMMO;
 		if (((item->isWeaponWithAmmo() || hasSelfAmmo) && item->haveAnyAmmo()) || isAmmoItem)
 		{
@@ -2329,7 +2329,7 @@ void InventoryState::think()
 			int modulo = 0;
 			for (int slot = 0; slot < RuleItem::AmmoSlotMax; ++slot)
 			{
-				bool showSelfAmmo = slot == 0 && _mouseHoverItem->getRules()->getClipSize() > 0;
+				bool showSelfAmmo = slot == 0 && _mouseHoverItem->getRules()->getBattleMagazineSize() > 0;
 				if ((_mouseHoverItem->needsAmmoForSlot(slot) || showSelfAmmo) && _mouseHoverItem->getAmmoForSlot(slot))
 				{
 					++modulo;
@@ -2342,7 +2342,7 @@ void InventoryState::think()
 
 			for (int slot = 0; slot < RuleItem::AmmoSlotMax; ++slot)
 			{
-				bool showSelfAmmo = slot == 0 && _mouseHoverItem->getRules()->getClipSize() > 0;
+				bool showSelfAmmo = slot == 0 && _mouseHoverItem->getRules()->getBattleMagazineSize() > 0;
 				if ((_mouseHoverItem->needsAmmoForSlot(slot) || showSelfAmmo) && _mouseHoverItem->getAmmoForSlot(slot))
 				{
 					ammoToShow = _mouseHoverItem->getAmmoForSlot(slot);

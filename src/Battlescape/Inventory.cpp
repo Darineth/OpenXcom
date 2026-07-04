@@ -67,7 +67,7 @@ bool getInventoryAmmoCount(const BattleItem *item, int &count, int &capacity)
 	const RuleItem *rule = item->getRules();
 	if (rule->getBattleType() == BT_AMMO)
 	{
-		capacity = rule->getClipSize();
+		capacity = rule->getBattleMagazineSize();
 		if (capacity <= 1)
 		{
 			// single-shot ammo (e.g. a rocket): the count is always trivial, skip it
@@ -78,14 +78,14 @@ bool getInventoryAmmoCount(const BattleItem *item, int &count, int &capacity)
 	}
 	for (int slot = 0; slot < RuleItem::AmmoSlotMax; ++slot)
 	{
-		bool selfAmmo = (slot == 0 && rule->getClipSize() > 0);
+		bool selfAmmo = (slot == 0 && rule->getBattleMagazineSize() > 0);
 		if (item->needsAmmoForSlot(slot) || selfAmmo)
 		{
 			const BattleItem *ammo = item->getAmmoForSlot(slot);
 			if (ammo)
 			{
 				count = ammo->getAmmoQuantity();
-				capacity = ammo->getRules()->getClipSize();
+				capacity = ammo->getRules()->getBattleMagazineSize();
 				return true;
 			}
 		}
@@ -611,7 +611,7 @@ void Inventory::drawAmmoCount(int rightX, int topY, int count, Uint8 numberColor
  */
 void Inventory::drawAmmoBadge(const BattleItem *ammo, int rightX, int topY, Surface *target)
 {
-	int capacity = ammo->getRules()->getClipSize();
+	int capacity = ammo->getRules()->getBattleMagazineSize();
 	if (capacity <= 1)
 	{
 		return;

@@ -296,8 +296,9 @@ Everything below is DX-specific work confirmed **absent** from the base.
 
 - [ ] **Quick Reload**.
 - [ ] **Weight/slot-based Reload Costs**.
-- [ ] **`battleClipSize`** — individual round tracking, magazine packing at battle gen
-  (decouples stocked ammo count from loaded round count).
+- [x] **`battleClipSize`** — individual round tracking, magazine packing at battle gen
+  (decouples stocked ammo count from loaded round count). See
+  [plans/Feature-BattleClipSize.md](plans/Feature-BattleClipSize.md).
 - [ ] **Grenades-as-Ammo**.
 - [ ] **Base-Screen Ammo Counts**.
 

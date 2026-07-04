@@ -799,3 +799,31 @@ so throw *range* is unchanged. *(design:
 - **Model:** Gaussian offset along the throw direction (dominant) + a ~0.4× lateral Gaussian, each
   scaled by distance, throw accuracy (floored), and a mild strain factor; clamped at 3σ. Vertical aim
   is left true (the arc + terrain set landing height). Tuning constants are provisional.
+
+## Per-Round Ammo Economy (`battleClipSize`)
+
+A `RuleItem` field that **decouples how ammo is stocked from how it's loaded**, for weapons that fire
+*expensive per-shot* rounds but are still *magazine-fed* (blaster bombs, fusion/artillery shells,
+and — later — psi-orbs). With `battleClipSize` set, the ammo is **stocked, bought, sold, and
+recovered one round at a time** (each base-store unit is a single round, so purchase/sell price and
+inventory are tracked per shot), yet at battle generation the loose rounds are **packed into
+magazines of up to `battleClipSize` rounds each**, and in the field the weapon loads / fires /
+refills exactly like any normal magazine. So a weapon can hold, say, 4 shots per reload while every
+shot is individually accounted for in the economy. *(design:
+[plans/Feature-BattleClipSize.md](plans/Feature-BattleClipSize.md))*
+
+- **`battleClipSize`** (RuleItem, default `0`) — non-zero enables the per-round model. It is
+  **mutually exclusive with `clipSize`**: setting `battleClipSize > 0` forces `clipSize` to `0` at
+  load time, so an ammo item uses one model or the other, never both.
+- **Field logic** routes through a new `getBattleMagazineSize()` (= `battleClipSize` if set, else
+  `clipSize`): initial magazine fill, the spend/refill gate, the loaded-ammo bar and inventory
+  ammo-count badges, and the Ufopaedia clip-size line all show/behave against the magazine capacity,
+  while `getClipSize()` stays the economy / base-store unit (`0` under this model, so stores stay
+  per-round).
+- **Battle generation** packs stored rounds into magazine `BattleItem`s
+  (`BattlescapeGenerator::createStoredItemsForTile`) — `min(remaining, battleClipSize)` per magazine,
+  so a stock that isn't a multiple of `battleClipSize` yields one partial final magazine.
+- **Recovery** returns the raw recovered rounds to stores (rather than rounding down to whole clips),
+  which also avoids dividing by the forced-to-zero `clipSize`.
+- Intended for **hand-carried** magazine-fed ammo, not vehicle/HWP fixed ammo (which keeps the
+  whole-clip economy).

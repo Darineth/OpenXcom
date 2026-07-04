@@ -178,7 +178,11 @@ items:
     hitAnimation: 26
     power: 45               # single heavy round
     damageType: 1
-    clipSize: 8
+    # DX battleClipSize test: slugs are stocked / bought / sold / recovered ONE round at a time
+    # (each store unit is a single slug), but they load as an 8-round magazine in the field. Compare
+    # with STR_SHOTGUN_BUCKSHOT above (normal clipSize: 8 - bought and recovered as whole 8-round clips).
+    # battleClipSize forces clipSize to 0, so the two models are mutually exclusive.
+    battleClipSize: 8
     battleType: 2
 
 # =====================================================================

@@ -125,6 +125,8 @@ private:
 	void deployXCOM(const RuleStartingCondition* startingCondition, const RuleEnviroEffects* enviro);
 	/// Runs necessary checks before physically setting the position.
 	bool canPlaceXCOMUnit(Tile *tile);
+	/// Creates the battle items for a stored stack, packing battleClipSize ammo into magazines (DX).
+	void createStoredItemsForTile(const RuleItem *rule, int count, Tile *tile);
 	/// Deploys the aliens, according to the alien deployment rules.
 	void deployAliens(const AlienDeployment *deployment);
 	/// Spawns civilians on a terror mission.

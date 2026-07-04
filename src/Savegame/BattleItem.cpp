@@ -51,7 +51,10 @@ BattleItem::BattleItem(const RuleItem *rules, int *id) : _id(*id), _rules(rules)
 	{
 		_inventoryMoveCostPercent = _rules->getInventoryMoveCostPercent();
 		_confMelee = _rules->getConfigMelee();
-		setAmmoQuantity(_rules->getClipSize());
+		// DX: getBattleMagazineSize() == getClipSize() for normal items; for battleClipSize ammo it
+		// is the magazine capacity, so a bare-created round-store item comes full (the battle
+		// generator overrides this for a partial final magazine).
+		setAmmoQuantity(_rules->getBattleMagazineSize());
 		if (_rules->getBattleType() == BT_MEDIKIT)
 		{
 			setHealQuantity (_rules->getHealQuantity());
@@ -65,7 +68,7 @@ BattleItem::BattleItem(const RuleItem *rules, int *id) : _id(*id), _rules(rules)
 			_confAuto = _rules->getConfigAuto();
 			_confSnap = _rules->getConfigSnap();
 			_confBurst = _rules->getConfigBurst();
-			bool showSelfAmmo = _rules->getClipSize() > 0;
+			bool showSelfAmmo = _rules->getBattleMagazineSize() > 0;
 			for (int slot = 0; slot < RuleItem::AmmoSlotMax; ++slot)
 			{
 				bool used = false;
@@ -950,7 +953,7 @@ void BattleItem::spendAmmoForAction(BattleActionType action, SavedBattleGame* sa
 	auto* ammo = getAmmoForAction(action, nullptr, &spendPerShot);
 	if (ammo)
 	{
-		if (ammo->getRules()->getClipSize() > 0 && ammo->spendBullet(spendPerShot) == false && !ammo->getRules()->isAmmoRechargeable())
+		if (ammo->getRules()->getBattleMagazineSize() > 0 && ammo->spendBullet(spendPerShot) == false && !ammo->getRules()->isAmmoRechargeable())
 		{
 			save->removeItem(ammo);
 			ammo->setIsAmmo(false);
@@ -1424,7 +1427,7 @@ std::string debugDisplayScript(const BattleItem* bt)
 		s += "\" id: ";
 		s += std::to_string(bt->getId());
 
-		int clipSize = rule->getClipSize();
+		int clipSize = rule->getBattleMagazineSize();
 		if (clipSize > 0)
 		{
 			s += " ammo: ";
@@ -1478,7 +1481,7 @@ void setAmmoQuantityScript(BattleItem* bt, int i)
 {
 	if (bt)
 	{
-		bt->setAmmoQuantity(Clamp(i, 1, bt->getRules()->getClipSize()));
+		bt->setAmmoQuantity(Clamp(i, 1, bt->getRules()->getBattleMagazineSize()));
 	}
 }
 
@@ -1549,7 +1552,7 @@ void BattleItem::ScriptRegister(ScriptParserBase* parser)
 	bi.add<&BattleItem::isAmmo>("isAmmo");
 	bi.add<&BattleItem::isSpecialWeapon>("isSpecialWeapon");
 
-	bi.add<&BattleItem::getRules, &RuleItem::getClipSize>("getAmmoQuantityMax");
+	bi.add<&BattleItem::getRules, &RuleItem::getBattleMagazineSize>("getAmmoQuantityMax");
 	bi.add<&BattleItem::getAmmoQuantity>("getAmmoQuantity");
 	bi.add<&setAmmoQuantityScript>("setAmmoQuantity");
 
