@@ -279,7 +279,12 @@ Everything below is DX-specific work confirmed **absent** from the base.
     red→green; shown without UFOExtender; cached per aim.
   - [x] Separately-broken-out cover-reduction term `(-<cover>%)` (unit targets) and `@ <distance>` suffix,
     giving the legacy `<acc>% (-<cover>%) @ <distance>` breakdown.
-- [ ] **Throw Reach Scaling** — strength vs weight readout/scaling. *(coupled UI — needs aim-cone)*
+- [x] **Throw Reach Scaling** — *already provided by stock OpenXcom.* The strength-vs-weight throw
+  model (arc curvature in `TileEngine::validateThrow`; max reach in
+  `ProjectileFlyBState::getMaxThrowDistance`) is retained as-is — a stronger thrower / lighter item
+  throws farther, and out-of-reach throws are rejected. The existing trajectory-preview arc plus the
+  cursor percentage already make it clear when a tile can't be reached, so no separate readout is
+  needed.
 - [x] **Action-menu effective-range readout** — the deferred Phase 1 piece. Cone weapons show each
   direct-fire mode's 50%-hit effective range (tiles) in place of the accuracy %
   (`Projectile::calculateEffectiveRange`, target-independent median-of-per-sample-range; validated
