@@ -77,6 +77,8 @@ private:
 	void refreshHandSlots();
 	/// Play a sound.
 	void playSound(int sound);
+	/// Gets the base TU cost of loading the given ammo into the given weapon slot (matches the load path).
+	int getReloadTuCost(const BattleItem *weapon, const BattleItem *ammo, int slotAmmo) const;
 public:
 	/// Creates a new inventory view at the specified position and size.
 	Inventory(Game *game, int width, int height, int x = 0, int y = 0, bool base = false);
@@ -104,6 +106,8 @@ public:
 	void drawAmmoBadge(const BattleItem *ammo, int rightX, int topY, Surface *target);
 	/// Gets the currently selected item.
 	BattleItem *getSelectedItem() const;
+	/// Gets the base TU cost of unloading the given weapon's first loaded ammo slot (0 if none).
+	int getUnloadTuCost(const BattleItem *weapon) const;
 	/// Sets the currently selected item.
 	void setSelectedItem(BattleItem *item);
 	/// Sets the search string.

@@ -194,13 +194,16 @@ RuleItem::RuleItem(const std::string &type, int listOrder) :
 	_throwMulti.setThrowing();
 	_closeQuartersMulti.setCloseQuarters();
 
+	// -1 = "not set by the ruleset"; the stock defaults (15 load / 8 unload) are applied in the
+	// getters, which also lets the DX weight-based reload model substitute a lower default (see
+	// getTULoad / getTUUnload). A weapon that sets tuLoad/tuUnload explicitly keeps its own value.
 	for (auto& load : _tuLoad)
 	{
-		load = 15;
+		load = -1;
 	}
 	for (auto& unload : _tuUnload)
 	{
-		unload = 8;
+		unload = -1;
 	}
 
 	_confAimed.range = 200;
@@ -1639,7 +1642,13 @@ RuleItemUseCost RuleItem::getCostUnprime() const
  */
 int RuleItem::getTULoad(int slot) const
 {
-	return _tuLoad[slot];
+	if (_tuLoad[slot] >= 0)
+	{
+		return _tuLoad[slot];
+	}
+	// DX: an unset load cost defaults to a low base (5) under the weight-based reload model — where
+	// the bulk of the cost comes from the magazine's weight — otherwise the stock default of 15.
+	return Options::battleWeightBasedReloadCost ? 5 : 15;
 }
 
 /**
@@ -1649,7 +1658,12 @@ int RuleItem::getTULoad(int slot) const
  */
 int RuleItem::getTUUnload(int slot) const
 {
-	return _tuUnload[slot];
+	if (_tuUnload[slot] >= 0)
+	{
+		return _tuUnload[slot];
+	}
+	// DX: matches getTULoad — a low base (5) under the weight-based reload model, else the stock 8.
+	return Options::battleWeightBasedReloadCost ? 5 : 8;
 }
 
 /**

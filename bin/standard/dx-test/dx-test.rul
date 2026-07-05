@@ -410,4 +410,5 @@ extraStrings:
 fixedUserOptions:
   combatLogVerbose: true          # DX: extra detail in the combat log (hidden option)
   battleRealisticThrowing: true   # DX: physical launch-error throw accuracy (short/long along the throw line)
+  battleWeightBasedReloadCost: true # DX: reload/unload timed by magazine weight (weight*2 + reduced base)
 

@@ -295,12 +295,16 @@ Everything below is DX-specific work confirmed **absent** from the base.
 ## Phase 6: Ammo & Reloading
 
 - [ ] **Quick Reload**.
-- [ ] **Weight/slot-based Reload Costs**.
+- [x] **Weight/slot-based Reload Costs** — `battleWeightBasedReloadCost` option; base load/unload
+  cost becomes `weight*2+5` on top of `tuLoad`/`tuUnload`. (The slot-path half already shipped as
+  OXCE's `extendedItemReloadCost`.) See
+  [plans/Feature-WeightBasedReloadCost.md](plans/Feature-WeightBasedReloadCost.md).
 - [x] **`battleClipSize`** — individual round tracking, magazine packing at battle gen
   (decouples stocked ammo count from loaded round count). See
   [plans/Feature-BattleClipSize.md](plans/Feature-BattleClipSize.md).
-- [ ] **Grenades-as-Ammo**.
 - [ ] **Base-Screen Ammo Counts**.
+- ~~Grenades-as-Ammo~~ — moved to **Maybe / Someday** (see below); a fun toy in the legacy
+  fork but not actually useful, so deprioritized.
 
 ## Phase 7: Tactical Unit Systems
 
@@ -485,3 +489,13 @@ implementation (see CLAUDE.md "Planning Features").*
     strings. Also made **New Battle persist its loadout templates** (craft loadouts + soldier equipment
     layouts) in its `.cfg` — factored `SavedGame::saveTemplates`, wired into `NewBattleState` save/load —
     so templates created in New Battle survive a restart (previously discarded).
+
+# Maybe / Someday
+
+*Deprioritized ideas — interesting but not clearly worth building yet. Revisit if a concrete use
+case appears; each still needs a design doc before implementation.*
+
+- **Grenades-as-Ammo** — allow grenades to be loaded as weapon ammo (e.g. a grenade launcher firing
+  from a magazine of grenade items). Existed as preliminary support in the legacy DX fork
+  (Legacy-DX-Features.md §4) but proved to be a novelty toy without a compelling gameplay payoff, so
+  it was pulled out of Phase 6. *(design: TBD)*

@@ -159,6 +159,10 @@ public:
 	void txtTooltipIn(Action *action);
 	/// Handler for hiding tooltip.
 	void txtTooltipOut(Action *action);
+	/// Handler for showing the unload button's cost (or tooltip) readout.
+	void unloadTooltipIn(Action *action);
+	/// Handler for hiding the unload button's readout.
+	void unloadTooltipOut(Action *action);
 	/// Handler for showing armor tooltip.
 	void txtArmorTooltipIn(Action *action);
 	/// Handler for hiding armor tooltip.

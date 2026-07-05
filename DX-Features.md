@@ -280,6 +280,17 @@ rule-based costs that will apply once the battle starts, so loadouts can be plan
 no TUs are actually spent in the setup phase. The display still honors the existing
 `oxceDisableInventoryTuCost` option — turning it off hides the costs in both phases.
 
+**Reload readout when holding ammo:** while a piece of **ammo** is held, any inventory section that
+contains a weapon the ammo can load shows that **weapon's name and the reload TU cost** (e.g.
+`RIFLE:11`) in place of the generic `SLOT:<move-cost>` label. The reload cost is computed by the same
+helper (`Inventory::getReloadTuCost`) the drag-to-load path charges, so the shown and actual costs
+match (including the DX weight-based reload term when `battleWeightBasedReloadCost` is on).
+
+**Unload cost on the Unload button:** while holding a loaded weapon, hovering the **Unload** button
+shows `Unload <weapon>: <TU>` on the bottom item line (replacing the normal item hover text), via
+`Inventory::getUnloadTuCost` — the weapon's `tuUnload` plus the weight-based term when the option is
+on. With nothing held, the button keeps its standard "Unload weapon" tooltip.
+
 ## Armor Degradation
 
 Battlescape damage types can now wear armor even on a hit that fails to penetrate, as long as the
@@ -827,3 +838,26 @@ shot is individually accounted for in the economy. *(design:
   which also avoids dividing by the forced-to-zero `clipSize`.
 - Intended for **hand-carried** magazine-fed ammo, not vehicle/HWP fixed ammo (which keeps the
   whole-clip economy).
+
+## Weight-based Reload Cost (`battleWeightBasedReloadCost`)
+
+An optional DX battlescape option that makes the **base** time to load or unload a magazine scale
+with the magazine's **weight** — heavier magazines take longer to swap — instead of the flat
+inventory-slot move cost. *(design:
+[plans/Feature-WeightBasedReloadCost.md](plans/Feature-WeightBasedReloadCost.md))*
+
+- **Option:** `battleWeightBasedReloadCost` (**default off**). When off, reload cost is byte-for-byte
+  the stock behavior.
+- **Formula:** the weight term is `magazineWeight * 2` (2 TU per unit of magazine weight), exposed as
+  `BattleItem::getReloadWeightCost()`. On top of it sits the weapon's `tuLoad`/`tuUnload`, whose
+  **default drops from 15/8 to 5** while this option is on (a weapon that sets `tuLoad`/`tuUnload`
+  explicitly keeps its own value as the basis). So a typical reload ≈ `weight*2 + 5` — mirroring the
+  legacy design, which *replaced* the flat 15 base with a weight-based cost rather than adding to it.
+- **Model:** the weight term **replaces the base handling cost** — i.e. the OXCE
+  `extendedItemReloadCost` inventory-slot move term where that applies — so the two don't stack.
+  Incidental moves (bringing the weapon body into a hand) are unchanged. The reduced default base is
+  applied in `RuleItem::getTULoad`/`getTUUnload` (an unset value now means "use the model's default").
+- **Applied everywhere reloads are costed:** inventory drag-load and quick-swap, inventory unload,
+  the battlescape mid-turn auto-reload, and the AI's reload-cost estimate (so the AI budgets reloads
+  correctly). The OXCE slot-path option (`extendedItemReloadCost`) remains available and independent;
+  when the DX option is on it takes precedence.

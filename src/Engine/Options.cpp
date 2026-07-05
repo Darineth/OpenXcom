@@ -656,6 +656,7 @@ void createAdvancedOptionsDX()
 	_info.push_back(OptionInfo(OPTION_DX, "hoveredUnitNameEnabled", &hoveredUnitNameEnabled, true, "STR_HOVERED_UNIT_NAME", "STR_BATTLESCAPE"));
 	_info.push_back(OptionInfo(OPTION_DX, "battleTrajectoryPreview", &battleTrajectoryPreview, true, "STR_TRAJECTORY_PREVIEW", "STR_BATTLESCAPE"));
 	_info.push_back(OptionInfo(OPTION_DX, "battleRealisticThrowing", &battleRealisticThrowing, false, "STR_REALISTIC_THROWING", "STR_BATTLESCAPE"));
+	_info.push_back(OptionInfo(OPTION_DX, "battleWeightBasedReloadCost", &battleWeightBasedReloadCost, false, "STR_WEIGHT_BASED_RELOAD_COST", "STR_BATTLESCAPE"));
 	_info.push_back(OptionInfo(OPTION_DX, "grenadeIndicatorEnabled", &grenadeIndicatorEnabled, true, "STR_GRENADE_INDICATOR", "STR_BATTLESCAPE"));
 	_info.push_back(OptionInfo(OPTION_DX, "unitStatusIndicatorEnabled", &unitStatusIndicatorEnabled, true, "STR_UNIT_STATUS_INDICATOR", "STR_BATTLESCAPE"));
 	_info.push_back(OptionInfo(OPTION_DX, "motionDetectorOverlayEnabled", &motionDetectorOverlayEnabled, true, "STR_MOTION_DETECTOR_OVERLAY", "STR_BATTLESCAPE"));

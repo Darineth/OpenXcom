@@ -134,6 +134,8 @@ public:
 	const RuleInventory *getSlot() const;
 	/// Gets the cost of moving item to given slot.
 	int getMoveToCost(const RuleInventory *slot) const;
+	/// Gets the DX weight-based reload/unload base TU cost of handling this item as a magazine.
+	int getReloadWeightCost() const;
 	/// Sets the item's inventory slot.
 	void setSlot(const RuleInventory *slot);
 	/// Gets the item's inventory X position.

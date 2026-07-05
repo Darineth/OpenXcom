@@ -2924,7 +2924,15 @@ bool BattlescapeGame::takeItem(BattleItem* item, BattleAction *action)
 			if (slot != -1)
 			{
 				BattleActionCost cost{ unit };
-				cost.Time += Mod::EXTENDED_ITEM_RELOAD_COST ? i->getMoveToCost(weapon->getSlot()) : 0;
+				if (Options::battleWeightBasedReloadCost)
+				{
+					// DX: base reload cost scales with the magazine's weight instead of the flat slot-path move.
+					cost.Time += i->getReloadWeightCost();
+				}
+				else if (Mod::EXTENDED_ITEM_RELOAD_COST)
+				{
+					cost.Time += i->getMoveToCost(weapon->getSlot());
+				}
 				cost.Time += weapon->getRules()->getTULoad(slot);
 				if (cost.haveTU() && !weapon->getAmmoForSlot(slot))
 				{

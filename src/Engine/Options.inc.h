@@ -155,6 +155,7 @@ OPT int combatLogDuration;
 OPT bool hoveredUnitNameEnabled;
 OPT bool battleTrajectoryPreview;
 OPT bool battleRealisticThrowing;
+OPT bool battleWeightBasedReloadCost;
 OPT bool grenadeIndicatorEnabled;
 OPT bool unitStatusIndicatorEnabled;
 OPT bool motionDetectorOverlayEnabled;

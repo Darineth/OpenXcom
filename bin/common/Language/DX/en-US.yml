@@ -47,6 +47,8 @@ en-US:
   STR_TRAJECTORY_PREVIEW: "Aim trajectory preview"
   STR_REALISTIC_THROWING: "Realistic throwing accuracy"
   STR_REALISTIC_THROWING_DESC: "Thrown items err short/long along the throw line (plus some lateral), scaling with distance and how hard the throw strains the thrower's strength, instead of scattering evenly around the target."
+  STR_WEIGHT_BASED_RELOAD_COST: "Weight-based reload cost"
+  STR_WEIGHT_BASED_RELOAD_COST_DESC: "Reloading is timed by the magazine's weight (weight x 2 TU) instead of a flat cost. The weapon's base load/unload cost also drops to 5 (from 15) unless it sets its own, so a typical reload costs about weight x 2 + 5 TU - heavier magazines take longer to swap."
   STR_GRENADE_INDICATOR: "Primed grenade indicator"
   STR_UNIT_STATUS_INDICATOR: "Unit status indicators"
   STR_MOTION_DETECTOR_OVERLAY: "Motion detector readings on map"
@@ -106,6 +108,8 @@ en-US:
   STR_DX_INVENTORY_ARMOR_B_SHORT: "B>{ALT}{0}"
   STR_DX_INVENTORY_ARMOR_U_SHORT: "U>{ALT}{0}"
   STR_DX_TEMPLATE_SLOT_NOT_IN_LAYOUT: "Some items left on the ground: no matching slot in this armor's inventory."
+  # Shown on the bottom item line when hovering the Unload button while holding a loaded weapon.
+  STR_UNLOAD_WEAPON_COST: "Unload {0}: {1} TU"
   #--- Contextual inventory info panel (shown on item hover) ---
   STR_DX_INV_ITEM_WEIGHT: "Weight>{ALT}{0}"
   # Item stat bonuses use the same STAT>VAL style as the unit stats ({ALT} = value color).

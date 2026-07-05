@@ -265,8 +265,8 @@ InventoryState::InventoryState(bool tu, BattlescapeState *parent, Base *base, bo
 
 	_btnUnload->onMouseClick((ActionHandler)&InventoryState::btnUnloadClick);
 	_btnUnload->setTooltip("STR_UNLOAD_WEAPON");
-	_btnUnload->onMouseIn((ActionHandler)&InventoryState::txtTooltipIn);
-	_btnUnload->onMouseOut((ActionHandler)&InventoryState::txtTooltipOut);
+	_btnUnload->onMouseIn((ActionHandler)&InventoryState::unloadTooltipIn);
+	_btnUnload->onMouseOut((ActionHandler)&InventoryState::unloadTooltipOut);
 
 	_btnGround->onMouseClick((ActionHandler)&InventoryState::btnGroundClickForward, SDL_BUTTON_LEFT);
 	_btnGround->onMouseClick((ActionHandler)&InventoryState::btnGroundClickBackward, SDL_BUTTON_RIGHT);
@@ -2450,6 +2450,42 @@ void InventoryState::txtTooltipOut(Action *action)
 			_txtItem->setText("");
 		}
 	}
+}
+
+/**
+ * Shows the unload button's readout: while holding a loaded weapon, the bottom item line shows the
+ * weapon's name and the TU cost to unload it (DX); otherwise the normal "Unload weapon" tooltip.
+ * @param action Pointer to an action.
+ */
+void InventoryState::unloadTooltipIn(Action *action)
+{
+	BattleItem *sel = _inv->getSelectedItem();
+	if (sel != 0)
+	{
+		int cost = _inv->getUnloadTuCost(sel);
+		if (cost > 0)
+		{
+			_txtItem->setText(tr("STR_UNLOAD_WEAPON_COST").arg(tr(sel->getRules()->getName())).arg(cost));
+			return;
+		}
+	}
+	// Nothing loaded to unload: fall back to the standard tooltip behavior.
+	txtTooltipIn(action);
+}
+
+/**
+ * Hides the unload button's readout.
+ * @param action Pointer to an action.
+ */
+void InventoryState::unloadTooltipOut(Action *action)
+{
+	if (_inv->getSelectedItem() != 0)
+	{
+		// The weapon-unload-cost readout is shown while holding an item; clear it on mouse-out.
+		_txtItem->setText("");
+		return;
+	}
+	txtTooltipOut(action);
 }
 
 /**

@@ -313,6 +313,61 @@ void Inventory::drawGrid()
 }
 
 /**
+ * Gets the base TU cost of loading the given ammo into the given weapon's ammo slot: the weapon's
+ * tuLoad plus the DX weight-based term (or the OXCE extendedItemReloadCost slot-path term). This is
+ * the same computation the drag-to-load path charges for loading into an empty slot, factored out so
+ * the crosshair/grid reload readout stays in sync with the actual cost. (Quick-swap of an already
+ * loaded weapon adds an extra unload cost on top; not reflected here.)
+ * @param weapon The weapon being loaded.
+ * @param ammo The ammo being loaded.
+ * @param slotAmmo The weapon's ammo slot index.
+ * @return The base reload TU cost.
+ */
+int Inventory::getReloadTuCost(const BattleItem *weapon, const BattleItem *ammo, int slotAmmo) const
+{
+	int cost = weapon->getRules()->getTULoad(slotAmmo);
+	if (Options::battleWeightBasedReloadCost)
+	{
+		cost += ammo->getReloadWeightCost();
+	}
+	else if (Mod::EXTENDED_ITEM_RELOAD_COST && ammo->getSlot()->getType() != INV_HAND && _inventorySlotRightHand)
+	{
+		cost += ammo->getMoveToCost(_inventorySlotRightHand);
+	}
+	return cost;
+}
+
+/**
+ * Gets the base TU cost of unloading the given weapon's first loaded ammo slot: the weapon's tuUnload
+ * plus the DX weight-based term (when battleWeightBasedReloadCost is on). Mirrors the unload path's
+ * per-slot handling cost, for the unload-button readout. Returns 0 if the weapon has no ammo to eject.
+ * (The unload path adds incidental inventory-shuffle move costs on top; not reflected here.)
+ * @param weapon The weapon to be unloaded.
+ * @return The base unload TU cost, or 0 if nothing to unload.
+ */
+int Inventory::getUnloadTuCost(const BattleItem *weapon) const
+{
+	for (int slot = 0; slot < RuleItem::AmmoSlotMax; ++slot)
+	{
+		if (!weapon->needsAmmoForSlot(slot))
+		{
+			continue;
+		}
+		const BattleItem *ammo = weapon->getAmmoForSlot(slot);
+		if (ammo)
+		{
+			int cost = weapon->getRules()->getTUUnload(slot);
+			if (Options::battleWeightBasedReloadCost)
+			{
+				cost += ammo->getReloadWeightCost();
+			}
+			return cost;
+		}
+	}
+	return 0;
+}
+
+/**
  * Draws the inventory grid labels.
  */
 void Inventory::drawGridLabels(bool showTuCost)
@@ -335,10 +390,40 @@ void Inventory::drawGridLabels(bool showTuCost)
 		text.setY(i->getY() - text.getFont()->getHeight() - text.getFont()->getSpacing());
 		if (showTuCost && _selItem != 0 && _selItem->getSlot() != i)
 		{
+			// DX: when holding ammo, if this section holds a weapon the ammo can load, show the
+			// weapon's name and the reload TU cost instead of the generic slot move cost.
+			BattleItem *weapon = nullptr;
+			int ammoSlot = -1;
+			if (_selItem->getRules()->getBattleType() == BT_AMMO && _selUnit)
+			{
+				for (auto* bi : *_selUnit->getInventory())
+				{
+					if (bi->getSlot() == i && bi->isWeaponWithAmmo())
+					{
+						int s = bi->getRules()->getSlotForAmmo(_selItem->getRules());
+						if (s != -1)
+						{
+							weapon = bi;
+							ammoSlot = s;
+							break;
+						}
+					}
+				}
+			}
+
 			std::ostringstream ss;
-			ss << _game->getLanguage()->getString(i->getId()).arg(1 + _groundOffset / _groundSlotsX).arg(1 + _xMax / _groundSlotsX);
-			ss << ":";
-			ss << _selItem->getMoveToCost(i);
+			if (weapon)
+			{
+				ss << _game->getLanguage()->getString(weapon->getRules()->getName());
+				ss << ":";
+				ss << getReloadTuCost(weapon, _selItem, ammoSlot);
+			}
+			else
+			{
+				ss << _game->getLanguage()->getString(i->getId()).arg(1 + _groundOffset / _groundSlotsX).arg(1 + _xMax / _groundSlotsX);
+				ss << ":";
+				ss << _selItem->getMoveToCost(i);
+			}
 			text.setText(ss.str().c_str());
 		}
 		else
@@ -1168,15 +1253,10 @@ void Inventory::mouseClick(Action *action, State *state)
 					}
 					else
 					{
-						// 4. the cost of loading the weapon with the new ammo (from the offhand)
-						int tuCost = item->getRules()->getTULoad(slotAmmo);
-
-						if (Mod::EXTENDED_ITEM_RELOAD_COST && _selItem->getSlot()->getType() != INV_HAND && _inventorySlotRightHand)
-						{
-							// 3. the cost of moving the new ammo from the current slot to the offhand
-							// Note: the cost for left/right hand might *NOT* be the same, but using the right hand "by definition"
-							tuCost += _selItem->getMoveToCost(_inventorySlotRightHand);
-						}
+						// 3. + 4. the base cost of loading the weapon with the new ammo (weapon tuLoad plus
+						// the DX weight term or the extendedItemReloadCost slot-path move). Shared with the
+						// grid reload readout via getReloadTuCost so the shown and charged costs match.
+						int tuCost = getReloadTuCost(item, _selItem, slotAmmo);
 
 						BattleItem *weaponRightHand = _selUnit->getRightHandWeapon();
 						BattleItem *weaponLeftHand = _selUnit->getLeftHandWeapon();
@@ -1214,7 +1294,12 @@ void Inventory::mouseClick(Action *action, State *state)
 
 								// 1. the cost of unloading the old ammo (to the offhand)
 								tuCost += tuUnload;
-								if (oldAmmoGoesTo == _inventorySlotGround && _inventorySlotRightHand)
+								if (Options::battleWeightBasedReloadCost)
+								{
+									// DX: weight-based handling cost for the ejected magazine (replaces the slot-path drop cost).
+									tuCost += item->getAmmoForSlot(slotAmmo)->getReloadWeightCost();
+								}
+								else if (oldAmmoGoesTo == _inventorySlotGround && _inventorySlotRightHand)
 								{
 									// 2. the cost of dropping the old ammo on the ground (from the offhand)
 									// Note: the cost for left/right hand is (should be) the same, so just using the right hand
@@ -1624,9 +1709,18 @@ bool Inventory::unload(bool quickUnload)
 		// 2. unload (= move the ammo to the second free hand)
 		cost.Time += toForAmmoUnload;
 
+		if (Options::battleWeightBasedReloadCost)
+		{
+			// DX: weight-based handling cost for the ejected magazine (replaces the slot-path move below).
+			BattleItem *ejected = _selItem->getAmmoForSlot(slotForAmmoUnload);
+			if (ejected)
+			{
+				cost.Time += ejected->getReloadWeightCost();
+			}
+		}
 		// 3. if the ammo isn't going to the (free) off-hand, add the cost of moving it from
 		// the working hand to its destination slot (or the ground)
-		if (ammoDest != SecondFreeHand)
+		else if (ammoDest != SecondFreeHand)
 		{
 			cost.Time += FirstFreeHand->getCost(ammoDest);
 		}

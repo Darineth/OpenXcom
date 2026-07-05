@@ -612,6 +612,22 @@ int BattleItem::getMoveToCost(const RuleInventory *slot) const
 }
 
 /**
+ * Gets the DX weight-based reload/unload cost: the "handling" cost of loading or unloading this item
+ * as a magazine, scaling with its weight. Used when the battleWeightBasedReloadCost option is on, in
+ * place of the flat inventory-slot move (extendedItemReloadCost) term.
+ *
+ * Formula (legacy DX): weight * 2 — 2 TU per unit of magazine weight. This is added on top of the
+ * weapon's tuLoad/tuUnload, whose default drops to a low base (5) under this model (see
+ * RuleItem::getTULoad / getTUUnload), so a default weapon costs ~weight*2 + 5 to reload.
+ * @return The weight-based reload cost in TU.
+ */
+int BattleItem::getReloadWeightCost() const
+{
+	const int perWeight = 2; // TU per unit of magazine weight
+	return _rules->getWeight() * perWeight;
+}
+
+/**
  * Sets the item's inventory slot.
  * @param slot The slot id.
  */
