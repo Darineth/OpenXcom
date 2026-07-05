@@ -296,7 +296,9 @@ NextTurnState::NextTurnState(SavedBattleGame *battleGame, BattlescapeState *stat
 	case FACTION_HOSTILE: sideKey = "STR_COMBATLOG_SIDE_HOSTILE"; break;
 	default:              sideKey = "STR_COMBATLOG_SIDE_NEUTRAL"; break;
 	}
-	_battleGame->appendToCombatLog(tr("STR_COMBATLOG_NEW_TURN").arg(_battleGame->getTurn()).arg(tr(sideKey)), OUTCOME_NEUTRAL);
+	// Use _currentTurn (which clamps the pre-battle turn 0 up to 1, like the on-screen turn text) so the
+	// first X-COM banner reads "Turn 1" and not "Turn 0" - this state is built before startFirstTurn().
+	_battleGame->appendToCombatLog(tr("STR_COMBATLOG_NEW_TURN").arg(_currentTurn).arg(tr(sideKey)), OUTCOME_NEUTRAL);
 
 	if (_battleGame->getSide() == FACTION_PLAYER)
 	{

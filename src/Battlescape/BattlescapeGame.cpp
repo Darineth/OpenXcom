@@ -205,6 +205,11 @@ BattlescapeGame::BattlescapeGame(SavedBattleGame *save, BattlescapeState *parent
 	_debugPlay = false;
 
 	checkForCasualties(nullptr, BattleActionAttack{ }, true);
+	// DX: the sweep above resolves units already dead/unconscious from map generation (deployed onto
+	// hazards, pre-placed casualties, etc.) and logs them as kills/stuns. Those are pre-battle events
+	// the player never witnessed, so wipe the floating combat log now - this is the "new battle start"
+	// clear. Anything logged from here on (turn 1 and player actions) is a real, in-battle event.
+	_save->getCombatLog()->clear();
 	cancelCurrentAction();
 }
 

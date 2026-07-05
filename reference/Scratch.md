@@ -1,11 +1,12 @@
 # TODO
-
-- Overwatch range vs. weapon's (attacktype)Range?  What does that field do in DX anyway?
-- Overwatch+dual fire?
 - Fix offscreen/pre-battle events appearing in combat log
 - Need to re-document OXCE's features.  Extended.txt is incomplete (e.g. extendedItemReloadCost is not documented).
 - Enable UFOPedia for items and weapons that don't have a configured page, so you can actually view stats for them.
 - Wound indicator on hp bar
+
+# Questions
+- Overwatch+dual fire?
+- Overwatch range vs. weapon's (attacktype)Range?  What does that field do in DX anyway?
 
 # TFTD
 - Unit stats colors are wrong in inventory
