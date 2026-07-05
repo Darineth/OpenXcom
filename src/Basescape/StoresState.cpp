@@ -324,7 +324,14 @@ void StoresState::initList()
 
 		if (qty > 0)
 		{
-			_itemList.push_back(StoredItem(rule, tr(itemType), qty, rule->getSize(), qty * rule->getSize()));
+			// DX: append the rounds-per-clip for multi-round ammo (skips single-shot and per-round battleClipSize).
+			std::string storeName = tr(itemType);
+			bool ammo = (rule->getBattleType() == BT_AMMO || (rule->getBattleType() == BT_NONE && rule->getClipSize() > 0));
+			if (ammo && rule->getClipSize() > 1)
+			{
+				storeName = tr("STR_DX_AMMO_ROUND_COUNT").arg(storeName).arg(rule->getClipSize());
+			}
+			_itemList.push_back(StoredItem(rule, storeName, qty, rule->getSize(), qty * rule->getSize()));
 		}
 	}
 

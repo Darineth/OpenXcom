@@ -172,3 +172,8 @@ en-US:
   STR_ACTIVITY_ECONOMY_DEFICIT: "Monthly deficit: {0}"
   STR_ACTIVITY_ECONOMY_NEGATIVE_BALANCE: "In the red: {0}"
   STR_ACTIVITY_ECONOMY_MAINTENANCE_SPIKE: "Maintenance spike vs last month: +{0}"
+
+#=================== DX Base-Screen Ammo Counts ===================
+#PurchaseState.cpp / SellState.cpp / TransferItemsState.cpp / StoresState.cpp
+  # {0} = item name, {1} = rounds per clip. Shown on base list screens for multi-round ammo.
+  STR_DX_AMMO_ROUND_COUNT: "{0} (x{1})"

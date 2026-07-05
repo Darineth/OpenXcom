@@ -505,6 +505,11 @@ void CraftEquipmentState::initList()
 			if (rule->getBattleType() == BT_AMMO)
 			{
 				s.insert(0, "  ");
+				// DX: show the rounds-per-clip for multi-round ammo (skips single-shot and per-round battleClipSize).
+				if (rule->getClipSize() > 1)
+				{
+					s = tr("STR_DX_AMMO_ROUND_COUNT").arg(s).arg(rule->getClipSize());
+				}
 			}
 			_lstEquipment->addRow(3, s.c_str(), ss.str().c_str(), ss2.str().c_str());
 

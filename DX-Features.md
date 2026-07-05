@@ -879,3 +879,15 @@ visible action-menu row** — matching the DX preference for discoverable UI ove
   `BattleUnit::reloadWeapon` / `getReloadCost` (built on a shared `findReloadAmmo` helper), so the
   keyboard and menu paths behave identically. Partial-magazine swap (ejecting a half-spent clip) is
   **not** included — the empty-slot behavior matches OXCE's R key.
+
+## Base-Screen Ammo Counts
+
+On the base item screens — **Buy, Sell, Transfer, Stores, and Craft Equipment** — an ammo row now
+shows how many **rounds** each clip holds, appended to its name as `(xN)` (e.g. `Rifle Clip (x20)`). Only multi-round
+clips (`clipSize > 1`) get the suffix; single-shot ammo (rockets) and per-round `battleClipSize` ammo
+show nothing, so the readout reflects what a purchase / stockpile actually contains.
+*(design: [plans/Feature-BaseScreenAmmoCounts.md](plans/Feature-BaseScreenAmmoCounts.md))*
+
+- Reuses each screen's existing ammo classification (`BT_AMMO || (BT_NONE && clipSize>0)`); the format
+  is the shared, translatable `STR_DX_AMMO_ROUND_COUNT` (`"{0} (x{1})"`). Manufacture screens are not
+  covered (deferred).

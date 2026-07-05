@@ -304,7 +304,9 @@ Everything below is DX-specific work confirmed **absent** from the base.
 - [x] **`battleClipSize`** — individual round tracking, magazine packing at battle gen
   (decouples stocked ammo count from loaded round count). See
   [plans/Feature-BattleClipSize.md](plans/Feature-BattleClipSize.md).
-- [ ] **Base-Screen Ammo Counts**.
+- [x] **Base-Screen Ammo Counts** — ammo rows on Buy/Sell/Transfer/Stores/Craft-Equipment show
+  rounds-per-clip (`(xN)`) for multi-round clips. See
+  [plans/Feature-BaseScreenAmmoCounts.md](plans/Feature-BaseScreenAmmoCounts.md).
 - ~~Grenades-as-Ammo~~ — moved to **Maybe / Someday** (see below); a fun toy in the legacy
   fork but not actually useful, so deprioritized.
 

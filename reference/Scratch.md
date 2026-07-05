@@ -1,6 +1,7 @@
 # TODO
 - Fix offscreen/pre-battle events appearing in combat log
 - Inventory grid and item rendering happens in clearly separate frames, and can sometimes get stuck with the wrong inventory layout showing?
+- Need to re-document OXCE's features.  Extended.txt is incomplete (e.g. extendedItemReloadCost is not documented).
 
 # TFTD
 - Unit stats colors are wrong in inventory

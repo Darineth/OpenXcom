@@ -627,6 +627,11 @@ void SellState::updateList()
 			if (ammo)
 			{
 				name.insert(0, "  ");
+				// DX: show the rounds-per-clip for multi-round ammo (skips single-shot and per-round battleClipSize).
+				if (rule->getClipSize() > 1)
+				{
+					name = tr("STR_DX_AMMO_ROUND_COUNT").arg(name).arg(rule->getClipSize());
+				}
 			}
 		}
 		std::ostringstream ssQty, ssAmount;
