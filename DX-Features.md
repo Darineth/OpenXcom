@@ -953,3 +953,22 @@ roles: how good a unit is at *reacting* (offence) **and** how hard it is to *be 
 - Both scores are exposed to Y-Script (`getReactionScore`, `getEvasionScore`).
 - Default 100 everywhere ⇒ **reaction fire is byte-for-byte stock**. This is the foundation for
   independent evasion drivers still to come (sneak-mode evasion, `RuleStatBonus`/script hooks).
+
+## Movement-mode Evasion (sprint/sneak alter reaction-fire evasion)
+
+Building on the reaction split, a moving unit's **defensive evasion** now varies with *how* it moves.
+The base score is `reactions × (currentTU/maxTU)`; a sprint/sneak config reshapes its **two parts
+independently** — the **reactions stat** (`statPercent`) and the **TU/maxTU penalty**
+(`tuPenaltyPercent`, where `tuFactor = 1 - (1 - currentTU/maxTU) × tuPenaltyPercent/100`). So you can
+express e.g. *sprint = half reactions but only half the TU penalty*, or *sneak = full reactions at all
+times*. Mod-configurable **globally and per-armor**.
+*(design: [plans/Feature-MovementModeEvasion.md](plans/Feature-MovementModeEvasion.md))*
+
+- `BattleUnit::getEvasionScore(BattleActionMove)` recomputes the score with the mode's `statPercent`
+  /`tuPenaltyPercent` (× the armor's flat base `evasion`); reaction fire threads the mover's
+  `getMoveType()` through `getSpottingUnits`/`getReactor` so the mover is judged by its *move-adjusted*
+  evasion (spotters' offensive scores are untouched).
+- **Global:** `evasionDefaults: { sprint: {statPercent, tuPenaltyPercent}, sneak: {...} }`.
+- **Per-armor:** `Armor.evasionSprint` / `Armor.evasionSneak` sub-maps override the global **per field**.
+- Non-move reactions (shooting, turning) report `BAM_NORMAL` ⇒ plain score; `{100,100}` everywhere ⇒
+  reaction fire byte-for-byte unchanged (reproduces `reactions × TU/maxTU`).

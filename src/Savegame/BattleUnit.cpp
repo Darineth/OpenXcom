@@ -2805,6 +2805,40 @@ double BattleUnit::getEvasionScore() const
 }
 
 /**
+ * Gets the evasion score reshaped by how the unit is currently moving (DX). The base reaction score
+ * is reactions * (currentTU/maxTU); a sprint/sneak config independently scales the reactions stat
+ * (statPercent) and softens the low-TU penalty (tuPenaltyPercent), so e.g. sneak can grant full
+ * reactions regardless of spent TU. Normal/strafe movement uses the plain evasion score. The armor's
+ * flat base evasion still applies on top.
+ * @param bam The unit's current movement mode.
+ * @return The move-adjusted evasion score.
+ */
+double BattleUnit::getEvasionScore(BattleActionMove bam) const
+{
+	const EvasionModeConfig* cfg = nullptr;
+	if (bam == BAM_RUN)
+	{
+		cfg = &_armor->getEvasionSprint();
+	}
+	else if (bam == BAM_SNEAK)
+	{
+		cfg = &_armor->getEvasionSneak();
+	}
+	if (!cfg)
+	{
+		// normal / strafe: the plain (vanilla × base-evasion) score
+		return getEvasionScore();
+	}
+
+	// reactions × statPercent, with the TU/maxTU penalty softened by (100 - tuPenaltyPercent):
+	//   tuFactor = 1 - (1 - currentTU/maxTU) × tuPenaltyPercent/100
+	double tuRatio = (double)getTimeUnits() / (double)getBaseStats()->tu;
+	double tuFactor = 1.0 - (1.0 - tuRatio) * (double)cfg->tuPenaltyPercent / 100.0;
+	double score = (double)getBaseStats()->reactions * ((double)cfg->statPercent / 100.0) * tuFactor;
+	return score * (double)_armor->getEvasion() / 100.0;
+}
+
+/**
  * Helper function preparing Time Units recovery at beginning of turn.
  * @param tu New time units for this turn.
  */

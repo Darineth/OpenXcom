@@ -47,6 +47,7 @@ class BattleItem;
 class Armor;
 class Unit;
 class BattlescapeGame;
+enum BattleActionMove : char; // DX: movement mode (walk/run/strafe/sneak), for mode-aware evasion
 struct BattleAction;
 struct BattleActionCost;
 struct RuleItemUseCost;
@@ -422,6 +423,8 @@ public:
 	double getReactionScore() const;
 	/// Get the current (defensive) evasion score (DX) - how hard this unit is to react-fire against.
 	double getEvasionScore() const;
+	/// Get the evasion score modified by how the unit is currently moving (sprint lowers, sneak raises).
+	double getEvasionScore(BattleActionMove bam) const;
 	/// Prepare for a new turn.
 	void prepareNewTurn(bool fullProcess = true);
 	/// Calculate change in unit stats.

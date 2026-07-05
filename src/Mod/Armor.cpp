@@ -33,6 +33,9 @@ const std::string Armor::NONE = "STR_NONE";
 /// values are the stock ones, so behaviour is unchanged unless a mod sets `moveCostDefaults:`.
 ArmorMoveCostDefaults Armor::moveCostDefaults;
 
+/// DX: mod-wide sprint/sneak evasion defaults, reset + loaded at mod load (see Mod::loadFile).
+ArmorEvasionDefaults Armor::evasionDefaults;
+
 /**
  * Creates a blank ruleset for a certain
  * type of armor.
@@ -231,6 +234,8 @@ void Armor::load(const YAML::YamlNodeReader& node, Mod *mod, const ModScript &pa
 	reader.tryRead("overKill", _overKill);
 	reader.tryRead("meleeDodgeBackPenalty", _meleeDodgeBackPenalty);
 	reader.tryRead("evasion", _evasion); // DX: reaction-fire evasion percent
+	_evasionSprint.load(reader["evasionSprint"]); // DX: sprint evasion reshape (stat% + TU-penalty%)
+	_evasionSneak.load(reader["evasionSneak"]);   // DX: sneak evasion reshape
 
 	_psiDefence.load(_type, reader, parsers.bonusStatsScripts.get<ModScript::PsiDefenceStatBonus>());
 	_meleeDodge.load(_type, reader, parsers.bonusStatsScripts.get<ModScript::MeleeDodgeStatBonus>());
@@ -297,6 +302,12 @@ void Armor::afterLoad(const Mod* mod)
 	resolve(_moveCostClimbUp, moveCostDefaults.climbUp);
 	resolve(_moveCostClimbDown, moveCostDefaults.climbDown);
 	resolve(_moveCostGravLift, moveCostDefaults.gravLift);
+
+	// DX: resolve any unset sprint/sneak evasion fields from the mod-wide defaults (per field).
+	if (_evasionSprint.statPercent < 0) _evasionSprint.statPercent = evasionDefaults.sprint.statPercent;
+	if (_evasionSprint.tuPenaltyPercent < 0) _evasionSprint.tuPenaltyPercent = evasionDefaults.sprint.tuPenaltyPercent;
+	if (_evasionSneak.statPercent < 0) _evasionSneak.statPercent = evasionDefaults.sneak.statPercent;
+	if (_evasionSneak.tuPenaltyPercent < 0) _evasionSneak.tuPenaltyPercent = evasionDefaults.sneak.tuPenaltyPercent;
 
 	mod->verifySoundOffset(_type, _moveSound, "BATTLE.CAT");
 	mod->verifySoundOffset(_type, _deathSoundMale, "BATTLE.CAT");

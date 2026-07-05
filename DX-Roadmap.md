@@ -321,11 +321,12 @@ Everything below is DX-specific work confirmed **absent** from the base.
   - [x] Prevent cancelling movement while sprinting (commits to full path; no spot-stop)
 - [~] **Sneak Mode** — surfaces & polishes OXCE's hidden **Sneak** (Alt) mode. *(final
   "no creeping while glowing" gate lands in Phase 8 with lighting)*
-  - [~] Low speed, high alertness, maintains evasion — *animation now crawls (~1.5× slower, a legacy-DX
-    touch). But OXCE's player sneak is otherwise nearly a stub (armor `sneakPercent` cost defaults to
-    walk-equivalent; forces walk; no stealth/detection/reaction effect); real sneak mechanics
-    (evasion/alertness) deferred to Reaction Split + Phase 8 lighting. (The AI-only `sneakyAI`
-    visible-tile avoidance is unrelated.)*
+  - [~] Low speed, high alertness, maintains evasion — *low speed (move-cost + ~1.5× slower crawl) and
+    **evasion** are now done: sneaking raises the mover's defensive reaction-fire evasion (sprint
+    lowers it), mod-configurable globally + per-armor. See
+    [plans/Feature-MovementModeEvasion.md](plans/Feature-MovementModeEvasion.md). "High alertness"
+    (spotting/detection) remains, tied to Phase 8 lighting. (The AI-only `sneakyAI` visible-tile
+    avoidance is unrelated.)*
   - [x] Purple path-preview color when sneaking
   - [x] Slower unit motion when sneaking (~1.5×)
 - [ ] **Overwatch System** — `BA_OVERWATCH`, held-fire behavior + indicators.

@@ -59,8 +59,8 @@ at reacting. Precedent for an armor-side defensive modifier already exists: `Arm
 
 ## Follow-ons (not this pass)
 
-- **Movement-mode evasion** — sneak raises / sprint lowers evasion. Needs the mover's current
-  `BattleActionMove` threaded into the reaction check (it's on the action, not the unit), so it's a
-  separate change; this split is the prerequisite.
+- **Movement-mode evasion** — sneak raises / sprint lowers evasion. **Done** (Jul 2026): see
+  [Feature-MovementModeEvasion.md](Feature-MovementModeEvasion.md); mod-configurable globally
+  (`evasionDefaults:`) and per-armor (`evasionSprint`/`evasionSneak`).
 - **`RuleStatBonus` evasion** (like `_meleeDodge`) and a **script modify-hook** for richer, formula-
   and script-driven evasion.

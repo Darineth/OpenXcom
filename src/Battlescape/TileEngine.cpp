@@ -2603,7 +2603,9 @@ bool TileEngine::checkReactionFire(BattleUnit *unit, const BattleAction &origina
 		return false;
 	}
 
-	std::vector<ReactionScore> spotters = getSpottingUnits(unit);
+	// DX: the mover's movement mode adjusts its defensive evasion (sprint lowers, sneak raises).
+	BattleActionMove moverMove = originalAction.getMoveType();
+	std::vector<ReactionScore> spotters = getSpottingUnits(unit, moverMove);
 	bool result = false;
 
 	// not mind controlled, or controlled by the player
@@ -2611,7 +2613,7 @@ bool TileEngine::checkReactionFire(BattleUnit *unit, const BattleAction &origina
 		|| unit->getFaction() != FACTION_HOSTILE)
 	{
 		// get the first man up to bat.
-		ReactionScore *reactor = getReactor(spotters, unit);
+		ReactionScore *reactor = getReactor(spotters, unit, moverMove);
 		// start iterating through the possible reactors until the current unit is the one with the highest score.
 		while (reactor != 0)
 		{
@@ -2628,14 +2630,14 @@ bool TileEngine::checkReactionFire(BattleUnit *unit, const BattleAction &origina
 				}
 				// can't make a reaction snapshot for whatever reason, boot this guy from the vector.
 				// avoid setting result to true, but carry on, just cause one unit can't react doesn't mean the rest of the units in the vector (if any) can't
-				reactor = getReactor(spotters, unit);
+				reactor = getReactor(spotters, unit, moverMove);
 				continue;
 			}
 			// nice shot, kid. don't get cocky.
 			result = true;
 			reactor->reactionScore -= reactor->reactionReduction;
 			reactor->count += 1;
-			reactor = getReactor(spotters, unit);
+			reactor = getReactor(spotters, unit, moverMove);
 		}
 	}
 	return result;
@@ -2646,13 +2648,13 @@ bool TileEngine::checkReactionFire(BattleUnit *unit, const BattleAction &origina
  * @param unit The unit to check for spotters of.
  * @return A vector of units that can see this unit.
  */
-std::vector<TileEngine::ReactionScore> TileEngine::getSpottingUnits(BattleUnit* unit)
+std::vector<TileEngine::ReactionScore> TileEngine::getSpottingUnits(BattleUnit* unit, BattleActionMove moverMove)
 {
 	std::vector<TileEngine::ReactionScore> spotters;
 	Tile *tile = unit->getTile();
-	// DX reaction split: the mover is measured by its DEFENSIVE evasion score; spotters below are
-	// still measured by their OFFENSIVE reaction score.
-	int threshold = unit->getEvasionScore();
+	// DX reaction split: the mover is measured by its DEFENSIVE evasion score (adjusted by how it's
+	// moving - sprint lowers, sneak raises); spotters below are still measured by their OFFENSIVE score.
+	int threshold = unit->getEvasionScore(moverMove);
 	// no reaction on civilian turn.
 	if (_save->getSide() != FACTION_NEUTRAL)
 	{
@@ -2764,7 +2766,7 @@ std::vector<TileEngine::ReactionScore> TileEngine::getSpottingUnits(BattleUnit* 
  * @param unit The unit to check scores against.
  * @return The unit with the highest reactions.
  */
-TileEngine::ReactionScore *TileEngine::getReactor(std::vector<TileEngine::ReactionScore> &spotters, BattleUnit *unit)
+TileEngine::ReactionScore *TileEngine::getReactor(std::vector<TileEngine::ReactionScore> &spotters, BattleUnit *unit, BattleActionMove moverMove)
 {
 	ReactionScore *best = 0;
 	for (std::vector<ReactionScore>::iterator i = spotters.begin(); i != spotters.end(); ++i)
@@ -2774,7 +2776,7 @@ TileEngine::ReactionScore *TileEngine::getReactor(std::vector<TileEngine::Reacti
 			best = &(*i);
 		}
 	}
-	if (best &&(unit->getEvasionScore() <= best->reactionScore)) // DX: mover's defensive evasion vs reactor's offensive score
+	if (best &&(unit->getEvasionScore(moverMove) <= best->reactionScore)) // DX: mover's (move-adjusted) defensive evasion vs reactor's offensive score
 	{
 		if (best->unit->getOriginalFaction() == FACTION_PLAYER)
 		{

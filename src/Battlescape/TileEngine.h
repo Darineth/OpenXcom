@@ -41,6 +41,7 @@ enum UnitBodyPart : int;
  */
 using MapSubset = AreaSubset<Position, Sint16>;
 enum BattleActionType : Uint8;
+enum BattleActionMove : char; // DX: mover's movement mode, for mode-aware evasion in reaction fire
 enum LightLayers : Uint8;
 
 
@@ -149,9 +150,9 @@ private:
 	/// Checks validity of a snap shot to this position.
 	ReactionScore determineReactionType(BattleUnit *unit, BattleUnit *target);
 	/// Creates a vector of units that can spot this unit.
-	std::vector<ReactionScore> getSpottingUnits(BattleUnit* unit);
+	std::vector<ReactionScore> getSpottingUnits(BattleUnit* unit, BattleActionMove moverMove);
 	/// Given a vector of spotters, and a unit, picks the spotter with the highest reaction score.
-	ReactionScore *getReactor(std::vector<ReactionScore> &spotters, BattleUnit *unit);
+	ReactionScore *getReactor(std::vector<ReactionScore> &spotters, BattleUnit *unit, BattleActionMove moverMove);
 	/// Tries to perform a reaction snap shot to this location.
 	bool tryReaction(ReactionScore *reaction, BattleUnit *target, const BattleAction &originalAction);
 public:

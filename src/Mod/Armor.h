@@ -128,6 +128,47 @@ struct ArmorMoveCostDefaults
 	}
 };
 
+/**
+ * DX: how a movement mode reshapes the moving unit's defensive reaction/evasion score. The base
+ * reaction score is `reactions * (currentTU / maxTU)`; this config tweaks its two parts independently:
+ *  - statPercent: percent of the reactions stat used (100 = full).
+ *  - tuPenaltyPercent: how strongly low TU penalises the score. The effective TU factor is
+ *    `1 - (1 - currentTU/maxTU) * tuPenaltyPercent/100`, so 100 = the vanilla TU/maxTU term, 0 = no
+ *    penalty (full score regardless of spent TU).
+ * e.g. Sprint = {statPercent:50, tuPenaltyPercent:50} (half reactions, only half the TU penalty);
+ *      Sneak  = {statPercent:100, tuPenaltyPercent:0}  (full reactions at all times).
+ */
+struct EvasionModeConfig
+{
+	int statPercent = 100;
+	int tuPenaltyPercent = 100;
+
+	void load(const YAML::YamlNodeReader& reader)
+	{
+		if (!reader)
+			return;
+		reader.tryRead("statPercent", statPercent);
+		reader.tryRead("tuPenaltyPercent", tuPenaltyPercent);
+	}
+};
+
+/**
+ * DX: mod-wide defaults for the sprint/sneak evasion configs. Loaded from the top-level
+ * `evasionDefaults:` node (`sprint:`/`sneak:` sub-maps); an armor's own `evasionSprint`/`evasionSneak`
+ * override per field. Default {100,100} for both ⇒ evasion unchanged from the plain reaction score.
+ */
+struct ArmorEvasionDefaults
+{
+	EvasionModeConfig sprint;
+	EvasionModeConfig sneak;
+
+	void load(const YAML::YamlNodeReader& reader)
+	{
+		sprint.load(reader["sprint"]);
+		sneak.load(reader["sneak"]);
+	}
+};
+
 
 /**
  * Represents a specific type of armor.
@@ -235,6 +276,10 @@ private:
 	Sint8 _ignoresMeleeThreat, _createsMeleeThreat;
 	float _overKill, _meleeDodgeBackPenalty;
 	int _evasion = 100; // DX: reaction-fire evasion (percent of the defensive reaction/evasion score)
+	// DX: how sprint/sneak reshape the mover's evasion. -1 in a field = "use the mod-wide default"
+	// (resolved per field in afterLoad).
+	EvasionModeConfig _evasionSprint{ -1, -1 };
+	EvasionModeConfig _evasionSneak{ -1, -1 };
 	RuleStatBonus _psiDefence, _meleeDodge;
 	RuleStatBonus _timeRecovery, _energyRecovery, _moraleRecovery, _healthRecovery, _stunRecovery, _manaRecovery;
 	ModScript::BattleUnitScripts::Container _battleUnitScripts;
@@ -414,6 +459,12 @@ public:
 	const RuleStatBonus *getPsiDefenceRaw() const { return &_psiDefence; }
 	/// DX: gets the armor's reaction-fire evasion (percent of the defensive score; 100 = no change).
 	int getEvasion() const { return _evasion; }
+	/// DX: gets the sprint (running) evasion config.
+	const EvasionModeConfig& getEvasionSprint() const { return _evasionSprint; }
+	/// DX: gets the sneak evasion config.
+	const EvasionModeConfig& getEvasionSneak() const { return _evasionSneak; }
+	/// DX: mod-wide defaults for sprint/sneak evasion (reset + loaded at mod load).
+	static ArmorEvasionDefaults evasionDefaults;
 	/// Gets unit melee dodge chance.
 	int getMeleeDodge(const BattleUnit* unit) const;
 	const RuleStatBonus *getMeleeDodgeRaw() const { return &_meleeDodge; }

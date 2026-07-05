@@ -19,6 +19,18 @@ moveCostDefaults:
   runPercent:   [50, 100]   # sprint: half TU (fast, covers ground), double walking's energy
 
 # =====================================================================
+#  DX: mod-wide defaults for how sprint/sneak scale a moving unit's
+#  DEFENSIVE evasion (reaction-fire resistance). Percent, 100 = no change.
+#  Armors override per-unit via evasionSprint / evasionSneak.
+# =====================================================================
+evasionDefaults:
+  # sprint: half the reactions stat, but only half the TU/maxTU penalty (fast movers stay a bit
+  # evasive even when low on TU); net effect - more exposed at full TU, less punished when depleted.
+  sprint: { statPercent: 60,  tuPenaltyPercent: 50 }
+  # sneak: full reactions stat at ALL times (no TU penalty) - always alert, hard to react-fire against.
+  sneak:  { statPercent: 90, tuPenaltyPercent: 0 }
+
+# =====================================================================
 #  DX: editable base damage types (loadEarlyRules pre-pass)
 #  Give every PHYSICAL damage type the same armor-wear profile so the
 #  Armor Degradation feature can be exercised across weapon types at
@@ -395,8 +407,11 @@ armors:
     inventoryLayout: STR_DX_LAYOUT_LIGHT
   - type: STR_PERSONAL_ARMOR_UC
     inventoryLayout: STR_DX_LAYOUT_RIG
-    evasion: 200   # DX reaction-split test: 2x defensive evasion (much harder to react-fire against);
-                   # its own reaction fire is unaffected (offence untouched)
+    evasion: 200        # DX reaction-split test: 2x base defensive evasion (harder to react-fire against);
+                        # its own reaction fire is unaffected (offence untouched)
+    # per-armor override of the global sprint config: a nimble suit that keeps more of its reactions
+    # and takes less TU penalty while sprinting than the mod-wide default {50, 50}.
+    evasionSprint: { statPercent: 75, tuPenaltyPercent: 25 }
   - type: STR_POWER_SUIT_UC
     inventoryLayout: STR_DX_LAYOUT_CLONE
   - type: STR_FLYING_SUIT_UC

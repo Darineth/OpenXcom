@@ -278,6 +278,7 @@ void Mod::resetGlobalStatics()
 	Pathfinding::purple = 13; // DX: sneak path colour
 
 	Armor::moveCostDefaults = ArmorMoveCostDefaults{}; // DX: reset mod-wide move-cost defaults to stock
+	Armor::evasionDefaults = ArmorEvasionDefaults{};   // DX: reset mod-wide sprint/sneak evasion defaults
 
 	DIFFICULTY_COEFFICIENT[0] = 0;
 	DIFFICULTY_COEFFICIENT[1] = 1;
@@ -3648,6 +3649,11 @@ void Mod::loadFile(const FileMap::FileRecord &filerec, ModScript &parsers)
 	if (const auto& moveCostDefaults = reader["moveCostDefaults"])
 	{
 		Armor::moveCostDefaults.load(moveCostDefaults);
+	}
+	// DX: mod-wide defaults for how sprint/sneak scale a mover's evasion (armors override per-unit).
+	if (const auto& evasionDefaults = reader["evasionDefaults"])
+	{
+		Armor::evasionDefaults.load(evasionDefaults);
 	}
 
 	// refresh _psiRequirements for psiStrengthEval
