@@ -533,6 +533,11 @@ void InventoryState::init()
 			// Step 0: update unit's armor
 			unit->updateArmorFromSoldier(_game->getMod(), s, s->getArmor(), _battleGame->getDepth(), false, nullptr);
 
+			// The armor (and thus the inventory layout) just changed. The setSelectedUnit() call above ran
+			// BEFORE this update, so it drew the grid and cached the hand slots from the OLD layout - redo
+			// that now against the new armor, or the grid keeps showing the previous armor's slots.
+			_inv->setSelectedUnit(unit, resetGroundOffset);
+
 			// Step 1: remember the unit's equipment (incl. loaded fixed items)
 			_clearInventoryTemplate(_tempInventoryTemplate);
 			_createInventoryTemplate(_tempInventoryTemplate);
