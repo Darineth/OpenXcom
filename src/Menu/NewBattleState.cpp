@@ -623,6 +623,15 @@ void NewBattleState::btnOkClick(Action *)
 		// just in case somebody manually edited battle.cfg
 		_craft->resetCustomDeployment();
 	}
+	// DX: start from a clean base battle-state. Base::save persists _inBattlescape, so a base carried over
+	// from a prior run (or a manually-edited .cfg) can arrive marked in-battle, which makes DebriefingState
+	// treat every later New Battle mission as a base defense (iterating UFOs with no AlienMission -> crash).
+	// The generator re-sets this flag below via bgen.run() when a base-defense battle actually starts, so
+	// clearing it here (before we persist the .cfg and before the battle) keeps the whole lifecycle here.
+	if (!_game->getSavedGame()->getBases()->empty())
+	{
+		_game->getSavedGame()->getBases()->front()->setInBattlescape(false);
+	}
 	save();
 	if (_missionTypes[_cbxMission->getSelected()] != "STR_BASE_DEFENSE" && _craft->getNumTotalUnits() == 0)
 	{
