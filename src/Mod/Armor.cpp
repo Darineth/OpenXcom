@@ -29,6 +29,10 @@ namespace OpenXcom
 
 const std::string Armor::NONE = "STR_NONE";
 
+/// DX: mod-wide default move costs, reset + loaded at mod load (see Mod::loadFile). Default-constructed
+/// values are the stock ones, so behaviour is unchanged unless a mod sets `moveCostDefaults:`.
+ArmorMoveCostDefaults Armor::moveCostDefaults;
+
 /**
  * Creates a blank ruleset for a certain
  * type of armor.
@@ -273,6 +277,26 @@ void Armor::load(const YAML::YamlNodeReader& node, Mod *mod, const ModScript &pa
  */
 void Armor::afterLoad(const Mod* mod)
 {
+	// DX: resolve any move-cost fields this armor didn't set (still the { -1, -1 } sentinel) from the
+	// mod-wide defaults. An explicit per-armor value always wins.
+	auto resolve = [](ArmorMoveCost& c, const ArmorMoveCost& def) { if (c.TimePercent < 0) c = def; };
+	resolve(_moveCostBase, moveCostDefaults.base);
+	resolve(_moveCostBaseFly, moveCostDefaults.baseFly);
+	resolve(_moveCostBaseClimb, moveCostDefaults.baseClimb);
+	resolve(_moveCostBaseNormal, moveCostDefaults.baseNormal);
+	resolve(_moveCostWalk, moveCostDefaults.walk);
+	resolve(_moveCostRun, moveCostDefaults.run);
+	resolve(_moveCostStrafe, moveCostDefaults.strafe);
+	resolve(_moveCostSneak, moveCostDefaults.sneak);
+	resolve(_moveCostFlyWalk, moveCostDefaults.flyWalk);
+	resolve(_moveCostFlyRun, moveCostDefaults.flyRun);
+	resolve(_moveCostFlyStrafe, moveCostDefaults.flyStrafe);
+	resolve(_moveCostFlyUp, moveCostDefaults.flyUp);
+	resolve(_moveCostFlyDown, moveCostDefaults.flyDown);
+	resolve(_moveCostClimbUp, moveCostDefaults.climbUp);
+	resolve(_moveCostClimbDown, moveCostDefaults.climbDown);
+	resolve(_moveCostGravLift, moveCostDefaults.gravLift);
+
 	mod->verifySoundOffset(_type, _moveSound, "BATTLE.CAT");
 	mod->verifySoundOffset(_type, _deathSoundMale, "BATTLE.CAT");
 	mod->verifySoundOffset(_type, _deathSoundFemale, "BATTLE.CAT");

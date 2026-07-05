@@ -422,6 +422,12 @@ and changes core progression curves.*
 *Items added outside the original plan. Each should get a design doc in `plans/` before
 implementation (see CLAUDE.md "Planning Features").*
 
+- [x] **Mod-configurable armor move-cost defaults (`moveCostDefaults`)** — a top-level node setting the
+  default walk/run/sneak/etc. move costs armors fall back to when they don't specify `moveCost:`, so a
+  mod can retune movement (e.g. slow sneaking) game-wide without editing every armor. Per-armor values
+  still override; no node = stock. Spun out of Sprint/Sneak (OXCE sneak defaults to walk-equivalent).
+  See [plans/Feature-MoveCostDefaults.md](plans/Feature-MoveCostDefaults.md).
+
 - [~] **Targeting visualization (aim-cone spread & throw landing area)** — spatially draw where the
   aim-cone / throw launch-error spread actually goes. *(design: [plans/Feature-TargetingVisualization.md](plans/Feature-TargetingVisualization.md))*
   - [x] **Sampled impact/landing dots** — hold Alt while aiming to swap the ideal tracer line for a

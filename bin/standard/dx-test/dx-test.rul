@@ -9,6 +9,16 @@
 # =====================================================================
 
 # =====================================================================
+#  DX: mod-wide default armor move costs. Exercises the moveCostDefaults
+#  feature - these apply to every armor that doesn't set its own moveCost,
+#  so stock soldiers get slow sneaking and ground-covering sprints without
+#  editing each armor. Each value is [time%, energy%] per tile.
+# =====================================================================
+moveCostDefaults:
+  sneakPercent: [200, 50]   # sneak: double TU per tile (slow), same energy as walking
+  runPercent:   [50, 100]   # sprint: half TU (fast, covers ground), double walking's energy
+
+# =====================================================================
 #  DX: editable base damage types (loadEarlyRules pre-pass)
 #  Give every PHYSICAL damage type the same armor-wear profile so the
 #  Armor Degradation feature can be exercised across weapon types at

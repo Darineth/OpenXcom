@@ -916,3 +916,24 @@ and adds sneak's colour; real sneak mechanics (evasion, the light gate) come wit
   Sprint's cost side is covered by OXCE's run multipliers, but sneak has **no** stealth/evasion effect
   yet — that's genuine new work landing with the Phase 7 Reaction Scoring Split (evasion) and the
   Phase 8 lighting gate.
+
+## Mod-configurable Armor Move-Cost Defaults (`moveCostDefaults`)
+
+A top-level `moveCostDefaults:` ruleset node that sets the **default** movement costs armors fall back
+to when they don't specify their own `moveCost:`. In stock OXCE those defaults are hardcoded in C++
+(and notably `sneakPercent` defaults to `[100, 50]` — identical to walking), so making, say, "sneaking
+is slow" game-wide meant editing every armor. Now a mod tunes the baseline once.
+*(design: [plans/Feature-MoveCostDefaults.md](plans/Feature-MoveCostDefaults.md))*
+
+```yaml
+moveCostDefaults:
+  sneakPercent: [200, 50]   # [time%, energy%] per tile - sneak: double TU, same energy
+  runPercent:   [50, 100]   # sprint: half TU, double energy
+```
+
+- Same keys as an armor's `moveCost:` block (`walkPercent`/`runPercent`/`sneakPercent`/`strafePercent`,
+  the `fly*`/`climb*`/`base*` variants, `gravLiftPercent`); each an `[time%, energy%]` pair.
+- A **per-armor `moveCost:` value always overrides** the default. Merge-safe: each armor field carries
+  a `{ -1, -1 }` "unset" sentinel that `Armor::afterLoad` resolves from `Armor::moveCostDefaults`, so
+  only keys an armor actually sets win, across mod merges.
+- Defaults equal the old hardcoded values, so **no `moveCostDefaults:` node ⇒ movement is unchanged**.

@@ -277,6 +277,8 @@ void Mod::resetGlobalStatics()
 	Pathfinding::blue = 8;    // DX: sprint (run) path colour
 	Pathfinding::purple = 13; // DX: sneak path colour
 
+	Armor::moveCostDefaults = ArmorMoveCostDefaults{}; // DX: reset mod-wide move-cost defaults to stock
+
 	DIFFICULTY_COEFFICIENT[0] = 0;
 	DIFFICULTY_COEFFICIENT[1] = 1;
 	DIFFICULTY_COEFFICIENT[2] = 2;
@@ -3641,6 +3643,11 @@ void Mod::loadFile(const FileMap::FileRecord &filerec, ModScript &parsers)
 		{
 			loadConstants(constants.useIndex());
 		}
+	}
+	// DX: mod-wide default armor move costs (armors that omit a move-cost key fall back to these).
+	if (const auto& moveCostDefaults = reader["moveCostDefaults"])
+	{
+		Armor::moveCostDefaults.load(moveCostDefaults);
 	}
 
 	// refresh _psiRequirements for psiStrengthEval

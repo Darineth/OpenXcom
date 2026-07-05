@@ -82,6 +82,52 @@ struct ArmorMoveCost
 	}
 };
 
+/**
+ * DX: mod-wide default armor move costs. An armor that omits a given move-cost key falls back to
+ * these (which themselves default to the stock values), so a mod can retune movement game-wide - e.g.
+ * make sneaking slow - without editing every armor. Loaded from the top-level `moveCostDefaults:`
+ * node; the field/key names match an armor's own `moveCost:` block.
+ */
+struct ArmorMoveCostDefaults
+{
+	ArmorMoveCost base = { 100, 100 };
+	ArmorMoveCost baseFly = { 100, 100 };
+	ArmorMoveCost baseClimb = { 100, 100 };
+	ArmorMoveCost baseNormal = { 100, 100 };
+	ArmorMoveCost walk = { 100, 50 };
+	ArmorMoveCost run = { 75, 75 };
+	ArmorMoveCost strafe = { 100, 50 };
+	ArmorMoveCost sneak = { 100, 50 };
+	ArmorMoveCost flyWalk = { 100, 50 };
+	ArmorMoveCost flyRun = { 75, 75 };
+	ArmorMoveCost flyStrafe = { 100, 50 };
+	ArmorMoveCost flyUp = { 100, 0 };
+	ArmorMoveCost flyDown = { 100, 0 };
+	ArmorMoveCost climbUp = { 100, 50 };
+	ArmorMoveCost climbDown = { 100, 50 };
+	ArmorMoveCost gravLift = { 100, 0 };
+
+	void load(const YAML::YamlNodeReader& reader)
+	{
+		base.load(reader["basePercent"]);
+		baseFly.load(reader["baseFlyPercent"]);
+		baseClimb.load(reader["baseClimbPercent"]);
+		baseNormal.load(reader["baseNormalPercent"]);
+		walk.load(reader["walkPercent"]);
+		run.load(reader["runPercent"]);
+		strafe.load(reader["strafePercent"]);
+		sneak.load(reader["sneakPercent"]);
+		flyWalk.load(reader["flyWalkPercent"]);
+		flyRun.load(reader["flyRunPercent"]);
+		flyStrafe.load(reader["flyStrafePercent"]);
+		flyUp.load(reader["flyUpPercent"]);
+		flyDown.load(reader["flyDownPercent"]);
+		climbUp.load(reader["climbUpPercent"]);
+		climbDown.load(reader["climbDownPercent"]);
+		gravLift.load(reader["gravLiftPercent"]);
+	}
+};
+
 
 /**
  * Represents a specific type of armor.
@@ -139,23 +185,25 @@ private:
 	bool _turnBeforeFirstStep;
 	int _turnCost;
 
-	ArmorMoveCost _moveCostBase = { 100, 100 };
-	ArmorMoveCost _moveCostBaseFly = { 100, 100 };
-	ArmorMoveCost _moveCostBaseClimb = { 100, 100 };
-	ArmorMoveCost _moveCostBaseNormal = { 100, 100 };
+	// DX: { -1, -1 } is the "not set by this armor" sentinel; afterLoad() resolves any unset field
+	// from Armor::moveCostDefaults (the mod-wide defaults, which default to the stock values below).
+	ArmorMoveCost _moveCostBase = { -1, -1 };
+	ArmorMoveCost _moveCostBaseFly = { -1, -1 };
+	ArmorMoveCost _moveCostBaseClimb = { -1, -1 };
+	ArmorMoveCost _moveCostBaseNormal = { -1, -1 };
 
-	ArmorMoveCost _moveCostWalk = { 100, 50 };
-	ArmorMoveCost _moveCostRun = { 75, 75 };
-	ArmorMoveCost _moveCostStrafe = { 100, 50 };
-	ArmorMoveCost _moveCostSneak = { 100, 50 };
-	ArmorMoveCost _moveCostFlyWalk = { 100, 50 };
-	ArmorMoveCost _moveCostFlyRun = { 75, 75 };
-	ArmorMoveCost _moveCostFlyStrafe = { 100, 50 };
-	ArmorMoveCost _moveCostFlyUp = { 100, 0 };
-	ArmorMoveCost _moveCostFlyDown = { 100, 0 };
-	ArmorMoveCost _moveCostClimbUp = { 100, 50 };
-	ArmorMoveCost _moveCostClimbDown = { 100, 50 };
-	ArmorMoveCost _moveCostGravLift = { 100, 0 };
+	ArmorMoveCost _moveCostWalk = { -1, -1 };
+	ArmorMoveCost _moveCostRun = { -1, -1 };
+	ArmorMoveCost _moveCostStrafe = { -1, -1 };
+	ArmorMoveCost _moveCostSneak = { -1, -1 };
+	ArmorMoveCost _moveCostFlyWalk = { -1, -1 };
+	ArmorMoveCost _moveCostFlyRun = { -1, -1 };
+	ArmorMoveCost _moveCostFlyStrafe = { -1, -1 };
+	ArmorMoveCost _moveCostFlyUp = { -1, -1 };
+	ArmorMoveCost _moveCostFlyDown = { -1, -1 };
+	ArmorMoveCost _moveCostClimbUp = { -1, -1 };
+	ArmorMoveCost _moveCostClimbDown = { -1, -1 };
+	ArmorMoveCost _moveCostGravLift = { -1, -1 };
 
 	int _moveSound;
 	std::vector<int> _deathSoundMale, _deathSoundFemale;
@@ -285,6 +333,9 @@ public:
 	bool getTurnBeforeFirstStep() const { return _turnBeforeFirstStep; }
 	/// Gets the turn cost.
 	int getTurnCost() const { return _turnCost; }
+
+	/// DX: mod-wide default move costs, seeding armors that omit a move-cost key (reset + loaded at mod load).
+	static ArmorMoveCostDefaults moveCostDefaults;
 
 	/// Multiplier of all move costs.
 	ArmorMoveCost getMoveCostBase() const { return _moveCostBase; }
