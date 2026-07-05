@@ -515,6 +515,14 @@ implementation (see CLAUDE.md "Planning Features").*
     layouts) in its `.cfg` — factored `SavedGame::saveTemplates`, wired into `NewBattleState` save/load —
     so templates created in New Battle survive a restart (previously discarded).
 
+- [ ] **Ufopaedia fallback stats page for unconfigured items** — auto-generate a viewable stats page
+  for items/weapons that have no authored `ufopaedia` article, so the player can still inspect their
+  stats (accuracy, damage, TU costs, weight, etc.) instead of the entry being unopenable. *(design: TBD)*
+
+- [ ] **Battlescape wound indicator on the HP bar** — show fatal-wound state directly on a unit's HP
+  bar in the battlescape (e.g. a marker/overlay on the health bar), so bleeding units are visible at a
+  glance without opening the medikit/stats. *(design: TBD)*
+
 # Maybe / Someday
 
 *Deprioritized ideas — interesting but not clearly worth building yet. Revisit if a concrete use
