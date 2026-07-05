@@ -332,7 +332,10 @@ Everything below is DX-specific work confirmed **absent** from the base.
   - [ ] Held-fire state for units
   - [ ] Per-weapon overwatch tuning (radius, range, shot type)
   - [ ] On-map overwatch indicators
-- [ ] **Reaction Scoring Split** — offensive `getReactionScore` / defensive `getEvasionScore`.
+- [x] **Reaction Scoring Split** — offensive `getReactionScore` / defensive `getEvasionScore`; the
+  mover is now measured by evasion (driven by a new armor `evasion:` percent), spotters by reaction.
+  Enables independent evasion tuning (sneak, stealth armor). See
+  [plans/Feature-ReactionScoringSplit.md](plans/Feature-ReactionScoringSplit.md).
 - [ ] **Bleedout & Indicators** — negative-health/bleedout state plus battlefield UI cues.
   - [ ] Negative-health state
   - [ ] Bleedout state (with fatal torso wounds)

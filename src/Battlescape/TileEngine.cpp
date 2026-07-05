@@ -2650,7 +2650,9 @@ std::vector<TileEngine::ReactionScore> TileEngine::getSpottingUnits(BattleUnit* 
 {
 	std::vector<TileEngine::ReactionScore> spotters;
 	Tile *tile = unit->getTile();
-	int threshold = unit->getReactionScore();
+	// DX reaction split: the mover is measured by its DEFENSIVE evasion score; spotters below are
+	// still measured by their OFFENSIVE reaction score.
+	int threshold = unit->getEvasionScore();
 	// no reaction on civilian turn.
 	if (_save->getSide() != FACTION_NEUTRAL)
 	{
@@ -2772,7 +2774,7 @@ TileEngine::ReactionScore *TileEngine::getReactor(std::vector<TileEngine::Reacti
 			best = &(*i);
 		}
 	}
-	if (best &&(unit->getReactionScore() <= best->reactionScore))
+	if (best &&(unit->getEvasionScore() <= best->reactionScore)) // DX: mover's defensive evasion vs reactor's offensive score
 	{
 		if (best->unit->getOriginalFaction() == FACTION_PLAYER)
 		{

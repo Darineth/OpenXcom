@@ -2794,6 +2794,17 @@ double BattleUnit::getReactionScore() const
 }
 
 /**
+ * Gets the current defensive evasion score (DX): how hard this unit is to react-fire against. Base is
+ * the (offensive) reaction score, scaled by the armor's evasion percent (100 = no change), so the
+ * defence can be tuned independently of the offence. Used as the mover's threshold in reaction fire.
+ * @return The evasion score.
+ */
+double BattleUnit::getEvasionScore() const
+{
+	return getReactionScore() * (double)_armor->getEvasion() / 100.0;
+}
+
+/**
  * Helper function preparing Time Units recovery at beginning of turn.
  * @param tu New time units for this turn.
  */
@@ -6382,6 +6393,15 @@ void getReactionScoreScript(const BattleUnit *bu, int &ret)
 	}
 	ret = 0;
 }
+void getEvasionScoreScript(const BattleUnit *bu, int &ret)
+{
+	if (bu)
+	{
+		ret = (int)bu->getEvasionScore();
+		return;
+	}
+	ret = 0;
+}
 void getRecolorScript(const BattleUnit *bu, int &pixel)
 {
 	if (bu)
@@ -7040,6 +7060,7 @@ void BattleUnit::ScriptRegister(ScriptParserBase* parser)
 	bu.add<&BattleUnit::isFearable>("isFearable");
 	bu.add<&BattleUnit::isWoundable>("isWoundable");
 	bu.add<&getReactionScoreScript>("getReactionScore");
+	bu.add<&getEvasionScoreScript>("getEvasionScore");
 	bu.add<&BattleUnit::getDirection>("getDirection");
 	bu.add<&BattleUnit::getIntelligence>("getIntelligence");
 	bu.add<&BattleUnit::getAggression>("getAggression");

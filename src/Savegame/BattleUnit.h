@@ -418,8 +418,10 @@ public:
 	static int getFiringAccuracy(BattleActionAttack::ReadOnly attack, const Mod *mod);
 	/// Calculate accuracy modifier.
 	int getAccuracyModifier(const BattleItem *item = 0) const;
-	/// Get the current reaction score.
+	/// Get the current (offensive) reaction score - this unit's ability to react-fire.
 	double getReactionScore() const;
+	/// Get the current (defensive) evasion score (DX) - how hard this unit is to react-fire against.
+	double getEvasionScore() const;
 	/// Prepare for a new turn.
 	void prepareNewTurn(bool fullProcess = true);
 	/// Calculate change in unit stats.

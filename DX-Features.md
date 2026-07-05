@@ -937,3 +937,19 @@ moveCostDefaults:
   a `{ -1, -1 }` "unset" sentinel that `Armor::afterLoad` resolves from `Armor::moveCostDefaults`, so
   only keys an armor actually sets win, across mod merges.
 - Defaults equal the old hardcoded values, so **no `moveCostDefaults:` node ⇒ movement is unchanged**.
+
+## Reaction Scoring Split (offensive reaction / defensive evasion)
+
+Stock reaction fire uses one `getReactionScore()` (`reactions × currentTU/maxTU`) for two opposite
+roles: how good a unit is at *reacting* (offence) **and** how hard it is to *be reacted against*
+(defence). DX splits them so a unit's defence can be tuned without touching its offence.
+*(design: [plans/Feature-ReactionScoringSplit.md](plans/Feature-ReactionScoringSplit.md))*
+
+- New **`BattleUnit::getEvasionScore()`** (defensive) = `getReactionScore()` × the wearer's armor
+  **`evasion`** percent. The reaction-fire check now measures the **moving unit** by its evasion score
+  and each **spotter** by its (unchanged) reaction score.
+- New **`Armor.evasion`** field (percent, **default 100** = no change). `> 100` makes a unit harder to
+  react-fire against (stealth armor); `< 100` easier. Its *own* reaction fire is unaffected.
+- Both scores are exposed to Y-Script (`getReactionScore`, `getEvasionScore`).
+- Default 100 everywhere ⇒ **reaction fire is byte-for-byte stock**. This is the foundation for
+  independent evasion drivers still to come (sneak-mode evasion, `RuleStatBonus`/script hooks).

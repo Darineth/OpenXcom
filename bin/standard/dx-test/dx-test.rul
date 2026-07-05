@@ -395,6 +395,8 @@ armors:
     inventoryLayout: STR_DX_LAYOUT_LIGHT
   - type: STR_PERSONAL_ARMOR_UC
     inventoryLayout: STR_DX_LAYOUT_RIG
+    evasion: 200   # DX reaction-split test: 2x defensive evasion (much harder to react-fire against);
+                   # its own reaction fire is unaffected (offence untouched)
   - type: STR_POWER_SUIT_UC
     inventoryLayout: STR_DX_LAYOUT_CLONE
   - type: STR_FLYING_SUIT_UC

@@ -234,6 +234,7 @@ private:
 	Sint8  _fearImmune, _bleedImmune, _painImmune, _zombiImmune;
 	Sint8 _ignoresMeleeThreat, _createsMeleeThreat;
 	float _overKill, _meleeDodgeBackPenalty;
+	int _evasion = 100; // DX: reaction-fire evasion (percent of the defensive reaction/evasion score)
 	RuleStatBonus _psiDefence, _meleeDodge;
 	RuleStatBonus _timeRecovery, _energyRecovery, _moraleRecovery, _healthRecovery, _stunRecovery, _manaRecovery;
 	ModScript::BattleUnitScripts::Container _battleUnitScripts;
@@ -411,6 +412,8 @@ public:
 	/// Gets unit psi defense.
 	int getPsiDefence(const BattleUnit* unit) const;
 	const RuleStatBonus *getPsiDefenceRaw() const { return &_psiDefence; }
+	/// DX: gets the armor's reaction-fire evasion (percent of the defensive score; 100 = no change).
+	int getEvasion() const { return _evasion; }
 	/// Gets unit melee dodge chance.
 	int getMeleeDodge(const BattleUnit* unit) const;
 	const RuleStatBonus *getMeleeDodgeRaw() const { return &_meleeDodge; }

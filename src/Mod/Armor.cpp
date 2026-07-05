@@ -230,6 +230,7 @@ void Armor::load(const YAML::YamlNodeReader& node, Mod *mod, const ModScript &pa
 
 	reader.tryRead("overKill", _overKill);
 	reader.tryRead("meleeDodgeBackPenalty", _meleeDodgeBackPenalty);
+	reader.tryRead("evasion", _evasion); // DX: reaction-fire evasion percent
 
 	_psiDefence.load(_type, reader, parsers.bonusStatsScripts.get<ModScript::PsiDefenceStatBonus>());
 	_meleeDodge.load(_type, reader, parsers.bonusStatsScripts.get<ModScript::MeleeDodgeStatBonus>());
