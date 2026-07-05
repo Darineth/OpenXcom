@@ -36,6 +36,9 @@ ArmorMoveCostDefaults Armor::moveCostDefaults;
 /// DX: mod-wide sprint/sneak evasion defaults, reset + loaded at mod load (see Mod::loadFile).
 ArmorEvasionDefaults Armor::evasionDefaults;
 
+/// DX: mod-wide bleedout defaults, reset + loaded at mod load (see Mod::loadFile).
+ArmorBleedoutDefaults Armor::bleedoutDefaults;
+
 /**
  * Creates a blank ruleset for a certain
  * type of armor.
@@ -234,6 +237,12 @@ void Armor::load(const YAML::YamlNodeReader& node, Mod *mod, const ModScript &pa
 	reader.tryRead("overKill", _overKill);
 	reader.tryRead("meleeDodgeBackPenalty", _meleeDodgeBackPenalty);
 	reader.tryRead("evasion", _evasion); // DX: reaction-fire evasion percent
+	if (reader["canBleedOut"]) // DX: tri-state bleedout eligibility (absent = auto/legacy rule)
+	{
+		bool canBleed = false;
+		reader.tryRead("canBleedOut", canBleed);
+		_allowBleedOut = canBleed ? 1 : 0;
+	}
 	_evasionSprint.load(reader["evasionSprint"]); // DX: sprint evasion reshape (stat% + TU-penalty%)
 	_evasionSneak.load(reader["evasionSneak"]);   // DX: sneak evasion reshape
 

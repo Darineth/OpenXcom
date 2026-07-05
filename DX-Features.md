@@ -1022,3 +1022,29 @@ on the legacy radius overwatch, rebuilt around a **directional cone**.
   toggled off by re-selecting **Overwatch**.
 - Deferred: a dedicated on-map per-unit overwatch glyph, per-tile line-of-fire filtering of the
   markers, and AI use of overwatch.
+
+## Bleedout & Indicators (negative-health dying state)
+
+In stock OXCE a unit dies the instant its health hits 0. DX lets eligible units drop into **negative
+health** and *bleed out* — a dying-but-savable window — with battlefield cues so a dying soldier is
+obvious. *(design: [plans/Feature-Bleedout.md](plans/Feature-Bleedout.md))*
+
+- **Bleed out instead of dying.** When an eligible unit's health crosses 0, instead of dying it enters
+  **bleedout**: it falls (unconscious) but stays alive, and a buffer of fatal torso wounds keeps its
+  health draining each turn (the engine's existing 1 HP/wound/turn). It only actually dies once health
+  reaches the death threshold, so a medic has a window to reach it. Healing its wounds stops the bleed;
+  recovering above 0 HP ends the bleedout.
+- **Mod-configurable, legacy defaults.** Eligibility is per-armor `canBleedOut` (a tri-state: unset =
+  the legacy rule — an original-player, non-vehicle geoscape soldier; `true`/`false` force it on/off).
+  A top-level **`bleedoutDefaults:`** node sets `deathHealthPercent` (default **50** → death at
+  `−maxHealth/2`) and `bufferWounds` (default **5** torso wounds on entry). Aliens/civilians/HWPs keep
+  the stock hit-0 behaviour unless a mod opts their armor in.
+- **Indicators (three).** A bleedout-priority **red-cross glyph** on the downed body (mod art
+  `FloorBleedoutIndicator`, else a built-in procedural cross); **white tick marks** — one per fatal
+  wound — on the selected unit's HP bar (`Bar::setMarks`, complementing the existing wound blink); and
+  bleeding-out soldiers listed **first** in the visible-unit column with a distinct *"Center on
+  bleeding-out soldier"* tooltip (a click-to-jump cue shown regardless of the selected unit).
+- **Combat log.** Entering bleedout logs `{unit} is bleeding out!` (WARNING); death from bleedout logs
+  via the normal kill path.
+- **Not yet:** the medikit "stabilize" rework (stabilise-without-revive) and proportional wound
+  recovery / Field Surgery research are separate Phase 7 items that build on this.

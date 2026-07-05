@@ -807,7 +807,7 @@ void BattlescapeGame::checkForCasualties(const RuleDamageType *damageType, Battl
 		// Determine murder type
 		if (victim->getStatus() != STATUS_DEAD)
 		{
-			if (victim->getHealth() <= 0)
+			if (victim->getHealth() <= victim->getDeathHealth()) // DX: bleedout units die at a negative threshold
 			{
 				killStat.status = STATUS_DEAD;
 			}
@@ -870,7 +870,22 @@ void BattlescapeGame::checkForCasualties(const RuleDamageType *damageType, Battl
 		bool noSound = false;
 		if (victim->getStatus() != STATUS_DEAD)
 		{
-			if (victim->getHealth() <= 0)
+			// DX: an eligible unit that crosses 0 HP (but is still above its death threshold) enters
+			// bleedout - once, whether it is dropping right now or was ALREADY unconscious and just bled
+			// past 0. Done here, before the knockout branch, because that branch only fires for a unit
+			// that is still standing, so an already-unconscious unit would otherwise never register it.
+			bool enteringBleedout = victim->getHealth() <= 0 && victim->getHealth() > victim->getDeathHealth()
+				&& victim->getCanBleedOut() && !victim->getBleedingOut();
+			if (enteringBleedout)
+			{
+				victim->checkStartBleedout();
+				if (!victim->isCosmetic())
+				{
+					_save->logKnockoutEvent("STR_COMBATLOG_BLEEDING_OUT", victim, OUTCOME_WARNING);
+				}
+			}
+
+			if (victim->getHealth() <= victim->getDeathHealth()) // DX: bleedout units die at a negative threshold, not at 0
 			{
 				victim->setDeathRegistered(true); // DX: one-shot guard (see top of loop)
 				if (!victim->isCosmetic())
@@ -979,11 +994,19 @@ void BattlescapeGame::checkForCasualties(const RuleDamageType *damageType, Battl
 					_parentState->getGame()->getSavedGame()->killSoldier(false, victim->getGeoscapeSoldier(), deathStat);
 				}
 			}
-			else if (victim->getStunlevel() >= victim->getHealth() && victim->getStatus() != STATUS_UNCONSCIOUS)
+			else if (victim->getStunlevel() >= victim->getHealth() && victim->getStatus() != STATUS_UNCONSCIOUS
+				&& !victim->isStunRegistered())
 			{
-				if (!victim->isCosmetic())
+				// DX: one-shot guard - the fall (which sets STATUS_UNCONSCIOUS) is queued and only runs
+				// after the whole volley, so without this a unit hit by several bullets would re-log the
+				// knockout and re-queue a fall on every round. Cleared once the fall finishes. A later
+				// round can still cross into the death branch above (which is guarded separately).
+				victim->setStunRegistered(true);
+				// A bleedout entry (handled + logged above) still falls as if unconscious here, but it
+				// reads as "bleeding out", so only log the plain knockout when it is NOT entering bleedout.
+				if (!victim->isCosmetic() && !enteringBleedout)
 				{
-					_save->logUnitEvent("STR_COMBATLOG_STUNNED", victim, _save->combatLogVictimOutcome(victim));
+					_save->logKnockoutEvent("STR_COMBATLOG_STUNNED", victim, _save->combatLogVictimOutcome(victim));
 				}
 				// morale change when an enemy is stunned (only for the first time!)
 				if (getMod()->getStunningImprovesMorale() && murderer && !victim->getStatistics()->wasUnconcious)

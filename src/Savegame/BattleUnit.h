@@ -134,6 +134,8 @@ private:
 	int _faceDirection; // used only during strafing moves
 	std::vector<int> _meleeAttackedBy;
 	bool _hitByFire, _hitByAnything, _alreadyExploded, _deathRegistered;
+	bool _stunRegistered; // DX: knockout already logged/queued this volley (one-shot guard, cleared after the fall)
+	bool _bleedingOut; // DX: unit is bleeding out (alive at negative health, dying toward getDeathHealth)
 	int _fireMaxHit;
 	int _smokeMaxHit;
 	int _moraleRestored;
@@ -611,6 +613,15 @@ public:
 	/// Get fatal wound amount of a body part
 	int getFatalWound(UnitBodyPart part) const;
 
+	/// DX: can this unit enter the bleedout (negative-health, dying-but-savable) state? (armor + faction gated)
+	bool getCanBleedOut() const;
+	/// DX: is this unit currently bleeding out?
+	bool getBleedingOut() const { return _bleedingOut; }
+	/// DX: the health value at/below which this unit actually dies (0 normally; negative when it can bleed out).
+	int getDeathHealth() const;
+	/// DX: enter the bleedout state (mark bleeding + add the buffer torso wounds). Idempotent; call only when eligible.
+	void checkStartBleedout();
+
 	/// Heal one fatal wound
 	void heal(UnitBodyPart part, int woundAmount, int healthAmount);
 	/// Give pain killers to this unit
@@ -920,6 +931,10 @@ public:
 	bool isDeathRegistered() const { return _deathRegistered; }
 	/// Set the death-registered flag.
 	void setDeathRegistered(bool deathRegistered) { _deathRegistered = deathRegistered; }
+	/// DX: has this unit's knockout already been registered this volley? (one-shot guard, cleared after the fall)
+	bool isStunRegistered() const { return _stunRegistered; }
+	/// DX: set the knockout-registered flag.
+	void setStunRegistered(bool stunRegistered) { _stunRegistered = stunRegistered; }
 	/// Get the unconscious/dead notification shown flag.
 	int getNotificationShown() const { return _notificationShown; }
 	/// Set the unconscious/dead notification shown flag.

@@ -34,6 +34,8 @@ private:
 	Uint8 _color, _color2, _borderColor;
 	double _scale, _max, _value, _value2;
 	bool _secondOnTop;
+	int _marks;        // DX: number of tick marks to overlay (e.g. fatal wounds on the HP bar); 0 = none
+	Uint8 _markColor;  // DX: colour of the tick marks
 public:
 	/// Creates a new bar with the specified size and position.
 	Bar(int width, int height, int x = 0, int y = 0);
@@ -65,6 +67,8 @@ public:
 	double getValue2() const;
 	/// Defines whether the second value should be drawn on top.
 	void setSecondValueOnTop(bool onTop);
+	/// DX: overlays N evenly-spaced tick marks on the bar (used to mark fatal wounds on the HP bar). count 0 clears.
+	void setMarks(int count, Uint8 color);
 	/// Draws the bar.
 	void draw() override;
 	/// set the outline color for the bar.

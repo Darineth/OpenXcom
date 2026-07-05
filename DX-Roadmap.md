@@ -341,11 +341,17 @@ Everything below is DX-specific work confirmed **absent** from the base.
   mover is now measured by evasion (driven by a new armor `evasion:` percent), spotters by reaction.
   Enables independent evasion tuning (sneak, stealth armor). See
   [plans/Feature-ReactionScoringSplit.md](plans/Feature-ReactionScoringSplit.md).
-- [ ] **Bleedout & Indicators** — negative-health/bleedout state plus battlefield UI cues.
-  - [ ] Negative-health state
-  - [ ] Bleedout state (with fatal torso wounds)
-  - [ ] Battlefield bleeding indicators
+- [x] **Bleedout & Indicators** — negative-health/bleedout state plus battlefield UI cues.
+  *(design: [plans/Feature-Bleedout.md](plans/Feature-Bleedout.md))*
+  - [x] Negative-health state (eligible units survive below 0 down to `getDeathHealth()`)
+  - [x] Bleedout state (buffer fatal torso wounds; mod-configurable via `bleedoutDefaults` + armor `canBleedOut`)
+  - [x] Battlefield bleeding indicators (map dying-glyph, HP-bar wound cross-marks, visible-unit column cue)
 - [ ] **Medikit/Stabilization Rework** — revised field treatment flow.
+  - [ ] **Medikit target-state readout** — show the target unit's current condition on the medikit
+    screen. Top: target unit name; `STATUS>` a derived condition word (INJURED / UNCONSCIOUS / etc.,
+    changing with HP / wounds / consciousness); `HP>50/60`; `STUN>0/50` (stun shown over **current**
+    HP, since a unit drops unconscious once stun exceeds current health). Bottom: `TU>38/49` from the
+    **healer's** TU. *(design: TBD)*
 - [ ] **Proportional Wound Recovery + Field Surgery** — recovery scaling and research gate.
 - [ ] **Role Definitions & Templates** — `RuleRole`/`Role` + template loadouts. *(reuses Phase 2
   loadout-template plumbing)*
@@ -519,9 +525,9 @@ implementation (see CLAUDE.md "Planning Features").*
   for items/weapons that have no authored `ufopaedia` article, so the player can still inspect their
   stats (accuracy, damage, TU costs, weight, etc.) instead of the entry being unopenable. *(design: TBD)*
 
-- [ ] **Battlescape wound indicator on the HP bar** — show fatal-wound state directly on a unit's HP
-  bar in the battlescape (e.g. a marker/overlay on the health bar), so bleeding units are visible at a
-  glance without opening the medikit/stats. *(design: TBD)*
+- [x] **Battlescape wound indicator on the HP bar** — white tick marks (one per fatal wound) on the
+  selected unit's health bar, so wounded/bleeding units are visible at a glance. Delivered as part of
+  **Bleedout & Indicators** (Phase 7) via `Bar::setMarks`. *(design: [plans/Feature-Bleedout.md](plans/Feature-Bleedout.md))*
 
 # Maybe / Someday
 

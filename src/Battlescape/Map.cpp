@@ -107,6 +107,7 @@ namespace OpenXcom
 Map::Map(Game *game, int width, int height, int x, int y, int visibleMapHeight) : InteractiveSurface(width, height, x, y),
 	_game(game), _isTFTD(false), _arrow(0), _grenadeIndicator(0), _proxyPing{},
 	_stunIndicatorFallback(0), _woundIndicatorFallback(0), _burnIndicatorFallback(0), _shockIndicatorFallback(0),
+	_bleedoutIndicator(0), _bleedoutIndicatorFallback(0),
 	_anyIndicator(false), _isAltPressed(false), _isCtrlPressed(false),
 	_selectorX(0), _selectorY(0), _mouseX(0), _mouseY(0), _cursorType(CT_NORMAL), _cursorSize(1), _animFrame(0),
 	_followProjectile(true), _projectileInFOV(false), _explosionInFOV(false), _launch(false), _visibleMapHeight(visibleMapHeight),
@@ -247,7 +248,8 @@ Map::Map(Game *game, int width, int height, int x, int y, int visibleMapHeight) 
 	_woundIndicator = _game->getMod()->getSurface("FloorWoundIndicator", false);
 	_burnIndicator = _game->getMod()->getSurface("FloorBurnIndicator", false);
 	_shockIndicator = _game->getMod()->getSurface("FloorShockIndicator", false);
-	_anyIndicator = _stunIndicator || _woundIndicator || _burnIndicator || _shockIndicator;
+	_bleedoutIndicator = _game->getMod()->getSurface("FloorBleedoutIndicator", false);
+	_anyIndicator = _stunIndicator || _woundIndicator || _burnIndicator || _shockIndicator || _bleedoutIndicator;
 
 	if (enviro)
 	{
@@ -278,6 +280,7 @@ Map::~Map()
 	delete _woundIndicatorFallback;
 	delete _burnIndicatorFallback;
 	delete _shockIndicatorFallback;
+	delete _bleedoutIndicatorFallback;
 	delete _message;
 	delete _camera;
 	delete _txtAccuracy;
@@ -530,10 +533,29 @@ void Map::init()
 			0,0,0,0,0,0,0,0,0,3,3,3,3,0,
 			0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
 
+		// Bleedout: a bold red medical cross - "this soldier is dying, get a medic here". Distinct in
+		// shape from the wound blood-drop so a bleeding-out unit reads differently from a merely wounded one.
+		const int bleedoutColors[3] = { 0, 34, 32 }; // red fill / brighter red centre
+		// Inset 1px on every side so buildIcon's black halo has transparent cells to paint into (the arms
+		// must not touch the grid edge, or the outline can't be drawn on that side).
+		const int bleedout[121] = {
+			0,0,0,0,0,0,0,0,0,0,0,
+			0,0,0,0,1,1,1,0,0,0,0,
+			0,0,0,0,1,1,1,0,0,0,0,
+			0,0,0,0,1,1,1,0,0,0,0,
+			0,1,1,1,1,1,1,1,1,1,0,
+			0,1,1,1,1,2,1,1,1,1,0,
+			0,1,1,1,1,1,1,1,1,1,0,
+			0,0,0,0,1,1,1,0,0,0,0,
+			0,0,0,0,1,1,1,0,0,0,0,
+			0,0,0,0,1,1,1,0,0,0,0,
+			0,0,0,0,0,0,0,0,0,0,0 };
+
 		_woundIndicatorFallback = buildIcon(wound, 11, 11, woundColors);
 		_burnIndicatorFallback = buildIcon(burn, 11, 11, burnColors);
 		_shockIndicatorFallback = buildIcon(shock, 11, 11, shockColors);
 		_stunIndicatorFallback = buildIcon(stun, 14, 14, stunColors);
+		_bleedoutIndicatorFallback = buildIcon(bleedout, 11, 11, bleedoutColors);
 	}
 
 	for (Projectile* p : _projectiles) delete p;
@@ -1359,7 +1381,12 @@ void Map::drawTerrain(Surface *surface)
 									// Floor*Indicator art and falling back to the DX procedural icon so
 									// the overlay always shows (burn > wound > shock > stun).
 									Surface *modArt = nullptr, *fallback = nullptr;
-									if (itemUnit->getFire() > 0)
+									if (itemUnit->getBleedingOut())
+									{
+										// DX: a dying soldier outranks every other status - show the bleedout cross.
+										modArt = _bleedoutIndicator; fallback = _bleedoutIndicatorFallback;
+									}
+									else if (itemUnit->getFire() > 0)
 									{
 										modArt = _burnIndicator; fallback = _burnIndicatorFallback;
 									}

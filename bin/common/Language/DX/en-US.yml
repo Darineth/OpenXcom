@@ -31,6 +31,8 @@ en-US:
 #BattlescapeGame.cpp
   STR_COMBATLOG_STUNNED_MALE: "{0} is knocked out"
   STR_COMBATLOG_STUNNED_FEMALE: "{0} is knocked out"
+  STR_COMBATLOG_BLEEDING_OUT_MALE: "{0} is bleeding out!"
+  STR_COMBATLOG_BLEEDING_OUT_FEMALE: "{0} is bleeding out!"
   STR_COMBATLOG_FIRED: "{0} fires {1}"
   STR_COMBATLOG_FIRED_REACTION: "{0} took a reaction shot at {2} with {1}"
   STR_COMBATLOG_FIRED_OVERWATCH: "{0} took an overwatch shot at {2} with {1}"
@@ -48,6 +50,14 @@ en-US:
   STR_COMBATLOG_DAMAGE_HEAVY: "for heavy damage"
   STR_COMBATLOG_WOUNDS_one: "({0} wound)"
   STR_COMBATLOG_WOUNDS_other: "({0} wounds)"
+  # DX: remaining health appended to a hit line for the player's own units ({0} current, {1} max).
+  STR_COMBATLOG_HP_REMAINING: "[HP {0}/{1}]"
+  # DX: HP + stun appended to a knockout/bleedout line ({0} current HP, {1} max HP, {2} stun). Stun is
+  # shown over current HP because a unit drops unconscious once its stun exceeds its current health.
+  STR_COMBATLOG_HP_STUN: "[HP {0}/{1}, Stun {2}/{0}]"
+  # DX: start-of-turn warning when one of our units bleeds HP from fatal wounds ({0} unit, {1} HP lost,
+  # {2} new current HP after the bleed, {3} max HP).
+  STR_COMBATLOG_WOUND_BLEED: "{0} loses {1} HP to wounds [HP {2}/{3}]"
 #BattlescapeGame.cpp - panic
   STR_COMBATLOG_PANIC: "{0} panics"
   STR_COMBATLOG_BERSERK: "{0} goes berserk"
@@ -56,6 +66,9 @@ en-US:
   STR_COMBATLOG_SIDE_PLAYER: "X-COM"
   STR_COMBATLOG_SIDE_HOSTILE: "Aliens"
   STR_COMBATLOG_SIDE_NEUTRAL: "Civilians"
+#=================== DX Bleedout ===================
+#BattlescapeState.cpp - visible-unit column tooltip for a soldier bleeding out
+  STR_CENTER_ON_BLEEDING_FRIEND: "Center on bleeding-out soldier"
 #=================== DX On-Map Overlays ===================
 #Options.cpp
   STR_HOVERED_UNIT_NAME: "Hovered unit name"

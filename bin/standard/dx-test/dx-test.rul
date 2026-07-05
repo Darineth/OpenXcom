@@ -44,6 +44,14 @@ overwatchDefaults:
   overwatchModifier:  80     # 80% of the offensive reaction score
 
 # =====================================================================
+#  DX: mod-wide bleedout config. A soldier crossing 0 HP bleeds out instead
+#  of dying, and only dies once health reaches -deathHealthPercent% of max.
+# =====================================================================
+bleedoutDefaults:
+  deathHealthPercent: 50     # die at -maxHealth/2 (matches the engine default)
+  bufferWounds:       5      # fatal torso wounds added on entering bleedout
+
+# =====================================================================
 #  DX: editable base damage types (loadEarlyRules pre-pass)
 #  Give every PHYSICAL damage type the same armor-wear profile so the
 #  Armor Degradation feature can be exercised across weapon types at

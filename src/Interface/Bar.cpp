@@ -29,7 +29,7 @@ namespace OpenXcom
  * @param x X position in pixels.
  * @param y Y position in pixels.
  */
-Bar::Bar(int width, int height, int x, int y) : Surface(width, height, x, y), _color(0), _color2(0), _borderColor(0), _scale(0), _max(0), _value(0), _value2(0), _secondOnTop(true)
+Bar::Bar(int width, int height, int x, int y) : Surface(width, height, x, y), _color(0), _color2(0), _borderColor(0), _scale(0), _max(0), _value(0), _value2(0), _secondOnTop(true), _marks(0), _markColor(0)
 {
 
 }
@@ -165,6 +165,18 @@ void Bar::setSecondValueOnTop(bool onTop)
 }
 
 /**
+ * DX: overlays N evenly-spaced tick marks across the bar (used to mark fatal wounds on the HP bar).
+ * @param count Number of marks (clamped in draw to what fits); 0 clears them.
+ * @param color Palette colour of the marks.
+ */
+void Bar::setMarks(int count, Uint8 color)
+{
+	_marks = count;
+	_markColor = color;
+	_redraw = true;
+}
+
+/**
  * Draws the bordered bar filled according
  * to its values.
  */
@@ -202,6 +214,24 @@ void Bar::draw()
 		drawRect(&square, _color2);
 		square.w = (Uint16)(_scale * _value);
 		drawRect(&square, _color);
+	}
+
+	// DX: fatal-wound tick marks - full-height 1px vertical ticks, 1px apart, from the left of the bar.
+	if (_marks > 0 && _markColor)
+	{
+		int innerW = (int)(_scale * _max);
+		int maxTicks = innerW / 2; // each tick is 1px wide with a 1px gap after it
+		int n = _marks;
+		if (n > maxTicks) n = maxTicks;
+		for (int i = 0; i < n; ++i)
+		{
+			SDL_Rect mark;
+			mark.x = 1 + (Uint16)(i * 2);
+			mark.y = 0;
+			mark.w = 1;
+			mark.h = getHeight();
+			drawRect(&mark, _markColor);
+		}
 	}
 }
 

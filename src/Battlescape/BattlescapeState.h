@@ -64,7 +64,7 @@ private:
 	int _posSpecialActions[SPECIAL_BUTTONS_MAX];
 
 	static const int VISIBLE_MAX = 10;
-	std::string _txtVisibleUnitTooltip[VISIBLE_MAX+2];
+	std::string _txtVisibleUnitTooltip[VISIBLE_MAX+3]; // +2 = wounded, +3rd (index VISIBLE_MAX+2) = bleeding out (DX)
 	InteractiveSurface *_btnVisibleUnit[VISIBLE_MAX];
 	NumberText *_numVisibleUnit[VISIBLE_MAX];
 	BattleUnit *_visibleUnit[VISIBLE_MAX];

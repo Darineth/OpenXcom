@@ -169,6 +169,24 @@ struct ArmorEvasionDefaults
 	}
 };
 
+/**
+ * DX: mod-wide defaults for the bleedout mechanic. Loaded from the top-level `bleedoutDefaults:` node.
+ * `deathHealthPercent` sets the death threshold as a percent of max health below zero (50 ⇒ a unit
+ * bleeding out dies at −maxHealth/2); `bufferWounds` is the number of fatal torso wounds added when a
+ * unit first enters bleedout (the drain that keeps it sinking toward the threshold if untreated).
+ */
+struct ArmorBleedoutDefaults
+{
+	int deathHealthPercent = 50;
+	int bufferWounds = 5;
+
+	void load(const YAML::YamlNodeReader& reader)
+	{
+		reader.tryRead("deathHealthPercent", deathHealthPercent);
+		reader.tryRead("bufferWounds", bufferWounds);
+	}
+};
+
 
 /**
  * Represents a specific type of armor.
@@ -276,6 +294,9 @@ private:
 	Sint8 _ignoresMeleeThreat, _createsMeleeThreat;
 	float _overKill, _meleeDodgeBackPenalty;
 	int _evasion = 100; // DX: reaction-fire evasion (percent of the defensive reaction/evasion score)
+	// DX: bleedout eligibility for units in this armor. -1 = auto (legacy rule: an original-player,
+	// non-vehicle geoscape soldier); 0 = never; 1 = always (any unit wearing this armor).
+	int _allowBleedOut = -1;
 	// DX: how sprint/sneak reshape the mover's evasion. -1 in a field = "use the mod-wide default"
 	// (resolved per field in afterLoad).
 	EvasionModeConfig _evasionSprint{ -1, -1 };
@@ -465,6 +486,10 @@ public:
 	const EvasionModeConfig& getEvasionSneak() const { return _evasionSneak; }
 	/// DX: mod-wide defaults for sprint/sneak evasion (reset + loaded at mod load).
 	static ArmorEvasionDefaults evasionDefaults;
+	/// DX: bleedout eligibility for this armor (-1 auto / 0 never / 1 always). See _allowBleedOut.
+	int getAllowBleedOut() const { return _allowBleedOut; }
+	/// DX: mod-wide defaults for the bleedout mechanic (reset + loaded at mod load).
+	static ArmorBleedoutDefaults bleedoutDefaults;
 	/// Gets unit melee dodge chance.
 	int getMeleeDodge(const BattleUnit* unit) const;
 	const RuleStatBonus *getMeleeDodgeRaw() const { return &_meleeDodge; }

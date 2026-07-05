@@ -1653,6 +1653,8 @@ void SavedBattleGame::endTurn()
 			continue;
 		}
 
+		int healthBeforeTurn = bu->getHealth();
+		int woundsBeforeTurn = bu->getFatalWounds();
 		if (bu->getFaction() == _side)
 		{
 			bu->prepareNewTurn();
@@ -1660,6 +1662,14 @@ void SavedBattleGame::endTurn()
 		else if (bu->getOriginalFaction() == _side)
 		{
 			bu->updateUnitStats(false, true);
+		}
+		// DX: warn when one of our units bled HP from fatal wounds at the start of its turn - including a
+		// downed/bleeding-out soldier - so the player is prompted to send a medic before it's too late.
+		if (_side == FACTION_PLAYER && bu->getOriginalFaction() == FACTION_PLAYER && bu->getStatus() != STATUS_DEAD
+			&& woundsBeforeTurn > 0)
+		{
+			int lost = std::min(woundsBeforeTurn, healthBeforeTurn - bu->getHealth());
+			logWoundBleedEvent(bu, lost);
 		}
 		if (bu->getFaction() != FACTION_PLAYER)
 		{
@@ -3621,6 +3631,59 @@ void SavedBattleGame::logUnitEvent(const std::string &msgId, const BattleUnit *u
 }
 
 /**
+ * Logs a knockout/bleedout event (like logUnitEvent) and appends the unit's remaining HP + stun when
+ * that unit is fully known - our own units always, a hostile only once its type is researched - so we
+ * don't leak an unresearched alien's exact condition. HP can be negative while bleeding out.
+ * @param msgId Gendered language key, e.g. "STR_COMBATLOG_STUNNED".
+ * @param unit The unit that was knocked out / entered bleedout.
+ * @param outcome Outcome tone for coloring.
+ */
+void SavedBattleGame::logKnockoutEvent(const std::string &msgId, const BattleUnit *unit, CombatLogOutcome outcome)
+{
+	std::string text = _lang->getString(msgId, unit->getGender()).arg(getCombatLogName(unit));
+	bool fullInfo = unit->getOriginalFaction() != FACTION_HOSTILE;
+	if (!fullInfo)
+	{
+		const SavedGame *geo = getGeoscapeSave();
+		fullInfo = geo && geo->isResearched(unit->getType());
+	}
+	if (fullInfo)
+	{
+		// For a bleeding-out unit show HP over its death threshold (a negative value) rather than max HP,
+		// so the readout reads as a death countdown (e.g. "HP -2/-6"); otherwise show HP over max.
+		int hpDenom = unit->getBleedingOut() ? unit->getDeathHealth() : unit->getBaseStats()->health;
+		text += " " + (std::string)_lang->getString("STR_COMBATLOG_HP_STUN")
+			.arg(unit->getHealth()).arg(hpDenom).arg(unit->getStunlevel());
+		// Fatal wounds too when present - for a bleeding-out unit this is the death countdown (HP lost/turn).
+		int wounds = unit->getFatalWounds();
+		if (wounds > 0)
+		{
+			text += " " + (std::string)_lang->getString("STR_COMBATLOG_WOUNDS", (unsigned)wounds).arg(wounds);
+		}
+	}
+	_combatLog->add(text, outcome);
+}
+
+/**
+ * Logs that one of our own units lost health to its fatal wounds at the start of its turn, reading
+ * "<unit> loses N HP to wounds" (WARNING) - a prompt to reach the soldier with a medic. Only meaningful
+ * for the player's units (called from the turn-start drain), so no research gating is needed.
+ * @param unit The bleeding unit.
+ * @param amount HP lost to wounds this turn.
+ */
+void SavedBattleGame::logWoundBleedEvent(const BattleUnit *unit, int amount)
+{
+	if (!unit || amount <= 0)
+	{
+		return;
+	}
+	// While bleeding out, show HP over the death threshold (a death countdown) rather than max HP.
+	int hpDenom = unit->getBleedingOut() ? unit->getDeathHealth() : unit->getBaseStats()->health;
+	_combatLog->add(_lang->getString("STR_COMBATLOG_WOUND_BLEED")
+		.arg(getCombatLogName(unit)).arg(amount).arg(unit->getHealth()).arg(hpDenom), OUTCOME_WARNING);
+}
+
+/**
  * Logs a kill. When the killer is known it reads "<victim> was killed by <killer>", with both
  * names knowledge-aware (an unknown, unseen or non-existent killer shows as "Unknown").
  * With no killer at all (bleed-out, fire, terrain) it falls back to a plain "<victim> is killed".
@@ -3780,6 +3843,14 @@ void SavedBattleGame::logHitEvent(const BattleUnit *attacker, const BattleUnit *
 	{
 		std::string woundPhrase = _lang->getString("STR_COMBATLOG_WOUNDS", (unsigned)wounds).arg(wounds);
 		suffix += " " + woundPhrase;
+	}
+
+	// DX: for our own units, append their remaining health so the player can track a soldier's condition
+	// at a glance (current can be negative while bleeding out).
+	if (victim->getOriginalFaction() == FACTION_PLAYER)
+	{
+		suffix += " " + (std::string)_lang->getString("STR_COMBATLOG_HP_REMAINING")
+			.arg(victim->getHealth()).arg(victim->getBaseStats()->health);
 	}
 
 	_combatLog->add(_lang->getString("STR_COMBATLOG_HIT")

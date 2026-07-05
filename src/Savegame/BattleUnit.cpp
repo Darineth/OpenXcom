@@ -89,7 +89,7 @@ BattleUnit::BattleUnit(const Mod *mod, Soldier *soldier, int depth, const RuleSt
 	_verticalDirection(0), _status(STATUS_STANDING), _wantsToSurrender(false), _isSurrendering(false), _walkPhase(0), _fallPhase(0), _kneeled(false), _floating(false),
 	_dontReselect(false), _aiMedikitUsed(false), _fire(0), _currentAIState(0), _visible(false),
 	_exp{ }, _expTmp{ },
-	_motionPoints(0), _scannedTurn(-1), _customMarker(0), _kills(0), _hitByFire(false), _hitByAnything(false), _alreadyExploded(false), _deathRegistered(false), _fireMaxHit(0), _smokeMaxHit(0),
+	_motionPoints(0), _scannedTurn(-1), _customMarker(0), _kills(0), _hitByFire(false), _hitByAnything(false), _alreadyExploded(false), _deathRegistered(false), _stunRegistered(false), _bleedingOut(false), _fireMaxHit(0), _smokeMaxHit(0),
 	_moraleRestored(0), _notificationShown(0), _charging(0),
 	_statistics(), _murdererId(0), _mindControllerID(0), _fatalShotSide(SIDE_FRONT), _fatalShotBodyPart(BODYPART_HEAD), _armor(0),
 	_geoscapeSoldier(soldier), _unitRules(0), _rankInt(0), _turretType(-1), _hidingForTurn(false), _floorAbove(false), _respawn(false), _alreadyRespawned(false),
@@ -446,7 +446,7 @@ BattleUnit::BattleUnit(const Mod *mod, const Unit *unit, UnitFaction faction, in
 	_toDirectionTurret(0), _verticalDirection(0), _status(STATUS_STANDING), _wantsToSurrender(false), _isSurrendering(false), _walkPhase(0),
 	_fallPhase(0), _kneeled(false), _floating(false), _dontReselect(false), _aiMedikitUsed(false), _fire(0), _currentAIState(0),
 	_visible(false), _exp{ }, _expTmp{ },
-	_motionPoints(0), _scannedTurn(-1), _customMarker(0), _kills(0), _hitByFire(false), _hitByAnything(false), _alreadyExploded(false), _deathRegistered(false), _fireMaxHit(0), _smokeMaxHit(0),
+	_motionPoints(0), _scannedTurn(-1), _customMarker(0), _kills(0), _hitByFire(false), _hitByAnything(false), _alreadyExploded(false), _deathRegistered(false), _stunRegistered(false), _bleedingOut(false), _fireMaxHit(0), _smokeMaxHit(0),
 	_moraleRestored(0), _notificationShown(0), _charging(0),
 	_statistics(), _murdererId(0), _mindControllerID(0), _fatalShotSide(SIDE_FRONT),
 	_fatalShotBodyPart(BODYPART_HEAD), _armor(armor), _geoscapeSoldier(0),  _unitRules(unit),
@@ -682,6 +682,7 @@ void BattleUnit::load(const YAML::YamlNodeReader& node, const Mod *mod, const Sc
 	reader.tryRead("notificationShown", _notificationShown);
 	reader.tryRead("killedBy", _killedBy);
 	reader.tryRead("kills", _kills);
+	reader.tryRead("bleedingOut", _bleedingOut); // DX: bleedout state
 	reader.tryRead("dontReselect", _dontReselect);
 	reader.tryRead("aiMedikitUsed", _aiMedikitUsed);
 	_charging = 0;
@@ -811,6 +812,8 @@ void BattleUnit::save(YAML::YamlNodeWriter writer, const ScriptGlobal *shared) c
 		writer.write("originalFaction", _originalFaction);
 	if (_kills)
 		writer.write("kills", _kills);
+	if (_bleedingOut)
+		writer.write("bleedingOut", _bleedingOut); // DX: bleedout state
 	if (_faction == FACTION_PLAYER && _dontReselect)
 		writer.write("dontReselect", _dontReselect);
 	if (_aiMedikitUsed)
@@ -2130,7 +2133,7 @@ void BattleUnit::keepFalling()
 	if (_fallPhase == _armor->getDeathFrames())
 	{
 		_fallPhase--;
-		if (_health <= 0)
+		if (_health <= getDeathHealth()) // DX: bleedout units die at a negative threshold, not at 0
 		{
 			_status = STATUS_DEAD;
 		}
@@ -2140,6 +2143,7 @@ void BattleUnit::keepFalling()
 		// recovery from negative HP can re-register a fresh death. STATUS_DEAD is now handled
 		// by checkForCasualties' own status check, so clearing here is safe.
 		_deathRegistered = false;
+		_stunRegistered = false; // DX: allow a fresh knockout to register after a future revive
 	}
 }
 
@@ -2150,7 +2154,7 @@ void BattleUnit::instaFalling()
 {
 	startFalling();
 	_fallPhase =  _armor->getDeathFrames() - 1;
-	if (_health <= 0)
+	if (_health <= getDeathHealth()) // DX: bleedout units die at a negative threshold, not at 0
 	{
 		_status = STATUS_DEAD;
 	}
@@ -2158,8 +2162,9 @@ void BattleUnit::instaFalling()
 	{
 		_status = STATUS_UNCONSCIOUS;
 	}
-	// DX: fall complete, clear the one-shot death guard (see keepFalling).
+	// DX: fall complete, clear the one-shot death/knockout guards (see keepFalling).
 	_deathRegistered = false;
+	_stunRegistered = false;
 }
 
 
@@ -4624,6 +4629,47 @@ void BattleUnit::setFatalWound(int wound, UnitBodyPart part)
 }
 
 /**
+ * DX: whether this unit can enter the bleedout (negative-health, dying-but-savable) state instead of
+ * dying outright at 0 HP. Per-armor `canBleedOut` overrides (1 = always, 0 = never); when unset (-1)
+ * it falls back to the legacy rule: an original-player, non-vehicle geoscape soldier.
+ */
+bool BattleUnit::getCanBleedOut() const
+{
+	int allow = _armor->getAllowBleedOut();
+	if (allow == 0) return false;
+	if (allow == 1) return true;
+	return _originalFaction == FACTION_PLAYER && getGeoscapeSoldier() != nullptr;
+}
+
+/**
+ * DX: the health value at/below which this unit actually dies. 0 for a normal unit (dies at 0 HP);
+ * for a bleedout-capable (or actively bleeding) unit it is negative - `-maxHealth * deathHealthPercent
+ * / 100` - so it survives at negative health down to that threshold before dying.
+ */
+int BattleUnit::getDeathHealth() const
+{
+	if (_bleedingOut || getCanBleedOut())
+	{
+		return -(getBaseStats()->health * Armor::bleedoutDefaults.deathHealthPercent) / 100;
+	}
+	return 0;
+}
+
+/**
+ * DX: enter the bleedout state - mark the unit bleeding and add the buffer torso wounds that keep it
+ * sinking toward getDeathHealth() until treated. Idempotent; callers gate on getCanBleedOut().
+ */
+void BattleUnit::checkStartBleedout()
+{
+	if (_bleedingOut)
+	{
+		return;
+	}
+	_bleedingOut = true;
+	setValueMax(_fatalWounds[BODYPART_TORSO], Armor::bleedoutDefaults.bufferWounds, 0, UnitStats::BaseStatLimit);
+}
+
+/**
  * Heal a fatal wound of the soldier
  * @param part the body part to heal
  * @param woundAmount the amount of fatal wound healed
@@ -4638,10 +4684,11 @@ void BattleUnit::heal(UnitBodyPart part, int woundAmount, int healthAmount)
 
 	setValueMax(_fatalWounds[part], -woundAmount, 0, UnitStats::BaseStatLimit);
 	setValueMax(_health, healthAmount, std::min(_health, 1), getBaseStats()->health); //Hippocratic Oath: First do no harm
-	// DX: if the unit recovered above 0 HP, allow a future death to re-register.
+	// DX: if the unit recovered above 0 HP, allow a future death to re-register and end any bleedout.
 	if (_health > 0)
 	{
 		_deathRegistered = false;
+		_bleedingOut = false;
 	}
 
 }

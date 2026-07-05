@@ -685,6 +685,10 @@ public:
 	CombatLogOutcome combatLogActorOutcome(const BattleUnit *unit) const;
 	/// Logs a one-unit combat event (gendered message + knowledge-aware name).
 	void logUnitEvent(const std::string &msgId, const BattleUnit *unit, CombatLogOutcome outcome);
+	/// Logs a knockout/bleedout event like logUnitEvent, but appends the unit's HP/stun when it's fully known.
+	void logKnockoutEvent(const std::string &msgId, const BattleUnit *unit, CombatLogOutcome outcome);
+	/// Logs that one of our units bled HP from fatal wounds at the start of its turn ("<unit> loses N HP to wounds").
+	void logWoundBleedEvent(const BattleUnit *unit, int amount);
 	/// Logs a kill, naming the killer when one is known (else a plain "is killed").
 	void logKillEvent(const BattleUnit *victim, const BattleUnit *killer);
 	/// Logs a weapon being fired ("<attacker> fires <weapon> (<shot type>)", or a reaction/overwatch variant naming the target), names knowledge-aware.

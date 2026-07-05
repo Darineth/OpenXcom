@@ -692,6 +692,7 @@ BattlescapeState::BattlescapeState() :
 	}
 	_txtVisibleUnitTooltip[VISIBLE_MAX] = "STR_CENTER_ON_WOUNDED_FRIEND";
 	_txtVisibleUnitTooltip[VISIBLE_MAX+1] = "STR_CENTER_ON_DIZZY_FRIEND";
+	_txtVisibleUnitTooltip[VISIBLE_MAX+2] = "STR_CENTER_ON_BLEEDING_FRIEND"; // DX: a soldier bleeding out
 
 	_warning->setColor(_game->getMod()->getInterface("battlescape")->getElement("warning")->color2);
 	_warning->setTextColor(_game->getMod()->getInterface("battlescape")->getElement("warning")->color);
@@ -2371,6 +2372,8 @@ void BattlescapeState::updateSoldierInfo(bool checkFOV)
 	_barHealth->setMax(battleUnit->getBaseStats()->health);
 	_barHealth->setValue(battleUnit->getHealth());
 	_barHealth->setValue2(battleUnit->getStunlevel());
+	// DX: one white tick per fatal wound on the HP bar (0 wounds clears them). Complements the blink.
+	_barHealth->setMarks(battleUnit->getFatalWounds(), 1);
 	_numMorale->setValue(battleUnit->getMorale());
 	_barMorale->setMax(100);
 	_barMorale->setValue(battleUnit->getMorale());
@@ -2433,11 +2436,27 @@ void BattlescapeState::updateSoldierInfo(bool checkFOV)
 	_numberOfEnemiesTotal = j;
 
 	{
-		// go through all wounded units under player's control (incl. unconscious)
+		// DX: bleeding-out soldiers first (the "someone is dying" cue, shown regardless of selection and
+		// clickable to jump to them), with their own tooltip, so they read distinctly from mere wounds.
 		for (auto* bu : *_save->getUnits())
 		{
 			if (j >= VISIBLE_MAX) break; // loop finished
-			if (bu->getFaction() == FACTION_PLAYER && bu->getStatus() != STATUS_DEAD && !bu->isIgnored() && bu->indicatorsAreEnabled())
+			if (bu->getFaction() == FACTION_PLAYER && bu->getStatus() != STATUS_DEAD && !bu->isIgnored()
+				&& bu->indicatorsAreEnabled() && bu->getBleedingOut())
+			{
+				_btnVisibleUnit[j]->setTooltip(_txtVisibleUnitTooltip[VISIBLE_MAX+2]);
+				_btnVisibleUnit[j]->setVisible(true);
+				_numVisibleUnit[j]->setVisible(true);
+				_visibleUnit[j] = bu;
+				++j;
+			}
+		}
+		// go through all other wounded units under player's control (incl. unconscious)
+		for (auto* bu : *_save->getUnits())
+		{
+			if (j >= VISIBLE_MAX) break; // loop finished
+			if (bu->getFaction() == FACTION_PLAYER && bu->getStatus() != STATUS_DEAD && !bu->isIgnored()
+				&& bu->indicatorsAreEnabled() && !bu->getBleedingOut())
 			{
 				if (bu->getFatalWounds() > 0 || (Options::oxceShowBurningAsWounded && bu->getFire() > 0))
 				{
