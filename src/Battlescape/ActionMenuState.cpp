@@ -188,6 +188,14 @@ ActionMenuState::ActionMenuState(BattleAction *action, int x, int y) : _action(a
 		{
 			addItem(BA_AIMEDSHOT,  weapon->getConfigAimed()->name, &id, Options::keyBattleActionItem1);
 		}
+
+		// DX overwatch: set-and-hold reaction fire over a cone. Shown for a non-launcher firearm that
+		// has overwatch enabled (range > 0) and can fire its configured overwatch shot mode.
+		if (!isLauncher && weapon->getOverwatchRange() > 0 &&
+			_action->actor->getActionTUs(weapon->getOverwatchShot(), _action->weapon).Time > 0)
+		{
+			addItem(BA_OVERWATCH, "STR_OVERWATCH", &id, Options::keyBattleActionItem8);
+		}
 	}
 
 	if (weapon->getCostMelee().Time > 0)
@@ -312,6 +320,31 @@ void ActionMenuState::addItem(BattleActionType ba, const std::string &name, int 
 			_actionMenu[*id]->setUnaffordable(tr("STR_ACTION_NO_AMMO"));
 		}
 		else if (_action->actor->getTimeUnits() < reloadCost)
+		{
+			_actionMenu[*id]->setUnaffordable(tr("STR_ACTION_NO_TU"));
+		}
+		(*id)++;
+		return;
+	}
+
+	// DX overwatch: a compact row showing the overwatch shot's TU cost (the minimum to arm it; the
+	// action then converts the actor's remaining TU into that many reaction shots). Red if unaffordable.
+	if (ba == BA_OVERWATCH)
+	{
+		int owTu = _action->actor->getActionTUs(_action->weapon->getRules()->getOverwatchShot(), _action->weapon).Time;
+		s2 = tr("STR_TIME_UNITS_SHORT").arg(owTu);
+		_actionMenu[*id]->setAction(ba, tr(name), s1, s2, owTu);
+		_actionMenu[*id]->setVisible(true);
+		if (key != SDLK_UNKNOWN)
+		{
+			_actionMenu[*id]->setHotkey(hotkeyLabel(key));
+			_actionMenu[*id]->onKeyboardPress((ActionHandler)&ActionMenuState::btnActionMenuItemClick, key);
+		}
+		if (!_action->weapon->getAmmoForAction(_action->weapon->getRules()->getOverwatchShot()))
+		{
+			_actionMenu[*id]->setUnaffordable(tr("STR_ACTION_NO_AMMO"));
+		}
+		else if (_action->actor->getTimeUnits() < owTu)
 		{
 			_actionMenu[*id]->setUnaffordable(tr("STR_ACTION_NO_TU"));
 		}
@@ -528,6 +561,19 @@ void ActionMenuState::handleAction()
 		}
 		else if (_action->type == BA_UNPRIME)
 		{
+			_game->popState();
+		}
+		else if (_action->type == BA_OVERWATCH && _action->actor->isOnOverwatch())
+		{
+			// DX: selecting Overwatch while already on it toggles it off (a free cancel). When not on
+			// overwatch it falls through to the generic targeting setup below (aim the cone).
+			_action->actor->clearOverwatch();
+			SavedBattleGame *save = _game->getSavedGame()->getSavedBattle();
+			if (save->getBattleState())
+			{
+				save->getBattleState()->updateSoldierInfo();
+			}
+			_action->type = BA_NONE;
 			_game->popState();
 		}
 		else if (_action->type == BA_RELOAD)

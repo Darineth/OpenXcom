@@ -2590,6 +2590,36 @@ void TileEngine::calculateFOV(Position position, int eventRadius, const bool upd
  * @param unit The unit to check reaction fire upon.
  * @return True if reaction fire took place.
  */
+/**
+ * DX: tests whether a tile lies inside an overwatch cone. The cone starts at `origin`, points toward
+ * `aimTarget`, and covers tiles whose horizontal distance is within [minRange, maxRange] and whose
+ * bearing is within half of `coneAngleDeg` (the full cone width) of the aim direction, so the cone
+ * widens with range. Height is ignored here - callers add a line-of-fire test for vertical/terrain.
+ * @return True if the tile is within the cone.
+ */
+bool TileEngine::isInOverwatchCone(Position origin, Position aimTarget, Position tile, int minRange, int maxRange, int coneAngleDeg) const
+{
+	int dx = tile.x - origin.x;
+	int dy = tile.y - origin.y;
+	double dist = std::sqrt((double)(dx * dx + dy * dy));
+	if (dist < 0.001 || dist < minRange || dist > maxRange)
+	{
+		return false;
+	}
+	int adx = aimTarget.x - origin.x;
+	int ady = aimTarget.y - origin.y;
+	double aimLen = std::sqrt((double)(adx * adx + ady * ady));
+	if (aimLen < 0.001)
+	{
+		return false; // no aim direction to define the cone
+	}
+	// angle between (origin→tile) and (origin→aim); compare via cosine to avoid an acos per tile. The
+	// field is the FULL cone width, so the bearing must be within half of it.
+	double cosAngle = Clamp((double)(dx * adx + dy * ady) / (dist * aimLen), -1.0, 1.0);
+	double cosThreshold = std::cos(((double)coneAngleDeg / 2.0) * M_PI / 180.0);
+	return cosAngle >= cosThreshold;
+}
+
 bool TileEngine::checkReactionFire(BattleUnit *unit, const BattleAction &originalAction)
 {
 	if (_save->isPreview())
@@ -2660,18 +2690,62 @@ std::vector<TileEngine::ReactionScore> TileEngine::getSpottingUnits(BattleUnit* 
 	{
 		for (auto* bu : *_save->getUnits())
 		{
+			// DX overwatch: an overwatching enemy reacts ONLY when the mover enters its cone - bypassing
+			// the normal reaction-score threshold and the view-sector (spot-to-protect) restriction (the
+			// cone is its declared watch area), but conversely a unit on overwatch does NOT take ordinary
+			// reaction fire at anything outside that cone. Firing needs a reserved free shot or enough TU.
+			bool overwatchTrigger = false;
+			BattleItem* overwatchWeapon = nullptr;
+			if (bu->isOnOverwatch() && bu->getFaction() != _save->getSide())
+			{
+				overwatchWeapon = bu->getOverwatchWeapon();
+				// No weapon (dropped/removed) or no ammo for the overwatch shot cancels overwatch outright -
+				// a unit with nothing to fire can't keep watching (also catches a gun emptied mid-turn).
+				if (!overwatchWeapon || !overwatchWeapon->getAmmoForAction(overwatchWeapon->getRules()->getOverwatchShot()))
+				{
+					bu->clearOverwatch();
+					overwatchWeapon = nullptr;
+				}
+				else
+				{
+					const RuleItem* owRule = overwatchWeapon->getRules();
+					int owShotCost = BattleActionCost(owRule->getOverwatchShot(), bu, overwatchWeapon).Time;
+					bool canFire = bu->hasOverwatchReservedShot() || (owShotCost > 0 && bu->getTimeUnits() >= owShotCost);
+					if (canFire)
+					{
+						overwatchTrigger = isInOverwatchCone(bu->getPosition(), bu->getOverwatchTarget(), unit->getPosition(),
+							owRule->getOverwatchMinRange(), owRule->getOverwatchRange(), owRule->getOverwatchConeAngle());
+					}
+				}
+			}
+			// DX verbose diagnostics: for any unit on overwatch, log why it does or doesn't react - most
+			// importantly whether the mover is in the cone AND within the engine's max view distance (the
+			// general reaction gate that also caps overwatch, so a long-range cone is clipped to it), plus
+			// the offensive score vs the mover's defensive evasion.
+			if (Options::combatLogVerbose && overwatchWeapon && bu->isOnOverwatch() && bu->getFaction() != _save->getSide())
+			{
+				int owDistSq = Position::distance2dSq(unit->getPosition(), bu->getPosition());
+				int owDist = (int)std::ceil(std::sqrt((double)owDistSq));
+				// "seen" = the mover is spotted by the watcher's team (its own LOS or a teammate's) - this,
+				// not raw view distance, is what overwatch now requires alongside line of fire.
+				bool owSeen = unit->getVisible() || visible(bu, tile);
+				int owScore = (int)std::lround((double)bu->getBaseStats()->reactions * overwatchWeapon->getRules()->getOverwatchModifier() / 100.0);
+				_save->logOverwatchEvalEvent(bu, unit, owDist, overwatchTrigger, owSeen, owScore, threshold);
+			}
+
 				// not dead/unconscious
 			if (!bu->isOut() &&
 				// not dying or not about to pass out
 				!bu->isOutThresholdExceed() &&
-				// have any chances for reacting
-				bu->getReactionScore() >= threshold &&
+				// on overwatch: only react inside the cone; otherwise the usual reaction-score threshold
+				(overwatchTrigger || (!bu->isOnOverwatch() && bu->getReactionScore() >= threshold)) &&
 				// not a friend
 				bu->getFaction() != _save->getSide() &&
 				// not a civilian, or a civilian shooting at bad non-ignored guys
 				(bu->getFaction() != FACTION_NEUTRAL || (unit->getFaction() == FACTION_HOSTILE && !unit->isIgnoredByAI())) &&
-				// closer than 20 tiles
-				Position::distance2dSq(unit->getPosition(), bu->getPosition()) <= getMaxViewDistanceSq())
+				// closer than 20 tiles - EXCEPT overwatch, which reaches its own (cone-bounded) range even
+				// beyond normal sight distance, provided a teammate is supplying the sight (checked below)
+				(overwatchTrigger || Position::distance2dSq(unit->getPosition(), bu->getPosition()) <= getMaxViewDistanceSq()))
 			{
 				BattleAction falseAction;
 				falseAction.type = BA_SNAPSHOT;
@@ -2704,19 +2778,46 @@ std::vector<TileEngine::ReactionScore> TileEngine::getSpottingUnits(BattleUnit* 
 					gotHit = bu->wasMeleeAttackedBy(unit->getId());
 				}
 
-					// can actually see the target Tile, or we got hit
-				if ((bu->checkViewSector(unit->getPosition()) || gotHit) &&
-					// can actually target the unit
+					// can actually see the target Tile, or we got hit, or the mover is inside our overwatch cone
+				if ((bu->checkViewSector(unit->getPosition()) || gotHit || overwatchTrigger) &&
+					// can actually target the unit (line of fire is still required to shoot)
 					canTargetUnit(&originVoxel, tile, &targetVoxel, bu, false) &&
-					// can actually see the unit
-					visible(bu, tile))
+					// can actually see the unit - for overwatch, a teammate providing the sight is enough:
+					// the watcher lays covering fire into its cone even without its own line of sight
+					(visible(bu, tile) || (overwatchTrigger && unit->getVisible())))
 				{
 					if (bu->getFaction() == FACTION_PLAYER)
 					{
 						unit->setVisible(true);
 					}
 					bu->addToVisibleUnits(unit);
-					ReactionScore rs = determineReactionType(bu, unit);
+					// DX overwatch: fire the weapon's overwatch mode with the overwatch-modified reaction
+					// score; otherwise pick the reaction shot the normal way.
+					ReactionScore rs;
+					if (overwatchTrigger)
+					{
+						const RuleItem* owRule = overwatchWeapon->getRules();
+						rs.unit = bu;
+						rs.weapon = overwatchWeapon;
+						rs.attackType = owRule->getOverwatchShot();
+						// Overwatch is dedicated watching, so its score uses the FULL reactions stat (not the
+						// TU-depleted getReactionScore - the TU was spent up front on the overwatch itself),
+						// scaled by the weapon's overwatch modifier. This keeps a committed watcher reliable.
+						rs.reactionScore = (double)bu->getBaseStats()->reactions * owRule->getOverwatchModifier() / 100.0;
+						// Decay the score per shot exactly like a normal reaction (cost x reactions / maxTU), so a
+						// watcher self-limits to the shots it can actually afford: the reserved shot fires free, then
+						// extras spend TU. Without this decay the score never drops, so checkReactionFire re-selects
+						// this same unit every iteration and queues fire-states until the count>10 safety cap - far
+						// more shots than the unit's TU/ammo support, which can desync/crash the battle state machine.
+						rs.reactionReduction = 1.0 * BattleActionCost(rs.attackType, bu, overwatchWeapon).Time
+							* bu->getBaseStats()->reactions / bu->getBaseStats()->tu;
+						rs.count = 1;
+						rs.overwatch = true;
+					}
+					else
+					{
+						rs = determineReactionType(bu, unit);
+					}
 					if (rs.attackType != BA_NONE)
 					{
 						int reactionFireThreshold = _save->getBattleGame()->getMod()->getReactionFireThreshold(bu->getFaction());
@@ -2746,13 +2847,31 @@ std::vector<TileEngine::ReactionScore> TileEngine::getSpottingUnits(BattleUnit* 
 							if (accuracy >= reactionFireThreshold && !outOfRange)
 							{
 								spotters.push_back(rs);
+								if (Options::combatLogVerbose && rs.overwatch)
+								{
+									_save->logOverwatchOutcomeEvent(bu, unit, "STR_COMBATLOG_OW_ELIGIBLE");
+								}
+							}
+							else if (Options::combatLogVerbose && rs.overwatch)
+							{
+								_save->logOverwatchOutcomeEvent(bu, unit, "STR_COMBATLOG_OW_LOW_ACC");
 							}
 						}
 						else
 						{
 							spotters.push_back(rs);
+							if (Options::combatLogVerbose && rs.overwatch)
+							{
+								_save->logOverwatchOutcomeEvent(bu, unit, "STR_COMBATLOG_OW_ELIGIBLE");
+							}
 						}
 					}
+				}
+				else if (Options::combatLogVerbose && overwatchTrigger)
+				{
+					// In cone and within view distance, but the shot itself can't be taken (no line of
+					// fire, blocked LOS, or out of the firer's view sector without a hit to justify turning).
+					_save->logOverwatchOutcomeEvent(bu, unit, "STR_COMBATLOG_OW_NO_LOF");
 				}
 			}
 		}
@@ -2924,6 +3043,7 @@ bool TileEngine::tryReaction(ReactionScore *reaction, BattleUnit *target, const 
 	action.weapon = reaction->weapon;
 	action.type = reaction->attackType;
 	action.reaction = true; // tag for combat log wording ("took a reaction shot/swing")
+	action.overwatch = reaction->overwatch; // DX: overwatch shots log as "overwatch" instead of "reaction"
 
 	if (!_save->canUseWeapon(action.weapon, action.actor, false, action.type))
 	{
@@ -2932,6 +3052,13 @@ bool TileEngine::tryReaction(ReactionScore *reaction, BattleUnit *target, const 
 
 	action.target = target->getPosition();
 	action.updateTU();
+	// DX overwatch: the reserved (first) shot was pre-paid on arming, so it fires free here; any further
+	// overwatch shots simply spend the unit's TU like a normal reaction. Ammo is consumed either way.
+	bool overwatchReserved = reaction->overwatch && reaction->unit->hasOverwatchReservedShot();
+	if (overwatchReserved)
+	{
+		action.clearTU();
+	}
 
 	auto* unit = action.actor;
 	auto* ammo = action.weapon->getAmmoForAction(action.type);
@@ -2981,6 +3108,14 @@ bool TileEngine::tryReaction(ReactionScore *reaction, BattleUnit *target, const 
 			if (RNG::percent(arg.getFirst()))
 			{
 				_save->appendToHitLog(HITLOG_REACTION_FIRE, unit->getFaction());
+
+				// DX: the reserved free shot is used once; overwatch itself persists (TU-based from here).
+				if (overwatchReserved)
+				{
+					unit->consumeOverwatchReservedShot();
+				}
+				// DX: the fire itself is logged by the shared fire path (ProjectileFlyBState/MeleeAttackBState),
+				// which renders an "overwatch" variant when action.overwatch is set - no separate line here.
 
 				if (action.type == BA_HIT)
 				{

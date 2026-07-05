@@ -11,6 +11,16 @@ en-US:
   STR_COMBATLOG_KILLED_FEMALE: "{0} is killed"
   STR_COMBATLOG_KILLED_BY_MALE: "{0} was killed by {1}"
   STR_COMBATLOG_KILLED_BY_FEMALE: "{0} was killed by {1}"
+  STR_COMBATLOG_OVERWATCH_SET_MALE: "{0} is on overwatch"
+  STR_COMBATLOG_OVERWATCH_SET_FEMALE: "{0} is on overwatch"
+  # Verbose-only overwatch reaction diagnostics (shown when the hidden combatLogVerbose option is on).
+  STR_COMBATLOG_OVERWATCH_EVAL: "{0} overwatch vs {1}: dist {2}, cone {3}, seen {4}, score {5} vs evade {6}"
+  STR_COMBATLOG_OVERWATCH_RESULT: "{0} overwatch on {1}: {2}"
+  STR_COMBATLOG_OW_YES: "yes"
+  STR_COMBATLOG_OW_NO: "no"
+  STR_COMBATLOG_OW_ELIGIBLE: "eligible to fire"
+  STR_COMBATLOG_OW_NO_LOF: "no line of fire/sight"
+  STR_COMBATLOG_OW_LOW_ACC: "accuracy below reaction threshold"
   STR_COMBATLOG_ARMOR_DAMAGE: "{0}'s {1} armor takes {2} damage"
   STR_COMBATLOG_DAMAGE_CALC: "{0}'s {1}: {2} damage vs {3} armor, {4} through ({5} to health)"
   STR_COMBATLOG_ARMOR_SIDE_FRONT: "front"
@@ -22,12 +32,14 @@ en-US:
   STR_COMBATLOG_STUNNED_MALE: "{0} is knocked out"
   STR_COMBATLOG_STUNNED_FEMALE: "{0} is knocked out"
   STR_COMBATLOG_FIRED: "{0} fires {1}"
-  STR_COMBATLOG_FIRED_REACTION: "{0} took a reaction shot with {1}"
+  STR_COMBATLOG_FIRED_REACTION: "{0} took a reaction shot at {2} with {1}"
+  STR_COMBATLOG_FIRED_OVERWATCH: "{0} took an overwatch shot at {2} with {1}"
   STR_COMBATLOG_SHOT_TYPE: "({0})"
   STR_COMBATLOG_OUT_OF_AMMO: "{0}'s {1} is out of ammo"
   STR_COMBATLOG_THROWS: "{0} throws {1}"
   STR_COMBATLOG_MELEE: "{0} strikes with {1}"
-  STR_COMBATLOG_MELEE_REACTION: "{0} took a reaction swing with {1}"
+  STR_COMBATLOG_MELEE_REACTION: "{0} took a reaction swing at {2} with {1}"
+  STR_COMBATLOG_MELEE_OVERWATCH: "{0} took an overwatch swing at {2} with {1}"
 #TileEngine.cpp
   STR_COMBATLOG_HIT: "{0} hit {1} {2}"
   STR_COMBATLOG_DAMAGE_EXACT: "for {0} damage"
@@ -61,8 +73,11 @@ en-US:
 #Options.cpp
   STR_ACTION_ITEM_6: "Item Action 6 (Burst)"
   STR_ACTION_ITEM_7: "Item Action 7 (Dual-Fire)"
+  STR_ACTION_ITEM_8: "Item Action 8 (Overwatch)"
 #ActionMenuState.cpp - DX dual-fire action label
   STR_DUAL_FIRE: "Dual Fire"
+#ActionMenuState.cpp - DX overwatch action label
+  STR_OVERWATCH: "Overwatch"
 #=================== DX Utility Equipment Slots ===================
 #Options.cpp - battlescape control to use the item in the unit's INV_UTILITY slot
   STR_USE_UTILITY_ITEM: "Use Utility Item"

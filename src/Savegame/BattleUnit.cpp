@@ -699,6 +699,11 @@ void BattleUnit::load(const YAML::YamlNodeReader& node, const Mod *mod, const Sc
 		_preferredHandForReactions = activeHandFromYaml(ph.readVal<std::string>());
 	reader.tryRead("reactionsDisabledForLeftHand", _reactionsDisabledForLeftHand);
 	reader.tryRead("reactionsDisabledForRightHand", _reactionsDisabledForRightHand);
+	// DX overwatch state (the weapon is re-resolved lazily from the saved item id).
+	reader.tryRead("overwatch", _overwatch);
+	reader.tryRead("overwatchReservedShot", _overwatchReservedShot);
+	reader.tryRead("overwatchTarget", _overwatchTarget);
+	reader.tryRead("overwatchWeaponId", _overwatchWeaponId);
 	if (reader["tempUnitStatistics"])
 		_statistics->load(reader["tempUnitStatistics"]);
 	reader.tryRead("murdererId", _murdererId);
@@ -830,6 +835,14 @@ void BattleUnit::save(YAML::YamlNodeWriter writer, const ScriptGlobal *shared) c
 		writer.write("reactionsDisabledForLeftHand", _reactionsDisabledForLeftHand);
 	if (_reactionsDisabledForRightHand)
 		writer.write("reactionsDisabledForRightHand", _reactionsDisabledForRightHand);
+	// DX overwatch state.
+	if (_overwatch)
+	{
+		writer.write("overwatch", _overwatch);
+		writer.write("overwatchReservedShot", _overwatchReservedShot);
+		writer.write("overwatchTarget", _overwatchTarget);
+		writer.write("overwatchWeaponId", _overwatchWeaponId);
+	}
 	_statistics->save(writer["tempUnitStatistics"]);
 	if (_murdererId)
 		writer.write("murdererId", _murdererId);
@@ -2839,6 +2852,60 @@ double BattleUnit::getEvasionScore(BattleActionMove bam) const
 }
 
 /**
+ * DX: puts this unit on overwatch (set-and-hold reaction fire) with a weapon and an aim tile that sets
+ * the cone direction. `reserved` grants a single free shot for the upcoming enemy turn; further shots
+ * (and shots on later turns) spend the unit's TU.
+ */
+void BattleUnit::setOverwatch(BattleItem *weapon, Position target, bool reserved)
+{
+	_overwatch = true;
+	_overwatchWeapon = weapon;
+	_overwatchWeaponId = weapon ? weapon->getId() : -1;
+	_overwatchTarget = target;
+	_overwatchReservedShot = reserved;
+}
+
+/**
+ * DX: clears the unit's overwatch state.
+ */
+void BattleUnit::clearOverwatch()
+{
+	_overwatch = false;
+	_overwatchReservedShot = false;
+	_overwatchWeapon = nullptr;
+	_overwatchWeaponId = -1;
+}
+
+/**
+ * DX: the weapon to fire the overwatch shot with. Resolved lazily from the saved item id, since item
+ * pointers don't survive save/load but ids do.
+ */
+BattleItem *BattleUnit::getOverwatchWeapon()
+{
+	if (!_overwatch)
+	{
+		return nullptr;
+	}
+	// Always resolve from the saved item id against the CURRENT inventory rather than trusting a cached
+	// pointer. Overwatch persists across turns, so between arming and firing the weapon may have left the
+	// unit (dropped, unloaded to the ground, or otherwise removed/destroyed); a stale pointer would dangle
+	// and crash on the next dereference. Returning null when it's gone is safe - callers guard on it.
+	_overwatchWeapon = nullptr;
+	if (_overwatchWeaponId >= 0)
+	{
+		for (auto* bi : _inventory)
+		{
+			if (bi->getId() == _overwatchWeaponId)
+			{
+				_overwatchWeapon = bi;
+				break;
+			}
+		}
+	}
+	return _overwatchWeapon;
+}
+
+/**
  * Helper function preparing Time Units recovery at beginning of turn.
  * @param tu New time units for this turn.
  */
@@ -2985,6 +3052,11 @@ void BattleUnit::prepareNewTurn(bool fullProcess)
 	_dontReselect = false;
 	_aiMedikitUsed = false;
 	_motionPoints = 0;
+
+	// DX: overwatch persists across turns, but the reserved (free) first shot only covers the first
+	// enemy turn - it expires at the owner's next turn, after which shots simply spend TU and the mode
+	// can be cancelled freely.
+	clearOverwatchReservation();
 
 	if (!isOut())
 	{

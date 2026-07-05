@@ -61,6 +61,8 @@ UnitWalkBState::~UnitWalkBState()
 void UnitWalkBState::init()
 {
 	_unit = _action.actor;
+	// DX: moving is a commanded action, so it cancels any overwatch the unit was holding.
+	_unit->clearOverwatch();
 	_numUnitsSpotted = _unit->getUnitsSpottedThisTurn().size();
 	setNormalWalkSpeed();
 	_pf = _parent->getPathfinding();

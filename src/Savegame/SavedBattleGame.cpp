@@ -3650,14 +3650,23 @@ void SavedBattleGame::logKillEvent(const BattleUnit *victim, const BattleUnit *k
  * @param attacker The firing unit.
  * @param weapon The weapon used.
  */
-void SavedBattleGame::logFireEvent(const BattleUnit *attacker, const BattleItem *weapon, bool reaction, const std::string &shotType)
+void SavedBattleGame::logFireEvent(const BattleUnit *attacker, const BattleItem *weapon, bool reaction, const std::string &shotType, bool overwatch, const BattleUnit *target)
 {
 	if (!attacker || !weapon)
 	{
 		return;
 	}
-	std::string text = _lang->getString(reaction ? "STR_COMBATLOG_FIRED_REACTION" : "STR_COMBATLOG_FIRED")
+	// An overwatch shot is a reaction shot that reads "overwatch" instead of "reaction".
+	const char *key = overwatch ? "STR_COMBATLOG_FIRED_OVERWATCH" : (reaction ? "STR_COMBATLOG_FIRED_REACTION" : "STR_COMBATLOG_FIRED");
+	auto line = _lang->getString(key)
 		.arg(getCombatLogName(attacker)).arg(getCombatLogWeaponName(attacker, weapon));
+	// Reaction/overwatch variants also name the target ({2}), research-gated exactly like the hovered-unit
+	// name and every other combat-log unit name (own units plain; hostiles reveal only as far as research).
+	if (reaction || overwatch)
+	{
+		line = line.arg(getCombatLogName(target));
+	}
+	std::string text = line;
 	// Append the shot mode (Snap/Aimed/Auto/Launch, weapon-customizable) as a parenthetical.
 	if (!shotType.empty())
 	{
@@ -3689,14 +3698,22 @@ void SavedBattleGame::logThrowEvent(const BattleUnit *attacker, const BattleItem
  * @param attacker The attacking unit.
  * @param weapon The melee weapon used.
  */
-void SavedBattleGame::logMeleeEvent(const BattleUnit *attacker, const BattleItem *weapon, bool reaction)
+void SavedBattleGame::logMeleeEvent(const BattleUnit *attacker, const BattleItem *weapon, bool reaction, bool overwatch, const BattleUnit *target)
 {
 	if (!attacker || !weapon)
 	{
 		return;
 	}
-	_combatLog->add(_lang->getString(reaction ? "STR_COMBATLOG_MELEE_REACTION" : "STR_COMBATLOG_MELEE")
-		.arg(getCombatLogName(attacker)).arg(getCombatLogWeaponName(attacker, weapon)), combatLogActorOutcome(attacker));
+	// An overwatch swing is a reaction swing that reads "overwatch" instead of "reaction".
+	const char *key = overwatch ? "STR_COMBATLOG_MELEE_OVERWATCH" : (reaction ? "STR_COMBATLOG_MELEE_REACTION" : "STR_COMBATLOG_MELEE");
+	auto line = _lang->getString(key)
+		.arg(getCombatLogName(attacker)).arg(getCombatLogWeaponName(attacker, weapon));
+	// Reaction/overwatch variants also name the target ({2}), research-gated like every other unit name.
+	if (reaction || overwatch)
+	{
+		line = line.arg(getCombatLogName(target));
+	}
+	_combatLog->add(line, combatLogActorOutcome(attacker));
 }
 
 /**
@@ -3881,6 +3898,54 @@ void SavedBattleGame::logOutOfAmmoEvent(const BattleUnit *unit, const BattleItem
 	}
 	_combatLog->add(_lang->getString("STR_COMBATLOG_OUT_OF_AMMO")
 		.arg(getCombatLogName(unit)).arg(getCombatLogWeaponName(unit, weapon)), OUTCOME_WARNING);
+}
+
+/**
+ * Logs an overwatch reaction-fire evaluation, reading "<watcher> overwatch vs <mover>: dist <d>, cone
+ * <yes/no>, seen <yes/no>, score <s> vs evade <e>". Verbose-only diagnostic (gated by
+ * Options::combatLogVerbose at the call site) meant to expose why an overwatch does or doesn't trigger -
+ * notably whether the mover is inside the cone and whether the watcher's team is spotting it (overwatch
+ * fires up to its own cone range on shared sight, not just personal LOS), plus the offensive score vs
+ * the mover's defensive evasion. Tone NEUTRAL.
+ * @param watcher The unit on overwatch.
+ * @param mover The moving unit being evaluated.
+ * @param distance Tile distance between them.
+ * @param inCone Whether the mover is inside the cone AND the watcher can afford a shot.
+ * @param seen Whether the mover is spotted by the watcher's team (own LOS or a teammate's).
+ * @param score The watcher's overwatch reaction score.
+ * @param evade The mover's move-adjusted evasion score (must be <= score for a reaction).
+ */
+void SavedBattleGame::logOverwatchEvalEvent(const BattleUnit *watcher, const BattleUnit *mover, int distance, bool inCone, bool seen, int score, int evade)
+{
+	if (!watcher || !mover)
+	{
+		return;
+	}
+	std::string yes = _lang->getString("STR_COMBATLOG_OW_YES");
+	std::string no = _lang->getString("STR_COMBATLOG_OW_NO");
+	_combatLog->add(_lang->getString("STR_COMBATLOG_OVERWATCH_EVAL")
+		.arg(getCombatLogName(watcher)).arg(getCombatLogName(mover)).arg(distance)
+		.arg(inCone ? yes : no).arg(seen ? yes : no).arg(score).arg(evade), OUTCOME_NEUTRAL);
+}
+
+/**
+ * Logs the terminal outcome of an overwatch check, reading "<watcher> overwatch on <mover>: <reason>".
+ * Verbose-only diagnostic (gated by Options::combatLogVerbose at the call site). resultKey is a language
+ * key resolving to the reason (eligible to fire / no line of fire or sight / accuracy below threshold).
+ * Tone NEUTRAL.
+ * @param watcher The unit on overwatch.
+ * @param mover The moving unit being evaluated.
+ * @param resultKey Language key for the outcome reason.
+ */
+void SavedBattleGame::logOverwatchOutcomeEvent(const BattleUnit *watcher, const BattleUnit *mover, const std::string &resultKey)
+{
+	if (!watcher || !mover)
+	{
+		return;
+	}
+	std::string reason = _lang->getString(resultKey);
+	_combatLog->add(_lang->getString("STR_COMBATLOG_OVERWATCH_RESULT")
+		.arg(getCombatLogName(watcher)).arg(getCombatLogName(mover)).arg(reason), OUTCOME_NEUTRAL);
 }
 
 /**

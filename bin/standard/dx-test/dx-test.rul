@@ -31,6 +31,19 @@ evasionDefaults:
   sneak:  { statPercent: 90, tuPenaltyPercent: 0 }
 
 # =====================================================================
+#  DX: mod-wide default overwatch config. Because overwatchRange > 0, this
+#  ENABLES overwatch on every weapon that doesn't set its own overwatch*
+#  fields (range 0 = off is the engine default). The rifle and heavy sniper
+#  below override these with their own per-weapon tuning.
+# =====================================================================
+overwatchDefaults:
+  overwatchMinRange:  5      # blind within 5 tiles
+  overwatchRange:     20     # watch out to 20 tiles
+  overwatchConeAngle: 30     # 30-degree cone (full width)
+  overwatchShot:      aimed  # reserve aimed shots
+  overwatchModifier:  80     # 80% of the offensive reaction score
+
+# =====================================================================
 #  DX: editable base damage types (loadEarlyRules pre-pass)
 #  Give every PHYSICAL damage type the same armor-wear profile so the
 #  Armor Degradation feature can be exercised across weapon types at
@@ -112,6 +125,11 @@ items:
 # =====================================================================
   - type: STR_PISTOL
     baseAccuracy: 55        # sloppy sidearm: short-range weapon, loose pattern
+    # DX overwatch: a wide, mid-range sweep - a sidearm covering a broad arc close/mid, snap shots.
+    overwatchRange: 12       # mid range
+    overwatchMinRange: 0     # covers right up close
+    overwatchConeAngle: 100  # very wide (full width)
+    overwatchShot: snap
   - type: STR_RIFLE
     baseAccuracy: 85        # precision rifle: tightest of the conventional set
     # Multi-shot testing: auto becomes a long 6-round spray and costs more (45TU, up
@@ -123,6 +141,14 @@ items:
     tuBurst: 35
     accuracyBurst: 45
     burstShots: 3
+    # DX overwatch test: a fairly narrow, long watch cone with a small near dead-zone. Select
+    # "Overwatch" from the rifle's action menu, click a tile to aim the cone (yellow tile markers show
+    # the watched area), and enemies entering it on their turn draw a reserved snap shot.
+    overwatchRange: 18       # watch out to 18 tiles
+    overwatchMinRange: 2     # ignore the 2-tile near dead zone
+    overwatchConeAngle: 50   # 50-degree cone (full width)
+    overwatchShot: burst     # reserve burst shots
+    overwatchModifier: 110   # +10% offensive reaction score on the overwatch shot
   - type: STR_AUTO_CANNON
     baseAccuracy: 45        # spray support gun: widest cone of the set
   - type: STR_HEAVY_CANNON  # reframed as a heavy sniper (renamed in extraStrings below)
@@ -132,6 +158,14 @@ items:
     tuSnap: 45              # ...and expensive: a genuine last resort
     accuracyAimed: 150      # the star: a big deliberate-aim bonus that tightens the SOLDIER
     tuAimed: 80             #   cone hard, so a skilled sniper reaches far out
+    # DX overwatch test - sniper "watch a lane": a long, narrow cone with a big near dead zone, firing
+    # the precise AIMED shot. Contrast with the rifle's short/wide burst overwatch. The aimed shot is
+    # expensive (80 TU), so after the free reserved shot it typically manages just one more per turn.
+    overwatchRange: 40       # watches all the way downrange
+    overwatchMinRange: 10    # blind up close - it only covers the far lane
+    overwatchConeAngle: 20   # very narrow 20-degree cone (full width)
+    overwatchShot: aimed     # the sniper's deliberate aimed shot
+    overwatchModifier: 120   # +20% - a set, watching sniper is quick to squeeze
   - type: STR_ROCKET_LAUNCHER
     baseAccuracy: 70        # aimed launcher: near reference precision
 
@@ -174,6 +208,11 @@ items:
     invWidth: 1
     invHeight: 3
     baseAccuracy: 65        # decent smoothbore: between heavy cannon (60) and launcher (70)
+    # DX overwatch: a short-range wide watch - covers a doorway/room, snap shots.
+    overwatchRange: 12        # short range
+    overwatchMinRange: 0     # covers right up close
+    overwatchConeAngle: 70   # wide
+    overwatchShot: aimed
   - type: STR_SHOTGUN_BUCKSHOT
     size: 0.1
     costBuy: 250
@@ -215,7 +254,7 @@ items:
 #
 #    STR_NONE_UC          -> LIGHT  (hands + ground + 3 typed test slots; no belt)
 #    STR_PERSONAL_ARMOR_UC-> RIG    (no backpack; adds a "satchel" slot)
-#    STR_POWER_SUIT_UC    -> CLONE  (refNode-inherits LIGHT; renders == LIGHT)
+#    STR_POWER_SUIT_UC    -> POWER  (LIGHT test slots, but a full backpack instead of the medkit slot)
 #    STR_FLYING_SUIT_UC   -> ONEHAND (locked "integrated weapon" hand + belt; no left hand)
 #
 #  What to check:
@@ -388,11 +427,10 @@ inventoryLayouts:
   - id: STR_DX_LAYOUT_RIG
     invs: [STR_RIGHT_HAND, STR_LEFT_HAND, STR_BELT, STR_RIGHT_SHOULDER, STR_LEFT_SHOULDER, STR_GROUND, STR_DX_SATCHEL]
 
-  - id: STR_DX_LAYOUT_CLONE
-    # refNode reuse: inherit LIGHT's invs list verbatim (no own `invs:`), so this renders
-    # identical to LIGHT. Demonstrates the standard refNode mechanic.
-    refNode:
-      invs: *dxLightInvs
+  - id: STR_DX_LAYOUT_POWER
+    # Power-armor loadout: the LIGHT test slots but with the full standard backpack in place of the
+    # medkit slot (hands + ground + ammo pouch + holster + backpack).
+    invs: [STR_RIGHT_HAND, STR_LEFT_HAND, STR_GROUND, STR_DX_AMMO_POUCH, STR_DX_HOLSTER, STR_BACK_PACK]
 
   - id: STR_DX_LAYOUT_ONEHAND
     # The unit's only hand is a locked "integrated weapon" mount (firearms only, can't be removed
@@ -413,7 +451,7 @@ armors:
     # and takes less TU penalty while sprinting than the mod-wide default {50, 50}.
     evasionSprint: { statPercent: 75, tuPenaltyPercent: 25 }
   - type: STR_POWER_SUIT_UC
-    inventoryLayout: STR_DX_LAYOUT_CLONE
+    inventoryLayout: STR_DX_LAYOUT_POWER
   - type: STR_FLYING_SUIT_UC
     inventoryLayout: STR_DX_LAYOUT_ONEHAND
 
@@ -435,7 +473,7 @@ extraStrings:
 #  User options forced on while this test mod is active
 # =====================================================================
 fixedUserOptions:
-  combatLogVerbose: true          # DX: extra detail in the combat log (hidden option)
-  battleRealisticThrowing: true   # DX: physical launch-error throw accuracy (short/long along the throw line)
+  combatLogVerbose: false           # DX: extra detail in the combat log (hidden option)
+  battleRealisticThrowing: true     # DX: physical launch-error throw accuracy (short/long along the throw line)
   battleWeightBasedReloadCost: true # DX: reload/unload timed by magazine weight (weight*2 + reduced base)
 

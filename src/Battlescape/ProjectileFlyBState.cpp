@@ -157,6 +157,12 @@ void ProjectileFlyBState::init()
 		return;
 	}
 
+	// DX: a commanded (non-reaction) shot cancels the unit's overwatch; an overwatch/reaction shot does not.
+	if (!_action.reaction && _action.actor && _action.actor->isOnOverwatch())
+	{
+		_action.actor->clearOverwatch();
+	}
+
 	if (!_parent->getSave()->getTile(_action.target)) // invalid target position
 	{
 		_parent->popState();
@@ -639,7 +645,14 @@ bool ProjectileFlyBState::createNewProjectile()
 			case BA_LAUNCH:    shotType = "STR_LAUNCH_MISSILE"; break;
 			default: break;
 			}
-			_parent->getSave()->logFireEvent(_action.actor, _action.weapon, _action.reaction, shotType);
+			// For a reaction/overwatch shot, name the targeted unit (research-gated in the log helper).
+			const BattleUnit *fireTarget = nullptr;
+			if (_action.reaction)
+			{
+				Tile *targetTile = _parent->getSave()->getTile(_action.target);
+				fireTarget = targetTile ? targetTile->getUnit() : nullptr;
+			}
+			_parent->getSave()->logFireEvent(_action.actor, _action.weapon, _action.reaction, shotType, _action.overwatch, fireTarget);
 		}
 	}
 
@@ -647,6 +660,11 @@ bool ProjectileFlyBState::createNewProjectile()
 	if (_action.type != BA_THROW && _action.type != BA_LAUNCH && !_action.weapon->getAmmoForAction(_action.type))
 	{
 		_parent->getSave()->logOutOfAmmoEvent(_action.actor, _action.weapon);
+		// DX: an overwatch shot that empties the weapon cancels overwatch - no rounds left to watch with.
+		if (_action.overwatch && _action.actor && _action.actor->isOnOverwatch())
+		{
+			_action.actor->clearOverwatch();
+		}
 	}
 
 	// remember this projectile's own impact type, so overlapping shots each resolve correctly

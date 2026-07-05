@@ -687,12 +687,12 @@ public:
 	void logUnitEvent(const std::string &msgId, const BattleUnit *unit, CombatLogOutcome outcome);
 	/// Logs a kill, naming the killer when one is known (else a plain "is killed").
 	void logKillEvent(const BattleUnit *victim, const BattleUnit *killer);
-	/// Logs a weapon being fired ("<attacker> fires <weapon> (<shot type>)", or a reaction variant), names knowledge-aware.
-	void logFireEvent(const BattleUnit *attacker, const BattleItem *weapon, bool reaction = false, const std::string &shotType = "");
+	/// Logs a weapon being fired ("<attacker> fires <weapon> (<shot type>)", or a reaction/overwatch variant naming the target), names knowledge-aware.
+	void logFireEvent(const BattleUnit *attacker, const BattleItem *weapon, bool reaction = false, const std::string &shotType = "", bool overwatch = false, const BattleUnit *target = nullptr);
 	/// Logs an item being thrown ("<attacker> throws <item>"), names knowledge-aware.
 	void logThrowEvent(const BattleUnit *attacker, const BattleItem *item);
-	/// Logs a melee attack ("<attacker> strikes with <weapon>", or a reaction variant), names knowledge-aware.
-	void logMeleeEvent(const BattleUnit *attacker, const BattleItem *weapon, bool reaction = false);
+	/// Logs a melee attack ("<attacker> strikes with <weapon>", or a reaction/overwatch variant naming the target), names knowledge-aware.
+	void logMeleeEvent(const BattleUnit *attacker, const BattleItem *weapon, bool reaction = false, bool overwatch = false, const BattleUnit *target = nullptr);
 	/// Logs a damaging hit on a unit, with research-gated damage/wound detail.
 	void logHitEvent(const BattleUnit *attacker, const BattleUnit *victim, int damage, int wounds);
 	/// Logs armor on a unit's side absorbing damage (verbose only).
@@ -703,6 +703,10 @@ public:
 	void logPanicEvent(const BattleUnit *unit, UnitStatus status);
 	/// Logs a weapon running dry on the shot just fired ("<unit>'s <weapon> is out of ammo").
 	void logOutOfAmmoEvent(const BattleUnit *unit, const BattleItem *weapon);
+	/// Logs an overwatch reaction-fire evaluation summary (verbose only): distance, in-cone, seen-by-team, score vs evade.
+	void logOverwatchEvalEvent(const BattleUnit *watcher, const BattleUnit *mover, int distance, bool inCone, bool seen, int score, int evade);
+	/// Logs the terminal outcome of an overwatch check (verbose only): resultKey resolves to a localized reason.
+	void logOverwatchOutcomeEvent(const BattleUnit *watcher, const BattleUnit *mover, const std::string &resultKey);
 	/// Reset all the unit hit state flags.
 	void resetUnitHitStates();
 };

@@ -146,6 +146,9 @@ private:
 	void clearTargetingPreview();
 	/// Draws the live aiming trajectory preview (tracer dots + impact marker).
 	void drawTargetingPreview(Surface *surface);
+	/// DX: draws markers over the tiles inside the active overwatch cone (while aiming, or when a unit
+	/// already on overwatch is selected).
+	void drawOverwatchCone(Surface *surface);
 	void drawTerrain(Surface *surface);
 	int getTerrainLevel(const Position& pos, int size) const;
 	int getWallShade(TilePart part, Tile* tileFrot);

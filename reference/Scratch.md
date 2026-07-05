@@ -1,7 +1,15 @@
 # TODO
+- Don't allow overwatch on no-ammo.
+- "Turn #" display appears multiple times sometimes in the combat log?  I think this is player vs enemy turns, let's show the faction the turn belongs to.
+- Switching armor does not update the inventory layout grid
+
+- Overwatch range vs. weapon's (attacktype)Range?  What does that field do in DX anyway?
+- Overwatch+dual fire?
 - Fix offscreen/pre-battle events appearing in combat log
 - Inventory grid and item rendering happens in clearly separate frames, and can sometimes get stuck with the wrong inventory layout showing?
 - Need to re-document OXCE's features.  Extended.txt is incomplete (e.g. extendedItemReloadCost is not documented).
+- Enable UFOPedia for items and weapons that don't have a configured page, so you can actually view stats for them.
+- Wound indicator on hp bar
 
 # TFTD
 - Unit stats colors are wrong in inventory

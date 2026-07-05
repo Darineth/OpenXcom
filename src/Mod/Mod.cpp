@@ -279,6 +279,7 @@ void Mod::resetGlobalStatics()
 
 	Armor::moveCostDefaults = ArmorMoveCostDefaults{}; // DX: reset mod-wide move-cost defaults to stock
 	Armor::evasionDefaults = ArmorEvasionDefaults{};   // DX: reset mod-wide sprint/sneak evasion defaults
+	RuleItem::overwatchDefaults = OverwatchDefaults{}; // DX: reset mod-wide overwatch defaults
 
 	DIFFICULTY_COEFFICIENT[0] = 0;
 	DIFFICULTY_COEFFICIENT[1] = 1;
@@ -3654,6 +3655,11 @@ void Mod::loadFile(const FileMap::FileRecord &filerec, ModScript &parsers)
 	if (const auto& evasionDefaults = reader["evasionDefaults"])
 	{
 		Armor::evasionDefaults.load(evasionDefaults);
+	}
+	// DX: mod-wide default overwatch parameters (weapons override via their own overwatch* fields).
+	if (const auto& overwatchDefaults = reader["overwatchDefaults"])
+	{
+		RuleItem::overwatchDefaults.load(overwatchDefaults);
 	}
 
 	// refresh _psiRequirements for psiStrengthEval

@@ -972,3 +972,53 @@ times*. Mod-configurable **globally and per-armor**.
 - **Per-armor:** `Armor.evasionSprint` / `Armor.evasionSneak` sub-maps override the global **per field**.
 - Non-move reactions (shooting, turning) report `BAM_NORMAL` ⇒ plain score; `{100,100}` everywhere ⇒
   reaction fire byte-for-byte unchanged (reproduces `reactions × TU/maxTU`).
+
+## Overwatch (set-and-hold reaction fire, cone-based)
+
+A deliberate held-fire state a unit enters on its own turn to react during the enemy turn — DX's take
+on the legacy radius overwatch, rebuilt around a **directional cone**.
+*(design: [plans/Feature-Overwatch.md](plans/Feature-Overwatch.md))*
+
+- **Cone, not radius.** Pick **Overwatch** from a firearm's action menu (hotkey `keyBattleActionItem8`,
+  default **O**), then click a tile to aim; the watched area is a cone from the unit toward that tile,
+  defined per-weapon by `overwatchConeAngle` (full cone width, widens with range), `overwatchRange`, and an
+  optional `overwatchMinRange` near dead zone. `overwatchShot` picks the fire mode (snap/burst/auto/
+  aimed) and `overwatchModifier` scales the offensive reaction score.
+- **Confirm the target like a shot.** Because arming spends TU and locks a facing, targeting takes a
+  confirmation click: the first click on a tile locks the aim (the cone freezes there and a target
+  reticle appears), and a second click on that same tile arms overwatch. Right-clicking backs out of
+  the pending target without leaving overwatch mode.
+- **Reaches its full cone range on shared sight.** Ordinary reaction fire is capped at the engine's
+  max view distance (~20 tiles) and needs the reactor's own line of sight. Overwatch is exempt: it can
+  trigger anywhere inside its cone up to `overwatchRange`, and it fires as covering fire when *any
+  teammate* is spotting the mover — the watcher itself doesn't need line of sight, only a valid line of
+  fire. This lets a long-range sniper overwatch cover ground a spotter reveals.
+- **Opt-in + mod-configurable defaults.** `overwatchRange` defaults to **0** = overwatch off (the menu
+  option is hidden), so a weapon opts in by setting `overwatchRange > 0`. All the per-weapon defaults
+  are overridable mod-wide via a top-level `overwatchDefaults:` node (same keys), so a mod can enable
+  overwatch broadly or change the default shot/angle without touching each item.
+- **Trigger-tile markers.** While aiming (and when a unit already on overwatch is reselected), every
+  tile inside the cone gets a **tile-level marker** (the dithered Pathfinding target-reticle sprite,
+  like the path preview's tile markers), so the watched area reads as a translucent filled region.
+- **Feedback.** Arming plays a reload/ready sound and logs `{unit} is on overwatch` to the floating
+  combat log. When the overwatch fires, it reuses the shared fire line but renders the **overwatch**
+  variant (`{unit} took an overwatch shot at {target} with {weapon}`) instead of the reaction wording.
+  The target name is research-gated like every other combat-log unit name. Entries use the actor's
+  faction color (green for the player, red for hostiles).
+- **One reserved shot, then TU.** Arming reserves a single **free** shot for the upcoming enemy turn
+  (its TU paid up front); every further overwatch shot spends the unit's TU like a normal reaction
+  (ammo is consumed either way). An overwatch shot uses the unit's **full reactions stat** ×
+  `overwatchModifier` (not the TU-depleted score), so a committed watcher reacts reliably.
+- **Needs ammo.** Overwatch can't be armed on an empty weapon (the menu row flags *No Ammo* and arming
+  warns *No Rounds left!*), and running dry cancels it: the shot that empties the weapon drops overwatch
+  immediately, and any lingering empty-weapon overwatch is cleared the next time reaction fire is checked.
+- **Cone-exclusive trigger.** Folded into `TileEngine::checkReactionFire`: an overwatching enemy fires
+  when the mover enters its cone (with line of fire), **exempt** from the normal reaction threshold and
+  the spot-to-protect restriction — but conversely it takes **no** ordinary reaction fire at anything
+  **outside** the cone.
+- **Persists across turns.** Overwatch stays until cancelled; only the reserved free shot is a
+  one-turn thing (it expires at the owner's next turn, after which shots just spend TU). State survives
+  save/load. It **auto-cancels** when the unit is commanded to move or fire a normal shot, and can be
+  toggled off by re-selecting **Overwatch**.
+- Deferred: a dedicated on-map per-unit overwatch glyph, per-tile line-of-fire filtering of the
+  markers, and AI use of overwatch.

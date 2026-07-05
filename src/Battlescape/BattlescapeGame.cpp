@@ -43,6 +43,7 @@
 #include "../Interface/Cursor.h"
 #include "../Savegame/SavedGame.h"
 #include "../Savegame/SavedBattleGame.h"
+#include "../Savegame/CombatLog.h"
 #include "../Savegame/Tile.h"
 #include "../Savegame/BattleUnit.h"
 #include "../Savegame/BattleItem.h"
@@ -75,6 +76,11 @@ void BattleActionCost::updateTU()
 	{
 		// DX dual-fire spans both hands, so its cost comes from the unit (not a single weapon).
 		*(RuleItemUseCost*)this = actor->getDualFireCost();
+	}
+	else if (actor && type == BA_OVERWATCH && weapon)
+	{
+		// DX overwatch: priced as one shot of the weapon's overwatch fire mode (the minimum to arm it).
+		*(RuleItemUseCost*)this = actor->getActionTUs(weapon->getRules()->getOverwatchShot(), weapon);
 	}
 	else if (actor && skillRules)
 	{
@@ -1728,6 +1734,14 @@ bool BattlescapeGame::cancelCurrentAction(bool bForce)
 			}
 			else
 			{
+				// DX: while confirming an overwatch target, backing out just drops the pending target
+				// (returning to free aiming) rather than leaving overwatch mode - matches confirm-fire.
+				if (_currentAction.type == BA_OVERWATCH && !_currentAction.waypoints.empty())
+				{
+					_currentAction.waypoints.pop_back();
+					getMap()->getWaypoints()->pop_back();
+					return true;
+				}
 				if (Options::battleConfirmFireMode && !_currentAction.waypoints.empty())
 				{
 					_currentAction.waypoints.pop_back();
@@ -1967,6 +1981,56 @@ void BattlescapeGame::primaryAction(Position pos)
 				{
 					//TODO: add `warning` that we can't target given unit
 				}
+			}
+		}
+		else if (_currentAction.type == BA_OVERWATCH)
+		{
+			// DX: arm overwatch aimed at the clicked tile (which sets the cone direction). Arming
+			// reserves ONE free shot for the upcoming enemy turn (its TU is paid up front); further
+			// shots this turn and any shots on later turns simply spend the unit's remaining TU.
+			// Since arming commits TU and a facing, it takes a confirmation click like firing a shot:
+			// the first click locks the aim tile (freezing the cone preview and showing a target
+			// reticle) and a second click on that same tile arms overwatch.
+			// No ammo, no overwatch: refuse to arm a weapon that can't fire its overwatch shot.
+			if (!_currentAction.weapon->getAmmoForAction(_currentAction.weapon->getRules()->getOverwatchShot()))
+			{
+				_parentState->warning("STR_NO_ROUNDS_LEFT");
+				cancelCurrentAction();
+			}
+			else if (_currentAction.waypoints.empty() || pos != _currentAction.waypoints.front())
+			{
+				_currentAction.waypoints.clear();
+				_currentAction.waypoints.push_back(pos);
+				getMap()->getWaypoints()->clear();
+				getMap()->getWaypoints()->push_back(pos);
+			}
+			else
+			{
+				_currentAction.waypoints.clear();
+				getMap()->getWaypoints()->clear();
+
+				BattleUnit *owActor = _currentAction.actor;
+				BattleItem *owWeapon = _currentAction.weapon;
+				int shotCost = owActor->getActionTUs(owWeapon->getRules()->getOverwatchShot(), owWeapon).Time;
+				if (shotCost > 0 && owActor->getTimeUnits() >= shotCost)
+				{
+					owActor->spendTimeUnits(shotCost);
+					owActor->setOverwatch(owWeapon, pos, true);
+					_save->logUnitEvent("STR_COMBATLOG_OVERWATCH_SET", owActor, _save->combatLogActorOutcome(owActor));
+					// DX: play a reload/ready sound as the unit readies its overwatch shot.
+					int owSound = owWeapon->getRules()->getReloadSound();
+					if (owSound == Mod::NO_SOUND)
+					{
+						owSound = Mod::ITEM_RELOAD;
+					}
+					getMod()->getSoundByDepth(_save->getDepth(), owSound)->play(-1, getMap()->getSoundAngle(owActor->getPosition()));
+					_parentState->updateSoldierInfo();
+				}
+				else
+				{
+					_parentState->warning("STR_NOT_ENOUGH_TIME_UNITS");
+				}
+				cancelCurrentAction();
 			}
 		}
 		else if (Options::battleConfirmFireMode && (_currentAction.waypoints.empty() || pos != _currentAction.waypoints.front()))

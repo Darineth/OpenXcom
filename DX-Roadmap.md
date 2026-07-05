@@ -329,10 +329,14 @@ Everything below is DX-specific work confirmed **absent** from the base.
     avoidance is unrelated.)*
   - [x] Purple path-preview color when sneaking
   - [x] Slower unit motion when sneaking (~1.5×)
-- [ ] **Overwatch System** — `BA_OVERWATCH`, held-fire behavior + indicators.
-  - [ ] Held-fire state for units
-  - [ ] Per-weapon overwatch tuning (radius, range, shot type)
-  - [ ] On-map overwatch indicators
+- [~] **Overwatch System** — `BA_OVERWATCH`, held-fire behavior + indicators. **Implemented**: DX uses
+  a **cone** (per-weapon full angle + range + optional min-range) instead of the legacy radius, with
+  trigger-tile markers; one-enemy-turn commitment, shots from reserved TU (pre-paid, fired free).
+  See [plans/Feature-Overwatch.md](plans/Feature-Overwatch.md).
+  - [x] Held-fire state for units (`BattleUnit` overwatch state, save/load, per-turn clear)
+  - [x] Per-weapon overwatch tuning (cone angle, range, min-range, shot type, modifier)
+  - [x] Cone trigger-tile markers (while aiming + when reselected)
+  - [ ] On-map per-unit overwatch indicator *(deferred; cone markers cover the selected unit)*
 - [x] **Reaction Scoring Split** — offensive `getReactionScore` / defensive `getEvasionScore`; the
   mover is now measured by evasion (driven by a new armor `evasion:` percent), spotters by reaction.
   Enables independent evasion tuning (sneak, stealth armor). See

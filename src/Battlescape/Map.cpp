@@ -2478,6 +2478,9 @@ void Map::drawTerrain(Surface *surface)
 	// DX: draw the live aiming trajectory preview on top of the scene.
 	drawTargetingPreview(surface);
 
+	// DX: draw the overwatch cone markers (while aiming overwatch, or reviewing a unit on overwatch).
+	drawOverwatchCone(surface);
+
 	// DX: crosshair text (hovered-unit name + accuracy/hit-chance readout) is prepared during the
 	// tile pass but blitted here, AFTER the tracers/dots, so it stays legible on top of the cloud.
 	if (_pendingUnitName)
@@ -3173,6 +3176,91 @@ void Map::drawTargetingPreview(Surface *surface)
 		impact = tracer;
 	}
 	Surface::blitRaw(surface, impact, screen.x - impact->getWidth() / 2, screen.y - impact->getHeight() / 2, 0, false, _nvColor);
+}
+
+/**
+ * DX: draws markers over the tiles inside the active overwatch cone. The cone is shown while the
+ * selected unit is aiming a BA_OVERWATCH action (toward the cursor) and while a unit already on
+ * overwatch is selected (toward its committed target), so the player sees exactly what's watched.
+ * Geometry only for now (no per-tile line-of-fire test).
+ */
+void Map::drawOverwatchCone(Surface *surface)
+{
+	BattleUnit *unit = _save->getSelectedUnit();
+	if (!unit)
+	{
+		return;
+	}
+
+	Position origin = unit->getPosition();
+	Position target;
+	BattleItem *weapon = nullptr;
+
+	BattleAction *action = _save->getBattleGame()->getCurrentAction();
+	if (_cursorType == CT_AIM && action && action->type == BA_OVERWATCH && action->actor == unit)
+	{
+		// While confirming (a target has been clicked once), freeze the cone on that pending tile so
+		// it's clear what the second click will commit to; otherwise the cone follows the cursor.
+		if (!action->waypoints.empty())
+		{
+			target = action->waypoints.front();
+		}
+		else
+		{
+			Position cursor;
+			getSelectorPosition(&cursor);
+			target = cursor;
+		}
+		weapon = action->weapon;
+	}
+	else if (unit->isOnOverwatch())
+	{
+		target = unit->getOverwatchTarget();
+		weapon = unit->getOverwatchWeapon();
+	}
+	else
+	{
+		return;
+	}
+	if (!weapon || target == origin)
+	{
+		return;
+	}
+
+	const RuleItem *rule = weapon->getRules();
+	int range = rule->getOverwatchRange();
+	int minRange = rule->getOverwatchMinRange();
+	int angle = rule->getOverwatchConeAngle();
+
+	// Use a tile-level marker (the Pathfinding dithered "target reticle" frame, like the path preview
+	// draws its tile markers) rather than a floating dot, so the watched area reads as a filled region.
+	// Frame 22 is the sparse/dithered variant of the frame-10 reticle - its blank pixels make the marker
+	// read as translucent, so the underlying map stays visible even at full brightness.
+	SurfaceSet *pathSet = _game->getMod()->getSurfaceSet("Pathfinding");
+	Surface *marker = pathSet ? pathSet->getFrame(22) : nullptr;
+	if (!marker)
+	{
+		return;
+	}
+
+	TileEngine *te = _save->getTileEngine();
+	Position screen;
+	for (int dx = -range; dx <= range; ++dx)
+	{
+		for (int dy = -range; dy <= range; ++dy)
+		{
+			Position t(origin.x + dx, origin.y + dy, origin.z);
+			Tile *tile = _save->getTile(t);
+			if (!tile || !te->isInOverwatchCone(origin, target, t, minRange, range, angle))
+			{
+				continue;
+			}
+			_camera->convertMapToScreen(t, &screen);
+			screen += _camera->getMapOffset();
+			// Full brightness (shade 0), vibrant color - the dithered sprite supplies the translucency.
+			Surface::blitRaw(surface, marker, screen.x, screen.y - tile->getTerrainLevel(), 0, false, Pathfinding::yellow);
+		}
+	}
 }
 
 /**

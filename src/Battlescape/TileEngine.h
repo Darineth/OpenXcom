@@ -101,6 +101,7 @@ private:
 		double reactionScore;
 		double reactionReduction;
 		int count;
+		bool overwatch = false; // DX: this is a pre-paid overwatch shot (free TU, decrements shots)
 	};
 
 	SavedBattleGame *_save;
@@ -186,6 +187,8 @@ public:
 	void calculateFOV(Position position, int eventRadius = -1, const bool updateTiles = true, const bool appendToTileVisibility = false);
 	/// Checks reaction fire.
 	bool checkReactionFire(BattleUnit *unit, const BattleAction &originalAction);
+	/// DX: tests whether a tile is inside an overwatch cone (min/max range + full cone angle from origin→aim).
+	bool isInOverwatchCone(Position origin, Position aimTarget, Position tile, int minRange, int maxRange, int coneAngleDeg) const;
 	/// Recalculate all lighting in some area.
 	void calculateLighting(LightLayers layer, Position position = invalid, int eventRadius = 0, bool terrianChanged = false);
 	/// Handles tile hit.

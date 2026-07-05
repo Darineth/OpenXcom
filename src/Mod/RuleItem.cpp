@@ -142,6 +142,30 @@ BattleActionAttack BattleActionAttack::GetAferShoot(BattleActionType type, Battl
 const float VexelsToTiles = 0.0625f;
 const float TilesToVexels = 16.0f;
 
+/// DX: mod-wide overwatch defaults, reset + loaded at mod load (see Mod::loadFile). Default range 0
+/// keeps overwatch opt-in; a weapon enables it by setting overwatchRange > 0 (or the mod raises this).
+OverwatchDefaults RuleItem::overwatchDefaults;
+
+/**
+ * DX: loads the mod-wide overwatch defaults from the top-level `overwatchDefaults:` node. Same keys as
+ * a weapon's own overwatch fields.
+ */
+void OverwatchDefaults::load(const YAML::YamlNodeReader& reader)
+{
+	reader.tryRead("overwatchRange", range);
+	reader.tryRead("overwatchMinRange", minRange);
+	reader.tryRead("overwatchConeAngle", coneAngle);
+	reader.tryRead("overwatchModifier", modifier);
+	if (const auto& shotNode = reader["overwatchShot"])
+	{
+		std::string mode = shotNode.readVal<std::string>();
+		if (mode == "burst") shot = BA_BURSTSHOT;
+		else if (mode == "auto") shot = BA_AUTOSHOT;
+		else if (mode == "aimed") shot = BA_AIMEDSHOT;
+		else shot = BA_SNAPSHOT;
+	}
+}
+
 /**
  * Creates a blank ruleset for a certain type of item.
  * @param type String defining the type.
@@ -161,6 +185,7 @@ RuleItem::RuleItem(const std::string &type, int listOrder) :
 	_explodeInventory(-1),
 	_costUse(25), _costMind({}, {}), _costPanic({}, {}), _costThrow(25), _costPrime(50), _costUnprime(25),
 	_clipSize(0), _battleClipSize(0), _specialChance(100), _tuLoad{ }, _tuUnload{ },
+	_overwatchRange(-1), _overwatchMinRange(-1), _overwatchConeAngle(-1), _overwatchModifier(-1), _overwatchShot(BA_NONE),
 	_battleType(BT_NONE), _fuseType(BFT_NONE), _fuseTriggerEvents{ }, _hiddenOnMinimap(false),
 	_painKillerActionName("STR_PAIN_KILLER"), _stimulantActionName("STR_STIMULANT"), _healActionName("STR_HEAL"),
 	_medikitActionName("STR_USE_MEDI_KIT"),
@@ -504,6 +529,20 @@ void RuleItem::load(const YAML::YamlNodeReader& node, Mod *mod, const ModScript&
 	if (_battleClipSize > 0)
 	{
 		_clipSize = 0;
+	}
+
+	// DX overwatch (set-and-hold reaction fire over a cone).
+	reader.tryRead("overwatchRange", _overwatchRange);
+	reader.tryRead("overwatchMinRange", _overwatchMinRange);
+	reader.tryRead("overwatchConeAngle", _overwatchConeAngle);
+	reader.tryRead("overwatchModifier", _overwatchModifier);
+	if (const auto& overwatchShot = reader["overwatchShot"])
+	{
+		std::string mode = overwatchShot.readVal<std::string>();
+		if (mode == "burst") _overwatchShot = BA_BURSTSHOT;
+		else if (mode == "auto") _overwatchShot = BA_AUTOSHOT;
+		else if (mode == "aimed") _overwatchShot = BA_AIMEDSHOT;
+		else _overwatchShot = BA_SNAPSHOT; // "snap" (default)
 	}
 
 	loadConfFuse(_fuseTriggerEvents, reader, "fuseTriggerEvents");

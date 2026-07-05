@@ -2231,6 +2231,21 @@ void StatsForNerdsState::initItemList()
 		endHeading();
 	}
 
+	// DX overwatch (set-and-hold reaction fire over a cone). Only shown when the weapon has overwatch
+	// enabled (range > 0); the cone angle is the full width, the modifier scales the reaction score.
+	if (itemRule->getOverwatchRange() > 0)
+	{
+		addHeading("overwatch");
+		{
+			addInteger(ss, itemRule->getOverwatchRange(), "overwatchRange", 0);
+			addInteger(ss, itemRule->getOverwatchMinRange(), "overwatchMinRange", 0);
+			addInteger(ss, itemRule->getOverwatchConeAngle(), "overwatchConeAngle", 40);
+			addInteger(ss, itemRule->getOverwatchModifier(), "overwatchModifier", 100);
+			addInteger(ss, (int)itemRule->getOverwatchShot(), "overwatchShot", (int)BA_SNAPSHOT);
+			endHeading();
+		}
+	}
+
 	addInteger(ss, itemRule->getArmor(), "armor", 20);
 
 	addInteger(ss, itemRule->getFrontArmorBonus(), "frontArmor");

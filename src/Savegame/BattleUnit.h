@@ -150,6 +150,15 @@ private:
 	UnitActiveHand _preferredHandForReactions = ACTIVE_HAND_NONE;
 	bool _reactionsDisabledForLeftHand = false;
 	bool _reactionsDisabledForRightHand = false;
+	// DX overwatch (set-and-hold reaction fire over a cone). Persists across turns until cancelled.
+	// Arming reserves ONE free shot (_overwatchReservedShot) for the first enemy turn; beyond that, and
+	// on later turns, overwatch shots simply spend the unit's TU. The weapon is resolved lazily from
+	// _overwatchWeaponId (item ids are stable across save/load, pointers are not).
+	bool _overwatch = false;
+	bool _overwatchReservedShot = false;
+	Position _overwatchTarget;
+	int _overwatchWeaponId = -1;
+	BattleItem* _overwatchWeapon = nullptr;
 	BattleUnitStatistics* _statistics;
 	int _murdererId;	// used to credit the murderer with the kills that this unit got by blowing up on death
 	int _mindControllerID;	// used to credit the mind controller with the kills of the mind controllee
@@ -533,6 +542,23 @@ public:
 	bool isRightHandDisabledForReactions() const { return _reactionsDisabledForRightHand; }
 	/// Is left hand disabled for reactions?
 	bool isLeftHandDisabledForReactions() const { return _reactionsDisabledForLeftHand; }
+
+	/// DX: puts this unit on overwatch with the given weapon and aim tile; reserved = a free first shot.
+	void setOverwatch(BattleItem *weapon, Position target, bool reserved);
+	/// DX: clears the unit's overwatch state entirely.
+	void clearOverwatch();
+	/// DX: is this unit currently on overwatch?
+	bool isOnOverwatch() const { return _overwatch; }
+	/// DX: the aim tile that defines the overwatch cone's direction.
+	Position getOverwatchTarget() const { return _overwatchTarget; }
+	/// DX: the weapon to fire the overwatch shot with (resolved lazily from the saved item id).
+	BattleItem *getOverwatchWeapon();
+	/// DX: does the unit still have its reserved (free) overwatch shot?
+	bool hasOverwatchReservedShot() const { return _overwatchReservedShot; }
+	/// DX: consumes the reserved free overwatch shot (overwatch itself persists).
+	void consumeOverwatchReservedShot() { _overwatchReservedShot = false; }
+	/// DX: clears just the reservation, keeping overwatch active (used at the owner's turn start).
+	void clearOverwatchReservation() { _overwatchReservedShot = false; }
 
 	/// Check if this unit is in the exit area
 	bool isInExitArea(SpecialTileType stt) const;

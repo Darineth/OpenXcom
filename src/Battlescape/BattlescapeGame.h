@@ -91,6 +91,7 @@ struct BattleAction : BattleActionCost
 	BattleActionOrigin relativeOrigin = BattleActionOrigin::CENTRE; // preferred origin voxel (centre, left or right)
 	int terrainMeleeTilePart = 0; // terrain melee
 	bool reaction = false; // this action is a reaction shot/attack (used for combat log wording)
+	bool overwatch = false; // DX: this reaction is an overwatch shot (combat log says "overwatch" not "reaction")
 
 	/// Default constructor
 	BattleAction() : target(-1, -1, -1), targeting(false), value(0), diff(0), autoShotCounter(0), cameraPosition(0, 0, -1), desperate(false), finalFacing(-1), finalAction(false), number(0), sprayTargeting(false) { }

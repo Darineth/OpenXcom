@@ -96,9 +96,29 @@ enum BattleActionType : Uint8
 	// DX: Reload — visible action-menu trigger for the existing quick-reload (loads the cheapest
 	// compatible clip into the weapon). Appended to keep serialized values stable.
 	BA_RELOAD = 22,
+
+	// DX: Overwatch — set-and-hold reaction fire over a directional cone. Appended to keep
+	// serialized values stable.
+	BA_OVERWATCH = 23,
 };
 
 enum class BattleActionOrigin { CENTRE = 0, LEFT, RIGHT }; // Used for off-centre shooting.
+
+/**
+ * DX: mod-wide default overwatch parameters. A weapon that doesn't set an `overwatch*` field falls
+ * back to these (getter-side). `range` defaults to 0, so overwatch is opt-in per weapon (range 0 =
+ * no overwatch); a mod can raise the default via the top-level `overwatchDefaults:` node.
+ */
+struct OverwatchDefaults
+{
+	int range = 0;        // max watched distance (tiles); 0 = overwatch unavailable by default
+	int minRange = 0;     // near dead zone
+	int coneAngle = 40;   // full cone angle / total width (degrees)
+	int modifier = 100;   // offensive reaction-score modifier (percent)
+	BattleActionType shot = BA_SNAPSHOT;
+
+	void load(const YAML::YamlNodeReader& reader);
+};
 
 struct BattleActionCost;
 class BattleItem;
@@ -432,6 +452,10 @@ private:
 	int _explodeInventory;
 	RuleItemUseCostRule _costUse, _costMind, _costPanic, _costThrow, _costPrime, _costUnprime;
 	int _clipSize, _battleClipSize, _specialChance, _tuLoad[AmmoSlotMax], _tuUnload[AmmoSlotMax];
+	// DX: overwatch (set-and-hold reaction fire over a cone). Range/min-range in tiles, cone angle is
+	// the full cone width in degrees, modifier scales the offensive reaction score, shot is the fire mode.
+	int _overwatchRange, _overwatchMinRange, _overwatchConeAngle, _overwatchModifier;
+	BattleActionType _overwatchShot;
 	BattleType _battleType;
 	BattleFuseType _fuseType;
 	RuleItemFuseTrigger _fuseTriggerEvents;
@@ -884,6 +908,18 @@ public:
 	int getBattleClipSize() const;
 	/// Gets the effective loaded-magazine capacity: battleClipSize if set, else clipSize (DX).
 	int getBattleMagazineSize() const;
+	/// DX overwatch: max watched distance (tiles); 0 = overwatch unavailable. Unset falls back to the mod default.
+	int getOverwatchRange() const { return _overwatchRange >= 0 ? _overwatchRange : overwatchDefaults.range; }
+	/// DX overwatch: near dead-zone distance (tiles); tiles closer than this aren't watched.
+	int getOverwatchMinRange() const { return _overwatchMinRange >= 0 ? _overwatchMinRange : overwatchDefaults.minRange; }
+	/// DX overwatch: full cone angle in degrees (the total width of the watched wedge).
+	int getOverwatchConeAngle() const { return _overwatchConeAngle >= 0 ? _overwatchConeAngle : overwatchDefaults.coneAngle; }
+	/// DX overwatch: percent applied to the offensive reaction score for an overwatch shot.
+	int getOverwatchModifier() const { return _overwatchModifier >= 0 ? _overwatchModifier : overwatchDefaults.modifier; }
+	/// DX overwatch: the fire mode used for the overwatch shot (snap/burst/auto/aimed).
+	BattleActionType getOverwatchShot() const { return _overwatchShot != BA_NONE ? _overwatchShot : overwatchDefaults.shot; }
+	/// DX: mod-wide overwatch defaults (reset + loaded at mod load).
+	static OverwatchDefaults overwatchDefaults;
 	/// Gets the chance of special effect like zombify or corpse explosion or mine triggering.
 	int getSpecialChance() const;
 	/// Draws the item's hand sprite onto a surface.
