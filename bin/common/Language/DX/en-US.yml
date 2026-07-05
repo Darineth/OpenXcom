@@ -52,7 +52,10 @@ en-US:
   STR_COMBATLOG_PANIC: "{0} panics"
   STR_COMBATLOG_BERSERK: "{0} goes berserk"
 #NextTurnState.cpp
-  STR_COMBATLOG_NEW_TURN: "- Turn {0} -"
+  STR_COMBATLOG_NEW_TURN: "- Turn {0}: {1} -"
+  STR_COMBATLOG_SIDE_PLAYER: "X-COM"
+  STR_COMBATLOG_SIDE_HOSTILE: "Aliens"
+  STR_COMBATLOG_SIDE_NEUTRAL: "Civilians"
 #=================== DX On-Map Overlays ===================
 #Options.cpp
   STR_HOVERED_UNIT_NAME: "Hovered unit name"

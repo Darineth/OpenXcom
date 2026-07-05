@@ -1,6 +1,4 @@
 # TODO
-- Don't allow overwatch on no-ammo.
-- "Turn #" display appears multiple times sometimes in the combat log?  I think this is player vs enemy turns, let's show the faction the turn belongs to.
 - Switching armor does not update the inventory layout grid
 
 - Overwatch range vs. weapon's (attacktype)Range?  What does that field do in DX anyway?

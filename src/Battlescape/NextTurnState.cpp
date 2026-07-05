@@ -286,7 +286,17 @@ NextTurnState::NextTurnState(SavedBattleGame *battleGame, BattlescapeState *stat
 		_battleGame->appendToHitLog(HITLOG_NEW_TURN_WITH_MESSAGE, _battleGame->getSide(), message);
 	}
 
-	_battleGame->appendToCombatLog(tr("STR_COMBATLOG_NEW_TURN").arg(_battleGame->getTurn()), OUTCOME_NEUTRAL);
+	// The turn banner is logged on every side's transition and the turn number is shared across the
+	// player/hostile/civilian phases of a round, so name the side whose turn is starting to tell the
+	// otherwise-identical "- Turn N -" lines apart.
+	std::string sideKey;
+	switch (_battleGame->getSide())
+	{
+	case FACTION_PLAYER:  sideKey = "STR_COMBATLOG_SIDE_PLAYER"; break;
+	case FACTION_HOSTILE: sideKey = "STR_COMBATLOG_SIDE_HOSTILE"; break;
+	default:              sideKey = "STR_COMBATLOG_SIDE_NEUTRAL"; break;
+	}
+	_battleGame->appendToCombatLog(tr("STR_COMBATLOG_NEW_TURN").arg(_battleGame->getTurn()).arg(tr(sideKey)), OUTCOME_NEUTRAL);
 
 	if (_battleGame->getSide() == FACTION_PLAYER)
 	{
