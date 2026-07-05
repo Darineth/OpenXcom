@@ -39,6 +39,10 @@ constexpr int Pathfinding::dir_z[Pathfinding::dir_max];
 int Pathfinding::red = 3;
 int Pathfinding::yellow = 10;
 int Pathfinding::green = 4;
+// DX movement-mode path colours (palette block indices). Defaults chosen to read as blue/purple in
+// the battlescape palette; tune if they don't render cleanly.
+int Pathfinding::blue = 8;
+int Pathfinding::purple = 13;
 
 /**
  * Sets up a Pathfinding.
@@ -1300,7 +1304,30 @@ void Pathfinding::refreshPath()
 					tile->setTUMarker(-1);
 					tile->setEnergyMarker(-1);
 				}
-				tile->setMarkerColor(!_pathPreviewed ? 0 : ((tus>=0 && energy>=0)?(reserve?Pathfinding::green : Pathfinding::yellow) : Pathfinding::red));
+				// DX: colour the preview by movement mode - blue = sprint (run), purple = sneak - while
+				// keeping red for an unaffordable step. Normal walk keeps green (TU reserved ok) / yellow.
+				int markerColor;
+				if (!_pathPreviewed)
+				{
+					markerColor = 0;
+				}
+				else if (tus < 0 || energy < 0)
+				{
+					markerColor = Pathfinding::red;
+				}
+				else if (bam == BAM_RUN)
+				{
+					markerColor = Pathfinding::blue;
+				}
+				else if (bam == BAM_SNEAK)
+				{
+					markerColor = Pathfinding::purple;
+				}
+				else
+				{
+					markerColor = reserve ? Pathfinding::green : Pathfinding::yellow;
+				}
+				tile->setMarkerColor(markerColor);
 			}
 		}
 	}

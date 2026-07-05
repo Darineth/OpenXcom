@@ -196,6 +196,9 @@ public:
 	static int red;
 	static int green;
 	static int yellow;
+	// DX: path-preview colours for the surfaced movement modes - blue = sprint (run), purple = sneak.
+	static int blue;
+	static int purple;
 
 	/// Creates a new Pathfinding class.
 	Pathfinding(SavedBattleGame *save);

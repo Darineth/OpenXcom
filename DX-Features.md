@@ -891,3 +891,28 @@ show nothing, so the readout reflects what a purchase / stockpile actually conta
 - Reuses each screen's existing ammo classification (`BT_AMMO || (BT_NONE && clipSize>0)`); the format
   is the shared, translatable `STR_DX_AMMO_ROUND_COUNT` (`"{0} (x{1})"`). Manufacture screens are not
   covered (deferred).
+
+## Sprint & Sneak Movement Modes
+
+OXCE already has hidden **Run** (hold Ctrl) and **Sneak** (hold Alt) movement modes — armor-gated,
+with per-mode TU *and* energy cost multipliers. Run is a full mechanic (cheaper TU / more energy);
+sneak, by contrast, is nearly a stub in stock OXCE (its cost defaults to walk-equivalent, it forces
+walking, and it has no built-in stealth/detection effect). DX **surfaces** Run as a visible sprint now
+and adds sneak's colour; real sneak mechanics (evasion, the light gate) come with later Phase 7/8 work.
+*(design: [plans/Feature-SprintSneakModes.md](plans/Feature-SprintSneakModes.md))*
+
+- **Path-preview colours** — the move preview now colours tiles by mode: **blue** while sprinting
+  (Run), **purple** while sneaking, keeping **red** for an unaffordable step and the normal
+  green/yellow for a walk. Colours are **configurable** via a `pathfindingDX` interface element
+  (`color` = sprint/blue, `color2` = sneak/purple, palette block indices like the base `pathfinding`
+  element), shipped for both UFO and TFTD; the engine falls back to built-in defaults if unset.
+- **Movement-mode animation pace** — a running unit animates ~2× faster and a sneaking unit ~1.5×
+  slower (frame interval scaled in `UnitWalkBState::setNormalWalkSpeed`), so sprint reads as a fast
+  dash and sneak as a slow, careful crawl. Both factors are tunable constants.
+- **Sprint commits to its full path** — a sprinting unit no longer auto-stops when it spots a new
+  enemy (the enemy is still revealed; you just can't halt mid-sprint to react). Normal walking still
+  stops to react. The existing desperate/charging exemptions are unchanged.
+- Deferred: the roadmap's "high hit chance" (sprint) and "high alertness / maintains evasion" (sneak).
+  Sprint's cost side is covered by OXCE's run multipliers, but sneak has **no** stealth/evasion effect
+  yet — that's genuine new work landing with the Phase 7 Reaction Scoring Split (evasion) and the
+  Phase 8 lighting gate.

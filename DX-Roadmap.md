@@ -312,15 +312,22 @@ Everything below is DX-specific work confirmed **absent** from the base.
 
 ## Phase 7: Tactical Unit Systems
 
-- [ ] **Sprint Mode** — fast movement mode with blue pathing.
-  - [ ] High TU/energy cost, high speed, high hit chance
-  - [ ] Blue path-preview color when sprinting
-  - [ ] Accelerate unit motion when sprinting
-  - [ ] Prevent cancelling movement while sprinting
-- [ ] **Sneak Mode** — low-profile movement mode with purple pathing. *(final
+- [~] **Sprint Mode** — surfaces & polishes OXCE's hidden **Run** (Ctrl) mode. See
+  [plans/Feature-SprintSneakModes.md](plans/Feature-SprintSneakModes.md).
+  - [~] High TU/energy cost, high speed, high hit chance — *OXCE Run already applies the TU+energy
+    cost multipliers; speed added below; "high hit chance" deferred (belongs with Reaction Split)*
+  - [x] Blue path-preview color when sprinting
+  - [x] Accelerate unit motion when sprinting (~2× animation)
+  - [x] Prevent cancelling movement while sprinting (commits to full path; no spot-stop)
+- [~] **Sneak Mode** — surfaces & polishes OXCE's hidden **Sneak** (Alt) mode. *(final
   "no creeping while glowing" gate lands in Phase 8 with lighting)*
-  - [ ] Low speed, high alertness, maintains evasion
-  - [ ] Purple path-preview color when sneaking
+  - [~] Low speed, high alertness, maintains evasion — *animation now crawls (~1.5× slower, a legacy-DX
+    touch). But OXCE's player sneak is otherwise nearly a stub (armor `sneakPercent` cost defaults to
+    walk-equivalent; forces walk; no stealth/detection/reaction effect); real sneak mechanics
+    (evasion/alertness) deferred to Reaction Split + Phase 8 lighting. (The AI-only `sneakyAI`
+    visible-tile avoidance is unrelated.)*
+  - [x] Purple path-preview color when sneaking
+  - [x] Slower unit motion when sneaking (~1.5×)
 - [ ] **Overwatch System** — `BA_OVERWATCH`, held-fire behavior + indicators.
   - [ ] Held-fire state for units
   - [ ] Per-weapon overwatch tuning (radius, range, shot type)

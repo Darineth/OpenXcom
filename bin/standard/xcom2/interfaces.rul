@@ -2178,6 +2178,11 @@ interfaces: #done
         color: 6
         color2: 2
         border: 12
+      # DX: sprint/sneak path-preview colours (palette BLOCK indices). color = sprint (run) path,
+      # color2 = sneak path. TFTD palette differs from UFO - verify these render blue/purple.
+      - id: pathfindingDX
+        color: 8     # sprint - blue
+        color2: 5    # sneak  - purple/violet
       - id: messageWindowButtons
         color: 47
         color2: 47

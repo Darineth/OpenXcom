@@ -311,6 +311,13 @@ BattlescapeState::BattlescapeState() :
 		Pathfinding::yellow = pathing->color2;
 		Pathfinding::red = pathing->border;
 	}
+	// DX: configurable sprint/sneak path-preview colours (palette block indices). Falls back to the
+	// engine defaults when unset, so each palette (UFO/TFTD/mods) can pick appropriate blue/purple.
+	if (const Element *pathingDX = _game->getMod()->getInterface("battlescape")->getElementOptional("pathfindingDX"))
+	{
+		if (pathingDX->color != INT_MAX) Pathfinding::blue = pathingDX->color;
+		if (pathingDX->color2 != INT_MAX) Pathfinding::purple = pathingDX->color2;
+	}
 
 	add(_map);
 	add(_icons);

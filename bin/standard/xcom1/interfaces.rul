@@ -2227,6 +2227,11 @@ interfaces:
         color: 18    # amber   - block 1 (16-31)
       - id: ammoLow
         color: 34    # red     - block 2 (32-47)
+      # DX: sprint/sneak path-preview colours (palette BLOCK indices, like the base 'pathfinding'
+      # element's color/color2/border). color = sprint (run) path, color2 = sneak path.
+      - id: pathfindingDX
+        color: 8     # sprint - blue
+        color2: 13   # sneak  - purple
   - type: stats
     elements:
       - id: numMaxHealth

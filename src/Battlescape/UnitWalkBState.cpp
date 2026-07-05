@@ -262,7 +262,9 @@ void UnitWalkBState::think()
 	if (_unit->getStatus() == STATUS_STANDING || _unit->getStatus() == STATUS_PANICKING || _unit->getStatus() == STATUS_BERSERK)
 	{
 		// check if we did spot new units
-		if (unitSpotted && !_action.desperate && _unit->getCharging() == 0 && !_falling)
+		// DX sprint commits to its full path: a running unit does NOT stop when it spots an enemy
+		// (the enemy is still revealed by the FOV pass - you just can't halt mid-sprint to react).
+		if (unitSpotted && !_action.desperate && _unit->getCharging() == 0 && !_falling && _action.getMoveType() != BAM_RUN)
 		{
 			if (Options::traceAI) { Log(LOG_INFO) << "Uh-oh! Company!"; }
 			_unit->setHiding(false); // clearly we're not hidden now
@@ -422,7 +424,8 @@ void UnitWalkBState::think()
 		_terrain->calculateFOV(_unit);
 		unitSpotted = (!_action.ignoreSpottedEnemies && !_falling && !_action.desperate && _parent->getPanicHandled() && _numUnitsSpotted != _unit->getUnitsSpottedThisTurn().size());
 
-		if (unitSpotted && !_action.desperate && !_unit->getCharging() && !_falling)
+		// DX sprint commits to its full path: don't pause on a turn-reveal of new units while running.
+		if (unitSpotted && !_action.desperate && !_unit->getCharging() && !_falling && _action.getMoveType() != BAM_RUN)
 		{
 			if (_beforeFirstStep)
 			{
@@ -518,10 +521,23 @@ void UnitWalkBState::postPathProcedures()
  */
 void UnitWalkBState::setNormalWalkSpeed()
 {
-	if (_unit->getFaction() == FACTION_PLAYER)
-		_parent->setStateInterval(Options::battleXcomSpeed);
-	else
-		_parent->setStateInterval(Options::battleAlienSpeed);
+	int interval = (_unit->getFaction() == FACTION_PLAYER) ? Options::battleXcomSpeed : Options::battleAlienSpeed;
+	// DX: the surfaced movement modes change the animation pace to match - sprint is faster, sneak slower.
+	if (_action.getMoveType() == BAM_RUN)
+	{
+		const int SPRINT_SPEED_PERCENT = 50; // half the frame interval => ~2x animation speed
+		interval = interval * SPRINT_SPEED_PERCENT / 100;
+	}
+	else if (_action.getMoveType() == BAM_SNEAK)
+	{
+		const int SNEAK_SPEED_PERCENT = 150; // longer frame interval => a slower, careful crawl
+		interval = interval * SNEAK_SPEED_PERCENT / 100;
+	}
+	if (interval < 1)
+	{
+		interval = 1;
+	}
+	_parent->setStateInterval(interval);
 }
 
 

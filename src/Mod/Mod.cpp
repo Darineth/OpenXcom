@@ -274,6 +274,8 @@ void Mod::resetGlobalStatics()
 	Pathfinding::red = 3;
 	Pathfinding::yellow = 10;
 	Pathfinding::green = 4;
+	Pathfinding::blue = 8;    // DX: sprint (run) path colour
+	Pathfinding::purple = 13; // DX: sneak path colour
 
 	DIFFICULTY_COEFFICIENT[0] = 0;
 	DIFFICULTY_COEFFICIENT[1] = 1;
