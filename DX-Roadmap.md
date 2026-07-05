@@ -294,7 +294,9 @@ Everything below is DX-specific work confirmed **absent** from the base.
 
 ## Phase 6: Ammo & Reloading
 
-- [ ] **Quick Reload**.
+- [x] **Quick Reload** — OXCE already provides the core (R key → `reloadAmmo`); DX adds a **visible
+  Reload item** in the weapon action menu (hotkey R) surfacing it. Partial-magazine swap deferred. See
+  [plans/Feature-QuickReloadMenu.md](plans/Feature-QuickReloadMenu.md).
 - [x] **Weight/slot-based Reload Costs** — `battleWeightBasedReloadCost` option; base load/unload
   cost becomes `weight*2+5` on top of `tuLoad`/`tuUnload`. (The slot-path half already shipped as
   OXCE's `extendedItemReloadCost`.) See

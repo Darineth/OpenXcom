@@ -92,6 +92,10 @@ enum BattleActionType : Uint8
 	// DX: Dual-fire — fire both hands' weapons at once (each hand its own weapon/ammo/mode).
 	// Appended to keep serialized values stable.
 	BA_DUALFIRE = 21,
+
+	// DX: Reload — visible action-menu trigger for the existing quick-reload (loads the cheapest
+	// compatible clip into the weapon). Appended to keep serialized values stable.
+	BA_RELOAD = 22,
 };
 
 enum class BattleActionOrigin { CENTRE = 0, LEFT, RIGHT }; // Used for off-centre shooting.

@@ -1997,11 +1997,33 @@ void BattlescapeState::btnReserveClick(Action *action)
  */
 void BattlescapeState::btnReloadClick(Action *)
 {
-	if (playableUnitSelected() && _save->getSelectedUnit()->reloadAmmo())
+	if (playableUnitSelected())
 	{
-		_game->getMod()->getSoundByDepth(_save->getDepth(), _save->getSelectedUnit()->getReloadSound())->play(-1, getMap()->getSoundAngle(_save->getSelectedUnit()->getPosition()));
+		quickReload(_save->getSelectedUnit());
+	}
+}
+
+/**
+ * Reloads a unit's weapon(s) and, on success, reports it: plays the reload sound and refreshes the
+ * soldier info. The single reload-and-report entry point shared by the R-key quick-reload (whole
+ * unit, both hands) and the action-menu Reload item (a specific weapon).
+ * @param unit The unit reloading.
+ * @param weapon A specific weapon to reload, or nullptr to reload the unit's hand weapons (R key).
+ * @return True if something was reloaded.
+ */
+bool BattlescapeState::quickReload(BattleUnit *unit, BattleItem *weapon)
+{
+	if (!unit)
+	{
+		return false;
+	}
+	bool reloaded = weapon ? unit->reloadWeapon(weapon) : unit->reloadAmmo();
+	if (reloaded)
+	{
+		_game->getMod()->getSoundByDepth(_save->getDepth(), unit->getReloadSound())->play(-1, getMap()->getSoundAngle(unit->getPosition()));
 		updateSoldierInfo();
 	}
+	return reloaded;
 }
 
 /**

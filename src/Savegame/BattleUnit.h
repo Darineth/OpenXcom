@@ -93,6 +93,9 @@ class BattleUnit
 private:
 	static const int SPEC_WEAPON_MAX = 4;
 
+	/// Finds the cheapest compatible clip to reload the given weapon (DX; shared reload helper).
+	BattleItem *findReloadAmmo(BattleItem *weapon, int &outSlot, int &outCost);
+
 	UnitFaction _faction, _originalFaction;
 	UnitFaction _killedBy;
 	UnitFaction _spawnUnitFaction = FACTION_HOSTILE;
@@ -503,8 +506,12 @@ public:
 	void setActiveLeftHand();
 	/// Choose what weapon was last use by unit.
 	const BattleItem *getActiveHand(const BattleItem *left, const BattleItem *right) const;
-	/// Reloads a weapon if needed.
+	/// Reloads a hand weapon if needed (both hands; loads the cheapest compatible clip).
 	bool reloadAmmo();
+	/// Reloads a specific weapon from the cheapest compatible clip in the inventory (DX).
+	bool reloadWeapon(BattleItem *weapon);
+	/// Gets the cheapest reload TU cost for a weapon, or -1 if it can't be reloaded from inventory (DX).
+	int getReloadCost(BattleItem *weapon);
 
 	/// Toggle the right hand as main hand for reactions.
 	void toggleRightHandForReactions(bool isCtrl);

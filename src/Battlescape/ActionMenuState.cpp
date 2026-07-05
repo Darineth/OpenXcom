@@ -29,6 +29,7 @@
 #include "../Mod/RuleItem.h"
 #include "../Mod/RuleInventory.h"
 #include "ActionMenuItem.h"
+#include "BattlescapeState.h"
 #include "Projectile.h"
 #include "PrimeGrenadeState.h"
 #include "MedikitState.h"
@@ -43,6 +44,17 @@
 
 namespace OpenXcom
 {
+
+namespace
+{
+/// The on-row hotkey label for a key, capitalized (e.g. "R" rather than SDL's lowercase "r").
+std::string hotkeyLabel(SDLKey key)
+{
+	std::string name = SDL_GetKeyName(key);
+	Unicode::upperCase(name);
+	return name;
+}
+}
 
 /**
  * Default constructor, used by SkillMenuState.
@@ -76,6 +88,15 @@ ActionMenuState::ActionMenuState(BattleAction *action, int x, int y) : _action(a
 	// Build up the popup menu
 	int id = 0;
 	const RuleItem *weapon = _action->weapon->getRules();
+
+	// DX: visible Quick Reload - surfaces the R-key reload (BattleUnit::reloadWeapon) as a menu row so
+	// it's discoverable. Shown for a firearm using external clips with an empty ammo slot. Added first
+	// so it sits at the very bottom of the menu (the last item). Hotkey keyBattleReload (R) matches the
+	// global bind.
+	if (weapon->getBattleType() == BT_FIREARM && _action->weapon->isWeaponWithAmmo() && !_action->weapon->haveAllAmmo())
+	{
+		addItem(BA_RELOAD, "STR_RELOAD", &id, Options::keyBattleReload);
+	}
 
 	// throwing (if not a fixed weapon). Also blocked when the item's slot won't release it:
 	// a combat-locked slot (allowCombatSwap:false) forbids moving the item out during combat,
@@ -131,7 +152,8 @@ ActionMenuState::ActionMenuState(BattleAction *action, int x, int y) : _action(a
 
 		// Menu rows stack with later-added items HIGHER on screen (y - id*25). Add order here is
 		// bottom-to-top, so the displayed order (top->bottom) is: Aimed, Snap, Burst, Auto, Dual,
-		// then Throw (Throw was added above this block, so it sits at the very bottom).
+		// then Throw, then Reload at the very bottom (Reload and Throw were both added above this
+		// block, Reload first so it's the last/bottom item).
 
 		// DX dual-fire: fire both hands at once (shown when the unit holds two loaded, fire-capable
 		// firearms). Each hand fires its own best mode; both hands are involved regardless of which
@@ -215,7 +237,6 @@ ActionMenuState::ActionMenuState(BattleAction *action, int x, int y) : _action(a
 	{
 		addItem(BA_USE, weapon->getPsiAttackName().empty() ? "STR_USE_MIND_PROBE" : weapon->getPsiAttackName(), &id, Options::keyBattleActionItem1);
 	}
-
 }
 
 /**
@@ -258,10 +279,39 @@ void ActionMenuState::addItem(BattleActionType ba, const std::string &name, int 
 		_actionMenu[*id]->setVisible(true);
 		if (key != SDLK_UNKNOWN)
 		{
-			_actionMenu[*id]->setHotkey(SDL_GetKeyName(key));
+			_actionMenu[*id]->setHotkey(hotkeyLabel(key));
 			_actionMenu[*id]->onKeyboardPress((ActionHandler)&ActionMenuState::btnActionMenuItemClick, key);
 		}
 		if (_action->actor->getTimeUnits() < dualTu)
+		{
+			_actionMenu[*id]->setUnaffordable(tr("STR_ACTION_NO_TU"));
+		}
+		(*id)++;
+		return;
+	}
+
+	// DX Quick Reload: a compact utility row (name + reload TU), not a firing action - no accuracy or
+	// shots. Flagged red when no compatible clip is carried (No Ammo) or unaffordable (No TU), so the
+	// option is discoverable even when it can't currently be used.
+	if (ba == BA_RELOAD)
+	{
+		int reloadCost = _action->actor->getReloadCost(_action->weapon);
+		if (reloadCost >= 0)
+		{
+			s2 = tr("STR_TIME_UNITS_SHORT").arg(reloadCost);
+		}
+		_actionMenu[*id]->setAction(ba, tr(name), s1, s2, reloadCost >= 0 ? reloadCost : 0);
+		_actionMenu[*id]->setVisible(true);
+		if (key != SDLK_UNKNOWN)
+		{
+			_actionMenu[*id]->setHotkey(hotkeyLabel(key));
+			_actionMenu[*id]->onKeyboardPress((ActionHandler)&ActionMenuState::btnActionMenuItemClick, key);
+		}
+		if (reloadCost < 0)
+		{
+			_actionMenu[*id]->setUnaffordable(tr("STR_ACTION_NO_AMMO"));
+		}
+		else if (_action->actor->getTimeUnits() < reloadCost)
 		{
 			_actionMenu[*id]->setUnaffordable(tr("STR_ACTION_NO_TU"));
 		}
@@ -296,7 +346,7 @@ void ActionMenuState::addItem(BattleActionType ba, const std::string &name, int 
 	// on-row hotkey label
 	if (key != SDLK_UNKNOWN)
 	{
-		_actionMenu[*id]->setHotkey(SDL_GetKeyName(key));
+		_actionMenu[*id]->setHotkey(hotkeyLabel(key));
 		_actionMenu[*id]->onKeyboardPress((ActionHandler)&ActionMenuState::btnActionMenuItemClick, key);
 	}
 
@@ -447,14 +497,17 @@ void ActionMenuState::handleAction()
 		bool newHitLog = false;
 		std::string actionResult = "STR_UNKNOWN"; // needs a non-empty default/fall-back !
 
-		if (_action->type != BA_THROW &&
+		// BA_RELOAD is a handling action (loading ammo), not "using" the weapon's function, so - like
+		// BA_THROW - it's exempt from the research and canUseWeapon (needs-ammo) gates below; those
+		// would otherwise block reloading the very unloaded weapon we're trying to reload.
+		if (_action->type != BA_THROW && _action->type != BA_RELOAD &&
 			_action->actor->getOriginalFaction() == FACTION_PLAYER &&
 			!_game->getSavedGame()->isResearched(weapon->getRequirements()))
 		{
 			_action->result = "STR_UNABLE_TO_USE_ALIEN_ARTIFACT_UNTIL_RESEARCHED";
 			_game->popState();
 		}
-		else if (_action->type != BA_THROW &&
+		else if (_action->type != BA_THROW && _action->type != BA_RELOAD &&
 			!_game->getSavedGame()->getSavedBattle()->canUseWeapon(_action->weapon, _action->actor, false, _action->type, &actionResult))
 		{
 			_action->result = actionResult;
@@ -475,6 +528,17 @@ void ActionMenuState::handleAction()
 		}
 		else if (_action->type == BA_UNPRIME)
 		{
+			_game->popState();
+		}
+		else if (_action->type == BA_RELOAD)
+		{
+			// DX: reload this weapon immediately (no targeting) via the shared reload-and-report call,
+			// so the menu item and the R key behave identically (reload + sound + refresh).
+			SavedBattleGame *save = _game->getSavedGame()->getSavedBattle();
+			if (save->getBattleState())
+			{
+				save->getBattleState()->quickReload(_action->actor, _action->weapon);
+			}
 			_game->popState();
 		}
 		else if (_action->type == BA_USE && weapon->getBattleType() == BT_MEDIKIT)

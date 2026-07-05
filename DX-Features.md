@@ -861,3 +861,21 @@ inventory-slot move cost. *(design:
   the battlescape mid-turn auto-reload, and the AI's reload-cost estimate (so the AI budgets reloads
   correctly). The OXCE slot-path option (`extendedItemReloadCost`) remains available and independent;
   when the DX option is on it takes precedence.
+
+## Quick Reload action-menu item
+
+OXCE already provides a quick-reload on the **R** key (`keyBattleReload` → `BattleUnit::reloadAmmo`,
+which loads the cheapest compatible clip into a hand weapon's empty slot). DX **surfaces it as a
+visible action-menu row** — matching the DX preference for discoverable UI over hidden hotkeys.
+*(design: [plans/Feature-QuickReloadMenu.md](plans/Feature-QuickReloadMenu.md))*
+
+- A **Reload** row (`BA_RELOAD`, reusing the localized `STR_RELOAD`) appears in a firearm's action
+  menu when the weapon uses external clips and has an empty ammo slot. It shows the reload **TU cost**
+  (weight-based when `battleWeightBasedReloadCost` is on) and is flagged red **No Ammo** (no
+  compatible clip carried) or **No TU**, like the fire-mode rows. Its hotkey is `keyBattleReload` (R),
+  so R still works with the menu open.
+- Selecting it reloads *that* weapon, plays the reload sound, and refreshes the ammo readout.
+- Shared logic: `reloadAmmo()` (the R key) and the menu item both route through a new
+  `BattleUnit::reloadWeapon` / `getReloadCost` (built on a shared `findReloadAmmo` helper), so the
+  keyboard and menu paths behave identically. Partial-magazine swap (ejecting a half-spent clip) is
+  **not** included — the empty-slot behavior matches OXCE's R key.

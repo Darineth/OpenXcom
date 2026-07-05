@@ -220,6 +220,9 @@ public:
 	bool playableUnitSelected();
 	/// Updates soldier name/rank/tu/energy/health/morale.
 	void updateSoldierInfo(bool checkFOV = true);
+	/// Reloads a unit's weapon(s) and reports the result (reload sound + soldier-info refresh). Pass a
+	/// specific weapon (action-menu Reload item), or nullptr to reload the unit's hands (R key).
+	bool quickReload(BattleUnit *unit, BattleItem *weapon = nullptr);
 	/// Updates the special/psi/skill button display based on the battle unit
 	void updateUiButton(const BattleUnit* battleUnit);
 	/// Animates map objects on the map, also smoke,fire, ...

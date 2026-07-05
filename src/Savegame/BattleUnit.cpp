@@ -3933,70 +3933,107 @@ const BattleItem *BattleUnit::getActiveHand(const BattleItem *left, const Battle
  */
 bool BattleUnit::reloadAmmo()
 {
-	BattleItem *list[2] =
+	// Reload the first hand weapon that needs (and can get) ammo. Both hands share reloadWeapon so
+	// the R hotkey and the DX action-menu Reload item behave identically.
+	return reloadWeapon(getRightHandWeapon()) || reloadWeapon(getLeftHandWeapon());
+}
+
+/**
+ * Finds the cheapest compatible clip in the unit's inventory to reload the given weapon's first
+ * empty ammo slot, returning it and its slot/cost via the out-params.
+ * @param weapon The weapon to reload (must be a valid, ammo-using, not-fully-loaded weapon).
+ * @param outSlot Receives the ammo slot to load into.
+ * @param outCost Receives the reload TU cost.
+ * @return The chosen clip, or nullptr if no compatible clip is carried.
+ */
+BattleItem *BattleUnit::findReloadAmmo(BattleItem *weapon, int &outSlot, int &outCost)
+{
+	BattleItem *ammo = nullptr;
+	auto ruleWeapon = weapon->getRules();
+	int bestCost = -1;
+	int bestSlot = 0;
+
+	for (auto* bi : *getInventory())
 	{
-		getRightHandWeapon(),
-		getLeftHandWeapon(),
-	};
-
-	for (int i = 0; i < 2; ++i)
-	{
-		BattleItem *weapon = list[i];
-		if (!weapon || !weapon->isWeaponWithAmmo() || weapon->haveAllAmmo())
+		int slot = ruleWeapon->getSlotForAmmo(bi->getRules());
+		if (slot != -1 && !weapon->getAmmoForSlot(slot))
 		{
-			continue;
-		}
-
-		// we have a non-melee weapon with no ammo and 15 or more TUs - we might need to look for ammo then
-		BattleItem *ammo = 0;
-		auto ruleWeapon = weapon->getRules();
-		auto tuCost = getTimeUnits() + 1;
-		auto slotAmmo = 0;
-
-		for (auto* bi : *getInventory())
-		{
-			int slot = ruleWeapon->getSlotForAmmo(bi->getRules());
-			if (slot != -1 && !weapon->getAmmoForSlot(slot))
+			int tuTemp = 0;
+			if (Options::battleWeightBasedReloadCost)
 			{
-				int tuTemp = 0;
-				if (Options::battleWeightBasedReloadCost)
-				{
-					// DX: base reload cost scales with the magazine's weight instead of the flat slot-path move.
-					tuTemp = bi->getReloadWeightCost();
-				}
-				else if (Mod::EXTENDED_ITEM_RELOAD_COST && bi->getSlot()->getType() != INV_HAND)
-				{
-					tuTemp = bi->getMoveToCost(weapon->getSlot());
-				}
-				tuTemp += ruleWeapon->getTULoad(slot);
-				if (tuTemp < tuCost)
-				{
-					tuCost = tuTemp;
-					ammo = bi;
-					slotAmmo = slot;
-				}
+				// DX: base reload cost scales with the magazine's weight instead of the flat slot-path move.
+				tuTemp = bi->getReloadWeightCost();
 			}
-		}
-
-		if (ammo && spendTimeUnits(tuCost))
-		{
-			weapon->setAmmoForSlot(slotAmmo, ammo);
-
-			auto sound = ammo->getRules()->getReloadSound();
-			if (sound == Mod::NO_SOUND)
+			else if (Mod::EXTENDED_ITEM_RELOAD_COST && bi->getSlot()->getType() != INV_HAND)
 			{
-				sound = ruleWeapon->getReloadSound();
+				tuTemp = bi->getMoveToCost(weapon->getSlot());
 			}
-			if (sound == Mod::NO_SOUND)
+			tuTemp += ruleWeapon->getTULoad(slot);
+			if (bestCost == -1 || tuTemp < bestCost)
 			{
-				sound = Mod::ITEM_RELOAD;
+				bestCost = tuTemp;
+				ammo = bi;
+				bestSlot = slot;
 			}
-
-			_lastReloadSound = sound;
-			return true;
 		}
 	}
+
+	outSlot = bestSlot;
+	outCost = bestCost;
+	return ammo;
+}
+
+/**
+ * Reloads a specific weapon from the cheapest compatible clip in the unit's inventory, spending the
+ * TU. Shared by the R-key quick-reload (both hands) and the DX action-menu Reload item.
+ * @param weapon The weapon to reload.
+ * @return True if the weapon was reloaded.
+ */
+bool BattleUnit::reloadWeapon(BattleItem *weapon)
+{
+	if (!weapon || !weapon->isWeaponWithAmmo() || weapon->haveAllAmmo())
+	{
+		return false;
+	}
+
+	int slotAmmo = 0, tuCost = 0;
+	BattleItem *ammo = findReloadAmmo(weapon, slotAmmo, tuCost);
+	if (ammo && spendTimeUnits(tuCost))
+	{
+		weapon->setAmmoForSlot(slotAmmo, ammo);
+
+		auto sound = ammo->getRules()->getReloadSound();
+		if (sound == Mod::NO_SOUND)
+		{
+			sound = weapon->getRules()->getReloadSound();
+		}
+		if (sound == Mod::NO_SOUND)
+		{
+			sound = Mod::ITEM_RELOAD;
+		}
+
+		_lastReloadSound = sound;
+		return true;
+	}
 	return false;
+}
+
+/**
+ * Gets the cheapest reload TU cost for a weapon (for the action-menu readout), or -1 if it cannot be
+ * reloaded from the inventory (already full, no external ammo, or no compatible clip carried).
+ * Mirrors the cost reloadWeapon would spend.
+ * @param weapon The weapon to reload.
+ * @return The reload TU cost, or -1 if not reloadable.
+ */
+int BattleUnit::getReloadCost(BattleItem *weapon)
+{
+	if (!weapon || !weapon->isWeaponWithAmmo() || weapon->haveAllAmmo())
+	{
+		return -1;
+	}
+	int slotAmmo = 0, tuCost = -1;
+	findReloadAmmo(weapon, slotAmmo, tuCost);
+	return tuCost;
 }
 
 /**
