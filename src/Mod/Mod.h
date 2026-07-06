@@ -260,6 +260,13 @@ private:
 	int _healthMissingWoundThreshold = 100;
 	bool _manaEnabled, _manaBattleUI, _manaTrainingPrimary, _manaTrainingSecondary, _manaReplenishAfterMission;
 	bool _healthReplenishAfterMission = true;
+	// DX: proportional wound recovery (fraction of max HP lost) + Field Surgery research gate.
+	bool _proportionalWoundRecovery = false;
+	int _woundRecoveryDaysMin = 20;
+	int _woundRecoveryDaysMax = 30;
+	std::string _fieldSurgeryResearch = "STR_FIELD_SURGERY_UNIT";
+	int _fieldSurgeryDaysMin = 15;
+	int _fieldSurgeryDaysMax = 25;
 	std::string _manaUnlockResearch;
 
 	std::string _loseMoney, _loseRating, _loseDefeat;
@@ -944,6 +951,19 @@ public:
 	int getHealthWoundThreshold() const { return _healthMissingWoundThreshold; }
 	/// Should a soldier's health be fully replenished after a mission?
 	bool getReplenishHealthAfterMission() const { return _healthReplenishAfterMission; }
+
+	/// DX: is proportional (fraction-of-health-lost) wound recovery enabled? (off = stock absolute model)
+	bool getProportionalWoundRecovery() const { return _proportionalWoundRecovery; }
+	/// DX: lower bound (days at 100% HP loss) for proportional wound recovery.
+	int getWoundRecoveryDaysMin() const { return _woundRecoveryDaysMin; }
+	/// DX: upper bound (days at 100% HP loss) for proportional wound recovery.
+	int getWoundRecoveryDaysMax() const { return _woundRecoveryDaysMax; }
+	/// DX: research id that shortens wound recovery base-wide once unlocked (empty = disabled).
+	const std::string &getFieldSurgeryResearch() const { return _fieldSurgeryResearch; }
+	/// DX: reduced lower bound for wound recovery once Field Surgery is researched.
+	int getFieldSurgeryDaysMin() const { return _fieldSurgeryDaysMin; }
+	/// DX: reduced upper bound for wound recovery once Field Surgery is researched.
+	int getFieldSurgeryDaysMax() const { return _fieldSurgeryDaysMax; }
 
 	/// Gets the cutscene ID that should be played when the player loses due to poor economy management.
 	const std::string &getLoseMoneyCutscene() const { return _loseMoney; }

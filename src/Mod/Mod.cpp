@@ -3393,6 +3393,13 @@ void Mod::loadFile(const FileMap::FileRecord &filerec, ModScript &parsers)
 	{
 		nodeHealth.tryRead("woundThreshold", _healthMissingWoundThreshold);
 		nodeHealth.tryRead("replenishAfterMission", _healthReplenishAfterMission);
+		// DX: proportional (fraction-of-health-lost) wound recovery + Field Surgery research gate.
+		nodeHealth.tryRead("proportionalRecovery", _proportionalWoundRecovery);
+		nodeHealth.tryRead("recoveryDaysMin", _woundRecoveryDaysMin);
+		nodeHealth.tryRead("recoveryDaysMax", _woundRecoveryDaysMax);
+		nodeHealth.tryRead("fieldSurgeryResearch", _fieldSurgeryResearch);
+		nodeHealth.tryRead("fieldSurgeryDaysMin", _fieldSurgeryDaysMin);
+		nodeHealth.tryRead("fieldSurgeryDaysMax", _fieldSurgeryDaysMax);
 	}
 
 

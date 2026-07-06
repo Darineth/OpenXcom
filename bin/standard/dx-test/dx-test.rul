@@ -52,6 +52,27 @@ bleedoutDefaults:
   bufferWounds:       5      # fatal torso wounds added on entering bleedout
 
 # =====================================================================
+#  DX: proportional wound recovery + Field Surgery. With
+#  proportionalRecovery on, post-mission recovery days scale with the
+#  FRACTION of max health lost (healthLost * RNG(min-max) / maxHealth)
+#  instead of stock OXCE's absolute-loss formula, so full HP loss is
+#  ~recoveryDays days for any soldier and tough soldiers convalesce
+#  faster for the same absolute damage.
+#
+#  Field Surgery: once STR_FIELD_SURGERY_UNIT is researched, all soldiers
+#  use the shorter fieldSurgeryDays band (~25% faster). The topic isn't
+#  defined here, so the gate stays dormant until a ruleset adds it (or you
+#  debug-research it) - proportional recovery still works meanwhile.
+# =====================================================================
+health:
+  proportionalRecovery: true   # enable the fraction-of-health-lost model
+  recoveryDaysMin:      20      # days out at 100% HP loss (lower bound)
+  recoveryDaysMax:      30      # days out at 100% HP loss (upper bound)
+  fieldSurgeryResearch: STR_FIELD_SURGERY_UNIT
+  fieldSurgeryDaysMin:  15      # reduced band once Field Surgery is researched
+  fieldSurgeryDaysMax:  25
+
+# =====================================================================
 #  DX: editable base damage types (loadEarlyRules pre-pass)
 #  Give every PHYSICAL damage type the same armor-wear profile so the
 #  Armor Degradation feature can be exercised across weapon types at
@@ -463,9 +484,31 @@ armors:
   - type: STR_FLYING_SUIT_UC
     inventoryLayout: STR_DX_LAYOUT_ONEHAND
 
+# =====================================================================
+#  DX: Field Surgery research stub. A cheap, no-dependency topic so the
+#  wound-recovery Field Surgery gate (health.fieldSurgeryResearch above)
+#  can be tested: research it and every soldier's post-mission recovery
+#  drops to the shorter fieldSurgeryDays band. Throwaway test content.
+# =====================================================================
+research:
+  - name: STR_FIELD_SURGERY_UNIT
+    cost: 30                # low so it finishes fast in a test game
+    points: 5
+    # no dependencies -> available from the start of a new game
+
+ufopaedia:
+  - id: STR_FIELD_SURGERY_UNIT
+    type_id: 8              # TEXT (heading + body, no image)
+    section: STR_ALIEN_RESEARCH_UC
+    requires:
+      - STR_FIELD_SURGERY_UNIT
+    text: STR_FIELD_SURGERY_UNIT_UFOPEDIA
+
 extraStrings:
   - type: en-US
     strings:
+      STR_FIELD_SURGERY_UNIT: "Field Surgery"
+      STR_FIELD_SURGERY_UNIT_UFOPEDIA: "Advances in field medicine let our surgeons treat battlefield trauma far more effectively. Wounded soldiers now recover from their injuries noticeably faster."
       STR_HEAVY_CANNON: "Heavy Sniper"
       STR_SHOTGUN: "Shotgun"
       STR_SHOTGUN_BUCKSHOT: "Shotgun Buckshot"

@@ -4434,7 +4434,25 @@ bool BattleUnit::postMissionProcedures(const Mod *mod, SavedGame *geoscape, Save
 	int manaLoss = mod->getReplenishManaAfterMission() ? 0 : manaLossOriginal;
 	int healthLoss = mod->getReplenishHealthAfterMission() ? 0 : healthLossOriginal;
 
-	auto recovery = (int)RNG::generate((healthLossOriginal*0.5),(healthLossOriginal*1.5));
+	int recovery;
+	if (mod->getProportionalWoundRecovery() && _stats.health > 0)
+	{
+		// DX: recovery scales with the fraction of max health lost, so a soldier's toughness no longer
+		// inflates convalescence for the same absolute damage. Field Surgery research shortens the band.
+		int daysMin = mod->getWoundRecoveryDaysMin();
+		int daysMax = mod->getWoundRecoveryDaysMax();
+		const std::string& fsResearch = mod->getFieldSurgeryResearch();
+		if (!fsResearch.empty() && geoscape->isResearched(fsResearch))
+		{
+			daysMin = mod->getFieldSurgeryDaysMin();
+			daysMax = mod->getFieldSurgeryDaysMax();
+		}
+		recovery = (int)(healthLossOriginal * (double)RNG::generate(daysMin, daysMax) / (double)_stats.health);
+	}
+	else
+	{
+		recovery = (int)RNG::generate((healthLossOriginal*0.5),(healthLossOriginal*1.5));
+	}
 
 	if (_exp.bravery && stats->bravery < caps.bravery)
 	{

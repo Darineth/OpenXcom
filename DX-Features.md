@@ -1051,8 +1051,6 @@ obvious. *(design: [plans/Feature-Bleedout.md](plans/Feature-Bleedout.md))*
   bleeding-out soldier"* tooltip (a click-to-jump cue shown regardless of the selected unit).
 - **Combat log.** Entering bleedout logs `{unit} is bleeding out!` (WARNING); death from bleedout logs
   via the normal kill path.
-- **Not yet:** proportional wound recovery / Field Surgery research (a separate Phase 7 item that
-  builds on this).
 
 ## Medikit / Stabilization Rework (out-for-the-mission + target readout)
 
@@ -1070,3 +1068,26 @@ Builds on bleedout. *(design: [plans/Feature-MedikitStabilization.md](plans/Feat
   `STATUS>` word (Healthy / Injured / Unconscious / Bleeding out / Incapacitated), `HP cur/max`, and
   `Stun stun/curHP` (stun over **current** HP, since a unit drops once stun exceeds current health),
   plus the healer's `TU cur/max` so you can see whether another treatment is affordable.
+
+## Proportional Wound Recovery + Field Surgery
+
+Post-mission wound recovery (days a soldier is out of action) rebalanced to track the **fraction** of
+health lost rather than the absolute amount, plus a research gate that shortens convalescence base-wide.
+*(design: [plans/Feature-ProportionalWoundRecovery.md](plans/Feature-ProportionalWoundRecovery.md))*
+
+- **Proportional recovery.** Stock OXCE sets recovery from *absolute* HP lost
+  (`RNG(0.5–1.5) × healthLost`), which penalizes tough soldiers — a 90-HP veteran who loses 30 HP is
+  out far longer than a 30-HP rookie who loses the same 30. With proportional recovery on, the formula
+  becomes `healthLost × RNG(recoveryDaysMin–Max) / maxHealth`, so full-health-loss is a roughly fixed
+  window (default **20–30 days**) for any soldier and recovery scales with the *percentage* of health
+  lost. The existing `instantWoundRecovery` armor flag and the `ReturnFromMissionUnit` armor script
+  still apply on top, unchanged.
+- **Field Surgery research gate.** Once a configurable research topic (default
+  **`STR_FIELD_SURGERY_UNIT`**) is unlocked, recovery uses a shorter band (default **15–25 days**) for
+  **all** soldiers — a permanent, save-wide reduction (~25% faster). Set `fieldSurgeryResearch` empty to
+  disable the gate. *(The engine provides the hook; the research topic/Ufopaedia content is left to the
+  ruleset.)*
+- **Opt-in, mod-configurable.** All keys live in the existing **`health:`** mod-info node:
+  `proportionalRecovery` (default **false** → stock absolute formula, byte-for-byte unchanged),
+  `recoveryDaysMin`/`recoveryDaysMax` (20/30), `fieldSurgeryResearch` (`STR_FIELD_SURGERY_UNIT`), and
+  `fieldSurgeryDaysMin`/`fieldSurgeryDaysMax` (15/25).

@@ -353,7 +353,13 @@ Everything below is DX-specific work confirmed **absent** from the base.
   - [x] **Medikit target-state readout** — target name + derived `STATUS>` (Healthy / Injured /
     Unconscious / Bleeding out / Incapacitated); `HP cur/max`; `Stun stun/curHP`; and the healer's
     `TU cur/max`, on the medikit screen.
-- [ ] **Proportional Wound Recovery + Field Surgery** — recovery scaling and research gate.
+- [x] **Proportional Wound Recovery + Field Surgery** — recovery scaling and research gate.
+  - ✅ **Done.** Opt-in fraction-of-health-lost recovery (`healthLost × RNG(min–max) / maxHealth`,
+    default 20–30 days at full loss) replacing OXCE's absolute-loss formula, plus a configurable
+    Field Surgery research gate (default `STR_FIELD_SURGERY_UNIT`) that drops the band to 15–25
+    base-wide. All config in the `health:` mod-info node; defaults preserve stock behavior. Engine
+    hook only — research content left to the ruleset.
+  *(design: [plans/Feature-ProportionalWoundRecovery.md](plans/Feature-ProportionalWoundRecovery.md))*
 - [ ] **Role Definitions & Templates** — `RuleRole`/`Role` + template loadouts. *(reuses Phase 2
   loadout-template plumbing)*
 - [ ] **Role UI & Markers** — soldier/craft/inventory UI icons and battlescape marker.
