@@ -25,6 +25,7 @@
 #include "Particle.h"
 #include "Projectile.h" // SpreadSample (aim-cone/throw spread visualization)
 #include <vector>
+#include <map>
 
 namespace OpenXcom
 {
@@ -159,6 +160,10 @@ private:
 	const std::vector<Uint8> *_transparencies;
 	bool _showObstacles;
 	bool _showInfoOnCursor;
+	// DX: per-tile line-of-fire cache for the overwatch-cone LOS clarity, valid while the watcher stays
+	// on _owLosCacheOrigin (cleared when it moves) so we don't voxel-trace every cone tile every frame.
+	Position _owLosCacheOrigin;
+	std::map<int, bool> _owLosCache;
 public:
 	/// Creates a new map at the specified position and size.
 	Map(Game* game, int width, int height, int x, int y, int visibleMapHeight);

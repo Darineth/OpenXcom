@@ -152,7 +152,7 @@ items:
     # DX overwatch test: a fairly narrow, long watch cone with a small near dead-zone. Select
     # "Overwatch" from the rifle's action menu, click a tile to aim the cone (yellow tile markers show
     # the watched area), and enemies entering it on their turn draw a reserved snap shot.
-    overwatchRange: 18       # watch out to 18 tiles
+    overwatchRange: 20       # watch out to 20 tiles
     overwatchMinRange: 2     # ignore the 2-tile near dead zone
     overwatchConeAngle: 50   # 50-degree cone (full width)
     overwatchShot: burst     # reserve burst shots

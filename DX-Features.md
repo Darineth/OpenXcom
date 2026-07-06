@@ -997,9 +997,15 @@ on the legacy radius overwatch, rebuilt around a **directional cone**.
   option is hidden), so a weapon opts in by setting `overwatchRange > 0`. All the per-weapon defaults
   are overridable mod-wide via a top-level `overwatchDefaults:` node (same keys), so a mod can enable
   overwatch broadly or change the default shot/angle without touching each item.
-- **Trigger-tile markers.** While aiming (and when a unit already on overwatch is reselected), every
-  tile inside the cone gets a **tile-level marker** (the dithered Pathfinding target-reticle sprite,
-  like the path preview's tile markers), so the watched area reads as a translucent filled region.
+- **Trigger-tile markers, LOS-clarified.** While aiming (and when a unit already on overwatch is
+  reselected), every tile inside the cone gets a **tile-level marker** (the dithered Pathfinding
+  target-reticle sprite, like the path preview's tile markers), so the watched area reads as a
+  translucent filled region. Tiles the watcher has **line of fire** to are **yellow** (the real
+  covered area); tiles blocked by terrain (behind a wall) are **red** dead zones the overwatch can't
+  actually cover — so you can see your true coverage as you pick the aim tile. The test is a pure
+  line-of-fire check (`canTargetUnit`) that spans the **full cone range** and is **not** clipped by the
+  ~20-tile view distance (overwatch reaches its whole cone on shared sight). Per-tile LOF is cached per
+  watcher position, so a large sniper cone doesn't voxel-trace every frame.
 - **Feedback.** Arming plays a reload/ready sound and logs `{unit} is on overwatch` to the floating
   combat log. When the overwatch fires, it reuses the shared fire line but renders the **overwatch**
   variant (`{unit} took an overwatch shot at {target} with {weapon}`) instead of the reaction wording.
@@ -1020,8 +1026,7 @@ on the legacy radius overwatch, rebuilt around a **directional cone**.
   one-turn thing (it expires at the owner's next turn, after which shots just spend TU). State survives
   save/load. It **auto-cancels** when the unit is commanded to move or fire a normal shot, and can be
   toggled off by re-selecting **Overwatch**.
-- Deferred: a dedicated on-map per-unit overwatch glyph, per-tile line-of-fire filtering of the
-  markers, and AI use of overwatch.
+- Deferred: a dedicated on-map per-unit overwatch glyph, and AI use of overwatch.
 
 ## Bleedout & Indicators (negative-health dying state)
 

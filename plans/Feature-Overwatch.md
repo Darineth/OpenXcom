@@ -5,10 +5,11 @@ The biggest new Phase 7 mechanic. Builds on the shipped **Reaction Scoring Split
 Evasion** ([Feature-ReactionScoringSplit.md](Feature-ReactionScoringSplit.md)). Shipped: the five
 `overwatch*` RuleItem fields + `BA_OVERWATCH`; `BattleUnit` overwatch state (persistent, save/load,
 lazy weapon resolve); `TileEngine::isInOverwatchCone`; the action-menu item + aim + one-reserved-shot
-arming; the cone-tile markers (aim + reselect); the trigger folded into `checkReactionFire`
-(cone-exclusive, reserved-free-then-TU shots, full-reaction score); persistence with turn-start
-reservation expiry; and auto/toggle cancellation. **Deferred:** a dedicated on-map per-unit overwatch
-indicator, per-tile line-of-fire filtering of the markers, and AI use of overwatch (see Follow-ons).
+arming; the cone-tile markers (aim + reselect), now **LOS-clarified** — yellow where the watcher has
+line of fire, red for terrain-blocked dead zones (per-tile LOF cached per watcher position); the
+trigger folded into `checkReactionFire` (cone-exclusive, reserved-free-then-TU shots, full-reaction
+score); persistence with turn-start reservation expiry; and auto/toggle cancellation. **Deferred:** a
+dedicated on-map per-unit overwatch indicator, and AI use of overwatch (see Follow-ons).
 
 ## Resolved decisions (as built)
 

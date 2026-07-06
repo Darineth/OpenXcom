@@ -113,7 +113,7 @@ Map::Map(Game *game, int width, int height, int x, int y, int visibleMapHeight) 
 	_followProjectile(true), _projectileInFOV(false), _explosionInFOV(false), _launch(false), _visibleMapHeight(visibleMapHeight),
 	_unitDying(false), _smoothingEngaged(false), _flashScreen(false), _bgColor(15), _projectileSet(0),
 	_targetingProjectile(0), _previewTarget(-1, -1, -1), _previewActionType(-1), _previewActor(0), _previewAlt(false),
-	_showObstacles(false), _showInfoOnCursor(false)
+	_showObstacles(false), _showInfoOnCursor(false), _owLosCacheOrigin(-1, -1, -1)
 {
 	// TODO: extract to a better place later
 	for (const auto& pair : Options::mods)
@@ -3275,6 +3275,18 @@ void Map::drawOverwatchCone(Surface *surface)
 	}
 
 	TileEngine *te = _save->getTileEngine();
+	// DX: per-tile line-of-fire cache is only valid for a stationary watcher - drop it if the unit moved.
+	if (_owLosCacheOrigin != origin)
+	{
+		_owLosCache.clear();
+		_owLosCacheOrigin = origin;
+	}
+	// Minimal action to build the firing origin voxel for this weapon/unit's line-of-fire test.
+	BattleAction losAction;
+	losAction.actor = unit;
+	losAction.type = rule->getOverwatchShot();
+	const int mapW = _save->getMapSizeX(), mapH = _save->getMapSizeY();
+
 	Position screen;
 	for (int dx = -range; dx <= range; ++dx)
 	{
@@ -3286,10 +3298,37 @@ void Map::drawOverwatchCone(Surface *surface)
 			{
 				continue;
 			}
+			// Tiles the watcher has line of fire to are the real watched area (yellow); tiles blocked by
+			// terrain (behind a wall) are dead zones overwatch can't cover - flag them red. We use the pure
+			// line-of-fire test (canTargetUnit for a hypothetical target at the tile), NOT isTileInLOS -
+			// overwatch fires by line of fire up to its full cone range and is NOT limited by the ~20-tile
+			// view distance (nor by the watcher's own sight; a teammate can supply the spotting).
+			int key = (t.z * mapH + t.y) * mapW + t.x;
+			auto it = _owLosCache.find(key);
+			bool inLos;
+			if (it != _owLosCache.end())
+			{
+				inLos = it->second;
+			}
+			else
+			{
+				losAction.target = t;
+				Position originVoxel = te->getOriginVoxel(losAction, 0);
+				// Raw line-of-fire trace from the firing origin to the tile's centre (~standing-unit
+				// height), excluding the watcher so it can't block its own shot. Clear if the ray reaches
+				// there unobstructed (V_EMPTY) or the first thing it hits is on the target tile itself;
+				// blocked if terrain stops it short. No view-distance cap, so it spans the whole cone.
+				Position targetVoxel = t.toVoxel() + Position(8, 8, 12);
+				std::vector<Position> traj;
+				VoxelType test = te->calculateLineVoxel(originVoxel, targetVoxel, false, &traj, unit);
+				inLos = (test == V_EMPTY) || (test != V_OUTOFBOUNDS && !traj.empty() && traj.front().toTile() == t);
+				_owLosCache[key] = inLos;
+			}
 			_camera->convertMapToScreen(t, &screen);
 			screen += _camera->getMapOffset();
-			// Full brightness (shade 0), vibrant color - the dithered sprite supplies the translucency.
-			Surface::blitRaw(surface, marker, screen.x, screen.y - tile->getTerrainLevel(), 0, false, Pathfinding::yellow);
+			// Full brightness (shade 0), vibrant colour - the dithered sprite supplies the translucency.
+			Surface::blitRaw(surface, marker, screen.x, screen.y - tile->getTerrainLevel(), 0, false,
+				inLos ? Pathfinding::yellow : Pathfinding::red);
 		}
 	}
 }
