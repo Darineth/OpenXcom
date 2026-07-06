@@ -32,7 +32,7 @@ namespace OpenXcom
  * Creates a blank role.
  * @param id The role's stable numeric id.
  */
-Role::Role(int id) : _id(id), _icon(0), _color(0), _loadoutArmor(nullptr)
+Role::Role(int id) : _id(id), _color(0), _loadoutArmor(nullptr)
 {
 }
 
@@ -99,7 +99,7 @@ void Role::save(YAML::YamlNodeWriter writer) const
 	writer.write("id", _id);
 	if (!_name.empty())
 		writer.write("name", _name);
-	if (_icon != 0)
+	if (!_icon.empty())
 		writer.write("icon", _icon);
 	if (_color != 0)
 		writer.write("color", _color);

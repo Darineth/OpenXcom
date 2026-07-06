@@ -44,7 +44,7 @@ class Role
 private:
 	int _id;
 	std::string _name;
-	int _icon;
+	std::string _icon;
 	int _color;
 	std::vector<EquipmentLayoutItem*> _loadout;
 	const Armor* _loadoutArmor;
@@ -65,10 +65,10 @@ public:
 	const std::string& getName() const { return _name; }
 	/// Sets the role's display name.
 	void setName(const std::string& name) { _name = name; }
-	/// Gets the role-icon frame index.
-	int getIcon() const { return _icon; }
-	/// Sets the role-icon frame index.
-	void setIcon(int icon) { _icon = icon; }
+	/// Gets the role-icon name (a roleIcons registry entry; empty = none).
+	const std::string& getIcon() const { return _icon; }
+	/// Sets the role-icon name (a roleIcons registry entry).
+	void setIcon(const std::string& icon) { _icon = icon; }
 	/// Gets the role's marker/tint palette colour.
 	int getColor() const { return _color; }
 	/// Sets the role's marker/tint palette colour.

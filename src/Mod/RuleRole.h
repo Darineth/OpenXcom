@@ -31,13 +31,13 @@ namespace OpenXcom
  * only a mod-supplied *seed* - a starter role copied into a new game's editable
  * role list so a fresh game has usable defaults out of the box. It intentionally
  * carries no loadout (roles get their loadout from the player); just an identity
- * (name), a role-icon frame index, and a marker/tint colour.
+ * (name), a role-icon reference (a roleIcons registry name), and a marker/tint colour.
  */
 class RuleRole
 {
 private:
 	std::string _name;
-	int _icon;
+	std::string _icon;
 	int _color;
 public:
 	/// Creates a blank role seed with the given (STR) id.
@@ -48,8 +48,8 @@ public:
 	void load(const YAML::YamlNodeReader& reader);
 	/// Gets the role's (STR) id / display name.
 	const std::string& getName() const { return _name; }
-	/// Gets the role-icon frame index (into the role-icon surface set).
-	int getIcon() const { return _icon; }
+	/// Gets the role-icon name (a roleIcons registry entry; empty = none).
+	const std::string& getIcon() const { return _icon; }
 	/// Gets the role's marker/tint palette colour.
 	int getColor() const { return _color; }
 };

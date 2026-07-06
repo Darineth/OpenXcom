@@ -112,6 +112,7 @@
 #include "RuleSoldierTransformation.h"
 #include "RuleSoldierBonus.h"
 #include "RuleRole.h"
+#include "RuleRoleIcon.h"
 
 #define ARRAYLEN(x) (std::size(x))
 
@@ -757,6 +758,10 @@ Mod::~Mod()
 		delete pair.second;
 	}
 	for (auto& pair : _roles)
+	{
+		delete pair.second;
+	}
+	for (auto& pair : _roleIcons)
 	{
 		delete pair.second;
 	}
@@ -3110,6 +3115,14 @@ void Mod::loadFile(const FileMap::FileRecord &filerec, ModScript &parsers)
 			rule->load(ruleReader, this, parsers);
 		}
 	}
+	for (const auto& ruleReader : iterateRules("roleIcons", "name"))
+	{
+		RuleRoleIcon *rule = loadRule(ruleReader, &_roleIcons, &_roleIconsIndex, "name");
+		if (rule != 0)
+		{
+			rule->load(ruleReader);
+		}
+	}
 	for (const auto& ruleReader : iterateRules("roles", "name"))
 	{
 		RuleRole *rule = loadRule(ruleReader, &_roles, &_rolesIndex, "name");
@@ -4853,6 +4866,25 @@ RuleRole *Mod::getRole(const std::string &id, bool error) const
 const std::vector<std::string> &Mod::getRolesList() const
 {
 	return _rolesIndex;
+}
+
+/**
+ * Returns a named soldier-role icon registry entry (DX).
+ * @param id Role-icon name.
+ * @return The role-icon entry.
+ */
+RuleRoleIcon *Mod::getRoleIcon(const std::string &id, bool error) const
+{
+	return getRule(id, "RoleIcon", _roleIcons, error);
+}
+
+/**
+ * Returns the (ordered) list of soldier-role icon names (DX).
+ * @return The list of role-icon names.
+ */
+const std::vector<std::string> &Mod::getRoleIconsList() const
+{
+	return _roleIconsIndex;
 }
 
 /**

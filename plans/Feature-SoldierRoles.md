@@ -1,12 +1,21 @@
 # Feature: Soldier Roles (player-authored classification + per-role loadout)
 
-**Status:** In progress (Jul 2026). **Step 1 (data backbone) done & building clean** — `RuleRole`
+**Status:** In progress (Jul 2026). **Step 1 (data backbone) committed & building clean** — `RuleRole`
 seeds + `roles:` node in `Mod`, savegame `Role` (identity + own loadout), `SavedGame` role list with
 new-game seeding / accessors / save-load, and `Soldier._roleId` (additive save format). Authored
-xcom1 role icons shipped as assets. **Next:** template-target generalization, the role-management
-screen, and the minimal Soldier-Info assign entry point. This is the Phase 7 **"Role Definitions &
-Templates"** roadmap item, redesigned from the legacy fixed-list model into a **player-authored**
-system.
+xcom1 role icons shipped as individual named `singleImage` surfaces (uncommitted).
+
+**Icon model → named icons via named surfaces (Jul 2026):** roles reference an icon by a **stable string
+name** (a new `roleIcons`/`RuleRoleIcon` registry), and each icon is an individual **named surface**
+(`RoleIcon<Name>` / `RoleIcon<Name>Map`) resolved via `Mod::getSurface`. The identity is a string
+end-to-end, so saved role icons survive mod-list / load-order changes with no frame-index / sprite-offset
+/ `maxSharedFrames` machinery at all. This **supersedes** step 1's `int _icon` on `RuleRole`/`Role` —
+that field becomes a `roleIcons`-name reference; the `roles:`/`Role`/`Soldier._roleId` plumbing already
+built is otherwise unchanged. **`RuleRoleIcon` + `roleIcons:` parsing implemented and `_icon` converted
+int→name — builds clean (Release/Win32, 0 warnings); uncommitted.** **Next:** template-target
+generalization, the role-management screen, and the minimal Soldier-Info assign entry point. This is the
+Phase 7 **"Role Definitions & Templates"** roadmap item, redesigned from the legacy fixed-list model into
+a **player-authored** system.
 
 Roadmap items covered/affected:
 - **Role Definitions & Templates** — *this pass* (data backbone + minimal assign/manage UI).
@@ -89,32 +98,63 @@ A top-level `roles:` node plus a companion `roleIcons` key naming the icon `Surf
 `Mod` into a lightweight **seed** definition (`RuleRole`) — the *only* role rule data, used to populate
 a fresh save's role list and to register the icon set:
 
+Each role icon is shipped as an **individual named `singleImage` ExtraSprite** (not a numbered
+SurfaceSet), and a `roleIcons:` registry bundles a badge + map-marker pair under a stable name:
+
 ```yaml
-roleIcons: ROLE_ICONS      # SurfaceSet (from extraSprites) the picker cycles through
+# Icons are named surfaces (extraSprites): RoleIcon<Name> (23x23 badge) and
+# RoleIcon<Name>Map (small battlescape marker). See xcom1/roles.rul.
+roleIcons:                 # registry: bundles a badge+marker pair under a stable name
+  - name: INFANTRY         # stable string id (this is what a Role stores)
+    sprite: RoleIconInfantry       # badge surface name (Mod::getSurface)
+    mapSprite: RoleIconInfantryMap  # map-marker surface name
+  - name: SNIPER
+    sprite: RoleIconSniper
+    mapSprite: RoleIconSniperMap
+  - name: ENGINEER         # a mod just declares its own named surfaces + a registry entry
+    sprite: MYMOD_RoleIconEngineer
+    mapSprite: MYMOD_RoleIconEngineerMap
+
 roles:                     # seed roles copied into a NEW save's editable role list
-  - name: STR_ROLE_RIFLEMAN
-    icon: 0                # frame index into ROLE_ICONS
-    color: 132            # palette index for the role's marker/tint (deferred use)
+  - name: STR_ROLE_INFANTRY
+    icon: INFANTRY         # references a roleIcons entry BY NAME
+    color: 132            # the role's UNIT ARMOR colour (per-role armor recolour; deferred)
   - name: STR_ROLE_SNIPER
-    icon: 1
-    color: 45
-  # ...Scout, Rocketeer, Assault, Heavy, Grenadier, Medic, Psionics, Demolitions, Specialist
+    icon: SNIPER
+  # ...one seed per starting role
 ```
 
-- `RuleRole` ([src/Mod/RuleRole.h/.cpp], new) — fields: `name` (STR id), `icon` (frame index), `color`
-  (palette index). Deliberately minimal; legacy's `smallIconSprite`/`isBlank` are dropped unless the UI
-  proves it needs them (a single icon set + on-the-fly small draw should suffice).
-- `Mod` ([src/Mod/Mod.cpp](../src/Mod/Mod.cpp)) — parse `roles:` into `std::vector<RuleRole*> _roles`
-  and store the `_roleIcons` surfaceset name; expose `getRoleSeeds()` and
-  `getRoleIconSurfaceSet()`. Registered in the `loadFile` dispatch alongside the other top-level nodes.
+- `RuleRoleIcon` ([src/Mod/RuleRoleIcon.h/.cpp], new) — the named icon definition: `name` (stable
+  string id) + `sprite` + `mapSprite` (**surface names**, resolved via `Mod::getSurface`). Parsed from a
+  top-level `roleIcons:` node into `std::map<std::string, RuleRoleIcon*>`; `Mod::getRoleIcon(name)` /
+  `getRoleIconsList()`. **Names are the identity** — a role stores the registry name, and the icon stores
+  surface names; nothing stores a frame index. No `color` — the icon is shared across roles, so it can't
+  own a per-role colour (see below).
+- `RuleRole` ([src/Mod/RuleRole.h/.cpp], seed) — fields: `name` (STR id), `icon` (a **`roleIcons` name**,
+  not an int), `color` (the role's **unit armor colour** — palette index; see the note below).
+  Deliberately minimal; legacy's `smallIconSprite`/`isBlank` dropped (the badge/map surface pair covers
+  the two sizes).
+- `Mod` ([src/Mod/Mod.cpp](../src/Mod/Mod.cpp)) — parse `roleIcons:` and `roles:`.
+
+**Why named surfaces (not a numbered SurfaceSet):** the icon identity is a **string** end-to-end
+(role → `roleIcons` name → surface names), so it survives mod-list / load-order changes with zero
+special handling — `getSurface(name)` re-resolves every load. Using a SurfaceSet would make the
+identity a frame *index*, which drags in per-mod sprite offsets, a reserved `maxSharedFrames` boundary
+(settable only in engine code — `ExtraSprites::load` has no such key), and silent index-collision
+between mods. Named surfaces avoid all of it: a mod adds an icon by declaring more named surfaces (a
+namespaced name like `MYMOD_...` avoids collisions) plus a `roleIcons:` entry. The only cost is a more
+verbose ruleset (~2 small blocks per icon), which we already pay via the registry.
 
 ### Savegame (player-authored: the live, editable roles)
 
 - `Role` ([src/Savegame/Role.h/.cpp], new) — the mutable per-save role:
   - `int _id` (stable unique id, minted from a savegame counter like soldiers' `_id`)
   - `std::string _name` (player-editable display/STR text)
-  - `int _icon` (frame index into the role-icon set)
-  - `int _color` (palette index; marker/tint — stored now, rendered by later items)
+  - `std::string _icon` (a **`roleIcons` name**, resolved to `RuleRoleIcon`/sprites at runtime — the
+    save-stable identity; empty = the `None`/no-badge default)
+  - `int _color` (the role's **unit armor colour** — a palette index used to recolour the assigned
+    soldier's armor; the Phase 7 "Per-Role Armor Colors" item. Stored now, rendered by that later item.
+    *May* optionally also tint the role icon, but the icon is not its purpose.)
   - `std::vector<EquipmentLayoutItem*> _loadout` (+ `const Armor* _loadoutArmor`, matching the global
     template's name/armor pairing)
   - `load`/`save`.
@@ -152,15 +192,37 @@ combat-log role text, and the armor tint render.
 
 The procedural-placeholder plan is dropped: a full set of **authored** role icons now ships under
 [bin/standard/xcom1/Resources/Roles/](../bin/standard/xcom1/Resources/Roles/) — one PNG per role
-(Rifleman, Sniper, Scout, Rocketeer, Assault, Heavy, Grenadier, Medic, Psionics, Demolitions,
-Specialist, plus Marksman / MachineGunner / AntiArmor extras), a `RoleIconNone` blank, `*Simple`
-low-detail variants, and the `RoleIconTemplate.pdn` Paint.NET source. **These are the starting icons.**
+(Infantry, Sniper, Scout, Rocketeer, Assault, Heavy, Grenadier, Medic, Psionics, Demolitions,
+Specialist, plus Marksman / MachineGunner / AntiArmor extras), a `RoleIconNone` blank, `*Map`
+small map-marker variants, and the `RoleIconTemplate.pdn` Paint.NET source. **These are the starting icons.**
 
 Known limitation: the art currently lives under **xcom1 only** — it is not yet a shared/cross-ruleset
 resource, so TFTD (xcom2) and other rulesets have no role icons yet. A later **sprite-management** pass
-will address shipping/sharing the icon set across rulesets (and the `SurfaceSet` wiring: an
-`extraSprites:` entry naming the set + a `roleIcons` reference the picker cycles through). For now the
-icons are committed as raw assets ahead of that wiring.
+will address shipping/sharing the icon set across rulesets. For now the icons are committed and wired
+under xcom1.
+
+### Icon surfaces (done — xcom1 `roles.rul`)
+
+Each role icon is an **individual named `singleImage` ExtraSprite** in the dedicated
+[bin/standard/xcom1/roles.rul](../bin/standard/xcom1/roles.rul) (which will also hold the `roleIcons:`
+registry and the `roles:` seed list), two per role:
+
+- **`RoleIcon<Name>`** — the full 23×23 badge (inventory + battlescape stats bar). All 15 roles
+  (including `RoleIconNone`) have one.
+- **`RoleIcon<Name>Map`** — the small variable-size glyph that replaces the bobbing down-arrow
+  selected-unit indicator in the live battlescape. 14 of them — **no `RoleIconNoneMap`** (the `None`
+  role keeps the default arrow).
+
+Shipped names: `None`, `Infantry`, `Marksman`, `Sniper`, `Scout`, `Assault`, `MachineGunner`, `Heavy`,
+`AntiArmor`, `Rocketeer`, `Grenadier`, `Demolitions`, `Medic`, `Psionics`, `Specialist`. Declared with
+`typeSingle:` + `fileSingle:` (no `width`/`height` — `Surface::loadImage` reallocates each surface to
+its PNG's native size). They are **lazy-loaded on first access**, so nothing loads until a consumer (a
+later rendering step) draws them via `Mod::getSurface(name)`.
+
+A `roleIcons:` registry entry pairs a badge + map surface under a stable name (`INFANTRY → sprite
+RoleIconInfantry / mapSprite RoleIconInfantryMap`); roles reference the registry name. There is **no
+frame index, no per-mod offset, and no `maxSharedFrames` boundary** — the named-surface model makes the
+whole identity a string (see "Why named surfaces" above).
 
 ## Scope for this pass
 
@@ -184,5 +246,7 @@ role-driven stat weighting/bonuses (not planned — roles are loadout + identity
 - **Apply-on-assign — RESOLVED (Jul 2026): prompt/optional.** Assigning a role tags the soldier but
   does not auto-overwrite their loadout; applying the role's template is a separate explicit action (or
   a yes/no prompt), so picking a role never stomps a hand-tuned loadout.
-- **`color` semantics now** — store only (rendered later) vs. also show a colored name/icon on the
-  management + Soldier-Info screens this pass (cheap; likely yes for the icon tint).
+- **`color` = unit armor colour (RESOLVED, Jul 2026).** The role's `color` is primarily the assigned
+  soldier's **armor recolour** (Phase 7 "Per-Role Armor Colors"), stored now and rendered by that later
+  item. It *may* also tint the role icon if that turns out to work cleanly, but the armor is the point —
+  it does not live on the shared `RuleRoleIcon`.

@@ -1091,6 +1091,9 @@
     <ClCompile Include="Mod\RuleRole.cpp">
       <Filter>Mod</Filter>
     </ClCompile>
+    <ClCompile Include="Mod\RuleRoleIcon.cpp">
+      <Filter>Mod</Filter>
+    </ClCompile>
     <ClCompile Include="Mod\RuleSoldierBonus.cpp">
       <Filter>Mod</Filter>
     </ClCompile>
@@ -2379,6 +2382,9 @@
       <Filter>Savegame</Filter>
     </ClInclude>
     <ClInclude Include="Mod\RuleRole.h">
+      <Filter>Mod</Filter>
+    </ClInclude>
+    <ClInclude Include="Mod\RuleRoleIcon.h">
       <Filter>Mod</Filter>
     </ClInclude>
     <ClInclude Include="Savegame\Role.h">

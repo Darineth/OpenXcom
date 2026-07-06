@@ -334,6 +334,7 @@ set ( mod_src
   Mod/RuleRegion.cpp
   Mod/RuleResearch.cpp
   Mod/RuleRole.cpp
+  Mod/RuleRoleIcon.cpp
   Mod/RuleSkill.cpp
   Mod/RuleSoldier.cpp
   Mod/RuleSoldierBonus.cpp

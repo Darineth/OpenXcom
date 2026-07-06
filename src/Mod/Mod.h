@@ -76,6 +76,7 @@ class RuleManufactureShortcut;
 class RuleSoldierBonus;
 class RuleSoldierTransformation;
 class RuleRole;
+class RuleRoleIcon;
 class AlienRace;
 class RuleEnviroEffects;
 class RuleStartingCondition;
@@ -203,6 +204,7 @@ private:
 	std::map<std::string, RuleSoldierBonus *> _soldierBonus;
 	std::map<std::string, RuleSoldierTransformation *> _soldierTransformation;
 	std::map<std::string, RuleRole *> _roles;
+	std::map<std::string, RuleRoleIcon *> _roleIcons;
 	std::map<std::string, UfoTrajectory *> _ufoTrajectories;
 	std::map<std::string, RuleAlienMission *> _alienMissions;
 	std::map<std::string, RuleInterface *> _interfaces;
@@ -331,7 +333,7 @@ private:
 	std::map<std::string, int> _ufopaediaSections;
 	std::vector<std::string> _countriesIndex, _extraGlobeLabelsIndex, _regionsIndex, _facilitiesIndex, _craftsIndex, _craftWeaponsIndex, _itemCategoriesIndex, _itemsIndex, _invsIndex, _inventoryLayoutsIndex, _ufosIndex;
 	std::vector<std::string> _aliensIndex, _enviroEffectsIndex, _startingConditionsIndex, _deploymentsIndex, _armorsIndex, _ufopaediaIndex, _ufopaediaCatIndex, _researchIndex, _manufactureIndex;
-	std::vector<std::string> _skillsIndex, _soldiersIndex, _soldierTransformationIndex, _soldierBonusIndex, _rolesIndex;
+	std::vector<std::string> _skillsIndex, _soldiersIndex, _soldierTransformationIndex, _soldierBonusIndex, _rolesIndex, _roleIconsIndex;
 	std::vector<std::string> _alienMissionsIndex, _terrainIndex, _customPalettesIndex, _arcScriptIndex, _eventScriptIndex, _eventIndex, _missionScriptIndex, _adhocScriptIndex;
 	std::vector<std::vector<int> > _alienItemLevels;
 	std::vector<std::array<SDL_Color, TransparenciesOpacityLevels>> _transparencies;
@@ -1073,6 +1075,10 @@ public:
 	RuleRole *getRole(const std::string &id, bool error = false) const;
 	/// Gets the (ordered) list of all soldier-role seed ids (DX).
 	const std::vector<std::string> &getRolesList() const;
+	/// Gets a named soldier-role icon registry entry (DX).
+	RuleRoleIcon *getRoleIcon(const std::string &id, bool error = false) const;
+	/// Gets the (ordered) list of all soldier-role icon names (DX).
+	const std::vector<std::string> &getRoleIconsList() const;
 	/// Gets the ruleset for a specific soldier transformation project.
 	RuleSoldierTransformation *getSoldierTransformation(const std::string &id, bool error = false) const;
 	/// Gets the list of all soldier transformation projects.

@@ -16,27 +16,27 @@
  * You should have received a copy of the GNU General Public License
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "RuleRole.h"
+#include "RuleRoleIcon.h"
 
 namespace OpenXcom
 {
 
 /**
- * Creates a blank role seed.
- * @param name The role's (STR) id.
+ * Creates a role-icon registry entry.
+ * @param name The entry's stable name.
  */
-RuleRole::RuleRole(const std::string& name) : _name(name), _color(0)
+RuleRoleIcon::RuleRoleIcon(const std::string& name) : _name(name)
 {
 }
 
 /**
- * Loads the role seed from a YAML file.
+ * Loads the role-icon entry from a YAML file.
  * @param reader YAML reader.
  */
-void RuleRole::load(const YAML::YamlNodeReader& reader)
+void RuleRoleIcon::load(const YAML::YamlNodeReader& reader)
 {
-	reader.tryRead("icon", _icon);
-	_color = reader["color"].readVal(_color);
+	reader.tryRead("sprite", _sprite);
+	reader.tryRead("mapSprite", _mapSprite);
 }
 
 }

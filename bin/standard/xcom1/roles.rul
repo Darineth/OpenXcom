@@ -1,0 +1,83 @@
+# =====================================================================
+#  DX: Soldier Roles (xcom1)
+# =====================================================================
+#  All role content for the UFO ruleset lives here: the role-icon surfaces
+#  now, and later the `roleIcons:` registry + the `roles:` seed list.
+#
+#  Role icons are individual named single-image surfaces, referenced BY NAME
+#  from a `roleIcons:` registry entry (which a Role then references by the
+#  registry name). Using named surfaces instead of a numbered SurfaceSet makes
+#  the icon identity a stable string - no frame indices, no per-mod sprite
+#  offsets, no shared-frame boundary - so a saved role's icon survives mod-list
+#  / load-order changes, and a mod adds icons just by declaring more named
+#  surfaces (namespacing the name avoids collisions).
+#
+#  Two variants per role:
+#    RoleIcon<Name>     - the full 23x23 badge (inventory + battlescape stats bar).
+#    RoleIcon<Name>Map  - the small marker that replaces the bobbing down-arrow
+#                         selected-unit indicator in the live battlescape
+#                         (variable size). "None" has a badge but no Map marker
+#                         (the None role keeps the default arrow).
+#
+#  Each surface keeps its PNG's native size (loadImage reallocates), so no
+#  width/height is needed.
+# =====================================================================
+extraSprites:
+  - typeSingle: RoleIconNone
+    fileSingle: Resources/Roles/RoleIconNone.png
+  - typeSingle: RoleIconInfantry
+    fileSingle: Resources/Roles/RoleIconInfantry.png
+  - typeSingle: RoleIconInfantryMap
+    fileSingle: Resources/Roles/RoleIconInfantryMap.png
+  - typeSingle: RoleIconMarksman
+    fileSingle: Resources/Roles/RoleIconMarksman.png
+  - typeSingle: RoleIconMarksmanMap
+    fileSingle: Resources/Roles/RoleIconMarksmanMap.png
+  - typeSingle: RoleIconSniper
+    fileSingle: Resources/Roles/RoleIconSniper.png
+  - typeSingle: RoleIconSniperMap
+    fileSingle: Resources/Roles/RoleIconSniperMap.png
+  - typeSingle: RoleIconScout
+    fileSingle: Resources/Roles/RoleIconScout.png
+  - typeSingle: RoleIconScoutMap
+    fileSingle: Resources/Roles/RoleIconScoutMap.png
+  - typeSingle: RoleIconAssault
+    fileSingle: Resources/Roles/RoleIconAssault.png
+  - typeSingle: RoleIconAssaultMap
+    fileSingle: Resources/Roles/RoleIconAssaultMap.png
+  - typeSingle: RoleIconMachineGunner
+    fileSingle: Resources/Roles/RoleIconMachineGunner.png
+  - typeSingle: RoleIconMachineGunnerMap
+    fileSingle: Resources/Roles/RoleIconMachineGunnerMap.png
+  - typeSingle: RoleIconHeavy
+    fileSingle: Resources/Roles/RoleIconHeavy.png
+  - typeSingle: RoleIconHeavyMap
+    fileSingle: Resources/Roles/RoleIconHeavyMap.png
+  - typeSingle: RoleIconAntiArmor
+    fileSingle: Resources/Roles/RoleIconAntiArmor.png
+  - typeSingle: RoleIconAntiArmorMap
+    fileSingle: Resources/Roles/RoleIconAntiArmorMap.png
+  - typeSingle: RoleIconRocketeer
+    fileSingle: Resources/Roles/RoleIconRocketeer.png
+  - typeSingle: RoleIconRocketeerMap
+    fileSingle: Resources/Roles/RoleIconRocketeerMap.png
+  - typeSingle: RoleIconGrenadier
+    fileSingle: Resources/Roles/RoleIconGrenadier.png
+  - typeSingle: RoleIconGrenadierMap
+    fileSingle: Resources/Roles/RoleIconGrenadierMap.png
+  - typeSingle: RoleIconDemolitions
+    fileSingle: Resources/Roles/RoleIconDemolitions.png
+  - typeSingle: RoleIconDemolitionsMap
+    fileSingle: Resources/Roles/RoleIconDemolitionsMap.png
+  - typeSingle: RoleIconMedic
+    fileSingle: Resources/Roles/RoleIconMedic.png
+  - typeSingle: RoleIconMedicMap
+    fileSingle: Resources/Roles/RoleIconMedicMap.png
+  - typeSingle: RoleIconPsionics
+    fileSingle: Resources/Roles/RoleIconPsionics.png
+  - typeSingle: RoleIconPsionicsMap
+    fileSingle: Resources/Roles/RoleIconPsionicsMap.png
+  - typeSingle: RoleIconSpecialist
+    fileSingle: Resources/Roles/RoleIconSpecialist.png
+  - typeSingle: RoleIconSpecialistMap
+    fileSingle: Resources/Roles/RoleIconSpecialistMap.png
