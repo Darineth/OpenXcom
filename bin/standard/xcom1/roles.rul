@@ -81,3 +81,116 @@ extraSprites:
     fileSingle: Resources/Roles/RoleIconSpecialist.png
   - typeSingle: RoleIconSpecialistMap
     fileSingle: Resources/Roles/RoleIconSpecialistMap.png
+
+# =====================================================================
+#  Role-icon registry
+#  Each entry bundles a badge + battlescape map-marker surface under a
+#  stable name. A role (below, and player-created ones) references an icon
+#  by this name; the picker enumerates this list. NONE is the "no role"
+#  badge - it has no map marker (an unassigned unit keeps the default arrow).
+# =====================================================================
+roleIcons:
+  - name: NONE
+    sprite: RoleIconNone
+  - name: INFANTRY
+    sprite: RoleIconInfantry
+    mapSprite: RoleIconInfantryMap
+  - name: MARKSMAN
+    sprite: RoleIconMarksman
+    mapSprite: RoleIconMarksmanMap
+  - name: SNIPER
+    sprite: RoleIconSniper
+    mapSprite: RoleIconSniperMap
+  - name: SCOUT
+    sprite: RoleIconScout
+    mapSprite: RoleIconScoutMap
+  - name: ASSAULT
+    sprite: RoleIconAssault
+    mapSprite: RoleIconAssaultMap
+  - name: MACHINE_GUNNER
+    sprite: RoleIconMachineGunner
+    mapSprite: RoleIconMachineGunnerMap
+  - name: HEAVY
+    sprite: RoleIconHeavy
+    mapSprite: RoleIconHeavyMap
+  - name: ANTI_ARMOR
+    sprite: RoleIconAntiArmor
+    mapSprite: RoleIconAntiArmorMap
+  - name: ROCKETEER
+    sprite: RoleIconRocketeer
+    mapSprite: RoleIconRocketeerMap
+  - name: GRENADIER
+    sprite: RoleIconGrenadier
+    mapSprite: RoleIconGrenadierMap
+  - name: DEMOLITIONS
+    sprite: RoleIconDemolitions
+    mapSprite: RoleIconDemolitionsMap
+  - name: MEDIC
+    sprite: RoleIconMedic
+    mapSprite: RoleIconMedicMap
+  - name: PSIONICS
+    sprite: RoleIconPsionics
+    mapSprite: RoleIconPsionicsMap
+  - name: SPECIALIST
+    sprite: RoleIconSpecialist
+    mapSprite: RoleIconSpecialistMap
+
+# =====================================================================
+#  Default seed roles
+#  Copied into a NEW game's editable role list (SavedGame). Thereafter the
+#  player creates / renames / re-icons / recolors / deletes freely. Seeds
+#  carry identity only - no loadout (the player fills that in-game) and no
+#  color (these stock icons aren't intended for armor recolour; revisit
+#  with Per-Role Armor Colors).
+# =====================================================================
+roles:
+  - name: STR_ROLE_INFANTRY
+    icon: INFANTRY
+  - name: STR_ROLE_MARKSMAN
+    icon: MARKSMAN
+  - name: STR_ROLE_SNIPER
+    icon: SNIPER
+  - name: STR_ROLE_SCOUT
+    icon: SCOUT
+  - name: STR_ROLE_ASSAULT
+    icon: ASSAULT
+  - name: STR_ROLE_MACHINE_GUNNER
+    icon: MACHINE_GUNNER
+  - name: STR_ROLE_HEAVY
+    icon: HEAVY
+  - name: STR_ROLE_ANTI_ARMOR
+    icon: ANTI_ARMOR
+  - name: STR_ROLE_ROCKETEER
+    icon: ROCKETEER
+  - name: STR_ROLE_GRENADIER
+    icon: GRENADIER
+  - name: STR_ROLE_DEMOLITIONS
+    icon: DEMOLITIONS
+  - name: STR_ROLE_MEDIC
+    icon: MEDIC
+  - name: STR_ROLE_PSIONICS
+    icon: PSIONICS
+  - name: STR_ROLE_SPECIALIST
+    icon: SPECIALIST
+
+# =====================================================================
+#  Seed-role display names (mod content). Player-created roles use raw
+#  typed text instead; these STR ids localise the shipped defaults.
+# =====================================================================
+extraStrings:
+  - type: en-US
+    strings:
+      STR_ROLE_INFANTRY: "Infantry"
+      STR_ROLE_MARKSMAN: "Designated Marksman"
+      STR_ROLE_SNIPER: "Sniper"
+      STR_ROLE_SCOUT: "Scout"
+      STR_ROLE_ASSAULT: "Assault"
+      STR_ROLE_MACHINE_GUNNER: "Machine Gunner"
+      STR_ROLE_HEAVY: "Heavy Weapons"
+      STR_ROLE_ANTI_ARMOR: "Anti-Armor"
+      STR_ROLE_ROCKETEER: "Rocket Trooper"
+      STR_ROLE_GRENADIER: "Grenadier"
+      STR_ROLE_DEMOLITIONS: "Demolitions"
+      STR_ROLE_MEDIC: "Medic"
+      STR_ROLE_PSIONICS: "Psion"
+      STR_ROLE_SPECIALIST: "Specialist"

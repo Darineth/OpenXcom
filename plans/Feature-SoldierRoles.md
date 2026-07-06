@@ -12,10 +12,11 @@ end-to-end, so saved role icons survive mod-list / load-order changes with no fr
 / `maxSharedFrames` machinery at all. This **supersedes** step 1's `int _icon` on `RuleRole`/`Role` —
 that field becomes a `roleIcons`-name reference; the `roles:`/`Role`/`Soldier._roleId` plumbing already
 built is otherwise unchanged. **`RuleRoleIcon` + `roleIcons:` parsing implemented and `_icon` converted
-int→name — builds clean (Release/Win32, 0 warnings); uncommitted.** **Next:** template-target
-generalization, the role-management screen, and the minimal Soldier-Info assign entry point. This is the
-Phase 7 **"Role Definitions & Templates"** roadmap item, redesigned from the legacy fixed-list model into
-a **player-authored** system.
+int→name — committed (b13922b87), builds clean.** **Content shipped (uncommitted):** the `roleIcons:`
+registry (NONE + 14 roles) and 14 default seed roles + their display strings, all in `roles.rul`
+(cross-references validated). **Next:** template-target generalization, the role-management screen, and
+the minimal Soldier-Info assign entry point. This is the Phase 7 **"Role Definitions & Templates"**
+roadmap item, redesigned from the legacy fixed-list model into a **player-authored** system.
 
 Roadmap items covered/affected:
 - **Role Definitions & Templates** — *this pass* (data backbone + minimal assign/manage UI).
