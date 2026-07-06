@@ -1046,5 +1046,22 @@ obvious. *(design: [plans/Feature-Bleedout.md](plans/Feature-Bleedout.md))*
   bleeding-out soldier"* tooltip (a click-to-jump cue shown regardless of the selected unit).
 - **Combat log.** Entering bleedout logs `{unit} is bleeding out!` (WARNING); death from bleedout logs
   via the normal kill path.
-- **Not yet:** the medikit "stabilize" rework (stabilise-without-revive) and proportional wound
-  recovery / Field Surgery research are separate Phase 7 items that build on this.
+- **Not yet:** proportional wound recovery / Field Surgery research (a separate Phase 7 item that
+  builds on this).
+
+## Medikit / Stabilization Rework (out-for-the-mission + target readout)
+
+Builds on bleedout. *(design: [plans/Feature-MedikitStabilization.md](plans/Feature-MedikitStabilization.md))*
+
+- **Negative health = out for the mission.** A unit that ever drops into negative health (enters
+  bleedout) is flagged incapacitated for the rest of the battle: a medic can **heal** it to stop the
+  bleed and pull it out of danger, but it **won't revive or rejoin the fight** — it stays down and is
+  recovered alive at debriefing. Enforced by gating `reviveUnconsciousUnits` on the flag, so even a
+  full heal doesn't stand it back up. **Heal itself is unchanged** (cures wounds per part, restores HP
+  as always); there's no special "stabilize" action.
+- **Mod-configurable.** `bleedoutDefaults.lockoutForMission` (default **true**). Set false and a
+  bled-out unit heals and revives normally, like stock.
+- **Medikit target readout.** The medikit screen now shows the target's condition: name, a derived
+  `STATUS>` word (Healthy / Injured / Unconscious / Bleeding out / Incapacitated), `HP cur/max`, and
+  `Stun stun/curHP` (stun over **current** HP, since a unit drops once stun exceeds current health),
+  plus the healer's `TU cur/max` so you can see whether another treatment is affordable.

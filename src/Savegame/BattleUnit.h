@@ -136,6 +136,7 @@ private:
 	bool _hitByFire, _hitByAnything, _alreadyExploded, _deathRegistered;
 	bool _stunRegistered; // DX: knockout already logged/queued this volley (one-shot guard, cleared after the fall)
 	bool _bleedingOut; // DX: unit is bleeding out (alive at negative health, dying toward getDeathHealth)
+	bool _incapacitated; // DX: unit dropped into negative health this mission - out for the rest of it (no revive)
 	int _fireMaxHit;
 	int _smokeMaxHit;
 	int _moraleRestored;
@@ -617,6 +618,10 @@ public:
 	bool getCanBleedOut() const;
 	/// DX: is this unit currently bleeding out?
 	bool getBleedingOut() const { return _bleedingOut; }
+	/// DX: did this unit drop into negative health this mission (entered bleedout)?
+	bool isIncapacitated() const { return _incapacitated; }
+	/// DX: is this unit locked out for the rest of the mission (entered bleedout AND the mod keeps it down)?
+	bool isLockedOutForMission() const;
 	/// DX: the health value at/below which this unit actually dies (0 normally; negative when it can bleed out).
 	int getDeathHealth() const;
 	/// DX: enter the bleedout state (mark bleeding + add the buffer torso wounds). Idempotent; call only when eligible.

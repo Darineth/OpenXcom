@@ -346,12 +346,13 @@ Everything below is DX-specific work confirmed **absent** from the base.
   - [x] Negative-health state (eligible units survive below 0 down to `getDeathHealth()`)
   - [x] Bleedout state (buffer fatal torso wounds; mod-configurable via `bleedoutDefaults` + armor `canBleedOut`)
   - [x] Battlefield bleeding indicators (map dying-glyph, HP-bar wound cross-marks, visible-unit column cue)
-- [ ] **Medikit/Stabilization Rework** — revised field treatment flow.
-  - [ ] **Medikit target-state readout** — show the target unit's current condition on the medikit
-    screen. Top: target unit name; `STATUS>` a derived condition word (INJURED / UNCONSCIOUS / etc.,
-    changing with HP / wounds / consciousness); `HP>50/60`; `STUN>0/50` (stun shown over **current**
-    HP, since a unit drops unconscious once stun exceeds current health). Bottom: `TU>38/49` from the
-    **healer's** TU. *(design: TBD)*
+- [x] **Medikit/Stabilization Rework** — a unit that ever dropped into negative health (bleedout) is
+  **out for the mission**: it can be healed to survive but won't revive/rejoin (recovered at debriefing).
+  Heal itself is unchanged. Mod knob `bleedoutDefaults.lockoutForMission` (default on).
+  *(design: [plans/Feature-MedikitStabilization.md](plans/Feature-MedikitStabilization.md))*
+  - [x] **Medikit target-state readout** — target name + derived `STATUS>` (Healthy / Injured /
+    Unconscious / Bleeding out / Incapacitated); `HP cur/max`; `Stun stun/curHP`; and the healer's
+    `TU cur/max`, on the medikit screen.
 - [ ] **Proportional Wound Recovery + Field Surgery** — recovery scaling and research gate.
 - [ ] **Role Definitions & Templates** — `RuleRole`/`Role` + template loadouts. *(reuses Phase 2
   loadout-template plumbing)*

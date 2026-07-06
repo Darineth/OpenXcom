@@ -1381,9 +1381,13 @@ void Map::drawTerrain(Surface *surface)
 									// Floor*Indicator art and falling back to the DX procedural icon so
 									// the overlay always shows (burn > wound > shock > stun).
 									Surface *modArt = nullptr, *fallback = nullptr;
-									if (itemUnit->getBleedingOut())
+									if (itemUnit->getBleedingOut() || (itemUnit->isLockedOutForMission() && itemUnit->getFatalWounds() > 0))
 									{
-										// DX: a dying soldier outranks every other status - show the bleedout cross.
+										// DX: the bleedout cross flags "still needs aid" - an actively-dying soldier,
+										// or one who bled out and is down for the mission and STILL bleeding (has fatal
+										// wounds, so it keeps losing HP even if a partial heal put it back above 0).
+										// Once the bleeding is fully stopped (wounds cured) it drops to the ordinary
+										// knocked-out glyph, so the cross never lingers on a stabilized unit.
 										modArt = _bleedoutIndicator; fallback = _bleedoutIndicatorFallback;
 									}
 									else if (itemUnit->getFire() > 0)

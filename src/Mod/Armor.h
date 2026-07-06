@@ -179,11 +179,16 @@ struct ArmorBleedoutDefaults
 {
 	int deathHealthPercent = 50;
 	int bufferWounds = 5;
+	// DX: when true, a unit that ever entered bleedout (dropped into negative health) is out for the rest
+	// of the mission - it can be healed to survive but will not revive/rejoin the fight (recovered at
+	// debriefing). false = a bled-out unit heals and revives normally.
+	bool lockoutForMission = true;
 
 	void load(const YAML::YamlNodeReader& reader)
 	{
 		reader.tryRead("deathHealthPercent", deathHealthPercent);
 		reader.tryRead("bufferWounds", bufferWounds);
+		reader.tryRead("lockoutForMission", lockoutForMission);
 	}
 };
 

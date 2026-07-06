@@ -69,6 +69,15 @@ en-US:
 #=================== DX Bleedout ===================
 #BattlescapeState.cpp - visible-unit column tooltip for a soldier bleeding out
   STR_CENTER_ON_BLEEDING_FRIEND: "Center on bleeding-out soldier"
+#MedikitState.cpp - target-state readout (Stun is shown over CURRENT HP: {0}=stun, {1}=current HP)
+  STR_MEDIKIT_TARGET_HP: "HP>{ALT}{0}/{1}"
+  STR_MEDIKIT_TARGET_STUN: "Stun>{ALT}{0}/{1}"
+  STR_MEDIKIT_HEALER_TU: "TU>{ALT}{0}/{1}"
+  STR_MEDIKIT_STATUS_HEALTHY: "Healthy"
+  STR_MEDIKIT_STATUS_INJURED: "Injured"
+  STR_MEDIKIT_STATUS_UNCONSCIOUS: "Unconscious"
+  STR_MEDIKIT_STATUS_BLEEDING: "Bleeding out"
+  STR_MEDIKIT_STATUS_INCAPACITATED: "Incapacitated"
 #=================== DX On-Map Overlays ===================
 #Options.cpp
   STR_HOVERED_UNIT_NAME: "Hovered unit name"

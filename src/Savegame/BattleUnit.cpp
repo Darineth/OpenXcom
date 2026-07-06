@@ -89,7 +89,7 @@ BattleUnit::BattleUnit(const Mod *mod, Soldier *soldier, int depth, const RuleSt
 	_verticalDirection(0), _status(STATUS_STANDING), _wantsToSurrender(false), _isSurrendering(false), _walkPhase(0), _fallPhase(0), _kneeled(false), _floating(false),
 	_dontReselect(false), _aiMedikitUsed(false), _fire(0), _currentAIState(0), _visible(false),
 	_exp{ }, _expTmp{ },
-	_motionPoints(0), _scannedTurn(-1), _customMarker(0), _kills(0), _hitByFire(false), _hitByAnything(false), _alreadyExploded(false), _deathRegistered(false), _stunRegistered(false), _bleedingOut(false), _fireMaxHit(0), _smokeMaxHit(0),
+	_motionPoints(0), _scannedTurn(-1), _customMarker(0), _kills(0), _hitByFire(false), _hitByAnything(false), _alreadyExploded(false), _deathRegistered(false), _stunRegistered(false), _bleedingOut(false), _incapacitated(false), _fireMaxHit(0), _smokeMaxHit(0),
 	_moraleRestored(0), _notificationShown(0), _charging(0),
 	_statistics(), _murdererId(0), _mindControllerID(0), _fatalShotSide(SIDE_FRONT), _fatalShotBodyPart(BODYPART_HEAD), _armor(0),
 	_geoscapeSoldier(soldier), _unitRules(0), _rankInt(0), _turretType(-1), _hidingForTurn(false), _floorAbove(false), _respawn(false), _alreadyRespawned(false),
@@ -446,7 +446,7 @@ BattleUnit::BattleUnit(const Mod *mod, const Unit *unit, UnitFaction faction, in
 	_toDirectionTurret(0), _verticalDirection(0), _status(STATUS_STANDING), _wantsToSurrender(false), _isSurrendering(false), _walkPhase(0),
 	_fallPhase(0), _kneeled(false), _floating(false), _dontReselect(false), _aiMedikitUsed(false), _fire(0), _currentAIState(0),
 	_visible(false), _exp{ }, _expTmp{ },
-	_motionPoints(0), _scannedTurn(-1), _customMarker(0), _kills(0), _hitByFire(false), _hitByAnything(false), _alreadyExploded(false), _deathRegistered(false), _stunRegistered(false), _bleedingOut(false), _fireMaxHit(0), _smokeMaxHit(0),
+	_motionPoints(0), _scannedTurn(-1), _customMarker(0), _kills(0), _hitByFire(false), _hitByAnything(false), _alreadyExploded(false), _deathRegistered(false), _stunRegistered(false), _bleedingOut(false), _incapacitated(false), _fireMaxHit(0), _smokeMaxHit(0),
 	_moraleRestored(0), _notificationShown(0), _charging(0),
 	_statistics(), _murdererId(0), _mindControllerID(0), _fatalShotSide(SIDE_FRONT),
 	_fatalShotBodyPart(BODYPART_HEAD), _armor(armor), _geoscapeSoldier(0),  _unitRules(unit),
@@ -683,6 +683,7 @@ void BattleUnit::load(const YAML::YamlNodeReader& node, const Mod *mod, const Sc
 	reader.tryRead("killedBy", _killedBy);
 	reader.tryRead("kills", _kills);
 	reader.tryRead("bleedingOut", _bleedingOut); // DX: bleedout state
+	reader.tryRead("incapacitated", _incapacitated); // DX: out for the mission (was bled out)
 	reader.tryRead("dontReselect", _dontReselect);
 	reader.tryRead("aiMedikitUsed", _aiMedikitUsed);
 	_charging = 0;
@@ -814,6 +815,8 @@ void BattleUnit::save(YAML::YamlNodeWriter writer, const ScriptGlobal *shared) c
 		writer.write("kills", _kills);
 	if (_bleedingOut)
 		writer.write("bleedingOut", _bleedingOut); // DX: bleedout state
+	if (_incapacitated)
+		writer.write("incapacitated", _incapacitated); // DX: out for the mission (was bled out)
 	if (_faction == FACTION_PLAYER && _dontReselect)
 		writer.write("dontReselect", _dontReselect);
 	if (_aiMedikitUsed)
@@ -4642,6 +4645,16 @@ bool BattleUnit::getCanBleedOut() const
 }
 
 /**
+ * DX: whether this unit is locked out for the rest of the mission - it entered bleedout (dropped into
+ * negative health) and the mod keeps such units down (bleedoutDefaults.lockoutForMission). A locked-out
+ * unit can be healed to survive but won't revive/rejoin the fight; it is recovered at debriefing.
+ */
+bool BattleUnit::isLockedOutForMission() const
+{
+	return _incapacitated && Armor::bleedoutDefaults.lockoutForMission;
+}
+
+/**
  * DX: the health value at/below which this unit actually dies. 0 for a normal unit (dies at 0 HP);
  * for a bleedout-capable (or actively bleeding) unit it is negative - `-maxHealth * deathHealthPercent
  * / 100` - so it survives at negative health down to that threshold before dying.
@@ -4666,7 +4679,16 @@ void BattleUnit::checkStartBleedout()
 		return;
 	}
 	_bleedingOut = true;
-	setValueMax(_fatalWounds[BODYPART_TORSO], Armor::bleedoutDefaults.bufferWounds, 0, UnitStats::BaseStatLimit);
+	// DX: crossing into negative health takes the unit out for the rest of the mission - it can be healed
+	// to survive but won't revive/rejoin (see reviveUnconsciousUnits + isLockedOutForMission). Add the
+	// buffer wounds only the FIRST time the unit enters bleedout this mission: healing can clear
+	// _bleedingOut, so a unit that is healed above 0 and then bleeds back through 0 must NOT stack another
+	// round of buffer wounds. _incapacitated persists across that heal, so it gates the one-time add.
+	if (!_incapacitated)
+	{
+		_incapacitated = true;
+		setValueMax(_fatalWounds[BODYPART_TORSO], Armor::bleedoutDefaults.bufferWounds, 0, UnitStats::BaseStatLimit);
+	}
 }
 
 /**

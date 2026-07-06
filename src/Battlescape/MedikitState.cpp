@@ -33,6 +33,8 @@
 #include "../Savegame/SavedGame.h"
 #include "../Savegame/SavedBattleGame.h"
 #include "TileEngine.h"
+#include "Pathfinding.h"
+#include "../Mod/RuleInterface.h"
 
 namespace OpenXcom
 {
@@ -133,6 +135,13 @@ MedikitState::MedikitState (BattleUnit *targetUnit, BattleAction *action, TileEn
 	}
 	_partTxt = new Text(62, 9, 82, 120);
 	_woundTxt = new Text(14, 9, 145, 120);
+	// DX target-state readout: a stacked target block top-left (name/status/HP/stun), each stat-colored,
+	// plus the healer's TU just above the selected-body-part text.
+	_txtTargetName = new Text(150, 9, 82, 49);
+	_txtTargetStatus = new Text(150, 9, 82, 58);
+	_txtHP = new Text(150, 9, 82, 67);
+	_txtStun = new Text(150, 9, 82, 76);
+	_txtHealerTU = new Text(62, 9, 82, 111);
 	_medikitView = new MedikitView(52, 58, 95, 60, _game, _targetUnit, _partTxt, _woundTxt);
 	_endButton = new InteractiveSurface(20, 20, 220, 140);
 	_stimulantButton = new MedikitButton(84);
@@ -155,6 +164,11 @@ MedikitState::MedikitState (BattleUnit *targetUnit, BattleAction *action, TileEn
 	add(_healTxt, "numHeal", "medikit", _bg);
 	add(_partTxt, "textPart", "medikit", _bg);
 	add(_woundTxt, "numWounds", "medikit", _bg);
+	add(_txtTargetName, "textPart", "medikit", _bg);
+	add(_txtTargetStatus, "textPart", "medikit", _bg);
+	add(_txtHP, "textPart", "medikit", _bg);
+	add(_txtStun, "textPart", "medikit", _bg);
+	add(_txtHealerTU, "textPart", "medikit", _bg);
 
 	centerAllSurfaces();
 
@@ -174,6 +188,11 @@ MedikitState::MedikitState (BattleUnit *targetUnit, BattleAction *action, TileEn
 	_healTxt->setBig();
 	_partTxt->setHighContrast(true);
 	_woundTxt->setHighContrast(true);
+	_txtTargetName->setHighContrast(true);
+	_txtTargetStatus->setHighContrast(true);
+	_txtHP->setHighContrast(true);
+	_txtStun->setHighContrast(true);
+	_txtHealerTU->setHighContrast(true);
 	_endButton->onMouseClick((ActionHandler)&MedikitState::onEndClick);
 	_endButton->onKeyboardPress((ActionHandler)&MedikitState::onEndClick, Options::keyCancel);
 	_healButton->onMouseClick((ActionHandler)&MedikitState::onHealClick);
@@ -305,6 +324,67 @@ void MedikitState::update()
 	_pkText->setText(toString(_item->getPainKillerQuantity()));
 	_stimulantTxt->setText(toString(_item->getStimulantQuantity()));
 	_healTxt->setText(toString(_item->getHealQuantity()));
+
+	// DX target-state readout. Stat colours come from the standard battlescape stat bars (barHealth /
+	// barEnergy / barTUs); the name is faction-coloured and the status word is coloured by condition.
+	RuleInterface *bs = _game->getMod()->getInterface("battlescape");
+	auto barColor = [&](const char *id, Uint8 fallback) -> Uint8
+	{
+		const Element *e = bs ? bs->getElementOptional(id) : nullptr;
+		return e ? static_cast<Uint8>(e->color) : fallback;
+	};
+	const int green = Palette::blockOffset(Pathfinding::green - 1) - 1;
+	const int yellow = Palette::blockOffset(Pathfinding::yellow - 1) - 1;
+	const int red = Palette::blockOffset(Pathfinding::red - 1) - 1;
+
+	// Name - coloured by the target's faction (green ally / red hostile / yellow neutral).
+	int nameColor = (_targetUnit->getFaction() == FACTION_PLAYER) ? green
+		: (_targetUnit->getFaction() == FACTION_HOSTILE) ? red : yellow;
+	_txtTargetName->setColor(nameColor);
+	_txtTargetName->setText(_targetUnit->getName(_game->getLanguage()));
+
+	// Status - a derived condition word, coloured by severity.
+	std::string statusKey;
+	int statusColor;
+	if (_targetUnit->getBleedingOut())
+	{
+		statusKey = "STR_MEDIKIT_STATUS_BLEEDING"; statusColor = red;
+	}
+	else if (_targetUnit->isLockedOutForMission() && _targetUnit->getStatus() == STATUS_UNCONSCIOUS)
+	{
+		statusKey = "STR_MEDIKIT_STATUS_INCAPACITATED"; statusColor = red;
+	}
+	else if (_targetUnit->getStatus() == STATUS_UNCONSCIOUS)
+	{
+		statusKey = "STR_MEDIKIT_STATUS_UNCONSCIOUS"; statusColor = yellow;
+	}
+	else if (_targetUnit->getFatalWounds() > 0 || _targetUnit->getHealth() < _targetUnit->getBaseStats()->health)
+	{
+		statusKey = "STR_MEDIKIT_STATUS_INJURED"; statusColor = yellow;
+	}
+	else
+	{
+		statusKey = "STR_MEDIKIT_STATUS_HEALTHY"; statusColor = green;
+	}
+	_txtTargetStatus->setColor(statusColor);
+	_txtTargetStatus->setText(tr(statusKey));
+
+	// HP / Stun / TU use the DX "LABEL>{ALT}value" style: the value ({ALT}) takes the stat's bar colour
+	// (health / energy / TU) as the secondary colour. Stun is shown over CURRENT hp, since a unit drops
+	// unconscious once stun exceeds its current health.
+	_txtHP->setSecondaryColor(barColor("barHealth", 32));
+	_txtHP->setText(tr("STR_MEDIKIT_TARGET_HP").arg(_targetUnit->getHealth()).arg(_targetUnit->getBaseStats()->health));
+	_txtStun->setSecondaryColor(barColor("barEnergy", 16));
+	_txtStun->setText(tr("STR_MEDIKIT_TARGET_STUN").arg(_targetUnit->getStunlevel()).arg(_targetUnit->getHealth()));
+
+	// Healer (acting unit) TU, so the player can see whether another treatment fits.
+	if (_action->actor)
+	{
+		_txtHealerTU->setSecondaryColor(barColor("barTUs", 64));
+		_txtHealerTU->setText(tr("STR_MEDIKIT_HEALER_TU")
+			.arg(_action->actor->getTimeUnits()).arg(_action->actor->getBaseStats()->tu));
+	}
+
 	_medikitView->invalidate();
 }
 

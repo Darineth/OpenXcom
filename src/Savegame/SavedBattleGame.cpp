@@ -2629,7 +2629,9 @@ void SavedBattleGame::reviveUnconsciousUnits(bool noTU)
 					}
 				}
 			}
-			if (bu->getStatus() == STATUS_UNCONSCIOUS && !bu->isOutThresholdExceed())
+			// DX: a unit that dropped into negative health this mission stays down for good - it can be
+			// healed to survive but never revives/rejoins the fight (recovered at debriefing instead).
+			if (bu->getStatus() == STATUS_UNCONSCIOUS && !bu->isOutThresholdExceed() && !bu->isLockedOutForMission())
 			{
 				Tile *targetTile = getTile(originalPosition);
 				bool largeUnit = targetTile && targetTile->getUnit() && targetTile->getUnit() != bu && targetTile->getUnit()->isBigUnit();
