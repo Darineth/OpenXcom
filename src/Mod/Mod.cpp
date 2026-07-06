@@ -91,6 +91,7 @@
 #include "../Savegame/Region.h"
 #include "../Savegame/Base.h"
 #include "../Savegame/Country.h"
+#include "../Savegame/Role.h"
 #include "../Savegame/Soldier.h"
 #include "../Savegame/BattleUnit.h"
 #include "../Savegame/Craft.h"
@@ -110,6 +111,7 @@
 #include "RuleConverter.h"
 #include "RuleSoldierTransformation.h"
 #include "RuleSoldierBonus.h"
+#include "RuleRole.h"
 
 #define ARRAYLEN(x) (std::size(x))
 
@@ -751,6 +753,10 @@ Mod::~Mod()
 		delete pair.second;
 	}
 	for (auto& pair : _soldierBonus)
+	{
+		delete pair.second;
+	}
+	for (auto& pair : _roles)
 	{
 		delete pair.second;
 	}
@@ -3104,6 +3110,14 @@ void Mod::loadFile(const FileMap::FileRecord &filerec, ModScript &parsers)
 			rule->load(ruleReader, this, parsers);
 		}
 	}
+	for (const auto& ruleReader : iterateRules("roles", "name"))
+	{
+		RuleRole *rule = loadRule(ruleReader, &_roles, &_rolesIndex, "name");
+		if (rule != 0)
+		{
+			rule->load(ruleReader);
+		}
+	}
 	for (const auto& ruleReader : iterateRules("soldierTransformation", "name"))
 	{
 		RuleSoldierTransformation *rule = loadRule(ruleReader, &_soldierTransformation, &_soldierTransformationIndex, "name", RuleListOrderedFactory<RuleSoldierTransformation>{ _transformationListOrder, 100 });
@@ -3988,6 +4002,13 @@ SavedGame *Mod::newSave(GameDifficulty diff) const
 			save->getRegions()->push_back(new Region(regionRule));
 	}
 
+	// DX: seed the player's editable soldier-role list from the mod's role seeds
+	for (const auto& roleName : _rolesIndex)
+	{
+		RuleRole *roleRule = getRole(roleName);
+		save->getRoles().push_back(new Role(save->getId("STR_ROLE"), roleRule));
+	}
+
 	// Set up starting base
 	const YAML::YamlRootNodeReader startingBaseByDiff(getStartingBase(diff), "(starting base template)");
 	Base *base = new Base(this);
@@ -4813,6 +4834,25 @@ RuleSoldierBonus *Mod::getSoldierBonus(const std::string &id, bool error) const
 const std::vector<std::string> &Mod::getSoldierBonusList() const
 {
 	return _soldierBonusIndex;
+}
+
+/**
+ * Returns the seed definition for the specified soldier role (DX).
+ * @param id Role (STR) id.
+ * @return Seed definition for the role.
+ */
+RuleRole *Mod::getRole(const std::string &id, bool error) const
+{
+	return getRule(id, "Role", _roles, error);
+}
+
+/**
+ * Returns the (ordered) list of soldier-role seed ids (DX).
+ * @return The list of role seed ids.
+ */
+const std::vector<std::string> &Mod::getRolesList() const
+{
+	return _rolesIndex;
 }
 
 /**

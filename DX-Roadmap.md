@@ -360,10 +360,14 @@ Everything below is DX-specific work confirmed **absent** from the base.
     base-wide. All config in the `health:` mod-info node; defaults preserve stock behavior. Engine
     hook only — research content left to the ruleset.
   *(design: [plans/Feature-ProportionalWoundRecovery.md](plans/Feature-ProportionalWoundRecovery.md))*
-- [ ] **Role Definitions & Templates** — `RuleRole`/`Role` + template loadouts. *(reuses Phase 2
-  loadout-template plumbing)*
+- [ ] **Role Definitions & Templates** — **player-authored** roles (`RuleRole` seeds + savegame `Role`)
+  each owning its own loadout template; hybrid seed-then-player-editable model (create/rename/re-icon/
+  recolor/delete in-game), not a fixed mod list. *(reuses Phase 2 loadout-template plumbing —
+  design: [plans/Feature-SoldierRoles.md](plans/Feature-SoldierRoles.md))*
 - [ ] **Role UI & Markers** — soldier/craft/inventory UI icons and battlescape marker.
-- [ ] **Per-Role Armor Colors**. *(reuses Phase 2 loadout-template plumbing + Phase 4 inventory layouts)*
+  *(design: [plans/Feature-SoldierRoles.md](plans/Feature-SoldierRoles.md))*
+- [ ] **Per-Role Armor Colors**. *(reuses Phase 2 loadout-template plumbing + Phase 4 inventory layouts;
+  the `Role.color` data hook lands with Role Definitions — design: [plans/Feature-SoldierRoles.md](plans/Feature-SoldierRoles.md))*
 
 ## Phase 8: Effects, Lighting & Psionics
 

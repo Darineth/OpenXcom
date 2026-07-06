@@ -333,6 +333,7 @@ set ( mod_src
   Mod/RuleMusic.cpp
   Mod/RuleRegion.cpp
   Mod/RuleResearch.cpp
+  Mod/RuleRole.cpp
   Mod/RuleSkill.cpp
   Mod/RuleSoldier.cpp
   Mod/RuleSoldierBonus.cpp
@@ -377,6 +378,7 @@ set ( savegame_src
   Savegame/RankCount.cpp
   Savegame/Region.cpp
   Savegame/ResearchProject.cpp
+  Savegame/Role.cpp
   Savegame/SaveConverter.cpp
   Savegame/SavedBattleGame.cpp
   Savegame/SavedGame.cpp

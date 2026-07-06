@@ -46,6 +46,7 @@
 #include "ResearchProject.h"
 #include "ItemContainer.h"
 #include "Soldier.h"
+#include "Role.h"
 #include "Transfer.h"
 #include "../Mod/RuleManufacture.h"
 #include "../Mod/RuleBaseFacility.h"
@@ -176,6 +177,10 @@ SavedGame::~SavedGame()
 	for (auto* soldier : _deadSoldiers)
 	{
 		delete soldier;
+	}
+	for (auto* role : _roles)
+	{
+		delete role;
 	}
 	for (int j = 0; j < Options::oxceMaxEquipmentLayoutTemplates; ++j)
 	{
@@ -671,6 +676,14 @@ void SavedGame::load(const std::string &filename, Mod *mod, Language *lang)
 		}
 	}
 
+	// DX: player-authored soldier roles
+	for (const auto& roleReader : reader["roles"].children())
+	{
+		Role* role = new Role(0);
+		role->load(roleReader, mod);
+		_roles.push_back(role);
+	}
+
 	loadTemplates(reader, mod);
 
 	for (const auto& missionStats : reader["missionStatistics"].children())
@@ -877,6 +890,11 @@ void SavedGame::save(const std::string &filename, Mod *mod) const
 	_alienStrategy->save(writer["alienStrategy"]);
 
 	saveVector(writer, _deadSoldiers, "deadSoldiers", mod->getScriptGlobal());
+	// DX: player-authored soldier roles
+	if (!_roles.empty())
+		writer.write("roles", _roles,
+			[](YAML::YamlNodeWriter& w, Role* r)
+			{ r->save(w.write()); });
 	saveTemplates(writer);
 	if (Options::soldierDiaries)
 		saveVector(writer, _missionStatistics, "missionStatistics");
@@ -2931,6 +2949,57 @@ std::string SavedGame::getLastSelectedArmor() const
 std::vector<EquipmentLayoutItem*> *SavedGame::getGlobalEquipmentLayout(int index)
 {
 	return &_globalEquipmentLayout[index];
+}
+
+/**
+ * DX: Returns a player soldier role by its stable id.
+ * @param id Role id.
+ * @return Pointer to the role, or null if not found.
+ */
+Role *SavedGame::getRole(int id) const
+{
+	for (auto* role : _roles)
+	{
+		if (role->getId() == id)
+			return role;
+	}
+	return nullptr;
+}
+
+/**
+ * DX: Creates a new empty player soldier role, appends it, and returns it.
+ * @return The newly created role.
+ */
+Role *SavedGame::createRole()
+{
+	Role* role = new Role(getId("STR_ROLE"));
+	_roles.push_back(role);
+	return role;
+}
+
+/**
+ * DX: Deletes a player soldier role and clears it from any soldier holding it.
+ * @param id Role id.
+ */
+void SavedGame::removeRole(int id)
+{
+	for (auto* base : _bases)
+	{
+		for (auto* soldier : *base->getSoldiers())
+		{
+			if (soldier->getRoleId() == id)
+				soldier->setRoleId(0);
+		}
+	}
+	for (auto it = _roles.begin(); it != _roles.end(); ++it)
+	{
+		if ((*it)->getId() == id)
+		{
+			delete *it;
+			_roles.erase(it);
+			return;
+		}
+	}
 }
 
 /**

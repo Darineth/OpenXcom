@@ -61,6 +61,7 @@ class Target;
 class Soldier;
 class Craft;
 class EquipmentLayoutItem;
+class Role;
 class ItemContainer;
 class RuleSoldierTransformation;
 class AlienRace;
@@ -164,6 +165,7 @@ private:
 	std::string _graphFinanceToggles;
 	std::vector<const RuleResearch*> _poppedResearch;
 	std::vector<Soldier*> _deadSoldiers;
+	std::vector<Role*> _roles;
 	size_t _selectedBase;
 	std::string _lastselectedArmor; //contains the last selected armor
 	std::string _globalEquipmentLayoutName[MAX_EQUIPMENT_LAYOUT_TEMPLATES];
@@ -491,6 +493,16 @@ public:
 	void setGlobalCraftLoadoutName(int index, const std::string &name);
 	/// Gets the global craft loadout at specified index.
 	ItemContainer *getGlobalCraftLoadout(int index);
+	/// Gets the list of the player's soldier roles (DX).
+	std::vector<Role*> &getRoles() { return _roles; }
+	/// Gets the list of the player's soldier roles (DX, const).
+	const std::vector<Role*> &getRoles() const { return _roles; }
+	/// Gets a soldier role by its stable id (DX); null if not found.
+	Role *getRole(int id) const;
+	/// Creates a new empty soldier role, appends it, and returns it (DX).
+	Role *createRole();
+	/// Deletes a soldier role by id and clears it from any soldier holding it (DX).
+	void removeRole(int id);
 	/// Gets the list of missions statistics
 	std::vector<MissionStatistics*> *getMissionStatistics();
 	/// Adds a UFO to the ignore list.

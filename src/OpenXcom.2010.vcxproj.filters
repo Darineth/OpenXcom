@@ -543,6 +543,9 @@
     <ClCompile Include="Savegame\EquipmentLayoutItem.cpp">
       <Filter>Savegame</Filter>
     </ClCompile>
+    <ClCompile Include="Savegame\Role.cpp">
+      <Filter>Savegame</Filter>
+    </ClCompile>
     <ClCompile Include="Basescape\PlaceStartFacilityState.cpp">
       <Filter>Basescape</Filter>
     </ClCompile>
@@ -1084,6 +1087,9 @@
     </ClCompile>
     <ClCompile Include="Savegame\GeoscapeEvent.cpp">
       <Filter>Savegame</Filter>
+    </ClCompile>
+    <ClCompile Include="Mod\RuleRole.cpp">
+      <Filter>Mod</Filter>
     </ClCompile>
     <ClCompile Include="Mod\RuleSoldierBonus.cpp">
       <Filter>Mod</Filter>
@@ -2370,6 +2376,12 @@
       <Filter>Mod</Filter>
     </ClInclude>
     <ClInclude Include="Savegame\GeoscapeEvent.h">
+      <Filter>Savegame</Filter>
+    </ClInclude>
+    <ClInclude Include="Mod\RuleRole.h">
+      <Filter>Mod</Filter>
+    </ClInclude>
+    <ClInclude Include="Savegame\Role.h">
       <Filter>Savegame</Filter>
     </ClInclude>
     <ClInclude Include="Mod\RuleSoldierBonus.h">

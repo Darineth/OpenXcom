@@ -73,6 +73,7 @@ private:
 	SoldierLook _look;
 	int _lookVariant;
 	int _missions, _kills, _stuns;
+	int _roleId; // DX: player-authored role assignment (0 = none)
 	int _healthMissing = 0; // amount of health missing until full health recovery, this is less serious than wound recovery.
 	int _manaMissing = 0;   // amount of mana missing until full mana recovery
 	float _recovery = 0.0;  // amount of hospital attention soldier needs... used to calculate recovery time
@@ -139,6 +140,10 @@ public:
 	void setRank(const SoldierRank newRank);
 	/// Gets the soldier's missions.
 	int getMissions() const;
+	/// Gets the soldier's assigned role id (DX; 0 = none).
+	int getRoleId() const { return _roleId; }
+	/// Sets the soldier's assigned role id (DX; 0 = none).
+	void setRoleId(int roleId) { _roleId = roleId; }
 	/// Gets the soldier's kills.
 	int getKills() const;
 	/// Gets the soldier's stuns.

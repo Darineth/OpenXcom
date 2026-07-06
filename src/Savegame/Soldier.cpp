@@ -53,7 +53,7 @@ namespace OpenXcom
 Soldier::Soldier(RuleSoldier *rules, Armor *armor, int nationality, int id) :
 	_id(id), _nationality(0),
 	_improvement(0), _psiStrImprovement(0), _rules(rules), _rank(RANK_ROOKIE), _craft(0),
-	_gender(GENDER_MALE), _look(LOOK_BLONDE), _lookVariant(0), _missions(0), _kills(0), _stuns(0),
+	_gender(GENDER_MALE), _look(LOOK_BLONDE), _lookVariant(0), _missions(0), _kills(0), _stuns(0), _roleId(0),
 	_recentlyPromoted(false), _psiTraining(false), _training(false), _returnToTrainingWhenHealed(false),
 	_armor(armor), _replacedArmor(0), _transformedArmor(0), _personalEquipmentArmor(nullptr), _death(0), _diary(new SoldierDiary()),
 	_corpseRecovered(false)
@@ -182,6 +182,7 @@ void Soldier::load(const YAML::YamlNodeReader& node, const Mod *mod, SavedGame *
 	reader.tryRead("lookVariant", _lookVariant);
 	reader.tryRead("missions", _missions);
 	reader.tryRead("kills", _kills);
+	reader.tryRead("roleId", _roleId);
 	reader.tryRead("stuns", _stuns);
 	reader.tryRead("manaMissing", _manaMissing);
 	reader.tryRead("healthMissing", _healthMissing);
@@ -300,6 +301,8 @@ void Soldier::save(YAML::YamlNodeWriter writer, const ScriptGlobal *shared) cons
 	writer.write("missions", _missions);
 	writer.write("kills", _kills);
 	writer.write("stuns", _stuns);
+	if (_roleId != 0)
+		writer.write("roleId", _roleId);
 	if (_manaMissing > 0)
 		writer.write("manaMissing", _manaMissing);
 	if (_healthMissing > 0)
