@@ -27,7 +27,7 @@ class Text;
 class TextEdit;
 class TextButton;
 class TextList;
-class Surface;
+class InteractiveSurface;
 
 /**
  * DX: Role management screen. Lists the save's player-authored roles and lets the
@@ -41,10 +41,11 @@ private:
 	Text *_txtTitle;
 	TextList *_lstRoles;
 	TextEdit *_edtName;
-	Surface *_role;
-	Text *_txtIcon;
-	TextButton *_btnNew, *_btnDefault, *_btnIcon, *_btnDelete, *_btnOk;
+	TextEdit *_edtShort;
+	InteractiveSurface *_role; // clickable role badge (opens the icon picker)
+	TextButton *_btnNew, *_btnDefault, *_btnDelete, *_btnOk;
 	int _sel; // index into SavedGame::getRoles(), or -1 for none selected
+	bool _autoShort; // while true, the short name auto-derives from the role name
 	/// Rebuilds the role list from the savegame.
 	void populateList();
 	/// Refreshes the detail panel (name field + badge) for the selected role.
@@ -60,6 +61,8 @@ public:
 	void lstRolesClick(Action *action);
 	/// Handler for editing the selected role's name.
 	void edtNameChange(Action *action);
+	/// Handler for editing the selected role's short (abbreviation) name.
+	void edtShortChange(Action *action);
 	/// Handler for clicking the New button.
 	void btnNewClick(Action *action);
 	/// Handler for clicking the Load Defaults button (re-adds missing seed roles).

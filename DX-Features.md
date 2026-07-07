@@ -26,15 +26,20 @@ Shipped so far:
   badge when unassigned). Clicking it opens a picker (`RoleSelectState`) to assign any of the save's
   roles (or clear it); on the Inventory screen it acts on the unit's geoscape soldier.
 - **Management screen.** The picker's **Manage** button opens `RoleMenuState` — a list of the save's
-  roles with **New / Rename** (inline) **/ Change Icon / Delete**. Change Icon opens `RoleIconSelectState`,
-  a picker over the `roleIcons` registry. Deleting a role clears it from any soldier that had it.
-  (Colour picking and loadout editing are follow-ons.)
+  roles with **New / Rename** (inline) **/ Abbreviation / Change Icon / Delete**. The abbreviation field
+  auto-fills from the role name as you type and then holds whatever you set (clearing it re-enables
+  auto). Change Icon opens `RoleIconSelectState`, a picker over the `roleIcons` registry. Deleting a role
+  clears it from any soldier that had it. (Colour picking and loadout editing are follow-ons.)
 - **Battlescape marker.** The bobbing down-arrow over the selected unit is replaced by that unit's role
   **map glyph** (`RoleIcon<Name>Map`) when its role has one; units with no role (or a role whose icon has
   no map glyph) keep the default arrow.
+- **Soldier lists.** The base roster and craft-assignment lists prefix the rank cell with the role's
+  **3-letter abbreviation** when assigned, e.g. `MRK-Rookie`. The abbreviation is an authored `shortName`
+  on the role (seeded per default role — HVY, SCT, AAR, …); player-created roles fall back to the first
+  three letters of the name.
 
-Pending: per-role loadout editing + colour picker, soldier/craft list role columns, and per-role armor
-colours. See [plans/Feature-SoldierRoles.md](plans/Feature-SoldierRoles.md).
+Pending: per-role loadout editing + colour picker, and per-role armor colours. See
+[plans/Feature-SoldierRoles.md](plans/Feature-SoldierRoles.md).
 
 ## Configurable Inventory Layouts
 

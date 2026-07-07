@@ -35,6 +35,7 @@ RuleRole::RuleRole(const std::string& name) : _name(name), _color(0)
  */
 void RuleRole::load(const YAML::YamlNodeReader& reader)
 {
+	reader.tryRead("shortName", _shortName);
 	reader.tryRead("icon", _icon);
 	_color = reader["color"].readVal(_color);
 }

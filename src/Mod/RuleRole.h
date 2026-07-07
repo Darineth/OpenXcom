@@ -37,6 +37,7 @@ class RuleRole
 {
 private:
 	std::string _name;
+	std::string _shortName;
 	std::string _icon;
 	int _color;
 public:
@@ -48,6 +49,8 @@ public:
 	void load(const YAML::YamlNodeReader& reader);
 	/// Gets the role's (STR) id / display name.
 	const std::string& getName() const { return _name; }
+	/// Gets the role's short (abbreviation) name, e.g. "SNP" (may be empty).
+	const std::string& getShortName() const { return _shortName; }
 	/// Gets the role-icon name (a roleIcons registry entry; empty = none).
 	const std::string& getIcon() const { return _icon; }
 	/// Gets the role's marker/tint palette colour.

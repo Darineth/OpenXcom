@@ -145,32 +145,46 @@ roleIcons:
 # =====================================================================
 roles:
   - name: STR_ROLE_INFANTRY
+    shortName: INF
     icon: INFANTRY
   - name: STR_ROLE_MARKSMAN
+    shortName: MRK
     icon: MARKSMAN
   - name: STR_ROLE_SNIPER
+    shortName: SNP
     icon: SNIPER
   - name: STR_ROLE_SCOUT
+    shortName: SCT
     icon: SCOUT
   - name: STR_ROLE_ASSAULT
+    shortName: ASL
     icon: ASSAULT
   - name: STR_ROLE_MACHINE_GUNNER
+    shortName: MGN
     icon: MACHINE_GUNNER
   - name: STR_ROLE_HEAVY
+    shortName: HVY
     icon: HEAVY
   - name: STR_ROLE_ANTI_ARMOR
+    shortName: AAR
     icon: ANTI_ARMOR
   - name: STR_ROLE_ROCKETEER
+    shortName: RKT
     icon: ROCKETEER
   - name: STR_ROLE_GRENADIER
+    shortName: GRN
     icon: GRENADIER
   - name: STR_ROLE_DEMOLITIONS
+    shortName: DEM
     icon: DEMOLITIONS
   - name: STR_ROLE_MEDIC
+    shortName: MED
     icon: MEDIC
   - name: STR_ROLE_PSIONICS
+    shortName: PSI
     icon: PSIONICS
   - name: STR_ROLE_SPECIALIST
+    shortName: SPC
     icon: SPECIALIST
 
 # =====================================================================

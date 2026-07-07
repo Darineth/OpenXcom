@@ -1,6 +1,7 @@
 # TODO
 - Overwatch is not cancelled by turning the unit
 - Need to re-document OXCE's features.  Extended.txt is incomplete (e.g. extendedItemReloadCost is not documented).
+- Hide psi stats before researched
 
 # Questions
 - Overwatch+dual fire?

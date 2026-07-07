@@ -19,11 +19,13 @@
 #include "RoleMenuState.h"
 #include "RoleIconSelectState.h"
 #include <set>
+#include <cctype>
 #include "../Engine/Game.h"
 #include "../Engine/Options.h"
 #include "../Engine/Action.h"
 #include "../Engine/LocalizedText.h"
 #include "../Engine/Surface.h"
+#include "../Engine/InteractiveSurface.h"
 #include "../Interface/Window.h"
 #include "../Interface/Text.h"
 #include "../Interface/TextEdit.h"
@@ -39,18 +41,34 @@ namespace OpenXcom
 {
 
 /**
+ * Derives a short abbreviation from a role name: the first 3 alphanumeric characters, uppercased.
+ */
+static std::string deriveShort(const std::string& name)
+{
+	std::string out;
+	for (char c : name)
+	{
+		if (out.size() >= 3)
+			break;
+		if (std::isalnum((unsigned char)c))
+			out += (char)std::toupper((unsigned char)c);
+	}
+	return out;
+}
+
+/**
  * Initializes all the elements in the Role Menu screen.
  */
-RoleMenuState::RoleMenuState() : _sel(-1)
+RoleMenuState::RoleMenuState() : _sel(-1), _autoShort(true)
 {
 	_window = new Window(this, 320, 200, 0, 0);
 	_txtTitle = new Text(300, 17, 10, 9);
 	_lstRoles = new TextList(128, 120, 16, 34);
-	_edtName = new TextEdit(this, 140, 16, 168, 40);
-	_role = new Surface(23, 23, 168, 62);
-	_txtIcon = new Text(114, 9, 196, 66);
-	_btnIcon = new TextButton(140, 16, 168, 92);
-	_btnDelete = new TextButton(140, 16, 168, 112);
+	// Detail: clickable icon on the left, big role name + mini abbreviation stacked to its right.
+	_role = new InteractiveSurface(23, 23, 168, 40);
+	_edtName = new TextEdit(this, 120, 17, 196, 39);
+	_edtShort = new TextEdit(this, 60, 9, 196, 55);
+	_btnDelete = new TextButton(140, 16, 168, 96);
 	_btnNew = new TextButton(100, 16, 16, 176);
 	_btnDefault = new TextButton(100, 16, 120, 176);
 	_btnOk = new TextButton(80, 16, 224, 176);
@@ -60,10 +78,9 @@ RoleMenuState::RoleMenuState() : _sel(-1)
 	add(_window, "window", "roleMenu");
 	add(_txtTitle, "text", "roleMenu");
 	add(_lstRoles, "list", "roleMenu");
-	add(_edtName, "text", "roleMenu");
 	add(_role);
-	add(_txtIcon, "text", "roleMenu");
-	add(_btnIcon, "button", "roleMenu");
+	add(_edtName, "text", "roleMenu");
+	add(_edtShort, "text", "roleMenu");
 	add(_btnDelete, "button", "roleMenu");
 	add(_btnNew, "button", "roleMenu");
 	add(_btnDefault, "button", "roleMenu");
@@ -83,17 +100,19 @@ RoleMenuState::RoleMenuState() : _sel(-1)
 	_lstRoles->setMargin(8);
 	_lstRoles->onMouseClick((ActionHandler)&RoleMenuState::lstRolesClick);
 
+	// Clicking the badge opens the icon picker for the selected role.
+	_role->onMouseClick((ActionHandler)&RoleMenuState::btnIconClick);
+
 	_edtName->setBig();
 	_edtName->onChange((ActionHandler)&RoleMenuState::edtNameChange);
+
+	_edtShort->onChange((ActionHandler)&RoleMenuState::edtShortChange);
 
 	_btnNew->setText(tr("STR_NEW_ROLE"));
 	_btnNew->onMouseClick((ActionHandler)&RoleMenuState::btnNewClick);
 
 	_btnDefault->setText(tr("STR_LOAD_DEFAULTS"));
 	_btnDefault->onMouseClick((ActionHandler)&RoleMenuState::btnDefaultClick);
-
-	_btnIcon->setText(tr("STR_CHANGE_ICON"));
-	_btnIcon->onMouseClick((ActionHandler)&RoleMenuState::btnIconClick);
 
 	_btnDelete->setText(tr("STR_DELETE"));
 	_btnDelete->onMouseClick((ActionHandler)&RoleMenuState::btnDeleteClick);
@@ -152,19 +171,22 @@ void RoleMenuState::updateDetail()
 	auto& roles = _game->getSavedGame()->getRoles();
 	_role->clear();
 	bool hasSel = _sel >= 0 && _sel < (int)roles.size();
+	_role->setVisible(hasSel);
 	_edtName->setVisible(hasSel);
-	_btnIcon->setVisible(hasSel);
+	_edtShort->setVisible(hasSel);
 	_btnDelete->setVisible(hasSel);
-	_txtIcon->setVisible(hasSel);
 	if (!hasSel)
 	{
 		_edtName->setText("");
-		_txtIcon->setText("");
+		_edtShort->setText("");
 		return;
 	}
 	Role* role = roles[_sel];
 	_edtName->setText(tr(role->getName()));
-	_txtIcon->setText(RoleIconSelectState::prettifyIconName(role->getIcon()));
+	// Show the authored short name, or the auto-derived one; auto-derive stays on until the
+	// player sets a short name explicitly.
+	_autoShort = role->getShortName().empty();
+	_edtShort->setText(_autoShort ? deriveShort(tr(role->getName())) : role->getShortName());
 
 	const RuleRoleIcon* roleIcon = _game->getMod()->getRoleIcon(role->getIcon().empty() ? "NONE" : role->getIcon(), false);
 	if (roleIcon && !roleIcon->getSprite().empty())
@@ -198,6 +220,26 @@ void RoleMenuState::edtNameChange(Action *)
 	{
 		roles[_sel]->setName(_edtName->getText());
 		_lstRoles->setCellText(_sel, 0, _edtName->getText());
+		// Auto-fill the short name from the name until the player customizes it. Leaving the
+		// role's stored shortName empty keeps it deriving (the lists derive the same way).
+		if (_autoShort)
+		{
+			_edtShort->setText(deriveShort(_edtName->getText()));
+		}
+	}
+}
+
+/**
+ * Sets the selected role's short (abbreviation) name; clearing it re-enables auto-derive.
+ * @param action Pointer to an action.
+ */
+void RoleMenuState::edtShortChange(Action *)
+{
+	auto& roles = _game->getSavedGame()->getRoles();
+	if (_sel >= 0 && _sel < (int)roles.size())
+	{
+		roles[_sel]->setShortName(_edtShort->getText());
+		_autoShort = _edtShort->getText().empty();
 	}
 }
 

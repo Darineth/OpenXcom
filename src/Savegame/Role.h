@@ -44,6 +44,7 @@ class Role
 private:
 	int _id;
 	std::string _name;
+	std::string _shortName;
 	std::string _icon;
 	int _color;
 	std::vector<EquipmentLayoutItem*> _loadout;
@@ -65,6 +66,13 @@ public:
 	const std::string& getName() const { return _name; }
 	/// Sets the role's display name.
 	void setName(const std::string& name) { _name = name; }
+	/// Gets the role's short (abbreviation) name (may be empty).
+	const std::string& getShortName() const { return _shortName; }
+	/// Sets the role's short (abbreviation) name.
+	void setShortName(const std::string& shortName) { _shortName = shortName; }
+	/// Gets the role's abbreviation: the short name if set, else derived from the given
+	/// (already-localized) display name (first 3 alphanumeric chars, uppercased).
+	std::string getAbbreviation(const std::string& displayName) const;
 	/// Gets the role-icon name (a roleIcons registry entry; empty = none).
 	const std::string& getIcon() const { return _icon; }
 	/// Sets the role-icon name (a roleIcons registry entry).

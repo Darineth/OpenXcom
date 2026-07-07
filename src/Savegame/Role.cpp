@@ -17,6 +17,7 @@
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "Role.h"
+#include <cctype>
 #include "EquipmentLayoutItem.h"
 #include "../Mod/Mod.h"
 #include "../Mod/RuleRole.h"
@@ -42,7 +43,8 @@ Role::Role(int id) : _id(id), _color(0), _loadoutArmor(nullptr)
  * @param seed The mod-supplied seed to copy identity from.
  */
 Role::Role(int id, const RuleRole* seed) :
-	_id(id), _name(seed->getName()), _icon(seed->getIcon()), _color(seed->getColor()),
+	_id(id), _name(seed->getName()), _shortName(seed->getShortName()),
+	_icon(seed->getIcon()), _color(seed->getColor()),
 	_loadoutArmor(nullptr)
 {
 }
@@ -53,6 +55,28 @@ Role::Role(int id, const RuleRole* seed) :
 Role::~Role()
 {
 	Collections::deleteAll(_loadout);
+}
+
+/**
+ * Returns the role's abbreviation for compact displays (e.g. the "MRK-Rookie" rank readout):
+ * the authored short name if set, else the first 3 alphanumeric characters of the given
+ * (already-localized) display name, uppercased.
+ * @param displayName The role's localized display name.
+ * @return A short abbreviation (may be empty if displayName has no usable characters).
+ */
+std::string Role::getAbbreviation(const std::string& displayName) const
+{
+	if (!_shortName.empty())
+		return _shortName;
+	std::string abbr;
+	for (char c : displayName)
+	{
+		if (abbr.size() >= 3)
+			break;
+		if (std::isalnum((unsigned char)c))
+			abbr += (char)std::toupper((unsigned char)c);
+	}
+	return abbr;
 }
 
 /**
@@ -72,6 +96,7 @@ void Role::load(const YAML::YamlNodeReader& reader, const Mod* mod)
 {
 	reader.tryRead("id", _id);
 	reader.tryRead("name", _name);
+	reader.tryRead("shortName", _shortName);
 	reader.tryRead("icon", _icon);
 	reader.tryRead("color", _color);
 	for (const auto& layoutItem : reader["loadout"].children())
@@ -99,6 +124,8 @@ void Role::save(YAML::YamlNodeWriter writer) const
 	writer.write("id", _id);
 	if (!_name.empty())
 		writer.write("name", _name);
+	if (!_shortName.empty())
+		writer.write("shortName", _shortName);
 	if (!_icon.empty())
 		writer.write("icon", _icon);
 	if (_color != 0)

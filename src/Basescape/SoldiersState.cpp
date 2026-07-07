@@ -35,6 +35,7 @@
 #include "../Savegame/Base.h"
 #include "../Savegame/BattleUnit.h"
 #include "../Savegame/Soldier.h"
+#include "../Savegame/Role.h"
 #include "../Savegame/SavedGame.h"
 #include "SoldierInfoState.h"
 #include "SoldierMemorialState.h"
@@ -440,17 +441,30 @@ void SoldiersState::initList(size_t scrl)
 	{
 		std::string craftString = soldier->getCraftString(_game->getLanguage(), recovery);
 
+		// DX: prefix the rank with the role abbreviation when assigned, e.g. "MRK-Rookie".
+		std::string rankLabel = tr(soldier->getRankString());
+		if (soldier->getRoleId() != 0)
+		{
+			const Role* role = _game->getSavedGame()->getRole(soldier->getRoleId());
+			if (role)
+			{
+				std::string abbr = role->getAbbreviation(tr(role->getName()));
+				if (!abbr.empty())
+					rankLabel = abbr + "-" + rankLabel;
+			}
+		}
+
 		if (_dynGetter != NULL)
 		{
 			// call corresponding getter
 			int dynStat = (*_dynGetter)(_game, soldier);
 			std::ostringstream ss;
 			ss << dynStat;
-			_lstSoldiers->addRow(4, soldier->getName(true).c_str(), tr(soldier->getRankString()).c_str(), craftString.c_str(), ss.str().c_str());
+			_lstSoldiers->addRow(4, soldier->getName(true).c_str(), rankLabel.c_str(), craftString.c_str(), ss.str().c_str());
 		}
 		else
 		{
-			_lstSoldiers->addRow(3, soldier->getName(true).c_str(), tr(soldier->getRankString()).c_str(), craftString.c_str());
+			_lstSoldiers->addRow(3, soldier->getName(true).c_str(), rankLabel.c_str(), craftString.c_str());
 		}
 
 		if (soldier->getCraft() == 0)
