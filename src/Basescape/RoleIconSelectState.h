@@ -19,6 +19,7 @@
  */
 #include "../Engine/State.h"
 #include <vector>
+#include <string>
 
 namespace OpenXcom
 {
@@ -27,33 +28,30 @@ class Window;
 class Text;
 class TextButton;
 class TextList;
-class Soldier;
+class Role;
 
 /**
- * DX: Role picker popup. Lists the save's player-authored roles (plus a "no
- * role" entry) and assigns the chosen one to a soldier. Opened from the
- * Soldier Info screen; sets the soldier's role id and returns.
+ * DX: Role-icon picker popup. Lists the roleIcons registry entries and assigns the
+ * chosen one to a role. Opened from the role management screen.
  */
-class RoleSelectState : public State
+class RoleIconSelectState : public State
 {
 private:
-	Soldier *_soldier;
+	Role *_role;
 	Window *_window;
 	Text *_txtTitle;
-	TextButton *_btnManage, *_btnCancel;
-	TextList *_lstRoles;
-	std::vector<int> _roleIds; // parallel to list rows; 0 for the "no role" row
+	TextButton *_btnCancel;
+	TextList *_lstIcons;
+	std::vector<std::string> _iconNames; // parallel to the list rows
 public:
-	/// Creates the Role Select state for the given soldier.
-	RoleSelectState(Soldier *soldier);
-	/// Cleans up the Role Select state.
-	~RoleSelectState();
-	/// Rebuilds the role list (refreshes after returning from role management).
-	void init() override;
-	/// Handler for clicking a role in the list.
-	void lstRolesClick(Action *action);
-	/// Handler for clicking the Manage button.
-	void btnManageClick(Action *action);
+	/// Turns a roleIcons registry id (e.g. "MACHINE_GUNNER") into a friendly label ("Machine Gunner").
+	static std::string prettifyIconName(const std::string& name);
+	/// Creates the Role Icon Select state for the given role.
+	RoleIconSelectState(Role *role);
+	/// Cleans up the Role Icon Select state.
+	~RoleIconSelectState();
+	/// Handler for clicking an icon in the list.
+	void lstIconsClick(Action *action);
 	/// Handler for clicking the Cancel button.
 	void btnCancelClick(Action *action);
 };

@@ -25,9 +25,13 @@ Shipped so far:
   Soldier Info screen and the battlescape Inventory screen (the assigned role's icon, or a "no role"
   badge when unassigned). Clicking it opens a picker (`RoleSelectState`) to assign any of the save's
   roles (or clear it); on the Inventory screen it acts on the unit's geoscape soldier.
+- **Management screen.** The picker's **Manage** button opens `RoleMenuState` — a list of the save's
+  roles with **New / Rename** (inline) **/ Change Icon / Delete**. Change Icon opens `RoleIconSelectState`,
+  a picker over the `roleIcons` registry. Deleting a role clears it from any soldier that had it.
+  (Colour picking and loadout editing are follow-ons.)
 
-Pending: the role-management screen (create/rename/icon/colour/delete/edit-loadout), the on-map
-battlescape role marker + list columns, and per-role armor colours. See
+Pending: per-role loadout editing + colour picker, the on-map battlescape role marker + soldier/craft
+list columns, and per-role armor colours. See
 [plans/Feature-SoldierRoles.md](plans/Feature-SoldierRoles.md).
 
 ## Configurable Inventory Layouts

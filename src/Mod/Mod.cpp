@@ -4018,8 +4018,7 @@ SavedGame *Mod::newSave(GameDifficulty diff) const
 	// DX: seed the player's editable soldier-role list from the mod's role seeds
 	for (const auto& roleName : _rolesIndex)
 	{
-		RuleRole *roleRule = getRole(roleName);
-		save->getRoles().push_back(new Role(save->getId("STR_ROLE"), roleRule));
+		save->createRole(getRole(roleName));
 	}
 
 	// Set up starting base

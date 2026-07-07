@@ -17,14 +17,16 @@ registry (NONE + 14 roles) and 14 default seed roles + their display strings, al
 (cross-references validated). **Template-target generalization — already satisfied:**
 `InventoryState::_createInventoryTemplate` / `_applyInventoryTemplate` already take a generic
 `std::vector<EquipmentLayoutItem*>&` and operate purely on the passed vector + selected unit, so a
-role's `getLoadout()` can be passed straight in (no code needed). **Assignment UI shipped (uncommitted,
-builds clean):** Soldier Info now shows the assigned role's badge (top-right) + a **Role** button that
-opens a `RoleSelectState` picker to set/clear a soldier's role; `SoldierInfoState::init()` refreshes the
-badge/label when the picker closes. `roleSelect` interface blocks added in xcom1 + xcom2; strings in
-`Language/DX/`. This is the **first icon consumer** — needs an in-game visual check (badge render +
-palette). **Next:** the role-management screen (create/rename/icon/colour/delete/edit-loadout), then the
-battlescape marker + list columns and per-role armor colours. This is the Phase 7 **"Role Definitions &
-Templates"** roadmap item, redesigned from the legacy fixed-list model into a **player-authored** system.
+role's `getLoadout()` can be passed straight in (no code needed). **Assignment UI + management screen
+shipped (builds clean):** Soldier Info and the battlescape Inventory show a clickable role badge (between
+the rank icon and name) + a "role> rank" line; the badge opens a `RoleSelectState` picker whose **Manage**
+button opens `RoleMenuState` (list + New / Rename inline / Change Icon via `RoleIconSelectState` / Delete).
+`roleSelect` / `roleMenu` / `roleIconSelect` interface blocks in xcom1 + xcom2; strings in `Language/DX/`.
+**Deferred within this item:** per-role **loadout editing** and the **colour picker** (armor-colour
+rendering isn't built yet). **Next roadmap items:** the battlescape map marker (the `RoleIconsMap` glyph
+replacing the selected-unit arrow) + soldier/craft list columns, and per-role armor colours. This is the
+Phase 7 **"Role Definitions & Templates"** roadmap item, redesigned from the legacy fixed-list model into
+a **player-authored** system.
 
 Roadmap items covered/affected:
 - **Role Definitions & Templates** — *this pass* (data backbone + minimal assign/manage UI).

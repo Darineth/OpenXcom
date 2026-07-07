@@ -226,3 +226,11 @@ en-US:
 #RoleSelectState.cpp
   STR_SELECT_ROLE: "Select Role"
   STR_NO_ROLE: "- No Role -"
+  STR_MANAGE: "Manage"
+#RoleMenuState.cpp
+  STR_MANAGE_ROLES: "Manage Roles"
+  STR_NEW_ROLE: "New Role"
+  STR_LOAD_DEFAULTS: "Load Defaults"
+  STR_CHANGE_ICON: "Change Icon"
+#RoleIconSelectState.cpp
+  STR_SELECT_ICON: "Select Icon"

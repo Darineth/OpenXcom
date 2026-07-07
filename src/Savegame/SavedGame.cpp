@@ -2967,12 +2967,40 @@ Role *SavedGame::getRole(int id) const
 }
 
 /**
+ * DX: Next free role id (max existing + 1). Role ids are self-contained within the role
+ * list so they stay unique regardless of the _ids counter (which New Battle doesn't persist).
+ * @return The next role id.
+ */
+static int nextRoleId(const std::vector<Role*>& roles)
+{
+	int maxId = 0;
+	for (auto* role : roles)
+	{
+		if (role->getId() > maxId)
+			maxId = role->getId();
+	}
+	return maxId + 1;
+}
+
+/**
  * DX: Creates a new empty player soldier role, appends it, and returns it.
  * @return The newly created role.
  */
 Role *SavedGame::createRole()
 {
-	Role* role = new Role(getId("STR_ROLE"));
+	Role* role = new Role(nextRoleId(_roles));
+	_roles.push_back(role);
+	return role;
+}
+
+/**
+ * DX: Creates a player soldier role from a mod seed, appends it, and returns it.
+ * @param seed The mod-supplied role seed to copy identity from.
+ * @return The newly created role.
+ */
+Role *SavedGame::createRole(const RuleRole *seed)
+{
+	Role* role = new Role(nextRoleId(_roles), seed);
 	_roles.push_back(role);
 	return role;
 }

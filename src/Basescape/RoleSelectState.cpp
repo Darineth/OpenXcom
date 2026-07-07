@@ -17,6 +17,7 @@
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "RoleSelectState.h"
+#include "RoleMenuState.h"
 #include "../Engine/Game.h"
 #include "../Engine/Options.h"
 #include "../Engine/Action.h"
@@ -40,16 +41,18 @@ RoleSelectState::RoleSelectState(Soldier *soldier) : _soldier(soldier)
 {
 	_screen = false;
 
-	_window = new Window(this, 192, 160, 64, 20, POPUP_BOTH);
-	_txtTitle = new Text(182, 9, 69, 30);
-	_lstRoles = new TextList(160, 89, 76, 42);
-	_btnCancel = new TextButton(160, 16, 80, 156);
+	_window = new Window(this, 192, 182, 64, 9, POPUP_BOTH);
+	_txtTitle = new Text(182, 9, 69, 18);
+	_lstRoles = new TextList(160, 120, 76, 32);
+	_btnManage = new TextButton(76, 16, 80, 158);
+	_btnCancel = new TextButton(76, 16, 160, 158);
 
 	setInterface("roleSelect");
 
 	add(_window, "window", "roleSelect");
 	add(_txtTitle, "text", "roleSelect");
 	add(_lstRoles, "list", "roleSelect");
+	add(_btnManage, "button", "roleSelect");
 	add(_btnCancel, "button", "roleSelect");
 
 	centerAllSurfaces();
@@ -58,6 +61,9 @@ RoleSelectState::RoleSelectState(Soldier *soldier) : _soldier(soldier)
 
 	_txtTitle->setText(tr("STR_SELECT_ROLE"));
 	_txtTitle->setAlign(ALIGN_CENTER);
+
+	_btnManage->setText(tr("STR_MANAGE"));
+	_btnManage->onMouseClick((ActionHandler)&RoleSelectState::btnManageClick);
 
 	_btnCancel->setText(tr("STR_CANCEL"));
 	_btnCancel->onMouseClick((ActionHandler)&RoleSelectState::btnCancelClick);
@@ -68,7 +74,23 @@ RoleSelectState::RoleSelectState(Soldier *soldier) : _soldier(soldier)
 	_lstRoles->setBackground(_window);
 	_lstRoles->setMargin(8);
 	_lstRoles->onMouseClick((ActionHandler)&RoleSelectState::lstRolesClick);
+}
 
+/**
+ *
+ */
+RoleSelectState::~RoleSelectState()
+{
+}
+
+/**
+ * (Re)builds the role list - so it refreshes after the management screen changes roles.
+ */
+void RoleSelectState::init()
+{
+	State::init();
+	_lstRoles->clearList();
+	_roleIds.clear();
 	// "No role" entry first, then every player role.
 	_lstRoles->addRow(1, tr("STR_NO_ROLE").c_str());
 	_roleIds.push_back(0);
@@ -77,13 +99,6 @@ RoleSelectState::RoleSelectState(Soldier *soldier) : _soldier(soldier)
 		_lstRoles->addRow(1, tr(role->getName()).c_str());
 		_roleIds.push_back(role->getId());
 	}
-}
-
-/**
- *
- */
-RoleSelectState::~RoleSelectState()
-{
 }
 
 /**
@@ -98,6 +113,15 @@ void RoleSelectState::lstRolesClick(Action *)
 		_soldier->setRoleId(_roleIds[row]);
 	}
 	_game->popState();
+}
+
+/**
+ * Opens the role management screen. init() rebuilds this list when it returns.
+ * @param action Pointer to an action.
+ */
+void RoleSelectState::btnManageClick(Action *)
+{
+	_game->pushState(new RoleMenuState());
 }
 
 /**

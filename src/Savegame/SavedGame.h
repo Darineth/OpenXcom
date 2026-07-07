@@ -62,6 +62,7 @@ class Soldier;
 class Craft;
 class EquipmentLayoutItem;
 class Role;
+class RuleRole;
 class ItemContainer;
 class RuleSoldierTransformation;
 class AlienRace;
@@ -501,6 +502,8 @@ public:
 	Role *getRole(int id) const;
 	/// Creates a new empty soldier role, appends it, and returns it (DX).
 	Role *createRole();
+	/// Creates a soldier role from a mod seed, appends it, and returns it (DX).
+	Role *createRole(const RuleRole *seed);
 	/// Deletes a soldier role by id and clears it from any soldier holding it (DX).
 	void removeRole(int id);
 	/// Gets the list of missions statistics

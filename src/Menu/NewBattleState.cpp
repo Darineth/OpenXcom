@@ -39,6 +39,7 @@
 #include "../Savegame/Craft.h"
 #include "../Savegame/ItemContainer.h"
 #include "../Savegame/Soldier.h"
+#include "../Savegame/Role.h"
 #include "../Battlescape/BattlescapeGenerator.h"
 #include "../Battlescape/BriefingState.h"
 #include "../Savegame/Ufo.h"
@@ -456,6 +457,25 @@ void NewBattleState::load(const std::string &filename)
 					_game->getSavedGame()->loadTemplates(savedTemplates, _game->getMod());
 					templatesLoaded = true;
 				}
+
+				// DX: restore the player-authored role list (soldier roleIds were restored with the
+				// base above). If the .cfg predates roles, seed the defaults so roles still work.
+				if (const auto& savedRoles = cfgReader["roles"])
+				{
+					for (const auto& roleReader : savedRoles.children())
+					{
+						Role* role = new Role(0);
+						role->load(roleReader, mod);
+						save->getRoles().push_back(role);
+					}
+				}
+				else
+				{
+					for (const auto& roleName : mod->getRolesList())
+					{
+						save->createRole(mod->getRole(roleName));
+					}
+				}
 			}
 			else
 			{
@@ -508,6 +528,12 @@ void NewBattleState::save(const std::string &filename)
 	auto templatesWriter = writer["globalTemplates"];
 	templatesWriter.setAsMap();
 	_game->getSavedGame()->saveTemplates(templatesWriter);
+
+	// DX: persist the player-authored role list (soldier roleIds ride along in base->save above).
+	if (!_game->getSavedGame()->getRoles().empty())
+		writer.write("roles", _game->getSavedGame()->getRoles(),
+			[](YAML::YamlNodeWriter& w, Role* r)
+			{ r->save(w.write()); });
 
 	std::string filepath = Options::getMasterUserFolder() + filename + ".cfg";
 	if (!CrossPlatform::writeFile(filepath, writer.emit().yaml))
@@ -607,6 +633,12 @@ void NewBattleState::initSave()
 
 	// Add research
 	save->makeAllResearchDiscovered(mod);
+
+	// DX: seed the default soldier roles (New Battle uses new SavedGame(), which doesn't seed).
+	for (const auto& roleName : mod->getRolesList())
+	{
+		save->createRole(mod->getRole(roleName));
+	}
 
 	_game->setSavedGame(save);
 	cbxMissionChange(0);
