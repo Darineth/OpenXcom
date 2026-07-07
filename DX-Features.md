@@ -30,6 +30,11 @@ Shipped so far:
   auto-fills from the role name as you type and then holds whatever you set (clearing it re-enables
   auto). Change Icon opens `RoleIconSelectState`, a picker over the `roleIcons` registry. Deleting a role
   clears it from any soldier that had it. (Colour picking and loadout editing are follow-ons.)
+- **Per-role loadout.** Each role carries its own equipment-loadout template. From the role picker
+  opened in the battlescape Inventory, **Save Kit** stores the current unit's loadout onto its assigned
+  role and **Apply Kit** equips the unit from that role's saved loadout (reusing the inventory template
+  apply/create paths; grabs items from the ground like the clipboard template). Both act on the unit's
+  assigned role and only appear in the inventory context.
 - **Battlescape marker.** The bobbing down-arrow over the selected unit is replaced by that unit's role
   **map glyph** (`RoleIcon<Name>Map`) when its role has one; units with no role (or a role whose icon has
   no map glyph) keep the default arrow.
@@ -38,7 +43,7 @@ Shipped so far:
   on the role (seeded per default role — HVY, SCT, AAR, …); player-created roles fall back to the first
   three letters of the name.
 
-Pending: per-role loadout editing + colour picker, and per-role armor colours. See
+Pending: per-role armor colours (with a colour picker). See
 [plans/Feature-SoldierRoles.md](plans/Feature-SoldierRoles.md).
 
 ## Configurable Inventory Layouts

@@ -37,6 +37,7 @@ class BattlescapeState;
 class BattleUnit;
 class BattlescapeButton;
 class Base;
+class Role;
 
 /**
  * Screen which displays soldier's inventory.
@@ -131,6 +132,12 @@ public:
 	void btnRankClick(Action *action);
 	/// Handler for clicking the role badge (DX).
 	void btnRoleClick(Action *action);
+	/// Gets the selected unit's assigned role (DX), or null.
+	Role *getSelectedUnitRole() const;
+	/// Applies the selected unit's assigned role's loadout to it (DX).
+	void applyRoleLoadout();
+	/// Saves the selected unit's current loadout onto its assigned role (DX).
+	void saveRoleLoadout();
 	/// Handler for clicking the Links button.
 	void btnLinksClick(Action *action);
 	/// Handler for clicking on the Create Template button.

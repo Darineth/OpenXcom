@@ -1516,8 +1516,66 @@ void InventoryState::btnRoleClick(Action *)
 	Soldier *soldier = unit ? unit->getGeoscapeSoldier() : nullptr;
 	if (soldier)
 	{
-		_game->pushState(new RoleSelectState(soldier));
+		// Pass this inventory so the picker can offer role-loadout apply/save for the unit.
+		_game->pushState(new RoleSelectState(soldier, this));
 	}
+}
+
+/**
+ * Gets the selected unit's assigned role (DX), or null if it has none / isn't a soldier.
+ */
+Role *InventoryState::getSelectedUnitRole() const
+{
+	BattleUnit *unit = _battleGame->getSelectedUnit();
+	Soldier *soldier = unit ? unit->getGeoscapeSoldier() : nullptr;
+	if (!soldier || soldier->getRoleId() == 0)
+	{
+		return nullptr;
+	}
+	return _game->getSavedGame()->getRole(soldier->getRoleId());
+}
+
+/**
+ * Applies the selected unit's assigned role's loadout to it (DX), reusing the inventory
+ * template apply path. No-op if the unit has no role.
+ */
+void InventoryState::applyRoleLoadout()
+{
+	if (_inv->getSelectedItem() != 0)
+	{
+		return;
+	}
+	Role *role = getSelectedUnitRole();
+	if (!role)
+	{
+		return;
+	}
+	_applyInventoryTemplate(role->getLoadout());
+	_inv->arrangeGround();
+	updateStats();
+	refreshMouse();
+	_game->getMod()->getSoundByDepth(_battleGame->getDepth(), Mod::ITEM_DROP)->play();
+}
+
+/**
+ * Saves the selected unit's current loadout onto its assigned role (DX), reusing the inventory
+ * template create path. No-op if the unit has no role.
+ */
+void InventoryState::saveRoleLoadout()
+{
+	if (_inv->getSelectedItem() != 0)
+	{
+		return;
+	}
+	Role *role = getSelectedUnitRole();
+	if (!role)
+	{
+		return;
+	}
+	_clearInventoryTemplate(role->getLoadout());
+	_createInventoryTemplate(role->getLoadout());
+	_game->getMod()->getSoundByDepth(_battleGame->getDepth(), Mod::ITEM_DROP)->play();
+	refreshMouse();
 }
 
 void InventoryState::_createInventoryTemplate(std::vector<EquipmentLayoutItem*> &inventoryTemplate)

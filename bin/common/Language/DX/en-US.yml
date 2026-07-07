@@ -227,6 +227,8 @@ en-US:
   STR_SELECT_ROLE: "Select Role"
   STR_NO_ROLE: "- No Role -"
   STR_MANAGE: "Manage"
+  STR_APPLY_LOADOUT: "Apply Kit"
+  STR_SAVE_LOADOUT: "Save Kit"
 #RoleMenuState.cpp
   STR_MANAGE_ROLES: "Manage Roles"
   STR_NEW_ROLE: "New Role"

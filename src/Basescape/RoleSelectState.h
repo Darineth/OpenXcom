@@ -28,6 +28,7 @@ class Text;
 class TextButton;
 class TextList;
 class Soldier;
+class InventoryState;
 
 /**
  * DX: Role picker popup. Lists the save's player-authored roles (plus a "no
@@ -38,20 +39,25 @@ class RoleSelectState : public State
 {
 private:
 	Soldier *_soldier;
+	InventoryState *_inv; // set when opened from the inventory; enables role-loadout apply/save
 	Window *_window;
 	Text *_txtTitle;
-	TextButton *_btnManage, *_btnCancel;
+	TextButton *_btnApply, *_btnSave, *_btnManage, *_btnCancel;
 	TextList *_lstRoles;
 	std::vector<int> _roleIds; // parallel to list rows; 0 for the "no role" row
 public:
-	/// Creates the Role Select state for the given soldier.
-	RoleSelectState(Soldier *soldier);
+	/// Creates the Role Select state for the given soldier (inv enables role-loadout apply/save).
+	RoleSelectState(Soldier *soldier, InventoryState *inv = nullptr);
 	/// Cleans up the Role Select state.
 	~RoleSelectState();
 	/// Rebuilds the role list (refreshes after returning from role management).
 	void init() override;
 	/// Handler for clicking a role in the list.
 	void lstRolesClick(Action *action);
+	/// Handler for clicking the Apply Loadout button.
+	void btnApplyClick(Action *action);
+	/// Handler for clicking the Save Loadout button.
+	void btnSaveClick(Action *action);
 	/// Handler for clicking the Manage button.
 	void btnManageClick(Action *action);
 	/// Handler for clicking the Cancel button.

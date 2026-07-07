@@ -22,8 +22,10 @@ shipped (builds clean):** Soldier Info and the battlescape Inventory show a clic
 the rank icon and name) + a "role> rank" line; the badge opens a `RoleSelectState` picker whose **Manage**
 button opens `RoleMenuState` (list + New / Rename inline / Change Icon via `RoleIconSelectState` / Delete).
 `roleSelect` / `roleMenu` / `roleIconSelect` interface blocks in xcom1 + xcom2; strings in `Language/DX/`.
-**Deferred within this item:** per-role **loadout editing** and the **colour picker** (armor-colour
-rendering isn't built yet). **Role UI & Markers (done):** the battlescape **map marker**
+**Per-role loadout editing (done):** the role picker opened from the battlescape Inventory offers
+**Save Kit** / **Apply Kit** (`InventoryState::saveRoleLoadout`/`applyRoleLoadout`), storing/applying the
+unit's assigned role's loadout via the generic inventory template helpers. **Deferred within this item:**
+the **colour picker** (pairs with per-role armor colours below). **Role UI & Markers (done):** the battlescape **map marker**
 replaces the selected-unit arrow with the role's `RoleIcon<Name>Map` glyph (`Map.cpp`), and the base
 roster + craft-assignment lists prefix the rank cell with the role's 3-letter abbreviation
 (`MRK-Rookie`) — an authored `shortName` on `RuleRole`/`Role` (seeded per default role) with a

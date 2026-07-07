@@ -18,6 +18,7 @@
  */
 #include "RoleSelectState.h"
 #include "RoleMenuState.h"
+#include "../Battlescape/InventoryState.h"
 #include "../Engine/Game.h"
 #include "../Engine/Options.h"
 #include "../Engine/Action.h"
@@ -37,21 +38,25 @@ namespace OpenXcom
  * Initializes all the elements in the Role Select window.
  * @param soldier The soldier whose role is being set.
  */
-RoleSelectState::RoleSelectState(Soldier *soldier) : _soldier(soldier)
+RoleSelectState::RoleSelectState(Soldier *soldier, InventoryState *inv) : _soldier(soldier), _inv(inv)
 {
 	_screen = false;
 
-	_window = new Window(this, 192, 182, 64, 9, POPUP_BOTH);
-	_txtTitle = new Text(182, 9, 69, 18);
-	_lstRoles = new TextList(160, 120, 76, 32);
-	_btnManage = new TextButton(76, 16, 80, 158);
-	_btnCancel = new TextButton(76, 16, 160, 158);
+	_window = new Window(this, 192, 190, 64, 5, POPUP_BOTH);
+	_txtTitle = new Text(182, 9, 69, 14);
+	_lstRoles = new TextList(160, 112, 76, 26);
+	_btnApply = new TextButton(76, 16, 80, 146);
+	_btnSave = new TextButton(76, 16, 160, 146);
+	_btnManage = new TextButton(76, 16, 80, 164);
+	_btnCancel = new TextButton(76, 16, 160, 164);
 
 	setInterface("roleSelect");
 
 	add(_window, "window", "roleSelect");
 	add(_txtTitle, "text", "roleSelect");
 	add(_lstRoles, "list", "roleSelect");
+	add(_btnApply, "button", "roleSelect");
+	add(_btnSave, "button", "roleSelect");
 	add(_btnManage, "button", "roleSelect");
 	add(_btnCancel, "button", "roleSelect");
 
@@ -61,6 +66,12 @@ RoleSelectState::RoleSelectState(Soldier *soldier) : _soldier(soldier)
 
 	_txtTitle->setText(tr("STR_SELECT_ROLE"));
 	_txtTitle->setAlign(ALIGN_CENTER);
+
+	_btnApply->setText(tr("STR_APPLY_LOADOUT"));
+	_btnApply->onMouseClick((ActionHandler)&RoleSelectState::btnApplyClick);
+
+	_btnSave->setText(tr("STR_SAVE_LOADOUT"));
+	_btnSave->onMouseClick((ActionHandler)&RoleSelectState::btnSaveClick);
 
 	_btnManage->setText(tr("STR_MANAGE"));
 	_btnManage->onMouseClick((ActionHandler)&RoleSelectState::btnManageClick);
@@ -74,6 +85,11 @@ RoleSelectState::RoleSelectState(Soldier *soldier) : _soldier(soldier)
 	_lstRoles->setBackground(_window);
 	_lstRoles->setMargin(8);
 	_lstRoles->onMouseClick((ActionHandler)&RoleSelectState::lstRolesClick);
+
+	// Role-loadout buttons only apply when opened from the inventory and the unit has a role.
+	Role *role = _inv ? _inv->getSelectedUnitRole() : nullptr;
+	_btnSave->setVisible(role != nullptr);
+	_btnApply->setVisible(role != nullptr && !role->getLoadout().empty());
 }
 
 /**
@@ -111,6 +127,32 @@ void RoleSelectState::lstRolesClick(Action *)
 	if (row < _roleIds.size())
 	{
 		_soldier->setRoleId(_roleIds[row]);
+	}
+	_game->popState();
+}
+
+/**
+ * Applies the unit's assigned role's loadout to it and closes.
+ * @param action Pointer to an action.
+ */
+void RoleSelectState::btnApplyClick(Action *)
+{
+	if (_inv)
+	{
+		_inv->applyRoleLoadout();
+	}
+	_game->popState();
+}
+
+/**
+ * Saves the unit's current loadout onto its assigned role and closes.
+ * @param action Pointer to an action.
+ */
+void RoleSelectState::btnSaveClick(Action *)
+{
+	if (_inv)
+	{
+		_inv->saveRoleLoadout();
 	}
 	_game->popState();
 }
