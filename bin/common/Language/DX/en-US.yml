@@ -217,3 +217,12 @@ en-US:
 #PurchaseState.cpp / SellState.cpp / TransferItemsState.cpp / StoresState.cpp
   # {0} = item name, {1} = rounds per clip. Shown on base list screens for multi-round ammo.
   STR_DX_AMMO_ROUND_COUNT: "{0} (x{1})"
+
+#=================== DX Soldier Roles ===================
+#SoldierInfoState.cpp
+  STR_ROLE: "Role"
+  # Rank line with the role name as the label. {0} = role name, {1} = rank name.
+  STR_ROLE_RANK: "{0}> {ALT}{1}"
+#RoleSelectState.cpp
+  STR_SELECT_ROLE: "Select Role"
+  STR_NO_ROLE: "- No Role -"

@@ -3,6 +3,33 @@
 This document tracks features added in OpenXcom DX on top of OXCE-Plus. Entries will be added
 here as features are implemented.
 
+## Soldier Roles (in progress)
+
+Player-authored soldier **roles** — a classification (Infantry, Sniper, Medic, …) carried by a
+soldier, shown as an icon badge and (later) driving a loadout template, battlescape marker, and armor
+colour. Unlike the legacy fixed-list model, roles are **player-owned savegame data**: a ruleset seeds
+a starter set on a new game, and the player can (once the management UI lands) create/rename/re-icon/
+recolour/delete them freely.
+
+Shipped so far:
+
+- **Data model.** `RuleRole` seeds + a savegame `Role` (identity + its own equipment-loadout template),
+  a per-save role list on `SavedGame` (new-game seeding, add/remove, save/load), and a per-soldier
+  `roleId` assignment. Additive save format — old saves load role-less.
+- **Named-surface icons.** Each role icon is an individual named `singleImage` surface
+  (`RoleIcon<Name>` badge + `RoleIcon<Name>Map` battlescape marker), bundled under a stable name by a
+  `roleIcons:` registry (`RuleRoleIcon`). The icon identity is a **string** end-to-end, so a saved
+  role's icon survives mod-list / load-order changes with no frame-index or sprite-offset handling.
+  Default icons + registry + 14 seed roles ship in `bin/standard/xcom1/roles.rul`.
+- **Assignment UI.** A clickable role badge sits between the rank icon and the unit name on both the
+  Soldier Info screen and the battlescape Inventory screen (the assigned role's icon, or a "no role"
+  badge when unassigned). Clicking it opens a picker (`RoleSelectState`) to assign any of the save's
+  roles (or clear it); on the Inventory screen it acts on the unit's geoscape soldier.
+
+Pending: the role-management screen (create/rename/icon/colour/delete/edit-loadout), the on-map
+battlescape role marker + list columns, and per-role armor colours. See
+[plans/Feature-SoldierRoles.md](plans/Feature-SoldierRoles.md).
+
 ## Configurable Inventory Layouts
 
 Different armors can now grant different inventory **section sets** (slots), instead of every unit

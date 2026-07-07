@@ -40,6 +40,7 @@ set ( basescape_src
   Basescape/PurchaseState.cpp
   Basescape/ResearchInfoState.cpp
   Basescape/ResearchState.cpp
+  Basescape/RoleSelectState.cpp
   Basescape/SackSoldierState.cpp
   Basescape/SelectStartFacilityState.cpp
   Basescape/SellState.cpp

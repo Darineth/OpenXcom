@@ -1703,6 +1703,22 @@ interfaces: #done
         border: 1    # white
       - id: button
         color: 1     # white
+  # DX: Soldier role picker popup (RoleSelectState)
+  - type: roleSelect
+    backgroundImage: BACK14.SCR
+    elements:
+      - id: palette
+        color: 4     # green
+      - id: window
+        color: 1     # white
+      - id: text
+        color: 1     # white
+      - id: list
+        color: 1     # white
+        color2: 244  # green
+        border: 1    # white
+      - id: button
+        color: 1     # white
   - type: soldierAvatar
     backgroundImage: BACK14.SCR
     elements:
@@ -2277,6 +2293,7 @@ interfaces: #done
         size: [70, 9]
       - id: textName
         color: 48
+        color2: 16   # DX: {ALT} highlight for the role> rank line (name itself has no {ALT})
       - id: textTUs
         color: 48
         color2: 16

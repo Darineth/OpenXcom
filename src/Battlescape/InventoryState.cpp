@@ -48,6 +48,9 @@
 #include "../Savegame/Craft.h"
 #include "../Savegame/ItemContainer.h"
 #include "../Savegame/Soldier.h"
+#include "../Savegame/Role.h"
+#include "../Basescape/RoleSelectState.h"
+#include "../Mod/RuleRoleIcon.h"
 #include "../Mod/RuleItem.h"
 #include "../Mod/RuleInventory.h"
 #include "../Mod/RuleInventoryLayout.h"
@@ -98,8 +101,9 @@ InventoryState::InventoryState(bool tu, BattlescapeState *parent, Base *base, bo
 	_bg = new Surface(320, 200, 0, 0);
 	_soldier = new Surface(320, 200, 0, 0);
 	_txtPosition = new Text(70, 9, 65, 95);
-	_txtNameStatic = new Text(210, 17, 28, 6);
-	_txtName = new TextEdit(this, 210, 17, 28, 6);
+	_txtRank = new Text(184, 9, 53, 1);
+	_txtNameStatic = new Text(184, 17, 53, 9);
+	_txtName = new TextEdit(this, 184, 17, 53, 9);
 	_txtWeight = new Text(70, 9, 245, 24);
 	_txtStatLine1 = new Text(70, 9, 245, 32);
 	_txtTus = new Text(70, 9, 245, 40);
@@ -121,6 +125,7 @@ InventoryState::InventoryState(bool tu, BattlescapeState *parent, Base *base, bo
 	_btnUnload = new BattlescapeButton(32, 25, 288, 64);
 	_btnGround = new BattlescapeButton(32, 15, 289, 137);
 	_btnRank = new BattlescapeButton(26, 23, 0, 0);
+	_role = new InteractiveSurface(23, 23, 28, 0);
 	_btnArmor = new BattlescapeButton(RuleInventory::PAPERDOLL_W, RuleInventory::PAPERDOLL_H, RuleInventory::PAPERDOLL_X, RuleInventory::PAPERDOLL_Y);
 	_btnCreateTemplate = new BattlescapeButton(32, 22, _templateBtnX, _createTemplateBtnY);
 	_btnApplyTemplate = new BattlescapeButton(32, 22, _templateBtnX, _applyTemplateBtnY);
@@ -150,6 +155,7 @@ InventoryState::InventoryState(bool tu, BattlescapeState *parent, Base *base, bo
 	add(_btnQuickSearch, "textItem", "inventory");
 	add(_txtNameStatic, "textName", "inventory", _bg);
 	add(_txtName, "textName", "inventory", _bg);
+	add(_txtRank, "textName", "inventory", _bg);
 	add(_txtTus, "textTUs", "inventory", _bg);
 	add(_txtWeight, "textWeight", "inventory", _bg);
 	add(_txtStatLine1, "textStatLine1", "inventory", _bg);
@@ -171,6 +177,7 @@ InventoryState::InventoryState(bool tu, BattlescapeState *parent, Base *base, bo
 	add(_btnUnload, "buttonUnload", "inventory", _bg);
 	add(_btnGround, "buttonGround", "inventory", _bg);
 	add(_btnRank, "rank", "inventory", _bg);
+	add(_role); // DX: role badge (drawn per-unit in init())
 	add(_btnCreateTemplate, "buttonCreate", "inventory", _bg);
 	add(_btnApplyTemplate, "buttonApply", "inventory", _bg);
 	add(_btnLinks, "buttonLinks", "inventory", _bg);
@@ -186,6 +193,8 @@ InventoryState::InventoryState(bool tu, BattlescapeState *parent, Base *base, bo
 
 	_txtNameStatic->setBig();
 	_txtNameStatic->setHighContrast(true);
+
+	_txtRank->setHighContrast(true); // DX: role> rank line
 
 	_txtName->setBig();
 	_txtName->setHighContrast(true);
@@ -280,6 +289,13 @@ InventoryState::InventoryState(bool tu, BattlescapeState *parent, Base *base, bo
 	_btnRank->setTooltip("STR_UNIT_STATS");
 	_btnRank->onMouseIn((ActionHandler)&InventoryState::txtTooltipIn);
 	_btnRank->onMouseOut((ActionHandler)&InventoryState::txtTooltipOut);
+
+	// DX: clicking the role badge opens the role picker (only meaningful for geoscape soldiers);
+	// hovering shows the current role name in the inventory's hover-text line.
+	_role->onMouseClick((ActionHandler)&InventoryState::btnRoleClick);
+	_role->setTooltip("STR_ROLE");
+	_role->onMouseIn((ActionHandler)&InventoryState::txtRoleTooltipIn);
+	_role->onMouseOut((ActionHandler)&InventoryState::txtTooltipOut);
 
 	if (!_game->getMod()->getInventoryOverlapsPaperdoll())
 	{
@@ -481,6 +497,8 @@ void InventoryState::init()
 
 	_soldier->clear();
 	_btnRank->clear();
+	_role->clear(); // DX: redrawn below for geoscape soldiers only
+	_txtRank->setText(""); // DX: set below for geoscape soldiers only
 
 	if (Options::oxceInventoryShowUnitSlot)
 	{
@@ -568,6 +586,30 @@ void InventoryState::init()
 		if (frame)
 		{
 			frame->blitNShade(_btnRank, 0, 0);
+		}
+
+		// DX: role badge (between the rank icon and the name). Assigned role's icon, or the
+		// "NONE" badge when unassigned. NOTE: badges are authored in the UI palette; colours may
+		// differ under the battlescape palette (like rank sprites have a separate battle variant).
+		const Role *role = s->getRoleId() != 0 ? _game->getSavedGame()->getRole(s->getRoleId()) : nullptr;
+		const RuleRoleIcon *roleIcon = _game->getMod()->getRoleIcon(role ? role->getIcon() : "NONE", false);
+		if (roleIcon && !roleIcon->getSprite().empty())
+		{
+			Surface *badge = _game->getMod()->getSurface(roleIcon->getSprite(), false);
+			if (badge)
+			{
+				badge->blitNShade(_role, 0, 0);
+			}
+		}
+
+		// DX: "role> rank" line under the name (role name as label when assigned, else RANK).
+		if (role)
+		{
+			_txtRank->setText(tr("STR_ROLE_RANK").arg(tr(role->getName())).arg(tr(s->getRankString())));
+		}
+		else
+		{
+			_txtRank->setText(tr("STR_RANK_").arg(tr(s->getRankString())));
 		}
 
 		if (s->getArmor()->hasLayersDefinition())
@@ -1446,6 +1488,26 @@ void InventoryState::btnRankClick(Action *)
 	}
 
 	_game->pushState(new UnitInfoState(_battleGame->getSelectedUnit(), _parent, true, false));
+}
+
+/**
+ * Opens the role picker for the current unit's soldier (DX). Only geoscape soldiers
+ * have roles; init() refreshes the badge when the picker closes.
+ * @param action Pointer to an action.
+ */
+void InventoryState::btnRoleClick(Action *)
+{
+	// don't accept clicks when moving items
+	if (_inv->getSelectedItem() != 0)
+	{
+		return;
+	}
+	BattleUnit *unit = _battleGame->getSelectedUnit();
+	Soldier *soldier = unit ? unit->getGeoscapeSoldier() : nullptr;
+	if (soldier)
+	{
+		_game->pushState(new RoleSelectState(soldier));
+	}
 }
 
 void InventoryState::_createInventoryTemplate(std::vector<EquipmentLayoutItem*> &inventoryTemplate)
@@ -2438,6 +2500,24 @@ void InventoryState::txtTooltipIn(Action *action)
 	{
 		_currentTooltip = action->getSender()->getTooltip();
 		_txtItem->setText(tr(_currentTooltip));
+	}
+}
+
+/**
+ * Shows the selected unit's current role name in the hover-text line (DX). Dynamic per unit,
+ * so it computes the name here rather than relying on a fixed widget tooltip; txtTooltipOut
+ * clears it (the role badge's tooltip id matches).
+ * @param action Pointer to an action.
+ */
+void InventoryState::txtRoleTooltipIn(Action *action)
+{
+	if (_inv->getSelectedItem() == 0 && Options::battleTooltips)
+	{
+		_currentTooltip = action->getSender()->getTooltip();
+		BattleUnit *unit = _battleGame->getSelectedUnit();
+		Soldier *s = unit ? unit->getGeoscapeSoldier() : nullptr;
+		const Role *role = (s && s->getRoleId() != 0) ? _game->getSavedGame()->getRole(s->getRoleId()) : nullptr;
+		_txtItem->setText(role ? tr(role->getName()) : tr("STR_NO_ROLE"));
 	}
 }
 

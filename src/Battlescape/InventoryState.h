@@ -47,9 +47,11 @@ private:
 	Surface *_bg, *_soldier;
 	Text *_txtItem, *_txtWeight, *_txtTus, *_txtStatLine1, *_txtStatLine2, *_txtStatLine3, *_txtStatLine4, *_txtStatLine5, *_txtStatLine6, *_txtStatLine7, *_txtArmorFront, *_txtArmorLeft, *_txtArmorRight, *_txtArmorBack, *_txtArmorUnder, *_txtPosition;
 	Text *_txtNameStatic;
+	Text *_txtRank; // DX: "role> rank" line under the unit name
 	TextEdit *_txtName;
 	TextEdit *_btnQuickSearch;
 	BattlescapeButton *_btnOk, *_btnPrev, *_btnNext, *_btnUnload, *_btnGround, *_btnRank, *_btnArmor;
+	InteractiveSurface *_role; // DX: clickable role badge (between the rank icon and the name)
 	BattlescapeButton *_btnCreateTemplate, *_btnApplyTemplate;
 	BattlescapeButton *_btnLinks;
 	Surface *_selAmmo;
@@ -127,6 +129,8 @@ public:
 	void btnGroundClickBackward(Action *action);
 	/// Handler for clicking the Rank button.
 	void btnRankClick(Action *action);
+	/// Handler for clicking the role badge (DX).
+	void btnRoleClick(Action *action);
 	/// Handler for clicking the Links button.
 	void btnLinksClick(Action *action);
 	/// Handler for clicking on the Create Template button.
@@ -159,6 +163,8 @@ public:
 	void txtTooltipIn(Action *action);
 	/// Handler for hiding tooltip.
 	void txtTooltipOut(Action *action);
+	/// Handler for showing the current role name as the hover text (DX).
+	void txtRoleTooltipIn(Action *action);
 	/// Handler for showing the unload button's cost (or tooltip) readout.
 	void unloadTooltipIn(Action *action);
 	/// Handler for hiding the unload button's readout.

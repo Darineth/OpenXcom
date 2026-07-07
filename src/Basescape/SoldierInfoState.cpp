@@ -43,6 +43,9 @@
 #include "SoldierTransformState.h"
 #include "SoldierRankState.h"
 #include "SackSoldierState.h"
+#include "RoleSelectState.h"
+#include "../Savegame/Role.h"
+#include "../Mod/RuleRoleIcon.h"
 #include "../Mod/RuleInterface.h"
 #include "../Mod/RuleSoldier.h"
 #include "../Savegame/SoldierDeath.h"
@@ -95,8 +98,9 @@ SoldierInfoState::SoldierInfoState(Base *base, size_t soldierId, bool forceLimit
 	_btnInventory = new TextButton(68, 14, 110, 48);
 	_btnBonuses = new TextButton(16, 14, 242, 48);
 	_btnTransformations = new TextButton(18, 14, 260, 48);
-	_txtRank = new Text(130, 9, 35, 4);
-	_edtSoldier = new TextEdit(this, 210, 16, 35, 12);
+	_role = new InteractiveSurface(23, 23, 35, 4);
+	_txtRank = new Text(105, 9, 60, 4);
+	_edtSoldier = new TextEdit(this, 185, 16, 60, 12);
 	_txtMissions = new Text(100, 9, 130, 64);
 	_txtKills = new Text(100, 9, 200, 64);
 	_txtStuns = new Text(60, 9, 260, 64);
@@ -180,6 +184,7 @@ SoldierInfoState::SoldierInfoState(Base *base, size_t soldierId, bool forceLimit
 
 	add(_bg);
 	add(_rank);
+	add(_role);
 	add(_flag);
 	add(_btnOk, "button", "soldierInfo");
 	add(_btnPrev, "button", "soldierInfo");
@@ -298,6 +303,13 @@ SoldierInfoState::SoldierInfoState(Base *base, size_t soldierId, bool forceLimit
 	_btnInventory->setText(tr("STR_INVENTORY"));
 	_btnInventory->onMouseClick((ActionHandler)&SoldierInfoState::btnInventoryClick);
 	_btnInventory->onKeyboardPress((ActionHandler)&SoldierInfoState::btnInventoryClick, Options::keyBattleInventory);
+
+	// DX: the role badge itself is the picker trigger. Living base soldiers only
+	// (the dead-soldiers view / read-only just shows the badge, no reassignment).
+	if (_base != 0 && !_readOnly)
+	{
+		_role->onMouseClick((ActionHandler)&SoldierInfoState::btnRoleClick);
+	}
 
 	_btnBonuses->setText(tr("STR_BONUSES_BUTTON")); // tiny button, default translation is " "
 	_btnBonuses->onMouseClick((ActionHandler)&SoldierInfoState::btnBonusesClick);
@@ -434,6 +446,21 @@ void SoldierInfoState::init()
 		frame->blitNShade(_rank, 0, 0);
 	}
 
+	// DX: role badge (between the rank icon and the name; the badge is the picker trigger).
+	// Draw the assigned role's icon, or the "NONE" badge when unassigned, mirroring how the
+	// rank/flag sprites are drawn above.
+	_role->clear();
+	const Role *role = _soldier->getRoleId() != 0 ? _game->getSavedGame()->getRole(_soldier->getRoleId()) : nullptr;
+	const RuleRoleIcon *roleIcon = _game->getMod()->getRoleIcon(role ? role->getIcon() : "NONE", false);
+	if (roleIcon && !roleIcon->getSprite().empty())
+	{
+		Surface *badge = _game->getMod()->getSurface(roleIcon->getSprite(), false);
+		if (badge)
+		{
+			badge->blitNShade(_role, 0, 0);
+		}
+	}
+
 	std::ostringstream flagId;
 	flagId << "Flag";
 	const std::vector<int> mapping = _game->getMod()->getFlagByKills();
@@ -507,7 +534,15 @@ void SoldierInfoState::init()
 	// Inventory editing is also allowed in New Battle (months == -1), unlike the other "nasty" buttons.
 	_btnInventory->setVisible(!_readOnly && !craftDeployed && _base->getAvailableSoldiers(true, true) > 0);
 
-	_txtRank->setText(tr("STR_RANK_").arg(tr(_soldier->getRankString())));
+	// DX: show the role name as the label when a role is assigned (ROLE> rank), else RANK> rank.
+	if (role)
+	{
+		_txtRank->setText(tr("STR_ROLE_RANK").arg(tr(role->getName())).arg(tr(_soldier->getRankString())));
+	}
+	else
+	{
+		_txtRank->setText(tr("STR_RANK_").arg(tr(_soldier->getRankString())));
+	}
 
 	_txtMissions->setText(tr("STR_MISSIONS").arg(_soldier->getMissions()));
 
@@ -833,6 +868,20 @@ void SoldierInfoState::btnInventoryClick(Action *)
 
 	_game->getScreen()->clear();
 	_game->pushState(new InventoryState(false, 0, _base, true));
+}
+
+/**
+ * Opens the role picker for the current soldier (DX). The soldier's role id is
+ * refreshed by init() when the picker closes.
+ * @param action Pointer to an action.
+ */
+void SoldierInfoState::btnRoleClick(Action *)
+{
+	if (_soldier == 0)
+	{
+		return;
+	}
+	_game->pushState(new RoleSelectState(_soldier));
 }
 
 /**

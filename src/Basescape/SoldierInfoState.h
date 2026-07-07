@@ -49,6 +49,7 @@ private:
 	Surface *_bg;
 	InteractiveSurface *_rank;
 	InteractiveSurface *_flag;
+	InteractiveSurface *_role; // DX: clickable role badge (between the rank icon and the name)
 	TextButton *_btnOk, *_btnPrev, *_btnNext, *_btnDiary, *_btnArmor, *_btnSack, *_btnCraft, *_btnInventory, *_btnBonuses, *_btnTransformations;
 	Text *_txtRank, *_txtMissions, *_txtKills, *_txtCraft, *_txtRecovery, *_txtPsionic, *_txtDead;
 	Text *_txtStuns;
@@ -83,6 +84,8 @@ public:
 	void btnCraftClick(Action *action);
 	/// Handler for clicking the Inventory button.
 	void btnInventoryClick(Action *action);
+	/// Handler for clicking the Role button (DX).
+	void btnRoleClick(Action *action);
 	/// Handler for clicking the Armor button.
 	void btnArmorClick(Action *action);
 	/// Handler for clicking the Bonuses button.
