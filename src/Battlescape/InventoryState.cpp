@@ -772,8 +772,18 @@ void InventoryState::updateStats()
 	_txtStatLine2->setText(tr("STR_DX_INVENTORY_RE_SHORT").arg(displayStats.reactions));
 	_txtStatLine3->setText(tr("STR_DX_INVENTORY_FA_SHORT").arg(displayStats.firing));
 	_txtStatLine4->setText(tr("STR_DX_INVENTORY_TA_SHORT").arg(displayStats.throwing));
-	_txtStatLine5->setText(tr("STR_DX_INVENTORY_PSK_SHORT").arg(displayStats.psiSkill));
-	_txtStatLine6->setText(tr("STR_DX_INVENTORY_PST_SHORT").arg(displayStats.psiStrength));
+	// DX: hide psi stats until psionics are researched, matching the Soldier Info screen. Blank the
+	// lines rather than setVisible, so the item-hover panel can still reuse them (it manages text only).
+	bool showPsiSkill = displayStats.psiSkill > 0;
+	bool showPsiStrength = showPsiSkill || (Options::psiStrengthEval && _game->getSavedGame()->isResearched(_game->getMod()->getPsiRequirements()));
+	if (showPsiSkill)
+		_txtStatLine5->setText(tr("STR_DX_INVENTORY_PSK_SHORT").arg(displayStats.psiSkill));
+	else
+		_txtStatLine5->setText("");
+	if (showPsiStrength)
+		_txtStatLine6->setText(tr("STR_DX_INVENTORY_PST_SHORT").arg(displayStats.psiStrength));
+	else
+		_txtStatLine6->setText("");
 	_txtStatLine7->setText(tr("STR_DX_INVENTORY_ARMOR_HEADER"));
 
 	_txtArmorFront->setText(tr("STR_DX_INVENTORY_ARMOR_F_SHORT").arg(unit->getArmor(SIDE_FRONT)));
