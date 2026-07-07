@@ -29,10 +29,12 @@ Shipped so far:
   roles with **New / Rename** (inline) **/ Change Icon / Delete**. Change Icon opens `RoleIconSelectState`,
   a picker over the `roleIcons` registry. Deleting a role clears it from any soldier that had it.
   (Colour picking and loadout editing are follow-ons.)
+- **Battlescape marker.** The bobbing down-arrow over the selected unit is replaced by that unit's role
+  **map glyph** (`RoleIcon<Name>Map`) when its role has one; units with no role (or a role whose icon has
+  no map glyph) keep the default arrow.
 
-Pending: per-role loadout editing + colour picker, the on-map battlescape role marker + soldier/craft
-list columns, and per-role armor colours. See
-[plans/Feature-SoldierRoles.md](plans/Feature-SoldierRoles.md).
+Pending: per-role loadout editing + colour picker, soldier/craft list role columns, and per-role armor
+colours. See [plans/Feature-SoldierRoles.md](plans/Feature-SoldierRoles.md).
 
 ## Configurable Inventory Layouts
 

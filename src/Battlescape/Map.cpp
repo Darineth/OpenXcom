@@ -49,6 +49,9 @@
 #include "../Mod/RuleEnviroEffects.h"
 #include "BattlescapeMessage.h"
 #include "../Savegame/SavedGame.h"
+#include "../Savegame/Soldier.h"
+#include "../Savegame/Role.h"
+#include "../Mod/RuleRoleIcon.h"
 #include "../Interface/NumberText.h"
 #include "../Interface/Text.h"
 #include "../fmath.h"
@@ -2335,7 +2338,25 @@ void Map::drawTerrain(Surface *surface)
 		}
 		if (this->getCursorType() != CT_NONE)
 		{
-			_arrow->blitNShade(surface, screenPosition.x + offset.x + (_spriteWidth / 2) - (_arrow->getWidth() / 2), screenPosition.y + offset.y - _arrow->getHeight() + getArrowBobForFrame(_animFrame), 0);
+			// DX: replace the bobbing selection arrow with the selected unit's role map marker,
+			// if its role has one (RoleIcon<Name>Map). Units with no role / no map glyph keep the
+			// default arrow. NOTE: the map markers are authored in the UI palette; colours may
+			// differ under the battlescape palette (see the role icons in xcom1/roles.rul).
+			Surface* marker = _arrow;
+			if (Soldier* selectedSoldier = selectedUnit->getGeoscapeSoldier())
+			{
+				if (selectedSoldier->getRoleId() != 0)
+				{
+					const Role* role = _game->getSavedGame()->getRole(selectedSoldier->getRoleId());
+					const RuleRoleIcon* icon = role ? _game->getMod()->getRoleIcon(role->getIcon(), false) : nullptr;
+					if (icon && !icon->getMapSprite().empty())
+					{
+						if (Surface* mapMarker = _game->getMod()->getSurface(icon->getMapSprite(), false))
+							marker = mapMarker;
+					}
+				}
+			}
+			marker->blitNShade(surface, screenPosition.x + offset.x + (_spriteWidth / 2) - (marker->getWidth() / 2), screenPosition.y + offset.y - marker->getHeight() + getArrowBobForFrame(_animFrame), 0);
 		}
 	}
 

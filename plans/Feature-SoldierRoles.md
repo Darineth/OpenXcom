@@ -23,8 +23,9 @@ the rank icon and name) + a "role> rank" line; the badge opens a `RoleSelectStat
 button opens `RoleMenuState` (list + New / Rename inline / Change Icon via `RoleIconSelectState` / Delete).
 `roleSelect` / `roleMenu` / `roleIconSelect` interface blocks in xcom1 + xcom2; strings in `Language/DX/`.
 **Deferred within this item:** per-role **loadout editing** and the **colour picker** (armor-colour
-rendering isn't built yet). **Next roadmap items:** the battlescape map marker (the `RoleIconsMap` glyph
-replacing the selected-unit arrow) + soldier/craft list columns, and per-role armor colours. This is the
+rendering isn't built yet). **Role UI & Markers (in progress):** the battlescape **map marker** is done —
+the selected-unit arrow is replaced by the role's `RoleIcon<Name>Map` glyph (`Map.cpp`); soldier/craft
+list role columns still to do. **Then:** per-role armor colours. This is the
 Phase 7 **"Role Definitions & Templates"** roadmap item, redesigned from the legacy fixed-list model into
 a **player-authored** system.
 
