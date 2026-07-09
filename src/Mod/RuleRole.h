@@ -53,7 +53,7 @@ public:
 	const std::string& getShortName() const { return _shortName; }
 	/// Gets the role-icon name (a roleIcons registry entry; empty = none).
 	const std::string& getIcon() const { return _icon; }
-	/// Gets the role's marker/tint palette colour.
+	/// Gets the role's default armor colour (battlescape palette index; -1 = none).
 	int getColor() const { return _color; }
 };
 

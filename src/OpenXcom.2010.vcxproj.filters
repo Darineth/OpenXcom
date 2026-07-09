@@ -1145,6 +1145,9 @@
     <ClCompile Include="Basescape\GlobalAlienContainmentState.cpp">
       <Filter>Basescape</Filter>
     </ClCompile>
+    <ClCompile Include="Basescape\RoleColorSelectState.cpp">
+      <Filter>Basescape</Filter>
+    </ClCompile>
     <ClCompile Include="Basescape\RoleIconSelectState.cpp">
       <Filter>Basescape</Filter>
     </ClCompile>
@@ -2454,6 +2457,9 @@
       <Filter>Battlescape</Filter>
     </ClInclude>
     <ClInclude Include="Basescape\GlobalAlienContainmentState.h">
+      <Filter>Basescape</Filter>
+    </ClInclude>
+    <ClInclude Include="Basescape\RoleColorSelectState.h">
       <Filter>Basescape</Filter>
     </ClInclude>
     <ClInclude Include="Basescape\RoleIconSelectState.h">

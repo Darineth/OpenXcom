@@ -46,6 +46,7 @@
 #include "../Mod/RuleSoldierBonus.h"
 #include "../Mod/RuleStartingCondition.h"
 #include "Soldier.h"
+#include "Role.h"
 #include "Tile.h"
 #include "SavedGame.h"
 #include "SavedBattleGame.h"
@@ -83,7 +84,7 @@ UnitActiveHand activeHandFromYaml(const std::string& s)
  * @param soldier Pointer to the Soldier.
  * @param depth the depth of the battlefield (used to determine movement type in case of MT_FLOAT).
  */
-BattleUnit::BattleUnit(const Mod *mod, Soldier *soldier, int depth, const RuleStartingCondition* sc) :
+BattleUnit::BattleUnit(const Mod *mod, Soldier *soldier, int depth, const RuleStartingCondition* sc, const SavedGame *save) :
 	_faction(FACTION_PLAYER), _originalFaction(FACTION_PLAYER), _killedBy(FACTION_PLAYER), _id(0), _tile(0),
 	_lastPos(Position()), _direction(0), _toDirection(0), _directionTurret(0), _toDirectionTurret(0),
 	_verticalDirection(0), _status(STATUS_STANDING), _wantsToSurrender(false), _isSurrendering(false), _walkPhase(0), _fallPhase(0), _kneeled(false), _floating(false),
@@ -136,7 +137,7 @@ BattleUnit::BattleUnit(const Mod *mod, Soldier *soldier, int depth, const RuleSt
 
 	deriveSoldierRank();
 
-	updateArmorFromSoldier(mod, soldier, soldier->getArmor(), depth, false, sc);
+	updateArmorFromSoldier(mod, soldier, soldier->getArmor(), depth, false, sc, save);
 
 	// soldier bonus cache was built above in updateArmorFromSoldier(), so we can also calculate this now
 	if (_geoscapeSoldier)
@@ -160,7 +161,7 @@ BattleUnit::BattleUnit(const Mod *mod, Soldier *soldier, int depth, const RuleSt
  * @param ruleArmor Pointer to the new Armor ruleset.
  * @param depth The depth of the battlefield.
  */
-void BattleUnit::updateArmorFromSoldier(const Mod *mod, Soldier *soldier, const Armor *ruleArmor, int depth, bool nextStage, const RuleStartingCondition* sc)
+void BattleUnit::updateArmorFromSoldier(const Mod *mod, Soldier *soldier, const Armor *ruleArmor, int depth, bool nextStage, const RuleStartingCondition* sc, const SavedGame *save)
 {
 	_armor = ruleArmor;
 	resolveInventoryLayout(mod);
@@ -275,8 +276,7 @@ void BattleUnit::updateArmorFromSoldier(const Mod *mod, Soldier *soldier, const 
 		}
 	}
 
-	int look = soldier->getGender() + 2 * soldier->getLook() + 8 * soldier->getLookVariant();
-	setRecolor(look, look, _rankIntUnified);
+	refreshRecolor(save);
 
 	prepareUnitSounds();
 	prepareUnitResponseSounds(mod);
@@ -914,26 +914,55 @@ void BattleUnit::save(YAML::YamlNodeWriter writer, const ScriptGlobal *shared) c
  * @param basicLook select index for hair and face color.
  * @param utileLook select index for utile color.
  * @param rankLook select index for rank color.
+ * @param utileOverride DX: replacement colour overriding the armor's utile colour (-1 = none);
+ *                      used for role-coloured armor accents. 0 is a valid colour (greyscale).
  */
-void BattleUnit::setRecolor(int basicLook, int utileLook, int rankLook)
+void BattleUnit::setRecolor(int basicLook, int utileLook, int rankLook, int utileOverride)
 {
 	_recolor.clear(); // reset in case of OXCE on-the-fly armor changes/transformations
+	bool overrideUtile = utileOverride >= 0;
 	const int colorsMax = 4;
 	std::pair<int, int> colors[colorsMax] =
 	{
 		std::make_pair(_armor->getFaceColorGroup(), _armor->getFaceColor(basicLook)),
 		std::make_pair(_armor->getHairColorGroup(), _armor->getHairColor(basicLook)),
-		std::make_pair(_armor->getUtileColorGroup(), _armor->getUtileColor(utileLook)),
+		std::make_pair(_armor->getUtileColorGroup(), overrideUtile ? utileOverride : _armor->getUtileColor(utileLook)),
 		std::make_pair(_armor->getRankColorGroup(), _armor->getRankColor(rankLook)),
 	};
 
 	for (int i = 0; i < colorsMax; ++i)
 	{
-		if (colors[i].first > 0 && colors[i].second > 0)
+		// the utile slot accepts colour 0 (greyscale block) when explicitly overridden by a role colour
+		if (colors[i].first > 0 && (colors[i].second > 0 || (i == 2 && overrideUtile)))
 		{
 			_recolor.push_back(std::make_pair(colors[i].first << 4, colors[i].second));
 		}
 	}
+}
+
+/**
+ * DX: Rebuilds the recolor vector from the unit's geoscape soldier (look/rank), letting the
+ * soldier's role colour (if any) override the armor's utile replacement colour so the armor's
+ * accent block renders in the role's colour. No-op for non-soldier units.
+ * @param save Saved game used to resolve the soldier's role (may be null -> no role colour).
+ */
+void BattleUnit::refreshRecolor(const SavedGame *save)
+{
+	if (!_geoscapeSoldier)
+	{
+		return;
+	}
+	int roleColor = -1;
+	if (save && _geoscapeSoldier->getRoleId() != 0)
+	{
+		const Role *role = save->getRole(_geoscapeSoldier->getRoleId());
+		if (role)
+		{
+			roleColor = role->getColor();
+		}
+	}
+	int look = _geoscapeSoldier->getGender() + 2 * _geoscapeSoldier->getLook() + 8 * _geoscapeSoldier->getLookVariant();
+	setRecolor(look, look, _rankIntUnified, roleColor);
 }
 
 /**
@@ -6606,7 +6635,10 @@ void getRecolorScript(const BattleUnit *bu, int &pixel)
 		{
 			if (g == p.first)
 			{
-				pixel = s + p.second;
+				// DX: legacy-DX recolor semantics - the replacement's low nibble selects
+				// lighten (1) / darken (15) / plain-offset modes (see helper::RecolorShade).
+				// Plain offsets behave exactly like OXCE stock.
+				pixel = helper::RecolorShade(s, p.second);
 				return;
 			}
 		}

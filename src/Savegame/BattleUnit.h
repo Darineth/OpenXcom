@@ -219,7 +219,7 @@ private:
 	/// Calculate stat improvement.
 	int improveStat(int exp) const;
 	/// Helper function initializing recolor vector.
-	void setRecolor(int basicLook, int utileLook, int rankLook);
+	void setRecolor(int basicLook, int utileLook, int rankLook, int utileOverride = -1);
 	/// Helper function preparing Time Units recovery at beginning of turn.
 	void prepareTimeUnits(int tu);
 	/// Helper function preparing Energy recovery at beginning of turn.
@@ -255,13 +255,15 @@ public:
 	static void ScriptFill(ScriptWorkerBlit* w, const BattleUnit* item, const SavedBattleGame* save, int body_part, int anim_frame, int shade, int burn);
 
 	/// Creates a BattleUnit from solder.
-	BattleUnit(const Mod *mod, Soldier *soldier, int depth, const RuleStartingCondition* sc);
+	BattleUnit(const Mod *mod, Soldier *soldier, int depth, const RuleStartingCondition* sc, const SavedGame *save = nullptr);
 	/// Creates a BattleUnit from unit.
 	BattleUnit(const Mod *mod, const Unit *unit, UnitFaction faction, int id, const RuleEnviroEffects* enviro, const Armor *armor, StatAdjustment *adjustment, int depth, const RuleStartingCondition* sc);
 	/// Updates BattleUnit's armor and related attributes (after a change/transformation of armor).
-	void updateArmorFromSoldier(const Mod *mod, Soldier *soldier, const Armor *ruleArmor, int depth, bool nextStage, const RuleStartingCondition* sc);
+	void updateArmorFromSoldier(const Mod *mod, Soldier *soldier, const Armor *ruleArmor, int depth, bool nextStage, const RuleStartingCondition* sc, const SavedGame *save = nullptr);
 	/// Updates BattleUnit's armor and related attributes (after a change/transformation of armor).
 	void updateArmorFromNonSoldier(const Mod* mod, const Armor* newArmor, int depth, bool nextStage, const RuleStartingCondition* sc);
+	/// Rebuilds the recolor vector from the geoscape soldier, honoring its role colour (DX).
+	void refreshRecolor(const SavedGame *save);
 	/// Cleans up the BattleUnit.
 	~BattleUnit();
 	/// Loads the unit from YAML.

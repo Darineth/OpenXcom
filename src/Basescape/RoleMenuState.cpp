@@ -18,6 +18,7 @@
  */
 #include "RoleMenuState.h"
 #include "RoleIconSelectState.h"
+#include "RoleColorSelectState.h"
 #include <set>
 #include <cctype>
 #include "../Engine/Game.h"
@@ -68,6 +69,7 @@ RoleMenuState::RoleMenuState() : _sel(-1), _autoShort(true)
 	_role = new InteractiveSurface(23, 23, 168, 40);
 	_edtName = new TextEdit(this, 120, 17, 196, 39);
 	_edtShort = new TextEdit(this, 60, 9, 196, 55);
+	_btnColor = new TextButton(140, 16, 168, 76);
 	_btnDelete = new TextButton(140, 16, 168, 96);
 	_btnNew = new TextButton(100, 16, 16, 176);
 	_btnDefault = new TextButton(100, 16, 120, 176);
@@ -81,6 +83,7 @@ RoleMenuState::RoleMenuState() : _sel(-1), _autoShort(true)
 	add(_role);
 	add(_edtName, "text", "roleMenu");
 	add(_edtShort, "text", "roleMenu");
+	add(_btnColor, "button", "roleMenu");
 	add(_btnDelete, "button", "roleMenu");
 	add(_btnNew, "button", "roleMenu");
 	add(_btnDefault, "button", "roleMenu");
@@ -113,6 +116,8 @@ RoleMenuState::RoleMenuState() : _sel(-1), _autoShort(true)
 
 	_btnDefault->setText(tr("STR_LOAD_DEFAULTS"));
 	_btnDefault->onMouseClick((ActionHandler)&RoleMenuState::btnDefaultClick);
+
+	_btnColor->onMouseClick((ActionHandler)&RoleMenuState::btnColorClick);
 
 	_btnDelete->setText(tr("STR_DELETE"));
 	_btnDelete->onMouseClick((ActionHandler)&RoleMenuState::btnDeleteClick);
@@ -174,6 +179,7 @@ void RoleMenuState::updateDetail()
 	_role->setVisible(hasSel);
 	_edtName->setVisible(hasSel);
 	_edtShort->setVisible(hasSel);
+	_btnColor->setVisible(hasSel);
 	_btnDelete->setVisible(hasSel);
 	if (!hasSel)
 	{
@@ -182,6 +188,9 @@ void RoleMenuState::updateDetail()
 		return;
 	}
 	Role* role = roles[_sel];
+	// Colour button shows the current armor colour choice.
+	std::string colorName = RoleColorSelectState::getColorName(_game->getMod(), role->getColor());
+	_btnColor->setText(tr("STR_ROLE_COLOR_BUTTON").arg(tr(colorName.empty() ? "STR_COLOR_NONE" : colorName)));
 	_edtName->setText(tr(role->getName()));
 	// Show the authored short name, or the auto-derived one; auto-derive stays on until the
 	// player sets a short name explicitly.
@@ -296,6 +305,19 @@ void RoleMenuState::btnIconClick(Action *)
 	if (_sel >= 0 && _sel < (int)roles.size())
 	{
 		_game->pushState(new RoleIconSelectState(roles[_sel]));
+	}
+}
+
+/**
+ * Opens the armor-colour picker for the selected role.
+ * @param action Pointer to an action.
+ */
+void RoleMenuState::btnColorClick(Action *)
+{
+	auto& roles = _game->getSavedGame()->getRoles();
+	if (_sel >= 0 && _sel < (int)roles.size())
+	{
+		_game->pushState(new RoleColorSelectState(roles[_sel]));
 	}
 }
 

@@ -128,6 +128,40 @@ const Uint8 ColorGroup = 0xF0;
 const Uint8 ColorShade = 0x0F;
 
 /**
+ * DX: Remaps a matched pixel's shade into a replacement colour, using the legacy DX
+ * recolor semantics keyed off the replacement's low nibble:
+ *  - 1  = "lighten" mode: source shades are compressed/shifted ~4 steps lighter
+ *         (0,1->0; 2,3->1; 4,5->2; 6,7->3; else shade-4); block-0 results are bumped
+ *         +1 so they never land on the transparent index.
+ *  - 15 = "darken" mode: shades are compressed into the dark half of the target block
+ *         (block + shade/2 + 8) - e.g. "Black" renders as a dark-grey->black ramp.
+ *  - anything else: plain replacement + shade (OXCE stock behaviour), with a 0->1
+ *         bump to avoid the transparent index.
+ * @param srcShade the source pixel's shade (low nibble).
+ * @param replacement the replacement colour value (block | mode/offset nibble).
+ * @return the remapped pixel.
+ */
+inline Uint8 RecolorShade(Uint8 srcShade, Uint8 replacement)
+{
+	const Uint8 block = replacement & ColorGroup;
+	switch (replacement & ColorShade)
+	{
+	case 1: // lighten
+	{
+		Uint8 s = srcShade < 8 ? srcShade / 2 : srcShade - 4;
+		return block ? block + s : s + 1;
+	}
+	case 15: // darken
+		return block + (srcShade >> 1) + 8;
+	default:
+	{
+		Uint8 p = replacement + srcShade;
+		return p > 0 ? p : 1;
+	}
+	}
+}
+
+/**
  * help class used for Surface::blitNShade
  */
 struct ColorReplace

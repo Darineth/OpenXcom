@@ -43,7 +43,7 @@ private:
 	TextEdit *_edtName;
 	TextEdit *_edtShort;
 	InteractiveSurface *_role; // clickable role badge (opens the icon picker)
-	TextButton *_btnNew, *_btnDefault, *_btnDelete, *_btnOk;
+	TextButton *_btnNew, *_btnDefault, *_btnColor, *_btnDelete, *_btnOk;
 	int _sel; // index into SavedGame::getRoles(), or -1 for none selected
 	bool _autoShort; // while true, the short name auto-derives from the role name
 	/// Rebuilds the role list from the savegame.
@@ -69,6 +69,8 @@ public:
 	void btnDefaultClick(Action *action);
 	/// Handler for clicking the Change Icon button.
 	void btnIconClick(Action *action);
+	/// Handler for clicking the Color button.
+	void btnColorClick(Action *action);
 	/// Handler for clicking the Delete button.
 	void btnDeleteClick(Action *action);
 	/// Handler for clicking the OK button.

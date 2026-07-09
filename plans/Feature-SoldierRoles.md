@@ -24,8 +24,55 @@ button opens `RoleMenuState` (list + New / Rename inline / Change Icon via `Role
 `roleSelect` / `roleMenu` / `roleIconSelect` interface blocks in xcom1 + xcom2; strings in `Language/DX/`.
 **Per-role loadout editing (done):** the role picker opened from the battlescape Inventory offers
 **Save Kit** / **Apply Kit** (`InventoryState::saveRoleLoadout`/`applyRoleLoadout`), storing/applying the
-unit's assigned role's loadout via the generic inventory template helpers. **Deferred within this item:**
-the **colour picker** (pairs with per-role armor colours below). **Role UI & Markers (done):** the battlescape **map marker**
+unit's assigned role's loadout via the generic inventory template helpers.
+
+**Per-Role Armor Colors (done — builds clean, needs playtest):** built on OXCE's **utile recolor
+channel** (`spriteUtileGroup`/`spriteUtileColor` on `Armor` — the fourth freely-assignable colour group
+alongside face/hair/rank; pixel swap keeps each pixel's shade, so it's a true block recolor). Research
+confirmed the mechanism survives modern OXCE and **no stock armor uses it** — DX claims it as "the
+armor's accent block". Implementation:
+- `BattleUnit::setRecolor` gained a `utileOverride`; `refreshRecolor(const SavedGame*)` resolves the
+  soldier's role colour and overrides the armor's utile replacement with it. `updateArmorFromSoldier` /
+  the soldier ctor now take an optional `const SavedGame*` (threaded from BattlescapeGenerator,
+  SavedBattleGame load, and InventoryState).
+- **Battlescape sprite** recolours through the existing default `recolorUnitSprite` script path (zero
+  render changes). **Inventory paperdoll** now applies the unit's recolor pairs via a
+  `blitPaperdollRecolored` helper (layered, .SPK, and non-soldier paths) — which also makes face/hair
+  recolours visible on the paperdoll for the first time; `init()` calls `refreshRecolor` so role/colour
+  changes made from the inventory show immediately. Other previews (avatar, Ufopaedia) remain plain.
+- **Colour picker**: `RoleColorSelectState` (from the manager's **Color:** button) — the colour set is
+  **mod config, not code**: the legacy **`soldierArmorBaseColors:`** top-level node (ordered
+  `name`/`color` pairs, merged by name across mods), parsed into `Mod::getSoldierArmorBaseColors()`.
+  Values are battlescape-palette indices and therefore palette-dependent — UFO's set ships in
+  `xcom1/roles.rul` (the 22 legacy colours: White 1, Gray 0, Black 15, Light/-/Dark Red 33/32/47,
+  Orange 17, Yellow 145, Light/-/Dark Green 65/64/79, Blue-Green 48, Light Blue 129, Blue 208,
+  Navy 223, Light/-/Dark Purple 193/192/207, Metallic 224, Pink 177, Beige 80, Brown 160). **TFTD's
+  set ships in `xcom2/roles.rul`** — 19 first-guess colours authored against the TFTD tactical block
+  layout (block 3 greyscale for White/Gray/Black, 11 orange-red for the Reds, 5 lime for the Greens,
+  12 blue-grey for Blue/Navy, 15 cyan for Light Blue, plus Gold 128; no purple ramp exists, so the
+  purple names are omitted — flagged for in-play tuning). The engine adds the "Armor Default" row
+  (**-1** = no recolour; 0 is a valid colour — the greyscale block, safe because armor body pixels
+  never use shade 0). The recolor math is the **exact legacy `Recolor::loop` semantics**
+  (ported from the legacy source at `OpenXcomDX-Legacy/src/Engine/ShaderDraw.h` into
+  `helper::RecolorShade`): the value's low nibble selects a mode — **1 = lighten** (shades
+  compressed/shifted ~4 steps lighter; block-0 results bumped off the transparent index),
+  **15 = darken** (shades compressed into the dark half of the block, so Black is a dark-grey→black
+  ramp, not flat), anything else = plain `value + shade` (OXCE stock, with 0→1 transparency
+  protection). Both `getRecolorScript` (battlescape) and the paperdoll helper share it. The paperdoll
+  applies **only the utile pair** (as legacy did) — never face/hair pairs, which would corrupt baked
+  skin tones on the per-look .SPK art. Legacy's `spriteBaseGroup` armor values (5/14/5/5) exactly
+  match DX's measured `spriteUtileGroup` assignments (legacy added a separate 5th channel; DX reuses
+  the vacant utile channel).
+- **Stock armor accents** (measured by histogramming the actual PCK/SPK sheets, non-face/hair pixels):
+  jumpsuit XCOM_0 → block 5 (93%), personal XCOM_1 → block 14 (98%), power/flying XCOM_2 → block 5
+  (99%); paperdoll MAN_* sheets match. Declared as `armors:` patches in `roles.rul`
+  (`spriteUtileGroup` only — no `spriteUtileColor`, so stock rendering is untouched until a role colour
+  is set). Caveat: vanilla suits are effectively single-block, so the "accent" recolours the whole suit
+  body; modded multi-block art gets true accents.
+- **Seed default colours** follow the legacy `defaultArmorColor` assignments: Infantry Blue 208,
+  Marksman Gray 0, Sniper Black 15, Scout Yellow 145, Assault Light Purple 193, Machine Gunner
+  Dark Green 79, Heavy Brown 160, Rocketeer Red 32, Grenadier Orange 17, Medic White 1,
+  Psionics Purple 192; Anti-Armor / Demolitions / Specialist uncoloured. **Role UI & Markers (done):** the battlescape **map marker**
 replaces the selected-unit arrow with the role's `RoleIcon<Name>Map` glyph (`Map.cpp`), and the base
 roster + craft-assignment lists prefix the rank cell with the role's 3-letter abbreviation
 (`MRK-Rookie`) — an authored `shortName` on `RuleRole`/`Role` (seeded per default role) with a
@@ -212,10 +259,12 @@ The procedural-placeholder plan is dropped: a full set of **authored** role icon
 Specialist, plus Marksman / MachineGunner / AntiArmor extras), a `RoleIconNone` blank, `*Map`
 small map-marker variants, and the `RoleIconTemplate.pdn` Paint.NET source. **These are the starting icons.**
 
-Known limitation: the art currently lives under **xcom1 only** — it is not yet a shared/cross-ruleset
-resource, so TFTD (xcom2) and other rulesets have no role icons yet. A later **sprite-management** pass
-will address shipping/sharing the icon set across rulesets. For now the icons are committed and wired
-under xcom1.
+Each game carries its own palette-indexed copy of the icon art (`bin/standard/<mod>/Resources/DX/Roles`):
+xcom1's is the original UFO-palette set; xcom2's was redesigned and re-indexed against the **TFTD
+tactical palette** (master art in `reference/RoleIconsMerged.pdn`/`.png`, split/re-indexed
+programmatically — nearest-palette-entry mapping per unique colour, index 0 transparent). Note the
+badge renders under both the tactical palette (inventory/battle) and the basescape palette (Soldier
+Info), so icon colours should sit on indices that read acceptably under both.
 
 ### Icon surfaces (done — xcom1 `roles.rul`)
 

@@ -20,7 +20,9 @@ Shipped so far:
   (`RoleIcon<Name>` badge + `RoleIcon<Name>Map` battlescape marker), bundled under a stable name by a
   `roleIcons:` registry (`RuleRoleIcon`). The icon identity is a **string** end-to-end, so a saved
   role's icon survives mod-list / load-order changes with no frame-index or sprite-offset handling.
-  Default icons + registry + 14 seed roles ship in `bin/standard/xcom1/roles.rul`.
+  Each game ships its own palette-indexed icon art (`Resources/DX/Roles` under xcom1/xcom2); the
+  registry + 14 seed roles ship per ruleset in `bin/standard/xcom1/roles.rul` and
+  `bin/standard/xcom2/roles.rul`.
 - **Assignment UI.** A clickable role badge sits between the rank icon and the unit name on both the
   Soldier Info screen and the battlescape Inventory screen (the assigned role's icon, or a "no role"
   badge when unassigned). Clicking it opens a picker (`RoleSelectState`) to assign any of the save's
@@ -38,13 +40,24 @@ Shipped so far:
 - **Battlescape marker.** The bobbing down-arrow over the selected unit is replaced by that unit's role
   **map glyph** (`RoleIcon<Name>Map`) when its role has one; units with no role (or a role whose icon has
   no map glyph) keep the default arrow.
+- **Per-role armor colours.** Each role can carry an **armor colour** (picked in the manager via
+  **Color:** — a curated list of battlescape-palette colour blocks). A soldier with a coloured role has
+  their armor's **accent block** (the OXCE `spriteUtileGroup` channel) remapped into the role's colour —
+  shade-preserving, so shading survives — on both the **battlescape sprite** (via the standard
+  `recolorUnitSprite` path) and the **inventory paperdoll** (which now applies the unit's recolor pairs,
+  also making face/hair recolours visible there for the first time). Armors opt in by declaring
+  `spriteUtileGroup`; DX assigns measured accent blocks to the stock soldier armors in both games
+  (UFO: jumpsuit & power/flying = block 5, personal armor = block 14; TFTD: wetsuit = block 15,
+  plastic aqua = block 12, ion/mag-ion = block 8 — effectively the whole suit body on vanilla art,
+  since the suits are single-block). The colour list itself is mod config (the legacy
+  `soldierArmorBaseColors:` node) — per-palette sets ship in each game's `roles.rul`. "Armor Default"
+  (no colour) renders fully stock.
 - **Soldier lists.** The base roster and craft-assignment lists prefix the rank cell with the role's
   **3-letter abbreviation** when assigned, e.g. `MRK-Rookie`. The abbreviation is an authored `shortName`
   on the role (seeded per default role — HVY, SCT, AAR, …); player-created roles fall back to the first
   three letters of the name.
 
-Pending: per-role armor colours (with a colour picker). See
-[plans/Feature-SoldierRoles.md](plans/Feature-SoldierRoles.md).
+See [plans/Feature-SoldierRoles.md](plans/Feature-SoldierRoles.md) for the full design.
 
 ## Configurable Inventory Layouts
 

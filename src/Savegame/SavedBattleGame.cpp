@@ -272,7 +272,7 @@ void SavedBattleGame::load(const YAML::YamlNodeReader& node, Mod *mod, SavedGame
 		int id = unitReader["id"].readVal<int>();
 		BattleUnit* unit;
 		if (id < BattleUnit::MAX_SOLDIER_ID) // Unit is linked to a geoscape soldier
-			unit = new BattleUnit(mod, savedGame->getSoldier(id), _depth, nullptr); // look up the matching soldier
+			unit = new BattleUnit(mod, savedGame->getSoldier(id), _depth, nullptr, savedGame); // look up the matching soldier
 		else
 		{
 			std::string type = unitReader["genUnitType"].readVal<std::string>();

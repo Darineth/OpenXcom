@@ -1,0 +1,247 @@
+# =====================================================================
+#  DX: Soldier Roles (xcom2 / TFTD)
+# =====================================================================
+#  TFTD counterpart of xcom1/roles.rul. The role-icon art lives in this
+#  mod's Resources/DX/Roles, re-indexed against the TFTD tactical palette
+#  (master art: reference/RoleIconsMerged.pdn/.png). Colour values are
+#  TFTD tactical-palette indices (a different block layout than UFO), so
+#  this file carries its own soldierArmorBaseColors set, armor accent
+#  groups, and seed colours.
+# =====================================================================
+extraSprites:
+  - typeSingle: RoleIconNone
+    fileSingle: Resources/DX/Roles/RoleIconNone.png
+  - typeSingle: RoleIconInfantry
+    fileSingle: Resources/DX/Roles/RoleIconInfantry.png
+  - typeSingle: RoleIconInfantryMap
+    fileSingle: Resources/DX/Roles/RoleIconInfantryMap.png
+  - typeSingle: RoleIconMarksman
+    fileSingle: Resources/DX/Roles/RoleIconMarksman.png
+  - typeSingle: RoleIconMarksmanMap
+    fileSingle: Resources/DX/Roles/RoleIconMarksmanMap.png
+  - typeSingle: RoleIconSniper
+    fileSingle: Resources/DX/Roles/RoleIconSniper.png
+  - typeSingle: RoleIconSniperMap
+    fileSingle: Resources/DX/Roles/RoleIconSniperMap.png
+  - typeSingle: RoleIconScout
+    fileSingle: Resources/DX/Roles/RoleIconScout.png
+  - typeSingle: RoleIconScoutMap
+    fileSingle: Resources/DX/Roles/RoleIconScoutMap.png
+  - typeSingle: RoleIconAssault
+    fileSingle: Resources/DX/Roles/RoleIconAssault.png
+  - typeSingle: RoleIconAssaultMap
+    fileSingle: Resources/DX/Roles/RoleIconAssaultMap.png
+  - typeSingle: RoleIconMachineGunner
+    fileSingle: Resources/DX/Roles/RoleIconMachineGunner.png
+  - typeSingle: RoleIconMachineGunnerMap
+    fileSingle: Resources/DX/Roles/RoleIconMachineGunnerMap.png
+  - typeSingle: RoleIconHeavy
+    fileSingle: Resources/DX/Roles/RoleIconHeavy.png
+  - typeSingle: RoleIconHeavyMap
+    fileSingle: Resources/DX/Roles/RoleIconHeavyMap.png
+  - typeSingle: RoleIconAntiArmor
+    fileSingle: Resources/DX/Roles/RoleIconAntiArmor.png
+  - typeSingle: RoleIconAntiArmorMap
+    fileSingle: Resources/DX/Roles/RoleIconAntiArmorMap.png
+  - typeSingle: RoleIconRocketeer
+    fileSingle: Resources/DX/Roles/RoleIconRocketeer.png
+  - typeSingle: RoleIconRocketeerMap
+    fileSingle: Resources/DX/Roles/RoleIconRocketeerMap.png
+  - typeSingle: RoleIconGrenadier
+    fileSingle: Resources/DX/Roles/RoleIconGrenadier.png
+  - typeSingle: RoleIconGrenadierMap
+    fileSingle: Resources/DX/Roles/RoleIconGrenadierMap.png
+  - typeSingle: RoleIconDemolitions
+    fileSingle: Resources/DX/Roles/RoleIconDemolitions.png
+  - typeSingle: RoleIconDemolitionsMap
+    fileSingle: Resources/DX/Roles/RoleIconDemolitionsMap.png
+  - typeSingle: RoleIconMedic
+    fileSingle: Resources/DX/Roles/RoleIconMedic.png
+  - typeSingle: RoleIconMedicMap
+    fileSingle: Resources/DX/Roles/RoleIconMedicMap.png
+  - typeSingle: RoleIconPsionics
+    fileSingle: Resources/DX/Roles/RoleIconPsionics.png
+  - typeSingle: RoleIconPsionicsMap
+    fileSingle: Resources/DX/Roles/RoleIconPsionicsMap.png
+  - typeSingle: RoleIconSpecialist
+    fileSingle: Resources/DX/Roles/RoleIconSpecialist.png
+  - typeSingle: RoleIconSpecialistMap
+    fileSingle: Resources/DX/Roles/RoleIconSpecialistMap.png
+
+# =====================================================================
+#  Role-icon registry (same names as xcom1, so saves/mods line up).
+# =====================================================================
+roleIcons:
+  - name: NONE
+    sprite: RoleIconNone
+  - name: INFANTRY
+    sprite: RoleIconInfantry
+    mapSprite: RoleIconInfantryMap
+  - name: MARKSMAN
+    sprite: RoleIconMarksman
+    mapSprite: RoleIconMarksmanMap
+  - name: SNIPER
+    sprite: RoleIconSniper
+    mapSprite: RoleIconSniperMap
+  - name: SCOUT
+    sprite: RoleIconScout
+    mapSprite: RoleIconScoutMap
+  - name: ASSAULT
+    sprite: RoleIconAssault
+    mapSprite: RoleIconAssaultMap
+  - name: MACHINE_GUNNER
+    sprite: RoleIconMachineGunner
+    mapSprite: RoleIconMachineGunnerMap
+  - name: HEAVY
+    sprite: RoleIconHeavy
+    mapSprite: RoleIconHeavyMap
+  - name: ANTI_ARMOR
+    sprite: RoleIconAntiArmor
+    mapSprite: RoleIconAntiArmorMap
+  - name: ROCKETEER
+    sprite: RoleIconRocketeer
+    mapSprite: RoleIconRocketeerMap
+  - name: GRENADIER
+    sprite: RoleIconGrenadier
+    mapSprite: RoleIconGrenadierMap
+  - name: DEMOLITIONS
+    sprite: RoleIconDemolitions
+    mapSprite: RoleIconDemolitionsMap
+  - name: MEDIC
+    sprite: RoleIconMedic
+    mapSprite: RoleIconMedicMap
+  - name: PSIONICS
+    sprite: RoleIconPsionics
+    mapSprite: RoleIconPsionicsMap
+  - name: SPECIALIST
+    sprite: RoleIconSpecialist
+    mapSprite: RoleIconSpecialistMap
+
+# =====================================================================
+#  Soldier armor colours - TFTD tactical-palette values.
+#  TFTD's tactical palette has a different block layout than UFO's, so
+#  this set is authored against it (see the palette reference: block 3 =
+#  greyscale, 5 = lime, 6 = aqua, 8 = gold, 10 = orange, 11 = orange-red,
+#  12 = blue-grey, 14 = pink, 15 = cyan). Low nibble selects the recolor
+#  mode: 1 = lighten, 15 = darken, else plain offset. TFTD has no purple
+#  ramp, so the purple names are omitted here. FIRST-GUESS VALUES - tune
+#  in play (deep-water palette variants tint all ramps bluer).
+# =====================================================================
+soldierArmorBaseColors:
+  - name: STR_COLOR_WHITE
+    color: 49            # block 3 greyscale, lighten
+  - name: STR_COLOR_GRAY
+    color: 48            # block 3 greyscale
+  - name: STR_COLOR_BLACK
+    color: 63            # block 3 greyscale, darken
+  - name: STR_COLOR_LIGHT_RED
+    color: 177           # block 11 orange-red, lighten
+  - name: STR_COLOR_RED
+    color: 176           # block 11 orange-red
+  - name: STR_COLOR_DARK_RED
+    color: 191           # block 11 orange-red, darken
+  - name: STR_COLOR_ORANGE
+    color: 161           # block 10 orange/amber, lighten
+  - name: STR_COLOR_GOLD
+    color: 128           # block 8 gold->green
+  - name: STR_COLOR_YELLOW
+    color: 17            # block 1 yellow->green, lighten
+  - name: STR_COLOR_LIGHT_GREEN
+    color: 81            # block 5 lime, lighten
+  - name: STR_COLOR_GREEN
+    color: 80            # block 5 lime
+  - name: STR_COLOR_DARK_GREEN
+    color: 95            # block 5 lime, darken
+  - name: STR_COLOR_BLUE_GREEN
+    color: 96            # block 6 aqua/teal
+  - name: STR_COLOR_LIGHT_BLUE
+    color: 241           # block 15 cyan, lighten
+  - name: STR_COLOR_BLUE
+    color: 192           # block 12 blue-grey
+  - name: STR_COLOR_NAVY
+    color: 207           # block 12 blue-grey, darken
+  - name: STR_COLOR_PINK
+    color: 225           # block 14 pink/rose, lighten
+  - name: STR_COLOR_BEIGE
+    color: 32            # block 2 cream/khaki
+  - name: STR_COLOR_BROWN
+    color: 64            # block 4 brown
+
+# =====================================================================
+#  Armor accent blocks - measured from the actual TFTD sprite sheets
+#  (dominant non-face/hair block; TFTD armors use face group 14 / hair
+#  group 4):
+#    TDXCOM_0 wetsuit        -> block 15 (74%, cyan)
+#    TDXCOM_1 plastic aqua   -> block 12 (56%, blue-grey/white)
+#    TDXCOM_2 ion + mag ion  -> block  8 (67%, gold)
+# =====================================================================
+armors:
+  - type: STR_NONE_UC
+    spriteUtileGroup: 15
+  - type: STR_PLASTIC_AQUA_ARMOR_UC
+    spriteUtileGroup: 12
+  - type: STR_ION_ARMOR_UC
+    spriteUtileGroup: 8
+  - type: STR_MAGNETIC_ION_ARMOR_UC
+    spriteUtileGroup: 8
+
+# =====================================================================
+#  Default seed roles - same set as xcom1; colours mapped to the nearest
+#  TFTD equivalents (no purple ramp: Assault -> Light Blue, Psion -> Pink).
+# =====================================================================
+roles:
+  - name: STR_ROLE_INFANTRY
+    shortName: INF
+    icon: INFANTRY
+    color: 192           # Blue
+  - name: STR_ROLE_MARKSMAN
+    shortName: MRK
+    icon: MARKSMAN
+    color: 48            # Gray
+  - name: STR_ROLE_SNIPER
+    shortName: SNP
+    icon: SNIPER
+    color: 63            # Black
+  - name: STR_ROLE_SCOUT
+    shortName: SCT
+    icon: SCOUT
+    color: 17            # Yellow
+  - name: STR_ROLE_ASSAULT
+    shortName: ASL
+    icon: ASSAULT
+    color: 241           # Light Blue
+  - name: STR_ROLE_MACHINE_GUNNER
+    shortName: MGN
+    icon: MACHINE_GUNNER
+    color: 95            # Dark Green
+  - name: STR_ROLE_HEAVY
+    shortName: HVY
+    icon: HEAVY
+    color: 64            # Brown
+  - name: STR_ROLE_ANTI_ARMOR
+    shortName: AAR
+    icon: ANTI_ARMOR
+  - name: STR_ROLE_ROCKETEER
+    shortName: RKT
+    icon: ROCKETEER
+    color: 176           # Red
+  - name: STR_ROLE_GRENADIER
+    shortName: GRN
+    icon: GRENADIER
+    color: 161           # Orange
+  - name: STR_ROLE_DEMOLITIONS
+    shortName: DEM
+    icon: DEMOLITIONS
+  - name: STR_ROLE_MEDIC
+    shortName: MED
+    icon: MEDIC
+    color: 49            # White
+  - name: STR_ROLE_PSIONICS
+    shortName: PSI
+    icon: PSIONICS
+    color: 225           # Pink
+  - name: STR_ROLE_SPECIALIST
+    shortName: SPC
+    icon: SPECIALIST
+
+# Seed-role display names live in Language/DX/en-US.yml (shared with xcom1).

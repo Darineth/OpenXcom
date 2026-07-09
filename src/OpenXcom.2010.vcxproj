@@ -400,6 +400,7 @@
     <ClCompile Include="Basescape\SoldierDiaryPerformanceState.cpp" />
     <ClCompile Include="Basescape\SoldierAvatarState.cpp" />
     <ClCompile Include="Basescape\SoldierInfoState.cpp" />
+    <ClCompile Include="Basescape\RoleColorSelectState.cpp" />
     <ClCompile Include="Basescape\RoleIconSelectState.cpp" />
     <ClCompile Include="Basescape\RoleMenuState.cpp" />
     <ClCompile Include="Basescape\RoleSelectState.cpp" />
@@ -886,6 +887,7 @@
     <ClInclude Include="Basescape\SoldierDiaryPerformanceState.h" />
     <ClInclude Include="Basescape\SoldierAvatarState.h" />
     <ClInclude Include="Basescape\SoldierInfoState.h" />
+    <ClInclude Include="Basescape\RoleColorSelectState.h" />
     <ClInclude Include="Basescape\RoleIconSelectState.h" />
     <ClInclude Include="Basescape\RoleMenuState.h" />
     <ClInclude Include="Basescape\RoleSelectState.h" />

@@ -3681,6 +3681,25 @@ void Mod::loadFile(const FileMap::FileRecord &filerec, ModScript &parsers)
 			loadConstants(constants.useIndex());
 		}
 	}
+	// DX: soldier armor colours for role armor recolouring (legacy soldierArmorBaseColors).
+	// Values are palette-dependent (battlescape palette blocks), so they live in the ruleset.
+	// Merged by name: a later mod can retune a colour or append new ones.
+	if (const auto& armorColors = reader["soldierArmorBaseColors"])
+	{
+		for (const auto& colorReader : armorColors.children())
+		{
+			std::string name = colorReader["name"].readVal<std::string>("");
+			if (name.empty())
+				continue;
+			int value = colorReader["color"].readVal<int>(-1);
+			auto it = std::find_if(_soldierArmorBaseColors.begin(), _soldierArmorBaseColors.end(),
+				[&](const std::pair<std::string, int>& p) { return p.first == name; });
+			if (it != _soldierArmorBaseColors.end())
+				it->second = value;
+			else
+				_soldierArmorBaseColors.push_back(std::make_pair(name, value));
+		}
+	}
 	// DX: mod-wide default armor move costs (armors that omit a move-cost key fall back to these).
 	if (const auto& moveCostDefaults = reader["moveCostDefaults"])
 	{

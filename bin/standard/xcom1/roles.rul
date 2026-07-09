@@ -1,8 +1,10 @@
 # =====================================================================
 #  DX: Soldier Roles (xcom1)
 # =====================================================================
-#  All role content for the UFO ruleset lives here: the role-icon surfaces
-#  now, and later the `roleIcons:` registry + the `roles:` seed list.
+#  All role content for the UFO ruleset lives here: the role-icon surfaces,
+#  the `roleIcons:` registry, armor colours, and the `roles:` seed list.
+#  The icon art lives in this mod's Resources/DX/Roles (UFO-palette indexed);
+#  xcom2 carries its own TFTD-palette-indexed copy.
 #
 #  Role icons are individual named single-image surfaces, referenced BY NAME
 #  from a `roleIcons:` registry entry (which a Role then references by the
@@ -24,63 +26,63 @@
 # =====================================================================
 extraSprites:
   - typeSingle: RoleIconNone
-    fileSingle: Resources/Roles/RoleIconNone.png
+    fileSingle: Resources/DX/Roles/RoleIconNone.png
   - typeSingle: RoleIconInfantry
-    fileSingle: Resources/Roles/RoleIconInfantry.png
+    fileSingle: Resources/DX/Roles/RoleIconInfantry.png
   - typeSingle: RoleIconInfantryMap
-    fileSingle: Resources/Roles/RoleIconInfantryMap.png
+    fileSingle: Resources/DX/Roles/RoleIconInfantryMap.png
   - typeSingle: RoleIconMarksman
-    fileSingle: Resources/Roles/RoleIconMarksman.png
+    fileSingle: Resources/DX/Roles/RoleIconMarksman.png
   - typeSingle: RoleIconMarksmanMap
-    fileSingle: Resources/Roles/RoleIconMarksmanMap.png
+    fileSingle: Resources/DX/Roles/RoleIconMarksmanMap.png
   - typeSingle: RoleIconSniper
-    fileSingle: Resources/Roles/RoleIconSniper.png
+    fileSingle: Resources/DX/Roles/RoleIconSniper.png
   - typeSingle: RoleIconSniperMap
-    fileSingle: Resources/Roles/RoleIconSniperMap.png
+    fileSingle: Resources/DX/Roles/RoleIconSniperMap.png
   - typeSingle: RoleIconScout
-    fileSingle: Resources/Roles/RoleIconScout.png
+    fileSingle: Resources/DX/Roles/RoleIconScout.png
   - typeSingle: RoleIconScoutMap
-    fileSingle: Resources/Roles/RoleIconScoutMap.png
+    fileSingle: Resources/DX/Roles/RoleIconScoutMap.png
   - typeSingle: RoleIconAssault
-    fileSingle: Resources/Roles/RoleIconAssault.png
+    fileSingle: Resources/DX/Roles/RoleIconAssault.png
   - typeSingle: RoleIconAssaultMap
-    fileSingle: Resources/Roles/RoleIconAssaultMap.png
+    fileSingle: Resources/DX/Roles/RoleIconAssaultMap.png
   - typeSingle: RoleIconMachineGunner
-    fileSingle: Resources/Roles/RoleIconMachineGunner.png
+    fileSingle: Resources/DX/Roles/RoleIconMachineGunner.png
   - typeSingle: RoleIconMachineGunnerMap
-    fileSingle: Resources/Roles/RoleIconMachineGunnerMap.png
+    fileSingle: Resources/DX/Roles/RoleIconMachineGunnerMap.png
   - typeSingle: RoleIconHeavy
-    fileSingle: Resources/Roles/RoleIconHeavy.png
+    fileSingle: Resources/DX/Roles/RoleIconHeavy.png
   - typeSingle: RoleIconHeavyMap
-    fileSingle: Resources/Roles/RoleIconHeavyMap.png
+    fileSingle: Resources/DX/Roles/RoleIconHeavyMap.png
   - typeSingle: RoleIconAntiArmor
-    fileSingle: Resources/Roles/RoleIconAntiArmor.png
+    fileSingle: Resources/DX/Roles/RoleIconAntiArmor.png
   - typeSingle: RoleIconAntiArmorMap
-    fileSingle: Resources/Roles/RoleIconAntiArmorMap.png
+    fileSingle: Resources/DX/Roles/RoleIconAntiArmorMap.png
   - typeSingle: RoleIconRocketeer
-    fileSingle: Resources/Roles/RoleIconRocketeer.png
+    fileSingle: Resources/DX/Roles/RoleIconRocketeer.png
   - typeSingle: RoleIconRocketeerMap
-    fileSingle: Resources/Roles/RoleIconRocketeerMap.png
+    fileSingle: Resources/DX/Roles/RoleIconRocketeerMap.png
   - typeSingle: RoleIconGrenadier
-    fileSingle: Resources/Roles/RoleIconGrenadier.png
+    fileSingle: Resources/DX/Roles/RoleIconGrenadier.png
   - typeSingle: RoleIconGrenadierMap
-    fileSingle: Resources/Roles/RoleIconGrenadierMap.png
+    fileSingle: Resources/DX/Roles/RoleIconGrenadierMap.png
   - typeSingle: RoleIconDemolitions
-    fileSingle: Resources/Roles/RoleIconDemolitions.png
+    fileSingle: Resources/DX/Roles/RoleIconDemolitions.png
   - typeSingle: RoleIconDemolitionsMap
-    fileSingle: Resources/Roles/RoleIconDemolitionsMap.png
+    fileSingle: Resources/DX/Roles/RoleIconDemolitionsMap.png
   - typeSingle: RoleIconMedic
-    fileSingle: Resources/Roles/RoleIconMedic.png
+    fileSingle: Resources/DX/Roles/RoleIconMedic.png
   - typeSingle: RoleIconMedicMap
-    fileSingle: Resources/Roles/RoleIconMedicMap.png
+    fileSingle: Resources/DX/Roles/RoleIconMedicMap.png
   - typeSingle: RoleIconPsionics
-    fileSingle: Resources/Roles/RoleIconPsionics.png
+    fileSingle: Resources/DX/Roles/RoleIconPsionics.png
   - typeSingle: RoleIconPsionicsMap
-    fileSingle: Resources/Roles/RoleIconPsionicsMap.png
+    fileSingle: Resources/DX/Roles/RoleIconPsionicsMap.png
   - typeSingle: RoleIconSpecialist
-    fileSingle: Resources/Roles/RoleIconSpecialist.png
+    fileSingle: Resources/DX/Roles/RoleIconSpecialist.png
   - typeSingle: RoleIconSpecialistMap
-    fileSingle: Resources/Roles/RoleIconSpecialistMap.png
+    fileSingle: Resources/DX/Roles/RoleIconSpecialistMap.png
 
 # =====================================================================
 #  Role-icon registry
@@ -139,72 +141,145 @@ roleIcons:
 #  Default seed roles
 #  Copied into a NEW game's editable role list (SavedGame). Thereafter the
 #  player creates / renames / re-icons / recolors / deletes freely. Seeds
-#  carry identity only - no loadout (the player fills that in-game) and no
-#  color (these stock icons aren't intended for armor recolour; revisit
-#  with Per-Role Armor Colors).
+#  carry identity only - no loadout (the player fills that in-game).
+#  Default armor colours follow the legacy DX assignments (battlescape
+#  palette block bases; see RoleColorSelectState for the name<->value map).
+#  Anti-Armor / Demolitions / Specialist ship uncoloured, as in legacy.
 # =====================================================================
 roles:
   - name: STR_ROLE_INFANTRY
     shortName: INF
     icon: INFANTRY
+    color: 208           # Blue
   - name: STR_ROLE_MARKSMAN
     shortName: MRK
     icon: MARKSMAN
+    color: 0             # Gray
   - name: STR_ROLE_SNIPER
     shortName: SNP
     icon: SNIPER
+    color: 15            # Black
   - name: STR_ROLE_SCOUT
     shortName: SCT
     icon: SCOUT
+    color: 145           # Yellow
   - name: STR_ROLE_ASSAULT
     shortName: ASL
     icon: ASSAULT
+    color: 193           # Light Purple
   - name: STR_ROLE_MACHINE_GUNNER
     shortName: MGN
     icon: MACHINE_GUNNER
+    color: 79            # Dark Green
   - name: STR_ROLE_HEAVY
     shortName: HVY
     icon: HEAVY
+    color: 160           # Brown
   - name: STR_ROLE_ANTI_ARMOR
     shortName: AAR
     icon: ANTI_ARMOR
   - name: STR_ROLE_ROCKETEER
     shortName: RKT
     icon: ROCKETEER
+    color: 32            # Red
   - name: STR_ROLE_GRENADIER
     shortName: GRN
     icon: GRENADIER
+    color: 17            # Orange
   - name: STR_ROLE_DEMOLITIONS
     shortName: DEM
     icon: DEMOLITIONS
   - name: STR_ROLE_MEDIC
     shortName: MED
     icon: MEDIC
+    color: 1             # White
   - name: STR_ROLE_PSIONICS
     shortName: PSI
     icon: PSIONICS
+    color: 192           # Purple
   - name: STR_ROLE_SPECIALIST
     shortName: SPC
     icon: SPECIALIST
 
 # =====================================================================
-#  Seed-role display names (mod content). Player-created roles use raw
-#  typed text instead; these STR ids localise the shipped defaults.
+#  Soldier armor colours (legacy soldierArmorBaseColors, UFO values).
+#  The picker's colour set for role armor recolouring. Values are
+#  battlescape-palette indices, so they are palette-dependent and belong
+#  here, not in code (TFTD needs its own set). The value's block replaces
+#  the armor's accent block; its low nibble selects the recolor mode:
+#  1 = lighten, 15 = darken (dark half of the ramp), else plain offset.
+#  Order here is the picker's display order; mods can retune by name.
 # =====================================================================
-extraStrings:
-  - type: en-US
-    strings:
-      STR_ROLE_INFANTRY: "Infantry"
-      STR_ROLE_MARKSMAN: "Designated Marksman"
-      STR_ROLE_SNIPER: "Sniper"
-      STR_ROLE_SCOUT: "Scout"
-      STR_ROLE_ASSAULT: "Assault"
-      STR_ROLE_MACHINE_GUNNER: "Machine Gunner"
-      STR_ROLE_HEAVY: "Heavy Weapons"
-      STR_ROLE_ANTI_ARMOR: "Anti-Armor"
-      STR_ROLE_ROCKETEER: "Rocket Trooper"
-      STR_ROLE_GRENADIER: "Grenadier"
-      STR_ROLE_DEMOLITIONS: "Demolitions"
-      STR_ROLE_MEDIC: "Medic"
-      STR_ROLE_PSIONICS: "Psion"
-      STR_ROLE_SPECIALIST: "Specialist"
+soldierArmorBaseColors:
+  - name: STR_COLOR_WHITE
+    color: 1
+  - name: STR_COLOR_GRAY
+    color: 0
+  - name: STR_COLOR_BLACK
+    color: 15
+  - name: STR_COLOR_LIGHT_RED
+    color: 33
+  - name: STR_COLOR_RED
+    color: 32
+  - name: STR_COLOR_DARK_RED
+    color: 47
+  - name: STR_COLOR_ORANGE
+    color: 17
+  - name: STR_COLOR_YELLOW
+    color: 145
+  - name: STR_COLOR_LIGHT_GREEN
+    color: 65
+  - name: STR_COLOR_GREEN
+    color: 64
+  - name: STR_COLOR_DARK_GREEN
+    color: 79
+  - name: STR_COLOR_BLUE_GREEN
+    color: 48
+  - name: STR_COLOR_LIGHT_BLUE
+    color: 129
+  - name: STR_COLOR_BLUE
+    color: 208
+  - name: STR_COLOR_NAVY
+    color: 223
+  - name: STR_COLOR_LIGHT_PURPLE
+    color: 193
+  - name: STR_COLOR_PURPLE
+    color: 192
+  - name: STR_COLOR_DARK_PURPLE
+    color: 207
+  - name: STR_COLOR_METALLIC
+    color: 224
+  - name: STR_COLOR_PINK
+    color: 177
+  - name: STR_COLOR_BEIGE
+    color: 80
+  - name: STR_COLOR_BROWN
+    color: 160
+
+# =====================================================================
+#  Armor accent blocks for role armor colours.
+#  spriteUtileGroup declares which 16-colour palette block is an armor's
+#  "accent": when a soldier's role has an armor colour set, pixels in that
+#  block are remapped into the role colour's block on the battlescape sprite
+#  and the inventory paperdoll (the colour's low nibble darkens the ramp,
+#  clamped at the block end - legacy DX semantics). No spriteUtileColor is
+#  set, so armors render stock when the role has no colour.
+#
+#  Blocks measured from the actual sprite sheets (non-face/hair pixels):
+#    XCOM_0 jumpsuit      -> block  5 (93%)   MAN_0 paperdolls match (78%)
+#    XCOM_1 personal      -> block 14 (98%)   MAN_1 paperdolls match (87%)
+#    XCOM_2 power/flying  -> block  5 (99%)   MAN_2 paperdoll matches (95%)
+#  Note: vanilla suits are essentially single-block, so the "accent" is
+#  the whole suit body; face/hair/highlights keep their own blocks.
+# =====================================================================
+armors:
+  - type: STR_NONE_UC
+    spriteUtileGroup: 5
+  - type: STR_PERSONAL_ARMOR_UC
+    spriteUtileGroup: 14
+  - type: STR_POWER_SUIT_UC
+    spriteUtileGroup: 5
+  - type: STR_FLYING_SUIT_UC
+    spriteUtileGroup: 5
+
+# Seed-role display names live in Language/DX/en-US.yml (shared with xcom2).

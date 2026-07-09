@@ -77,9 +77,9 @@ public:
 	const std::string& getIcon() const { return _icon; }
 	/// Sets the role-icon name (a roleIcons registry entry).
 	void setIcon(const std::string& icon) { _icon = icon; }
-	/// Gets the role's marker/tint palette colour.
+	/// Gets the role's armor colour (battlescape palette index; -1 = none/armor default).
 	int getColor() const { return _color; }
-	/// Sets the role's marker/tint palette colour.
+	/// Sets the role's armor colour (-1 = none/armor default).
 	void setColor(int color) { _color = color; }
 	/// Gets the role's loadout template (mutable, so it can be (re)filled from the inventory).
 	std::vector<EquipmentLayoutItem*>& getLoadout() { return _loadout; }

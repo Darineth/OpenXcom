@@ -25,7 +25,7 @@ namespace OpenXcom
  * Creates a blank role seed.
  * @param name The role's (STR) id.
  */
-RuleRole::RuleRole(const std::string& name) : _name(name), _color(0)
+RuleRole::RuleRole(const std::string& name) : _name(name), _color(-1)
 {
 }
 

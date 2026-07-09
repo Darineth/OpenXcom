@@ -40,6 +40,7 @@ set ( basescape_src
   Basescape/PurchaseState.cpp
   Basescape/ResearchInfoState.cpp
   Basescape/ResearchState.cpp
+  Basescape/RoleColorSelectState.cpp
   Basescape/RoleIconSelectState.cpp
   Basescape/RoleMenuState.cpp
   Basescape/RoleSelectState.cpp

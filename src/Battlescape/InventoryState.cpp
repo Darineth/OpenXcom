@@ -38,6 +38,7 @@
 #include "../Interface/BattlescapeButton.h"
 #include "../Engine/Action.h"
 #include "../Engine/InteractiveSurface.h"
+#include "../Engine/ShaderDraw.h"
 #include "../Engine/Sound.h"
 #include "../Engine/SurfaceSet.h"
 #include "../Savegame/SavedGame.h"
@@ -71,6 +72,48 @@ namespace OpenXcom
 static const int _templateBtnX = 288;
 static const int _createTemplateBtnY = 90;
 static const int _applyTemplateBtnY  = 113;
+
+/**
+ * DX: Blits a paperdoll sprite onto the target applying the unit's recolor pairs — the same
+ * block+shade semantics as the battlescape recolorUnitSprite script (match the pixel's
+ * 16-colour block, keep its shade, substitute the replacement base). This is what makes
+ * face/hair/role-accent recolours visible on the inventory paperdoll.
+ * @param src Source sprite (layer or .SPK look sprite).
+ * @param dst Destination surface.
+ * @param recolor The unit's recolor pairs (from BattleUnit::getRecolor()).
+ */
+static void blitPaperdollRecolored(Surface *src, Surface *dst, const std::vector<std::pair<Uint8, Uint8> > &recolor)
+{
+	if (recolor.empty())
+	{
+		src->blitNShade(dst, 0, 0);
+		return;
+	}
+	Surface tmp(src->getWidth(), src->getHeight(), src->getX(), src->getY());
+	src->blitNShade(&tmp, 0, 0);
+	tmp.lock();
+	for (int y = 0; y < tmp.getHeight(); ++y)
+	{
+		for (int x = 0; x < tmp.getWidth(); ++x)
+		{
+			Uint8 p = tmp.getPixel(x, y);
+			if (p == 0)
+				continue;
+			Uint8 group = p & 0xF0;
+			for (const auto &pair : recolor)
+			{
+				if (group == pair.first)
+				{
+					// legacy-DX recolor semantics, same math as getRecolorScript
+					tmp.setPixel(x, y, helper::RecolorShade(p & 0x0F, pair.second));
+					break;
+				}
+			}
+		}
+	}
+	tmp.unlock();
+	tmp.blitNShade(dst, 0, 0);
+}
 
 /**
  * Initializes all the elements in the Inventory screen.
@@ -549,7 +592,7 @@ void InventoryState::init()
 			}
 
 			// Step 0: update unit's armor
-			unit->updateArmorFromSoldier(_game->getMod(), s, s->getArmor(), _battleGame->getDepth(), false, nullptr);
+			unit->updateArmorFromSoldier(_game->getMod(), s, s->getArmor(), _battleGame->getDepth(), false, nullptr, _game->getSavedGame());
 
 			// The armor (and thus the inventory layout) just changed. The setSelectedUnit() call above ran
 			// BEFORE this update, so it drew the grid and cached the hand slots from the OLD layout - redo
@@ -612,11 +655,31 @@ void InventoryState::init()
 			_txtRank->setText(tr("STR_RANK_").arg(tr(s->getRankString())));
 		}
 
+		// DX: re-resolve the recolor pairs (look/rank/role colour) so a role or colour changed
+		// from this screen shows on the paperdoll immediately. The paperdoll applies ONLY the
+		// armor-accent (utile) pair - the .SPK/layer art already has the correct baked face/hair
+		// colours per look, and applying the face/hair pairs would corrupt some skin tones
+		// (matches the legacy DX inventory, which recoloured just the base-colour pair).
+		unit->refreshRecolor(_game->getSavedGame());
+		std::vector<std::pair<Uint8, Uint8> > utileRecolor;
+		int utileGroup = unit->getArmor()->getUtileColorGroup();
+		if (utileGroup > 0)
+		{
+			for (const auto &pair : unit->getRecolor())
+			{
+				if (pair.first == (utileGroup << 4))
+				{
+					utileRecolor.push_back(pair);
+					break;
+				}
+			}
+		}
+
 		if (s->getArmor()->hasLayersDefinition())
 		{
 			for (const auto& layer : s->getArmorLayers())
 			{
-				_game->getMod()->getSurface(layer, true)->blitNShade(_soldier, 0, 0);
+				blitPaperdollRecolored(_game->getMod()->getSurface(layer, true), _soldier, utileRecolor);
 			}
 		}
 		else
@@ -650,11 +713,25 @@ void InventoryState::init()
 			{
 				surf = _game->getMod()->getSurface(look, true);
 			}
-			surf->blitNShade(_soldier, 0, 0);
+			blitPaperdollRecolored(surf, _soldier, utileRecolor);
 		}
 	}
 	else
 	{
+		// DX: non-soldier units likewise only apply the armor-accent (utile) pair, if any.
+		std::vector<std::pair<Uint8, Uint8> > utileRecolor;
+		int utileGroup = unit->getArmor()->getUtileColorGroup();
+		if (utileGroup > 0)
+		{
+			for (const auto &pair : unit->getRecolor())
+			{
+				if (pair.first == (utileGroup << 4))
+				{
+					utileRecolor.push_back(pair);
+					break;
+				}
+			}
+		}
 		Surface *armorSurface = _game->getMod()->getSurface(unit->getArmor()->getSpriteInventory(), false);
 		if (!armorSurface)
 		{
@@ -666,7 +743,7 @@ void InventoryState::init()
 		}
 		if (armorSurface)
 		{
-			armorSurface->blitNShade(_soldier, 0, 0);
+			blitPaperdollRecolored(armorSurface, _soldier, utileRecolor);
 		}
 	}
 

@@ -205,6 +205,7 @@ private:
 	std::map<std::string, RuleSoldierTransformation *> _soldierTransformation;
 	std::map<std::string, RuleRole *> _roles;
 	std::map<std::string, RuleRoleIcon *> _roleIcons;
+	std::vector<std::pair<std::string, int> > _soldierArmorBaseColors;
 	std::map<std::string, UfoTrajectory *> _ufoTrajectories;
 	std::map<std::string, RuleAlienMission *> _alienMissions;
 	std::map<std::string, RuleInterface *> _interfaces;
@@ -1079,6 +1080,8 @@ public:
 	RuleRoleIcon *getRoleIcon(const std::string &id, bool error = false) const;
 	/// Gets the (ordered) list of all soldier-role icon names (DX).
 	const std::vector<std::string> &getRoleIconsList() const;
+	/// Gets the mod-defined soldier armor colours (DX): ordered (STR name, palette value) pairs.
+	const std::vector<std::pair<std::string, int> > &getSoldierArmorBaseColors() const { return _soldierArmorBaseColors; }
 	/// Gets the ruleset for a specific soldier transformation project.
 	RuleSoldierTransformation *getSoldierTransformation(const std::string &id, bool error = false) const;
 	/// Gets the list of all soldier transformation projects.

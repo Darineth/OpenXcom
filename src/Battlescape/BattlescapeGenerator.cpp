@@ -572,7 +572,7 @@ void BattlescapeGenerator::nextStage()
 					// change soldier's armor (needed for inventory view!)
 					bu->getGeoscapeSoldier()->setArmor(transformedArmor);
 					// change battleunit's armor
-					bu->updateArmorFromSoldier(_game->getMod(), bu->getGeoscapeSoldier(), transformedArmor, _save->getDepth(), true, _save->getStartingCondition());
+					bu->updateArmorFromSoldier(_game->getMod(), bu->getGeoscapeSoldier(), transformedArmor, _save->getDepth(), true, _save->getStartingCondition(), _game->getSavedGame());
 					// remove old special built-in weapons and replace them with new fresh special built-in weapons
 					// TODO? if this was a limited-use weapon, it will have full ammo again!
 					bu->removeSpecialWeapons(_save);
@@ -1148,7 +1148,7 @@ void BattlescapeGenerator::deployXCOM(const RuleStartingCondition* startingCondi
 				{
 					soldier->clearEquipmentLayout();
 				}
-				BattleUnit *unit = addXCOMUnit(new BattleUnit(_game->getMod() , soldier, _save->getDepth(), _save->getStartingCondition()));
+				BattleUnit *unit = addXCOMUnit(new BattleUnit(_game->getMod() , soldier, _save->getDepth(), _save->getStartingCondition(), _game->getSavedGame()));
 				if (unit && !_save->getSelectedUnit())
 					_save->setSelectedUnit(unit);
 			}
@@ -1209,7 +1209,7 @@ void BattlescapeGenerator::deployXCOM(const RuleStartingCondition* startingCondi
 				{
 					soldier->clearEquipmentLayout();
 				}
-				BattleUnit *unit = addXCOMUnit(new BattleUnit(_game->getMod(), soldier, _save->getDepth(), _save->getStartingCondition()));
+				BattleUnit *unit = addXCOMUnit(new BattleUnit(_game->getMod(), soldier, _save->getDepth(), _save->getStartingCondition(), _game->getSavedGame()));
 				if (unit && !_save->getSelectedUnit())
 					_save->setSelectedUnit(unit);
 			}
