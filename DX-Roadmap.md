@@ -360,14 +360,20 @@ Everything below is DX-specific work confirmed **absent** from the base.
     base-wide. All config in the `health:` mod-info node; defaults preserve stock behavior. Engine
     hook only — research content left to the ruleset.
   *(design: [plans/Feature-ProportionalWoundRecovery.md](plans/Feature-ProportionalWoundRecovery.md))*
-- [ ] **Role Definitions & Templates** — **player-authored** roles (`RuleRole` seeds + savegame `Role`)
-  each owning its own loadout template; hybrid seed-then-player-editable model (create/rename/re-icon/
-  recolor/delete in-game), not a fixed mod list. *(reuses Phase 2 loadout-template plumbing —
+- [x] **Role Definitions & Templates** — **player-authored** roles (`RuleRole` seeds + savegame `Role`)
+  each owning its own loadout template; hybrid seed-then-player-editable model (create/rename/abbreviate/
+  re-icon/recolor/delete in-game via the management screen), not a fixed mod list. Assignment via
+  clickable badges on Soldier Info + the battlescape Inventory; per-role loadout Save Kit / Apply Kit;
+  New Battle persistence. *(reused the Phase 2 loadout-template plumbing as planned —
   design: [plans/Feature-SoldierRoles.md](plans/Feature-SoldierRoles.md))*
-- [ ] **Role UI & Markers** — soldier/craft/inventory UI icons and battlescape marker.
+- [x] **Role UI & Markers** — role badge + "role> rank" line on Soldier Info and the Inventory,
+  rank-cell abbreviations (`MRK-Rookie`) in the base/craft soldier lists, and the battlescape
+  selected-unit marker (the role's map glyph replaces the down-arrow).
   *(design: [plans/Feature-SoldierRoles.md](plans/Feature-SoldierRoles.md))*
-- [ ] **Per-Role Armor Colors**. *(reuses Phase 2 loadout-template plumbing + Phase 4 inventory layouts;
-  the `Role.color` data hook lands with Role Definitions — design: [plans/Feature-SoldierRoles.md](plans/Feature-SoldierRoles.md))*
+- [x] **Per-Role Armor Colors** — built on OXCE's vacant utile recolor channel with the legacy DX
+  recolor semantics (lighten/darken modes); colour picker in the manager, `soldierArmorBaseColors:`
+  mod config (UFO + TFTD sets), measured armor accent blocks, battlescape + inventory-paperdoll
+  rendering. *(design: [plans/Feature-SoldierRoles.md](plans/Feature-SoldierRoles.md))*
 
 ## Phase 8: Effects, Lighting & Psionics
 
