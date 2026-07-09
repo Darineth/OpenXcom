@@ -46,8 +46,8 @@ treat as *verify/configure*, not *implement*:
 - [x] **Night-vision system — base confirmed present.**
   `Armor.visibilityAtDark`/`visibilityAtDay` and OXCE night-vision options/toggle present
   (`Options`, `OptionsAdvancedState`, `TileEngine`, `Map`, `BattlescapeState`). DX-specific
-  remainder stays scheduled: **fog-of-war** (Phase 1) and **light equipment** (Phase 8,
-  needs Effects).
+  remainder stays scheduled: **fog-of-war** (Phase 1) and **light equipment** (Phase 8;
+  the Effects framework it once depended on was dropped — see Phase 8).
 - [x] **Load rulesets from subdirectories — confirmed present.** `FileMap`
   `mapPlainDir` uses recursive `ls_r` + `isRuleset`, so `.rul` files load from any
   subdirectory of a mod. → No work needed.
@@ -375,18 +375,42 @@ Everything below is DX-specific work confirmed **absent** from the base.
   mod config (UFO + TFTD sets), measured armor accent blocks, battlescape + inventory-paperdoll
   rendering. *(design: [plans/Feature-SoldierRoles.md](plans/Feature-SoldierRoles.md))*
 
-## Phase 8: Effects, Lighting & Psionics
+## Phase 8: Lighting & Psionics
 
-- [ ] **Effects Core Framework** — `RuleEffect` / `BattleEffect` / `EffectComponent`
-  (initial/ongoing/final, duration, maxStack).
-- [ ] **Item Effect Hooks** — `hitEffect` / `equippedEffect`.
-- [ ] **Light / illumination equipment** — `EC_CIRCULAR_LIGHT`/`EC_DIRECTIONAL_LIGHT`;
-  finalizes Sneak's light gate. *(needs Effects)*
-- [ ] **Stealth / cloaking armor** — `Armor.equippedEffects` → `EC_STEALTH` magnitude scales
-  down enemy spot range (≥100 = effectively invisible); translucent `RecolorStealth` render
-  (inventory paperdoll wired, `UnitSprite::drawRecolored` still TODO). *(needs Effects; the
-  inverse of light equipment)* *(legacy: [Legacy-DX-Features.md](Legacy-DX-Features.md) §15)*
-- [ ] **Channeled Mind Control** — with backlash/counter-control.
+**⚠️ Effects framework dropped (audit + decision, Jul 2026).** The legacy DX "Effects Core"
+(`RuleEffect`/`BattleEffect`/`EffectComponent` — a generic triggered/ongoing buff-debuff container)
+is **not being ported**. It was a reasonable 2015 design when base OpenXcom had no extension surface,
+but modern OXCE covers nearly every use it was invented for, via direct fields + the scripting engine:
+
+- **Stealth/cloaking** → `Armor.camouflageAtDay/AtDark`, `antiCamouflage*`, `psiVision`/`psiCamouflage`,
+  plus the `visibilityUnit` script hook for arbitrary per-observer visibility math.
+- **Custom light emission** → `Armor.personalLightFriend/Hostile/Neutral` (per-faction, which legacy
+  never had).
+- **Night vision** → native (`visibilityAtDark`, the NV toggle — see the Phase 0 audit).
+- **Timed buffs/debuffs** → `newTurnUnit`/`newTurnItem` + `hitUnit`/`damageUnit` script hooks with
+  save-persisted per-unit `ScriptValues` tags; `RuleEnviroEffects` (battle-wide conditions);
+  `RuleSoldierBonus` (persistent stat layering).
+- Not covered: one-off oddities like the legacy grapple-hook *teleport-on-hit* — if ever wanted, that's
+  a small dedicated feature, not a framework justification.
+
+A generic effect system must integrate with stats, FOV/lighting, rendering, saves, UI, and AI all at
+once — the costliest kind of engine code — and every DX feature that has landed well (bleedout,
+overwatch, roles) was a *targeted* system with a small ruleset surface instead. Phase 8 items are
+therefore reframed as targeted deltas:
+
+- ~~**Effects Core Framework**~~ — dropped (see above).
+- ~~**Item Effect Hooks** (`hitEffect` / `equippedEffect`)~~ — dropped; specific behaviours become
+  their own small features if they earn a slot.
+- [ ] **Light / illumination equipment** — audit what per-*item* carried light OXCE already has
+  (armor `personalLight*` and flares are native), then the true DX delta: **directional/cone light**
+  (flashlight-style) as a direct `TileEngine` lighting feature. Finalizes Sneak's light gate
+  ("no creeping while glowing" — read the unit's current light emission directly).
+- [ ] **Stealth / cloaking armor** — audit OXCE's `camouflage*` fields against the legacy `EC_STEALTH`
+  behaviour (magnitude scales down enemy spot range; ≥100 = effectively invisible) — likely already
+  covered; the DX-specific remainder is the **translucent render** (legacy `RecolorStealth` shader —
+  source available in the legacy tree). *(legacy: [Legacy-DX-Features.md](Legacy-DX-Features.md) §15)*
+- [ ] **Channeled Mind Control** — with backlash/counter-control. Per-turn upkeep state on
+  `BattleUnit`, implemented directly (the overwatch pattern).
 - [ ] **Mind Blast** — direct psychic damage *(needs damage-model pieces).*
 - [ ] **Clairvoyance** — area reveal power *(needs Phase 1 fog-of-war).*
 - [ ] **Psi-Amp Ammo Mechanics** — per-use round cost; percentage-based, armor-reducible
@@ -443,7 +467,7 @@ and changes core progression curves.*
 | Directional armor + item stats (P4) | damage model, sided slots, modular vehicles |
 | Aim-cone (P5) | accuracy mods, burst, targeting feedback, AI ranges |
 | `battleClipSize` (P6) | psi-amp ammo |
-| Effects framework (P8) | light equipment, Sneak light-gating |
+| Light equipment (P8, direct TileEngine feature — Effects framework dropped) | Sneak light-gating |
 | Firing system (P5) | per-weapon AI targeting (P9) |
 
 ---
