@@ -2047,13 +2047,23 @@ void BattlescapeState::btnSelectMusicTrackClick(Action *)
 }
 
 /**
- * Toggles soldier's personal lighting.
+ * Toggles personal lighting. DX: the plain key toggles the SELECTED unit's light;
+ * Ctrl+key keeps the original squad-wide master toggle.
  * @param action Pointer to an action.
  */
 void BattlescapeState::btnPersonalLightingClick(Action *)
 {
 	if (allowButtons())
-		_save->getTileEngine()->togglePersonalLighting();
+	{
+		if ((SDL_GetModState() & KMOD_CTRL) != 0)
+		{
+			_save->getTileEngine()->togglePersonalLighting();
+		}
+		else if (_save->getSelectedUnit())
+		{
+			_save->getTileEngine()->toggleUnitPersonalLight(_save->getSelectedUnit());
+		}
+	}
 }
 
 /**

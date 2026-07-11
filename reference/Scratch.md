@@ -28,3 +28,7 @@ Based on Xus's original armor damage code.
       ToArmorOverPen: 1.0          # legacy: (power - armor) on a smash-through
       ToArmorOverPenThreshold: 2.0
 ```
+
+## Darkness Balance
+
+Alien see-in-the-dark stuff?

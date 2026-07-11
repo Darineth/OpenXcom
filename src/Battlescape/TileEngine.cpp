@@ -1075,7 +1075,8 @@ TileEngine::UnitLightEmission TileEngine::getUnitLightEmission(const BattleUnit 
 	UnitLightEmission em;
 	if (unit->getFaction() == FACTION_PLAYER)
 	{
-		em.circular = std::max(em.circular, _personalLighting ? unit->getArmor()->getPersonalLightFriend() : 0);
+		// DX: per-unit light switch, ANDed with the squad-wide master toggle
+		em.circular = std::max(em.circular, (_personalLighting && unit->isPersonalLightOn()) ? unit->getArmor()->getPersonalLightFriend() : 0);
 	}
 	else if (unit->getFaction() == FACTION_HOSTILE)
 	{
@@ -5024,6 +5025,22 @@ void TileEngine::togglePersonalLighting()
 	_save->setTogglePersonalLightTemp(_personalLighting);
 	calculateLighting(LL_UNITS);
 	recalculateFOV();
+}
+
+/**
+ * DX: Toggles a single unit's personal light on / off (per-unit switch, ANDed with the
+ * squad-wide master toggle above). Relights and updates FOV around the unit only.
+ * @param unit The unit whose light to toggle.
+ */
+void TileEngine::toggleUnitPersonalLight(BattleUnit *unit)
+{
+	if (!unit)
+	{
+		return;
+	}
+	unit->setPersonalLightOn(!unit->isPersonalLightOn());
+	calculateLighting(LL_UNITS, unit->getPosition(), 2);
+	calculateFOV(unit->getPosition(), unit->getArmor()->getPersonalLightFriend(), true, false);
 }
 
 /**

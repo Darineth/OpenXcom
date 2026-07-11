@@ -685,6 +685,7 @@ void BattleUnit::load(const YAML::YamlNodeReader& node, const Mod *mod, const Sc
 	reader.tryRead("bleedingOut", _bleedingOut); // DX: bleedout state
 	reader.tryRead("incapacitated", _incapacitated); // DX: out for the mission (was bled out)
 	reader.tryRead("dontReselect", _dontReselect);
+	reader.tryRead("personalLightOn", _personalLightOn);
 	reader.tryRead("aiMedikitUsed", _aiMedikitUsed);
 	_charging = 0;
 	if ((_spawnUnit = mod->getUnit(reader["spawnUnit"].readVal<std::string>(""), false))) // ignore bugged types
@@ -819,6 +820,8 @@ void BattleUnit::save(YAML::YamlNodeWriter writer, const ScriptGlobal *shared) c
 		writer.write("incapacitated", _incapacitated); // DX: out for the mission (was bled out)
 	if (_faction == FACTION_PLAYER && _dontReselect)
 		writer.write("dontReselect", _dontReselect);
+	if (!_personalLightOn)
+		writer.write("personalLightOn", _personalLightOn); // DX: per-unit light switch (default on)
 	if (_aiMedikitUsed)
 		writer.write("aiMedikitUsed", _aiMedikitUsed);
 	if (_previousOwner)

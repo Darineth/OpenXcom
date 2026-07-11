@@ -17,12 +17,16 @@ radius; prime/unprime = on/off) with three targeted deltas:
 - **Carried-glow slots** — carried light counts items in the **hands and DX single-item equipment
   slots** (`INV_UTILITY`/`INV_EQUIP`): a lantern clipped to webbing glows, one stowed in a backpack
   doesn't. (OXCE stock counted hands only.)
+- **Per-unit personal light toggle** — the personal-lighting key now toggles the **selected unit's**
+  light (a per-unit switch, battle-persisted); **Ctrl+key** keeps the original squad-wide master
+  toggle. Emission is the AND of both, so old saves with the master off behave as before.
 - **Sneak light gate** — "no creeping while glowing": a unit emitting more light than
   `sneakDefaults: { maxLight: N }` (default 5) cannot enter sneak mode — the purple preview doesn't
-  offer it, and an explicit Alt-move warns *"Emitting too much light to sneak!"* and walks instead.
-  Emission counts armor personal light (honoring the in-battle personal-light toggle — switching your
-  light off is how you become sneak-capable), carried lit items, and being on fire. Shared
-  engine-side via `TileEngine::getUnitLightEmission`.
+  offer it, and an explicit Alt-move warns *"Emitting too much light to sneak!"* and walks instead
+  (an armor that can't sneak at all preempts with *"Cannot sneak in this armor!"*). Emission counts
+  armor personal light (honoring the per-unit switch and master toggle — dousing a soldier's light is
+  how they become sneak-capable), carried lit items, and being on fire. Shared engine-side via
+  `TileEngine::getUnitLightEmission`.
 
 ## Soldier Roles (in progress)
 

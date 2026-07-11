@@ -104,7 +104,9 @@ Potential follow-ups, roughly in value order:
   simple lit flag) — would be the clean long-run mechanism.
 - **HUD glow indicator.** Show the selected unit's current emission on the battlescape UI (and/or in
   the inventory stat panel) so the sneak gate's threshold is legible without trial-and-error — "you
-  are glowing" feedback.
+  are glowing" feedback. (More relevant now that the light toggle is per-unit — shipped Jul 2026:
+  `BattleUnit::_personalLightOn`, plain personal-light key = selected unit, Ctrl+key = squad master,
+  emission = master AND per-unit.)
 - **Armor-mounted lights.** A shoulder/helmet lamp as armor fields (circular exists as
   `personalLight*`; add a cone variant reusing the same `addLight` cone filter). Would want its own
   on/off control (the personal-light toggle is all-or-nothing today). **Design intent:** an armor's

@@ -117,6 +117,7 @@ private:
 	int _tu, _energy, _health, _morale, _stunlevel, _mana;
 	bool _kneeled, _floating, _dontReselect, _aiMedikitUsed;
 	bool _haveNoFloorBelow = false;
+	bool _personalLightOn = true; // DX: per-unit personal-light switch (ANDed with the squad master toggle)
 	int _currentArmor[SIDE_MAX], _maxArmor[SIDE_MAX];
 	int _maxArmorBase[SIDE_MAX];
 	int _armorDamage[SIDE_MAX];
@@ -338,6 +339,10 @@ public:
 	bool isFloating() const;
 	/// Have unit floor below?
 	bool haveNoFloorBelow() const { return _haveNoFloorBelow; }
+	/// DX: is this unit's personal light switched on? (per-unit; ANDed with the squad master toggle)
+	bool isPersonalLightOn() const { return _personalLightOn; }
+	/// DX: switches this unit's personal light on/off.
+	void setPersonalLightOn(bool on) { _personalLightOn = on; }
 
 	/// Aim.
 	void aim(bool aiming);
