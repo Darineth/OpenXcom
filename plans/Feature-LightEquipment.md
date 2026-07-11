@@ -107,7 +107,10 @@ Potential follow-ups, roughly in value order:
   are glowing" feedback.
 - **Armor-mounted lights.** A shoulder/helmet lamp as armor fields (circular exists as
   `personalLight*`; add a cone variant reusing the same `addLight` cone filter). Would want its own
-  on/off control (the personal-light toggle is all-or-nothing today).
+  on/off control (the personal-light toggle is all-or-nothing today). **Design intent:** an armor's
+  built-in light should be **optional** (armors can ship with none), and **equippable lighting
+  interacts with it** — a carried/worn light item *replaces* the armor's default light when equipped
+  (or adds lighting to an armor that has none), rather than stacking on top of it.
 - **Light-based spotting interplay.** Emitted light directly widening the distance at which a unit can
   be spotted (beyond what tile shade already does) — ties into `camouflageAtDark` and would give the
   sneak/light system a detection payoff. This is the natural home of the Phase 7 Sneak "high
