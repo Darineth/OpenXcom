@@ -110,6 +110,12 @@ void UnitTurnBState::think()
 	{
 		size_t unitSpotted = _unit->getUnitsSpottedThisTurn().size();
 		_unit->turn(_turret);
+		// DX: a unit carrying a lit directional (cone) light sweeps its beam when it turns -
+		// re-run the unit light layer (cheap, region-bounded). Ordinary turns skip this.
+		if (_parent->getTileEngine()->getUnitLightEmission(_unit).conePower > 0)
+		{
+			_parent->getTileEngine()->calculateLighting(LL_UNITS, _unit->getPosition(), 2);
+		}
 		_parent->getTileEngine()->calculateFOV(_unit);
 		if (_chargeTUs && _unit->getFaction() == _parent->getSave()->getSide() && _parent->getPanicHandled() && _action.type == BA_NONE && _unit->getUnitsSpottedThisTurn().size() > unitSpotted)
 		{

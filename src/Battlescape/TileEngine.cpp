@@ -37,6 +37,7 @@
 #include "../Mod/Unit.h"
 #include "../Mod/Mod.h"
 #include "../Mod/Armor.h"
+#include "../Mod/RuleInventory.h"
 #include "../Mod/RuleSkill.h"
 #include "Pathfinding.h"
 #include "../Engine/Options.h"
@@ -1037,7 +1038,10 @@ void TileEngine::calculateTerrainItems(MapSubset gs)
 			{
 				if (bi->getGlow())
 				{
-					currLight = std::max(currLight, bi->getGlowRange());
+					// DX: a dropped directional (cone) light has no facing - it spills a circular
+					// glow at half power (directional optics don't spread well).
+					const int range = bi->getRules()->getGlowConeAngle() > 0 ? bi->getGlowRange() / 2 : bi->getGlowRange();
+					currLight = std::max(currLight, range);
 				}
 
 				auto* bu = bi->getUnit();
@@ -1057,6 +1061,76 @@ void TileEngine::calculateTerrainItems(MapSubset gs)
 }
 
 /**
+ * DX: Computes the light a unit emits - armor personal light (honoring the player's
+ * personal-light toggle), carried glow items, and being on fire. Carried glow counts items
+ * in the hands and in DX single-item equipment slots (utility/equip - a lamp clipped to
+ * webbing glows; one stowed in a backpack does not). Directional (cone) glow items are
+ * reported separately so the lighting pass can beam them along the carrier's facing.
+ * Shared by calculateUnitLighting and the sneak light gate.
+ * @param unit The unit.
+ * @return The emission summary.
+ */
+TileEngine::UnitLightEmission TileEngine::getUnitLightEmission(const BattleUnit *unit) const
+{
+	UnitLightEmission em;
+	if (unit->getFaction() == FACTION_PLAYER)
+	{
+		em.circular = std::max(em.circular, _personalLighting ? unit->getArmor()->getPersonalLightFriend() : 0);
+	}
+	else if (unit->getFaction() == FACTION_HOSTILE)
+	{
+		em.circular = std::max(em.circular, unit->getArmor()->getPersonalLightHostile());
+	}
+	else if (unit->getFaction() == FACTION_NEUTRAL)
+	{
+		em.circular = std::max(em.circular, unit->getArmor()->getPersonalLightNeutral());
+	}
+
+	for (const BattleItem *w : *unit->getInventory())
+	{
+		if (!w->getSlot())
+		{
+			continue;
+		}
+		const bool carried = w->getSlot()->getType() == INV_HAND || w->getSlot()->isSingleItem();
+		if (!carried)
+		{
+			continue;
+		}
+
+		if (w->getGlow())
+		{
+			const int coneAngle = w->getRules()->getGlowConeAngle();
+			if (coneAngle > 0)
+			{
+				if (w->getGlowRange() > em.conePower)
+				{
+					em.conePower = w->getGlowRange();
+					em.coneAngle = coneAngle;
+				}
+			}
+			else
+			{
+				em.circular = std::max(em.circular, w->getGlowRange());
+			}
+		}
+
+		auto* u = w->getUnit();
+		if (u && u->getFire())
+		{
+			em.circular = std::max(em.circular, unitFireLightPowerStunned);
+		}
+	}
+
+	// units on fire
+	if (unit->getFire())
+	{
+		em.circular = std::max(em.circular, unitFireLightPower);
+	}
+	return em;
+}
+
+/**
   * Recalculates lighting for the units.
   */
 void TileEngine::calculateUnitLighting(MapSubset gs)
@@ -1068,46 +1142,14 @@ void TileEngine::calculateUnitLighting(MapSubset gs)
 			continue;
 		}
 
-		int currLight = 0;
-		// add lighting of unit
-		if (unit->getFaction() == FACTION_PLAYER)
+		auto em = getUnitLightEmission(unit);
+		if (em.circular >= getMaxDynamicLightDistance())
 		{
-			currLight = std::max(currLight, _personalLighting ? unit->getArmor()->getPersonalLightFriend() : 0);
+			em.circular = getMaxDynamicLightDistance() - 1;
 		}
-		else if (unit->getFaction() == FACTION_HOSTILE)
+		if (em.conePower >= getMaxDynamicLightDistance())
 		{
-			currLight = std::max(currLight, unit->getArmor()->getPersonalLightHostile());
-		}
-		else if (unit->getFaction() == FACTION_NEUTRAL)
-		{
-			currLight = std::max(currLight, unit->getArmor()->getPersonalLightNeutral());
-		}
-
-		const BattleItem *handWeapons[] = { unit->getLeftHandWeapon(), unit->getRightHandWeapon() };
-		for (const BattleItem *w : handWeapons)
-		{
-			if (!w) continue;
-
-			if (w->getGlow())
-			{
-				currLight = std::max(currLight, w->getGlowRange());
-			}
-
-			auto* u = w->getUnit();
-			if (u && u->getFire())
-			{
-				currLight = std::max(currLight, unitFireLightPowerStunned);
-			}
-		}
-		// add lighting of units on fire
-		if (unit->getFire())
-		{
-			currLight = std::max(currLight, unitFireLightPower);
-		}
-
-		if (currLight >= getMaxDynamicLightDistance())
-		{
-			currLight = getMaxDynamicLightDistance() - 1;
+			em.conePower = getMaxDynamicLightDistance() - 1;
 		}
 		const auto size = unit->getArmor()->getSize();
 		const auto pos = unit->getPosition();
@@ -1115,7 +1157,12 @@ void TileEngine::calculateUnitLighting(MapSubset gs)
 		{
 			for (int y = 0; y < size; ++y)
 			{
-				addLight(gs, pos + Position(x, y, 0), currLight, LL_UNITS);
+				addLight(gs, pos + Position(x, y, 0), em.circular, LL_UNITS);
+				if (em.conePower > 0)
+				{
+					// DX: directional glow item - beam along the carrier's facing
+					addLight(gs, pos + Position(x, y, 0), em.conePower, LL_UNITS, unit->getDirection(), em.coneAngle);
+				}
 			}
 		}
 	}
@@ -1237,11 +1284,23 @@ void TileEngine::calculateLighting(LightLayers layer, Position position, int eve
  * @param power Power.
  * @param layer Light is separated in 4 layers: Ambient, Tiles, Items, Units.
  */
-void TileEngine::addLight(MapSubset gs, Position center, int power, LightLayers layer)
+void TileEngine::addLight(MapSubset gs, Position center, int power, LightLayers layer, int coneDirection, int coneAngleDeg)
 {
 	if (power <= 0)
 	{
 		return;
+	}
+
+	// DX: directional (cone) light - restrict lit tiles to a facing cone (same bearing math as
+	// the overwatch cone). The centre tile itself stays lit (spill at the carrier's feet).
+	const bool cone = coneDirection >= 0 && coneDirection <= 7 && coneAngleDeg > 0 && coneAngleDeg < 360;
+	Position coneVec;
+	double coneCosHalf = 0.0, coneAxisLen = 1.0;
+	if (cone)
+	{
+		Pathfinding::directionToVector(coneDirection, &coneVec);
+		coneAxisLen = std::sqrt((double)(coneVec.x * coneVec.x + coneVec.y * coneVec.y));
+		coneCosHalf = std::cos(M_PI * coneAngleDeg / 360.0);
 	}
 
 	const auto fire = layer == LL_FIRE;
@@ -1266,6 +1325,18 @@ void TileEngine::addLight(MapSubset gs, Position center, int power, LightLayers 
 		{
 			const auto target = tile->getPosition();
 			const auto diff = target - center;
+
+			// DX: cone gate - skip tiles whose horizontal bearing falls outside the facing cone.
+			if (cone && (diff.x != 0 || diff.y != 0))
+			{
+				const double len = std::sqrt((double)(diff.x * diff.x + diff.y * diff.y));
+				const double cosA = (diff.x * coneVec.x + diff.y * coneVec.y) / (len * coneAxisLen);
+				if (cosA < coneCosHalf)
+				{
+					return;
+				}
+			}
+
 			const auto distance = (int)Round(Position::distance(target.toVoxel(), center.toVoxel()) / Position::TileXY);
 			const auto targetLight = tile->getLightMulti(layer);
 			auto currLight = power - distance;

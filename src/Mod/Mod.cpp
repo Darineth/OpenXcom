@@ -283,6 +283,7 @@ void Mod::resetGlobalStatics()
 	Armor::moveCostDefaults = ArmorMoveCostDefaults{}; // DX: reset mod-wide move-cost defaults to stock
 	Armor::evasionDefaults = ArmorEvasionDefaults{};   // DX: reset mod-wide sprint/sneak evasion defaults
 	Armor::bleedoutDefaults = ArmorBleedoutDefaults{}; // DX: reset mod-wide bleedout defaults to stock
+	Armor::sneakDefaults = ArmorSneakDefaults{};       // DX: reset mod-wide sneak parameters (light gate)
 	RuleItem::overwatchDefaults = OverwatchDefaults{}; // DX: reset mod-wide overwatch defaults
 
 	DIFFICULTY_COEFFICIENT[0] = 0;
@@ -3709,6 +3710,11 @@ void Mod::loadFile(const FileMap::FileRecord &filerec, ModScript &parsers)
 	if (const auto& evasionDefaults = reader["evasionDefaults"])
 	{
 		Armor::evasionDefaults.load(evasionDefaults);
+	}
+	// DX: mod-wide sneak parameters (the "no creeping while glowing" light gate).
+	if (const auto& sneakDefaults = reader["sneakDefaults"])
+	{
+		Armor::sneakDefaults.load(sneakDefaults);
 	}
 	// DX: mod-wide bleedout parameters (death threshold + buffer wounds); armors set canBleedOut per-unit.
 	if (const auto& bleedoutDefaults = reader["bleedoutDefaults"])

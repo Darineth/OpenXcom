@@ -28,6 +28,7 @@
 #include "../Engine/Options.h"
 #include "../fmath.h"
 #include "BattlescapeGame.h"
+#include "TileEngine.h"
 
 namespace OpenXcom
 {
@@ -1258,7 +1259,10 @@ void Pathfinding::refreshPath()
 
 	const bool running = _ctrlUsed && _unit->getArmor()->allowsRunning(_unit->isSmallUnit()) && (_path.size() > 1 || _altUsed);
 	const bool strafing = !running && _ctrlUsed && _unit->getArmor()->allowsStrafing(_unit->isSmallUnit()) && _path.size() == 1;
-	const bool sneaking = !running && _altUsed && _unit->getArmor()->allowsSneaking(_unit->isSmallUnit());
+	// DX: the sneak light gate - a unit emitting more light than sneakDefaults.maxLight cannot
+	// creep (toggle personal light off / douse carried lights to sneak).
+	const bool sneaking = !running && _altUsed && _unit->getArmor()->allowsSneaking(_unit->isSmallUnit())
+		&& _save->getTileEngine()->getUnitLightEmission(_unit).total() <= Armor::sneakDefaults.maxLight;
 
 	const BattleActionMove bam = strafing ? BAM_STRAFE : running ? BAM_RUN : sneaking ? BAM_SNEAK : BAM_NORMAL;
 	const MovementType movementType = getMovementType(_unit, nullptr, bam); //preview always for unit not missiles

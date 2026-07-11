@@ -170,6 +170,26 @@ struct ArmorEvasionDefaults
 };
 
 /**
+ * DX: mod-wide sneak-mode parameters. Loaded from the top-level `sneakDefaults:` node.
+ * `maxLight` is the "no creeping while glowing" gate: a unit emitting more light than this
+ * (armor personal light with the toggle on, carried glow items, being on fire) cannot enter
+ * sneak mode. Default 5 - small glows tolerated; the stock personal light (15) or a lit
+ * flare/torch blocks sneaking until the light is toggled off / dropped.
+ */
+struct ArmorSneakDefaults
+{
+	int maxLight = 5;
+
+	void load(const YAML::YamlNodeReader& reader)
+	{
+		if (reader)
+		{
+			reader.tryRead("maxLight", maxLight);
+		}
+	}
+};
+
+/**
  * DX: mod-wide defaults for the bleedout mechanic. Loaded from the top-level `bleedoutDefaults:` node.
  * `deathHealthPercent` sets the death threshold as a percent of max health below zero (50 ⇒ a unit
  * bleeding out dies at −maxHealth/2); `bufferWounds` is the number of fatal torso wounds added when a
@@ -495,6 +515,8 @@ public:
 	int getAllowBleedOut() const { return _allowBleedOut; }
 	/// DX: mod-wide defaults for the bleedout mechanic (reset + loaded at mod load).
 	static ArmorBleedoutDefaults bleedoutDefaults;
+	/// DX: mod-wide sneak-mode parameters (light gate; reset + loaded at mod load).
+	static ArmorSneakDefaults sneakDefaults;
 	/// Gets unit melee dodge chance.
 	int getMeleeDodge(const BattleUnit* unit) const;
 	const RuleStatBonus *getMeleeDodgeRaw() const { return &_meleeDodge; }

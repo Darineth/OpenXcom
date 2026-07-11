@@ -218,6 +218,13 @@ en-US:
   # {0} = item name, {1} = rounds per clip. Shown on base list screens for multi-round ammo.
   STR_DX_AMMO_ROUND_COUNT: "{0} (x{1})"
 
+#=================== DX Light Equipment ===================
+#BattlescapeGame.cpp
+  # Shown when a sneak move is ordered but the unit's armor/type can't sneak at all.
+  STR_DX_CANNOT_SNEAK_ARMOR: "Cannot sneak in this armor!"
+  # Shown when a sneak move is ordered but the unit emits too much light (sneakDefaults.maxLight).
+  STR_DX_TOO_BRIGHT_TO_SNEAK: "Emitting too much light to sneak!"
+
 #=================== DX Soldier Roles ===================
 #SoldierInfoState.cpp
   STR_ROLE: "Role"

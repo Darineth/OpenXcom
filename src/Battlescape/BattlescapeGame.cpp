@@ -2138,7 +2138,23 @@ void BattlescapeGame::primaryAction(Position pos)
 			}
 			else if (isAltPressed)
 			{
-				_currentAction.sneak = _save->getSelectedUnit()->getArmor()->allowsSneaking(_save->getSelectedUnit()->isSmallUnit());
+				BattleUnit *sneaker = _save->getSelectedUnit();
+				// DX: armor capability preempts everything else - this unit simply can't sneak.
+				if (!sneaker->getArmor()->allowsSneaking(sneaker->isSmallUnit()))
+				{
+					_currentAction.sneak = false;
+					_parentState->warning("STR_DX_CANNOT_SNEAK_ARMOR");
+				}
+				// DX: the sneak light gate - too glowy to creep (matches the Pathfinding preview gate).
+				else if (getTileEngine()->getUnitLightEmission(sneaker).total() > Armor::sneakDefaults.maxLight)
+				{
+					_currentAction.sneak = false;
+					_parentState->warning("STR_DX_TOO_BRIGHT_TO_SNEAK");
+				}
+				else
+				{
+					_currentAction.sneak = true;
+				}
 			}
 
 			// recalculate path after setting new move types

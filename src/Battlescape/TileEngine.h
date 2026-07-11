@@ -131,8 +131,9 @@ private:
 	std::vector<BattleUnit*> _movingUnitPrev;
 	BattleUnit* _movingUnit = nullptr;
 
-	/// Add light source.
-	void addLight(MapSubset gs, Position center, int power, LightLayers layer);
+	/// Add light source. DX: coneDirection (0-7) + coneAngleDeg > 0 restrict the light to a
+	/// facing cone (directional/flashlight light); coneDirection -1 = circular (default).
+	void addLight(MapSubset gs, Position center, int power, LightLayers layer, int coneDirection = -1, int coneAngleDeg = 0);
 	/// Calculate blockage amount.
 	int blockage(Tile *tile, const TilePart part, ItemDamageType type, int direction = -1, bool checkingFromOrigin = false);
 
@@ -191,6 +192,17 @@ public:
 	bool isInOverwatchCone(Position origin, Position aimTarget, Position tile, int minRange, int maxRange, int coneAngleDeg) const;
 	/// Recalculate all lighting in some area.
 	void calculateLighting(LightLayers layer, Position position = invalid, int eventRadius = 0, bool terrianChanged = false);
+	/// DX: what light a unit emits (armor personal light honoring the toggle, carried glow items, fire).
+	struct UnitLightEmission
+	{
+		int circular = 0;  ///< brightest circular emission (personal light, non-cone glow items, fire)
+		int conePower = 0; ///< brightest directional glow item's power (0 = none)
+		int coneAngle = 0; ///< that item's full cone angle in degrees
+		/// The unit's strongest emission (for the sneak light gate).
+		int total() const { return circular > conePower ? circular : conePower; }
+	};
+	/// DX: computes the unit's light emission (shared by the lighting pass and the sneak gate).
+	UnitLightEmission getUnitLightEmission(const BattleUnit *unit) const;
 	/// Handles tile hit.
 	int hitTile(Tile *tile, int damage, const RuleDamageType* type);
 	/// Handles experience training.

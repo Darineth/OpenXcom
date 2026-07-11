@@ -39,6 +39,9 @@ ArmorEvasionDefaults Armor::evasionDefaults;
 /// DX: mod-wide bleedout defaults, reset + loaded at mod load (see Mod::loadFile).
 ArmorBleedoutDefaults Armor::bleedoutDefaults;
 
+/// DX: mod-wide sneak-mode parameters (light gate), reset + loaded at mod load (see Mod::loadFile).
+ArmorSneakDefaults Armor::sneakDefaults;
+
 /**
  * Creates a blank ruleset for a certain
  * type of armor.

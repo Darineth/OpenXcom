@@ -31,6 +31,22 @@ evasionDefaults:
   sneak:  { statPercent: 90, tuPenaltyPercent: 0 }
 
 # =====================================================================
+#  DX: sneak-mode parameters. maxLight is the "no creeping while glowing"
+#  gate: a unit emitting more light than this (personal light with the
+#  toggle on, carried lit flares/torches, being on fire) cannot sneak.
+#  With 5, the stock personal light (15) blocks sneaking - toggle it off
+#  (personal lighting key) to creep; a lit flashlight/flare also blocks.
+#
+#  What to check:
+#    * Alt-path a soldier at night: purple sneak preview only appears with
+#      personal light toggled OFF and no lit light source carried.
+#    * Ordering an Alt-move while glowing shows "Emitting too much light
+#      to sneak!" and walks normally instead.
+# =====================================================================
+sneakDefaults:
+  maxLight: 5
+
+# =====================================================================
 #  DX: mod-wide default overwatch config. Because overwatchRange > 0, this
 #  ENABLES overwatch on every weapon that doesn't set its own overwatch*
 #  fields (range 0 = off is the engine default). The rifle and heavy sniper
@@ -257,6 +273,31 @@ items:
     battleType: 2
     shotgunPellets: 6
     shotgunSpread: 150      # per-pellet weapon cone x1.5 (100 = neutral)
+  - type: STR_FLASHLIGHT
+    # DX: directional (cone) light test item. A BT_FLARE with glowConeAngle beams a cone of
+    # light along the CARRIER's facing while lit; prime = on, unprime = off (fuseType -1 =
+    # BFT_SET). Works held in a hand or in a DX utility/equip slot.
+    #
+    # What to check (night mission, personal light toggled off):
+    #   * Prime the flashlight: a ~70-degree wedge of lit tiles appears ahead of the soldier;
+    #     the rest of the surroundings stay dark (contrast an electro-flare's full circle).
+    #   * Turning the soldier sweeps the beam (light follows facing without moving).
+    #   * Drop it lit: the beam collapses to a dim circle (half power - no facing on the ground).
+    #   * Clip it into a utility/equip slot (LIGHT armor's slots): still beams - stowing it in
+    #     the backpack turns the carried light off.
+    #   * While lit, Alt-sneak is refused ("Emitting too much light to sneak!"); unprime it
+    #     (or drop it) and sneaking works again.
+    size: 0.1
+    costBuy: 200
+    costSell: 150
+    weight: 3
+    bigSprite: 55           # electro-flare graphics
+    floorSprite: 72
+    power: 25               # beam length/brightness (glow range)
+    glowConeAngle: 45       # full cone angle; 0 would make it a normal circular flare
+    fuseType: -1            # BFT_SET: primed = on, unprime = off
+    battleType: 10          # BT_FLARE
+    armor: 8
   - type: STR_SHOTGUN_SLUG
     size: 0.1
     costBuy: 300
@@ -481,6 +522,9 @@ armors:
     evasionSprint: { statPercent: 75, tuPenaltyPercent: 25 }
   - type: STR_POWER_SUIT_UC
     inventoryLayout: STR_DX_LAYOUT_POWER
+    # DX sneak-gate test: powered armor is too bulky/noisy to creep. Alt-move in a power suit
+    # shows "Cannot sneak in this armor!" (the armor check preempts the light gate).
+    allowsSneaking: false
   - type: STR_FLYING_SUIT_UC
     inventoryLayout: STR_DX_LAYOUT_ONEHAND
 
@@ -510,6 +554,7 @@ extraStrings:
       STR_FIELD_SURGERY_UNIT: "Field Surgery"
       STR_FIELD_SURGERY_UNIT_UFOPEDIA: "Advances in field medicine let our surgeons treat battlefield trauma far more effectively. Wounded soldiers now recover from their injuries noticeably faster."
       STR_HEAVY_CANNON: "Heavy Sniper"
+      STR_FLASHLIGHT: "Flashlight"
       STR_SHOTGUN: "Shotgun"
       STR_SHOTGUN_BUCKSHOT: "Shotgun Buckshot"
       STR_SHOTGUN_SLUG: "Shotgun Slug"

@@ -319,13 +319,14 @@ Everything below is DX-specific work confirmed **absent** from the base.
   - [x] Blue path-preview color when sprinting
   - [x] Accelerate unit motion when sprinting (~2× animation)
   - [x] Prevent cancelling movement while sprinting (commits to full path; no spot-stop)
-- [~] **Sneak Mode** — surfaces & polishes OXCE's hidden **Sneak** (Alt) mode. *(final
-  "no creeping while glowing" gate lands in Phase 8 with lighting)*
+- [~] **Sneak Mode** — surfaces & polishes OXCE's hidden **Sneak** (Alt) mode. *(the
+  "no creeping while glowing" gate shipped with Phase 8's Light Equipment —
+  `sneakDefaults: { maxLight }`)*
   - [~] Low speed, high alertness, maintains evasion — *low speed (move-cost + ~1.5× slower crawl) and
     **evasion** are now done: sneaking raises the mover's defensive reaction-fire evasion (sprint
     lowers it), mod-configurable globally + per-armor. See
     [plans/Feature-MovementModeEvasion.md](plans/Feature-MovementModeEvasion.md). "High alertness"
-    (spotting/detection) remains, tied to Phase 8 lighting. (The AI-only `sneakyAI` visible-tile
+    (spotting/detection) remains the only open piece. (The AI-only `sneakyAI` visible-tile
     avoidance is unrelated.)*
   - [x] Purple path-preview color when sneaking
   - [x] Slower unit motion when sneaking (~1.5×)
@@ -401,10 +402,14 @@ therefore reframed as targeted deltas:
 - ~~**Effects Core Framework**~~ — dropped (see above).
 - ~~**Item Effect Hooks** (`hitEffect` / `equippedEffect`)~~ — dropped; specific behaviours become
   their own small features if they earn a slot.
-- [ ] **Light / illumination equipment** — audit what per-*item* carried light OXCE already has
-  (armor `personalLight*` and flares are native), then the true DX delta: **directional/cone light**
-  (flashlight-style) as a direct `TileEngine` lighting feature. Finalizes Sneak's light gate
-  ("no creeping while glowing" — read the unit's current light emission directly).
+- [x] **Light / illumination equipment** — audit found carried circular light **already native**
+  (held `BT_FLARE` items light the carrier; power = radius; prime/unprime = on/off); DX shipped the
+  true deltas: **directional/cone light** (`glowConeAngle:` on items — facing-based beam, turn sweeps
+  it, ground fallback = half-power circle), carried glow counting DX **utility/equip slots**, and the
+  **sneak light gate** (`TileEngine::getUnitLightEmission` + `sneakDefaults: { maxLight }`, personal
+  light counts — toggle it off to creep). Closes the Phase 7 Sneak "high alertness/light" leftover's
+  lighting half.
+  *(design: [plans/Feature-LightEquipment.md](plans/Feature-LightEquipment.md))*
 - [ ] **Stealth / cloaking armor** — audit OXCE's `camouflage*` fields against the legacy `EC_STEALTH`
   behaviour (magnitude scales down enemy spot range; ≥100 = effectively invisible) — likely already
   covered; the DX-specific remainder is the **translucent render** (legacy `RecolorStealth` shader —

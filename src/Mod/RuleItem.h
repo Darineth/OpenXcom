@@ -436,6 +436,7 @@ private:
 	std::vector<int> _psiMissSound;
 	int _psiMissAnimation, _psiMissAnimFrames;
 	int _power, _powerForAnimation;
+	int _glowConeAngle; // DX: full cone angle (deg) for directional carried glow; 0 = circular
 	bool _hidePower;
 	bool _ignoreAmmoPower;
 	float _powerRangeReduction;
@@ -716,6 +717,8 @@ public:
 
 	/// Gets the item's power.
 	int getPower() const;
+	/// Gets the full cone angle (degrees) for directional carried glow (DX; 0 = circular).
+	int getGlowConeAngle() const { return _glowConeAngle; }
 	/// Gets the item's power used for AoE explosion animation.
 	int getPowerForAnimation() const { return _powerForAnimation; }
 	/// Gets the blast falloff factor within AoE radius (0 = flat/vanilla, 1 = full linear dropoff).

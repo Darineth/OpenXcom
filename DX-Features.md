@@ -3,6 +3,27 @@
 This document tracks features added in OpenXcom DX on top of OXCE-Plus. Entries will be added
 here as features are implemented.
 
+## Light Equipment (directional cone light + sneak light gate)
+
+Builds on OXCE's native carried light (a held, lit `BT_FLARE` already lights its carrier; power =
+radius; prime/unprime = on/off) with three targeted deltas:
+
+- **Directional (cone) light** — a new `glowConeAngle:` item field (full angle in degrees; 0 = normal
+  circular glow). A lit cone item **beams along the carrier's facing**: light spreads with the engine's
+  normal `power − distance` falloff (and wall/smoke occlusion under enhanced lighting) but only inside
+  the facing cone. Turning the carrier sweeps the beam (turn now re-runs the unit light layer for cone
+  carriers only). Dropped on the ground it has no facing, so it spills a **circular glow at half
+  power**.
+- **Carried-glow slots** — carried light counts items in the **hands and DX single-item equipment
+  slots** (`INV_UTILITY`/`INV_EQUIP`): a lantern clipped to webbing glows, one stowed in a backpack
+  doesn't. (OXCE stock counted hands only.)
+- **Sneak light gate** — "no creeping while glowing": a unit emitting more light than
+  `sneakDefaults: { maxLight: N }` (default 5) cannot enter sneak mode — the purple preview doesn't
+  offer it, and an explicit Alt-move warns *"Emitting too much light to sneak!"* and walks instead.
+  Emission counts armor personal light (honoring the in-battle personal-light toggle — switching your
+  light off is how you become sneak-capable), carried lit items, and being on fire. Shared
+  engine-side via `TileEngine::getUnitLightEmission`.
+
 ## Soldier Roles (in progress)
 
 Player-authored soldier **roles** — a classification (Infantry, Sniper, Medic, …) carried by a
