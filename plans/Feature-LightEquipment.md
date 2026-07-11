@@ -89,9 +89,32 @@ to include them (a lit lantern clipped to your webbing glows; one stowed in a ba
 
 ## Out of scope
 
-- Armor-mounted cone light (headlamp) — could reuse the same spread later via an armor field; not now.
 - Any generic effect system (see the Phase 8 audit).
 - Night-vision items (native armor fields / later concern).
+
+## Future work (noted Jul 2026, unscheduled)
+
+Potential follow-ups, roughly in value order:
+
+- **Proper toggleable flashlight.** The shipped on/off UX rides the flare fuse (prime = on,
+  unprime = off). That works but is test-grade: fuse semantics drag in grenade baggage (prime dialogs,
+  throw/fuse interactions, `battleInstantGrenade`-style options, AI fuse handling), and "PRIME" is the
+  wrong verb for a torch. A dedicated **light switch** — e.g. an item flag that replaces the prime
+  action with a "Turn On / Turn Off" action-menu entry (own TU cost, no fuse state, persists as a
+  simple lit flag) — would be the clean long-run mechanism.
+- **HUD glow indicator.** Show the selected unit's current emission on the battlescape UI (and/or in
+  the inventory stat panel) so the sneak gate's threshold is legible without trial-and-error — "you
+  are glowing" feedback.
+- **Armor-mounted lights.** A shoulder/helmet lamp as armor fields (circular exists as
+  `personalLight*`; add a cone variant reusing the same `addLight` cone filter). Would want its own
+  on/off control (the personal-light toggle is all-or-nothing today).
+- **Light-based spotting interplay.** Emitted light directly widening the distance at which a unit can
+  be spotted (beyond what tile shade already does) — ties into `camouflageAtDark` and would give the
+  sneak/light system a detection payoff. This is the natural home of the Phase 7 Sneak "high
+  alertness" remainder.
+- **Beam z-behavior.** The cone currently constrains bearing only (vertical spread matches circular
+  light). A true vertical wedge (no lighting floors above/below the beam) would read more like a
+  flashlight, at the cost of fiddlier `addLight` math.
 
 ## Resolved decisions (Jul 2026)
 
