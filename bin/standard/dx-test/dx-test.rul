@@ -330,6 +330,14 @@ items:
     battleClipSize: 8
     battleType: 2
 
+  # DX: store item for the Stealth Suit test armor (buyable from the start - no research gate).
+  - type: STR_STEALTH_SUIT
+    size: 0.8
+    costBuy: 30000
+    costSell: 24000
+    transferTime: 24
+    listOrder: 3401
+
 # =====================================================================
 #  DX: configurable inventory layouts (per-armor)
 #  Exercises RuleInventoryLayout + Armor.inventoryLayout. Each soldier
@@ -541,6 +549,67 @@ armors:
     allowsSneaking: false
   - type: STR_FLYING_SUIT_UC
     inventoryLayout: STR_DX_LAYOUT_ONEHAND
+    # DX dynamic cloak with the DEFAULT restrictions: omitting `breaksOn:` means walk, run, attack and
+    # useItem all give the unit away - only sneaking (Alt-move) and turning in place keep the cloak up.
+    # Compare with the Stealth Suit below, whose better cloak survives everything but attacking.
+    #
+    # MAXIMUM camouflage: a positive value is an absolute cap, in tiles, on how far away anyone can spot
+    # this unit, and the engine floors visibility at 1 tile (an adjacent unit is always seen - see
+    # BattleUnit::getMaxViewDistance). So 1 is as invisible as the engine allows: while the cloak is up,
+    # nothing sees this soldier until it is standing right next to him, day or night.
+    camouflageAtDay: 1
+    camouflageAtDark: 1
+    cloak:
+      dynamic: true
+
+  # DX dynamic-cloak test armor: a Personal Armor reskin (same sprites and protection) that cloaks.
+  # Buy it from the store (it needs no research) and put it on a soldier.
+  #
+  # The camouflage values are the plain OXCE ones (positive = an absolute cap, in tiles, on how far away
+  # anyone can spot this unit), but the `cloak:` node turns them into a CLOAK: up at the start of the
+  # unit's turn, and down until the next one once the unit gives itself away. This is the GOOD suit -
+  # `breaksOn: [attack]` means only shooting, throwing, meleeing or a psi attack drops it, so the wearer
+  # can walk, run, use items, turn and sneak around fully cloaked. (The flying suit above wears the
+  # default restrictions - moving at anything but a creep exposes it.)
+  #
+  # What to check:
+  #   * The soldier renders as a checkerboard ghost while the cloak is up, solid once it breaks.
+  #   * Walk, run, prime a grenade: still ghosted (unlike the flying suit, which drops on all of those).
+  #   * Fire: the ghost snaps to solid and stays solid until your next turn.
+  #   * At night, aliens should only notice the cloaked soldier from ~3 tiles (6 in daylight).
+  - type: STR_STEALTH_SUIT_UC
+    spriteSheet: XCOM_1.PCK
+    spriteInv: MAN_1
+    spriteFaceGroup: 6
+    spriteFaceColor: [96, 96, 96, 96, 160, 160, 163, 163] #M0 F0 M1 F1 M2 F2 M3 F3
+    spriteHairGroup: 9
+    spriteHairColor: [144, 144, 164, 164, 245, 245, 166, 166] #M0 F0 M1 F1 M2 F2 M3 F3
+    spriteUtileGroup: 14          # DX: accent block the per-role armor colors recolor
+    corpseBattle:
+      - STR_CORPSE_ARMOR
+    storeItem: STR_STEALTH_SUIT
+    inventoryLayout: STR_DX_LAYOUT_RIG
+    frontArmor: 50
+    sideArmor: 40
+    rearArmor: 30
+    underArmor: 30
+    damageModifier:
+      - 1.0
+      - 1.0
+      - 0.8
+      - 1.0
+      - 1.0
+      - 1.0
+      - 0.9
+      - 1.0
+      - 1.1
+      - 1.0
+    loftempsSet: [ 3 ]
+    camouflageAtDay: 6
+    camouflageAtDark: 3
+    cloak:
+      dynamic: true
+      breaksOn: [attack]   # only attacking gives this suit away
 
 # =====================================================================
 #  DX: Field Surgery research stub. A cheap, no-dependency topic so the
@@ -568,6 +637,8 @@ extraStrings:
       STR_FIELD_SURGERY_UNIT: "Field Surgery"
       STR_FIELD_SURGERY_UNIT_UFOPEDIA: "Advances in field medicine let our surgeons treat battlefield trauma far more effectively. Wounded soldiers now recover from their injuries noticeably faster."
       STR_HEAVY_CANNON: "Heavy Sniper"
+      STR_STEALTH_SUIT: "Stealth Suit"
+      STR_STEALTH_SUIT_UC: "STEALTH SUIT"
       STR_FLASHLIGHT: "Flashlight"
       STR_SHOTGUN: "Shotgun"
       STR_SHOTGUN_BUCKSHOT: "Shotgun Buckshot"

@@ -686,6 +686,7 @@ void BattleUnit::load(const YAML::YamlNodeReader& node, const Mod *mod, const Sc
 	reader.tryRead("incapacitated", _incapacitated); // DX: out for the mission (was bled out)
 	reader.tryRead("dontReselect", _dontReselect);
 	reader.tryRead("personalLightOn", _personalLightOn);
+	reader.tryRead("cloakBroken", _cloakBroken);
 	reader.tryRead("aiMedikitUsed", _aiMedikitUsed);
 	_charging = 0;
 	if ((_spawnUnit = mod->getUnit(reader["spawnUnit"].readVal<std::string>(""), false))) // ignore bugged types
@@ -822,6 +823,8 @@ void BattleUnit::save(YAML::YamlNodeWriter writer, const ScriptGlobal *shared) c
 		writer.write("dontReselect", _dontReselect);
 	if (!_personalLightOn)
 		writer.write("personalLightOn", _personalLightOn); // DX: per-unit light switch (default on)
+	if (_cloakBroken)
+		writer.write("cloakBroken", _cloakBroken); // DX: dynamic cloak is down until this unit's next turn
 	if (_aiMedikitUsed)
 		writer.write("aiMedikitUsed", _aiMedikitUsed);
 	if (_previousOwner)
@@ -3098,6 +3101,9 @@ void BattleUnit::prepareNewTurn(bool fullProcess)
 	// can be cancelled freely.
 	clearOverwatchReservation();
 
+	// DX: a broken dynamic cloak comes back up at the start of the unit's own turn.
+	restoreCloak();
+
 	if (!isOut())
 	{
 		incTurnsSinceStunned();
@@ -5169,11 +5175,31 @@ int BattleUnit::getMaxViewDistance(int baseVisibility, int nerf, int buff) const
 	return result;
 }
 
+/**
+ * DX: breaks this unit's dynamic cloak, if its armor says this action gives the unit away. The
+ * camouflage stops applying until the cloak comes back up at the start of the unit's next turn.
+ * By default sneaking and turning don't break it - they are how you move while cloaked.
+ * @param action What the unit just did (as reported to BattlescapeGame::unitActed).
+ * @return True if the cloak was up and is now down (the caller must refresh visibility).
+ */
+bool BattleUnit::breakCloak(UnitAction action)
+{
+	const ArmorCloak &cloak = _armor->getCloak();
+	if (!cloak.dynamic || _cloakBroken || !cloak.breaksOnAction(action))
+	{
+		return false;
+	}
+
+	_cloakBroken = true;
+	return true;
+}
+
 int BattleUnit::getMaxViewDistanceAtDark(const BattleUnit* otherUnit) const
 {
 	if (otherUnit)
 	{
-		return getMaxViewDistance(_maxViewDistanceAtDark, otherUnit->getArmor()->getCamouflageAtDark(), _armor->getAntiCamouflageAtDark());
+		// DX: the target's *effective* camouflage - a broken dynamic cloak provides none.
+		return getMaxViewDistance(_maxViewDistanceAtDark, otherUnit->getCamouflageAtDark(), _armor->getAntiCamouflageAtDark());
 	}
 	else
 	{
@@ -5190,7 +5216,8 @@ int BattleUnit::getMaxViewDistanceAtDay(const BattleUnit* otherUnit) const
 {
 	if (otherUnit)
 	{
-		return getMaxViewDistance(_maxViewDistanceAtDay, otherUnit->getArmor()->getCamouflageAtDay(), _armor->getAntiCamouflageAtDay());
+		// DX: the target's *effective* camouflage - a broken dynamic cloak provides none.
+		return getMaxViewDistance(_maxViewDistanceAtDay, otherUnit->getCamouflageAtDay(), _armor->getAntiCamouflageAtDay());
 	}
 	else
 	{

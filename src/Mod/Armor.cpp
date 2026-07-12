@@ -192,6 +192,7 @@ void Armor::load(const YAML::YamlNodeReader& node, Mod *mod, const ModScript &pa
 	reader.tryRead("camouflageAtDark", _camouflageAtDark);
 	reader.tryRead("antiCamouflageAtDay", _antiCamouflageAtDay);
 	reader.tryRead("antiCamouflageAtDark", _antiCamouflageAtDark);
+	_cloak.load(reader["cloak"]); // DX
 	reader.tryRead("heatVision", _visibilityThroughSmoke);
 	reader.tryRead("visibilityThroughFire", _visibilityThroughFire);
 	reader.tryRead("psiVision", _psiVision);

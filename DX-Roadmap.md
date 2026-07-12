@@ -410,10 +410,21 @@ therefore reframed as targeted deltas:
   light counts — toggle it off to creep). Closes the Phase 7 Sneak "high alertness/light" leftover's
   lighting half.
   *(design: [plans/Feature-LightEquipment.md](plans/Feature-LightEquipment.md))*
-- [ ] **Stealth / cloaking armor** — audit OXCE's `camouflage*` fields against the legacy `EC_STEALTH`
-  behaviour (magnitude scales down enemy spot range; ≥100 = effectively invisible) — likely already
-  covered; the DX-specific remainder is the **translucent render** (legacy `RecolorStealth` shader —
-  source available in the legacy tree). *(legacy: [Legacy-DX-Features.md](Legacy-DX-Features.md) §15)*
+- [x] **Stealth / cloaking armor** — ✅ **Done.** **Audit (Jul 2026): the spotting math is already native and
+  richer than legacy's.** OXCE `Armor.camouflageAtDay/AtDark` (+ observer-side `antiCamouflage*`) scale
+  down the observer's max view distance in the one `TileEngine::visible()` funnel, so AI, reaction fire,
+  overwatch, FOV and the visible-unit buttons all honor it for free — a *static* stealth armor is pure
+  ruleset content, zero engine work. The two real DX deltas are (a) the **dynamic cloak** (legacy broke
+  stealth on walk/sprint/attack/item-use but preserved it while sneaking — absent from OXCE, and it
+  composes with DX's sneak/evasion/light-gate work) and (b) the **translucent render** (genuinely
+  absent: no alpha anywhere, `Map::drawUnit` is a binary visible-gate; legacy's `RecolorStealth`
+  scanline-cull only worked on the inventory paperdoll and was commented out on the battlescape because
+  it punched holes in the terrain). Both shipped: a per-armor `cloak: { dynamic, breaksOn }` node (walk/
+  run/attack/useItem break it; sneaking and turning keep it; recovers next turn) and a checkerboard
+  ghost render for any unit with active camouflage (new `CurrentPixel` shader arg + a `ghost` flag on
+  `ScriptWorkerBlit::executeBlit`, leaving the background pixel alone rather than zeroing it).
+  *(design + audit: [plans/Feature-StealthArmor.md](plans/Feature-StealthArmor.md);
+  legacy: [Legacy-DX-Features.md](Legacy-DX-Features.md) §15)*
 - [ ] **Channeled Mind Control** — with backlash/counter-control. Per-turn upkeep state on
   `BattleUnit`, implemented directly (the overwatch pattern).
 - [ ] **Mind Blast** — direct psychic damage *(needs damage-model pieces).*

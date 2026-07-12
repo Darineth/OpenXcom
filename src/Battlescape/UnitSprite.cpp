@@ -149,7 +149,7 @@ void UnitSprite::blitItem(Part& item)
 
 	_dest->lock();
 
-	work.executeBlit(item.src, _dest,  _x + item.offX, _y + item.offY, _shade, _mask);
+	work.executeBlit(item.src, _dest,  _x + item.offX, _y + item.offY, _shade, _mask, _ghost);
 
 	_dest->unlock();
 }
@@ -169,7 +169,7 @@ void UnitSprite::blitBody(Part& body)
 
 	_dest->lock();
 
-	work.executeBlit(body.src, _dest,  _x + body.offX, _y + body.offY, _shade, _mask);
+	work.executeBlit(body.src, _dest,  _x + body.offX, _y + body.offY, _shade, _mask, _ghost);
 
 	_dest->unlock();
 }
@@ -187,6 +187,9 @@ void UnitSprite::draw(const BattleUnit* unit, int part, int x, int y, int shade,
 	_part = part;
 	_shade = shade;
 	_mask = mask;
+	// DX: a unit with active camouflage (a static camo armor, or a dynamic cloak that is currently up)
+	// draws as a checkerboard ghost - body and held items alike.
+	_ghost = _unit->isCamouflaged();
 
 	if (_unit->isOut())
 	{

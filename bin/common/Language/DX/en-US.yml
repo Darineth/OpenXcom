@@ -298,3 +298,6 @@ en-US:
   overwatchConeAngle: "Overwatch cone angle"
   overwatchModifier: "Overwatch accuracy modifier"
   overwatchShot: "Overwatch shot type"
+  cloak: "Dynamic cloak:"
+  dynamic: "Cloak is dynamic?"
+  breaksOn: "Broken by"

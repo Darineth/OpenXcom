@@ -2897,6 +2897,27 @@ void StatsForNerdsState::initArmorList()
 	addInteger(ss, armorRule->getAntiCamouflageAtDay(), "antiCamouflageAtDay");
 	addInteger(ss, armorRule->getAntiCamouflageAtDark(), "antiCamouflageAtDark");
 
+	// DX dynamic cloak: the camouflage above only applies while the cloak is up, and these are the
+	// actions that drop it until the wearer's next turn. Only shown for armors that opt in.
+	const ArmorCloak &cloak = armorRule->getCloak();
+	if (cloak.dynamic || _showDebug)
+	{
+		addHeading("cloak");
+		{
+			addBoolean(ss, cloak.dynamic, "dynamic");
+			std::vector<std::string> breaksOn;
+			for (UnitAction action : UnitActionsAll)
+			{
+				if (cloak.breaksOnAction(action))
+				{
+					breaksOn.push_back(unitActionName(action));
+				}
+			}
+			addVectorOfStrings(ss, breaksOn, "breaksOn", false);
+			endHeading();
+		}
+	}
+
 	addRuleStatBonus(ss, *armorRule->getPsiDefenceRaw(), "psiDefence");
 	addRuleStatBonus(ss, *armorRule->getMeleeDodgeRaw(), "meleeDodge");
 	addFloatAsPercentage(ss, armorRule->getMeleeDodgeBackPenalty(), "meleeDodgeBackPenalty");

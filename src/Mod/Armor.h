@@ -190,6 +190,46 @@ struct ArmorSneakDefaults
 };
 
 /**
+ * DX: per-armor dynamic-cloak config, loaded from the armor's `cloak:` node.
+ *
+ * Without the node an armor's `camouflageAtDay`/`camouflageAtDark` behave exactly as in OXCE: always
+ * on. With `dynamic: true` those same values become a *cloak* that is up at the start of the unit's
+ * turn and drops to no camouflage as soon as the unit does something listed in `breaksOn` - it
+ * recovers on the unit's next turn. Sneaking and turning never break a cloak (that is the point:
+ * creep while cloaked, expose yourself when you act).
+ */
+struct ArmorCloak
+{
+	bool dynamic = false;
+	/// The set of unit actions that break the cloak, as a mask of UnitAction bits (the `breaksOn:` list).
+	/// Sneaking and turning are out of the default set - creeping and looking around are how you move
+	/// while cloaked.
+	int breaksOn = UA_MOVE_WALK | UA_MOVE_RUN | UA_ATTACK | UA_USE_ITEM;
+
+	/// Does this cloak break when the unit does this?
+	bool breaksOnAction(UnitAction action) const { return (breaksOn & action) != 0; }
+
+	void load(const YAML::YamlNodeReader& reader)
+	{
+		if (!reader)
+		{
+			return;
+		}
+		reader.tryRead("dynamic", dynamic);
+		if (const auto& breaks = reader["breaksOn"])
+		{
+			std::vector<std::string> actions;
+			breaks.tryReadVal(actions);
+			breaksOn = 0;
+			for (const auto& action : actions)
+			{
+				breaksOn |= unitActionFromName(action);
+			}
+		}
+	}
+};
+
+/**
  * DX: mod-wide defaults for the bleedout mechanic. Loaded from the top-level `bleedoutDefaults:` node.
  * `deathHealthPercent` sets the death threshold as a percent of max health below zero (50 ⇒ a unit
  * bleeding out dies at −maxHealth/2); `bufferWounds` is the number of fatal torso wounds added when a
@@ -303,6 +343,7 @@ private:
 	int _personalLightNeutral = 0;
 
 	int _camouflageAtDay, _camouflageAtDark, _antiCamouflageAtDay, _antiCamouflageAtDark;
+	ArmorCloak _cloak; // DX
 	int _visibilityThroughSmoke, _visibilityThroughFire;
 	int _psiVision, _psiCamouflage;
 	float _damageModifier[DAMAGE_TYPES];
@@ -565,6 +606,8 @@ public:
 	int getAntiCamouflageAtDay() const;
 	/// Gets info about anti camouflage at dark.
 	int getAntiCamouflageAtDark() const;
+	/// DX: gets the dynamic-cloak config (camouflage that breaks when the unit acts).
+	const ArmorCloak &getCloak() const { return _cloak; }
 	/// Gets info about heat vision.
 	int getVisibilityThroughSmoke() const { return _visibilityThroughSmoke; }
 	/// Gets info about visibility through fire.

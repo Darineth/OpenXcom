@@ -1091,6 +1091,44 @@ void BattlescapeGame::missionComplete()
 /**
  * Handles the result of non target actions, like priming a grenade.
  */
+/**
+ * DX: reports that a unit just took an action, and lets every system that cares about a unit *acting*
+ * respond in one place. The action states say what happened; the policy of who reacts to what lives
+ * here, so adding a consumer means editing this function instead of hunting down every action site.
+ *
+ * Current consumers:
+ *  - Overwatch: any commanded action drops held fire. The unit's *own* reaction/overwatch shot does
+ *    not (that is overwatch firing, not the unit abandoning it), and using an item doesn't either.
+ *  - Dynamic cloak: breaks per the armor's `cloak: breaksOn:` set (a reaction shot breaks it too -
+ *    firing gives you away regardless of who ordered it).
+ *
+ * @param unit The acting unit (may be null; ignored).
+ * @param action What it just did.
+ * @param reaction True if this was a reaction/overwatch action rather than a commanded one.
+ */
+void BattlescapeGame::unitActed(BattleUnit *unit, UnitAction action, bool reaction)
+{
+	if (!unit)
+	{
+		return;
+	}
+
+	// Overwatch: you can't hold a lane while doing something else.
+	if (!reaction && action != UA_USE_ITEM && unit->isOnOverwatch())
+	{
+		unit->clearOverwatch();
+	}
+
+	// Dynamic cloak: the armor decides which actions give the unit away.
+	if (unit->breakCloak(action))
+	{
+		// Its camouflage just stopped applying, so spotters that were outside the cloak's reduced range
+		// can see it now - and the ghost render has to drop.
+		getTileEngine()->calculateFOV(unit->getPosition()); // default radius: everyone who could see it
+		getMap()->invalidate();
+	}
+}
+
 void BattlescapeGame::handleNonTargetAction()
 {
 	if (!_currentAction.targeting)
@@ -1111,6 +1149,7 @@ void BattlescapeGame::handleNonTargetAction()
 				playSound(_currentAction.weapon->getRules()->getPrimeSound()); // prime sound
 				_save->getTileEngine()->calculateLighting(LL_UNITS, _currentAction.actor->getPosition());
 				_save->getTileEngine()->calculateFOV(_currentAction.actor->getPosition(), _currentAction.weapon->getVisibilityUpdateRange(), false);
+				unitActed(_currentAction.actor, UA_USE_ITEM); // DX
 			}
 			else
 			{
@@ -1126,6 +1165,7 @@ void BattlescapeGame::handleNonTargetAction()
 				playSound(_currentAction.weapon->getRules()->getUnprimeSound()); // unprime sound
 				_save->getTileEngine()->calculateLighting(LL_UNITS, _currentAction.actor->getPosition());
 				_save->getTileEngine()->calculateFOV(_currentAction.actor->getPosition(), _currentAction.weapon->getVisibilityUpdateRange(), false);
+				unitActed(_currentAction.actor, UA_USE_ITEM); // DX
 			}
 			else
 			{
@@ -1135,6 +1175,7 @@ void BattlescapeGame::handleNonTargetAction()
 		else if (_currentAction.type == BA_USE)
 		{
 			getTileEngine()->updateGameStateAfterScript(BattleActionAttack::GetBeforeShoot(_currentAction), TileEngine::invalid);
+			unitActed(_currentAction.actor, UA_USE_ITEM); // DX
 		}
 		else if (_currentAction.type == BA_HIT)
 		{
@@ -2199,14 +2240,14 @@ void BattlescapeGame::secondaryAction(Position pos)
 	_currentAction.actor = _save->getSelectedUnit();
 	_currentAction.strafe = Options::strafe && _save->isCtrlPressed(true) && _save->getSelectedUnit()->getTurretType() > -1;
 
-	// DX: an explicit turn order re-aims the unit, so it cancels overwatch - you can't keep
-	// watching a lane you deliberately turn away from. Right-clicking the tile the unit already
-	// faces (e.g. the open-door gesture) doesn't turn and keeps the overwatch. Engine-driven
-	// turns (reaction fire, panic) don't come through here and never cancel it.
+	// DX: an explicit turn order re-aims the unit (so it drops overwatch - you can't keep watching a
+	// lane you deliberately turn away from). Right-clicking the tile the unit already faces (e.g. the
+	// open-door gesture) doesn't turn, so it reports nothing. Engine-driven turns (reaction fire,
+	// panic) don't come through here and are never reported.
 	BattleUnit *turnActor = _currentAction.actor;
-	if (turnActor && turnActor->isOnOverwatch() && turnActor->directionTo(pos) != turnActor->getDirection())
+	if (turnActor && turnActor->directionTo(pos) != turnActor->getDirection())
 	{
-		turnActor->clearOverwatch();
+		unitActed(turnActor, UA_TURN);
 	}
 
 	statePushBack(new UnitTurnBState(this, _currentAction));

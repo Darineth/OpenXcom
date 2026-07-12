@@ -19,6 +19,7 @@
  */
 #include "Position.h"
 #include "../Mod/RuleItem.h"
+#include "../Mod/Unit.h"
 #include "../Engine/HelperMeta.h"
 #include <string>
 #include <list>
@@ -41,6 +42,13 @@ class SoldierDiary;
 class RuleSkill;
 
 enum BattleActionMove : char { BAM_NORMAL = 0, BAM_RUN = 1, BAM_STRAFE = 2, BAM_SNEAK = 3, BAM_MISSILE = 4 };
+
+/// DX: the movement mode a unit is using, as a reportable action (UnitAction lives in Mod/Unit.h, so
+/// the rules can express sets of actions too - e.g. an armor's `cloak: breaksOn:` mask).
+inline UnitAction unitActionFromMove(BattleActionMove move)
+{
+	return move == BAM_RUN ? UA_MOVE_RUN : move == BAM_SNEAK ? UA_MOVE_SNEAK : UA_MOVE_WALK;
+}
 
 struct BattleActionCost : RuleItemUseCost
 {
@@ -193,6 +201,8 @@ public:
 	bool hasConcurrentStates() const { return !_concurrentStates.empty(); }
 	/// Handles the result of non target actions, like priming a grenade.
 	void handleNonTargetAction();
+	/// DX: reports that a unit just acted, so the systems that care (overwatch, dynamic cloak) can react.
+	void unitActed(BattleUnit *unit, UnitAction action, bool reaction = false);
 	/// Removes current state.
 	void popState();
 	/// Sets state think interval.

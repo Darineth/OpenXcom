@@ -59,6 +59,7 @@ private:
 	bool _helmet;
 	int _red, _blue;
 	int _x, _y, _shade, _burn;
+	bool _ghost = false; // DX: draw the unit as a dither-ghost (it has active camouflage / an up cloak)
 	GraphSubset _mask;
 
 	/// Drawing routine for XCom soldiers in overalls, sectoids (routine 0),

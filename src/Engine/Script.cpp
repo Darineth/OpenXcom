@@ -533,74 +533,97 @@ void ScriptWorkerBlit::executeBlit(const Surface* src, Surface* dest, int x, int
  * @param x x offset of source surface.
  * @param y y offset of source surface.
  */
-void ScriptWorkerBlit::executeBlit(const Surface* src, Surface* dest, int x, int y, int shade, GraphSubset mask)
+void ScriptWorkerBlit::executeBlit(const Surface* src, Surface* dest, int x, int y, int shade, GraphSubset mask, bool ghost)
 {
 	ShaderMove<const Uint8> srcShader(src, x, y);
 	ShaderMove<Uint8> destShader(dest, 0, 0);
 
 	destShader.setDomain(mask);
 
-	if (_proc)
+	// How one pixel is produced. Which of these is used is decided ONCE below, not per pixel, so each
+	// draw loop is specialized on a single lambda type.
+	auto scriptedWithEvents = [&](Uint8& destStuff, const Uint8& srcStuff)
 	{
-		if (_events)
+		if (srcStuff)
 		{
-			ShaderDrawFunc(
-				[&](Uint8& destStuff, const Uint8& srcStuff)
-				{
-					if (srcStuff)
-					{
-						ScriptWorkerBlit::Output arg = { srcStuff, destStuff };
-						set(arg);
-						auto ptr = _events;
-						while (*ptr)
-						{
-							reset(arg);
-							scriptExe(*this, ptr->data());
-							++ptr;
-						}
-						++ptr;
+			ScriptWorkerBlit::Output arg = { srcStuff, destStuff };
+			set(arg);
+			auto ptr = _events;
+			while (*ptr)
+			{
+				reset(arg);
+				scriptExe(*this, ptr->data());
+				++ptr;
+			}
+			++ptr;
 
-						reset(arg);
-						scriptExe(*this, _proc);
+			reset(arg);
+			scriptExe(*this, _proc);
 
-						while (*ptr)
-						{
-							reset(arg);
-							scriptExe(*this, ptr->data());
-							++ptr;
-						}
-						++ptr;
+			while (*ptr)
+			{
+				reset(arg);
+				scriptExe(*this, ptr->data());
+				++ptr;
+			}
+			++ptr;
 
-						get(arg);
-						if (arg.getFirst()) destStuff = arg.getFirst();
-					}
-				},
-				destShader,
-				srcShader
-			);
+			get(arg);
+			if (arg.getFirst()) destStuff = arg.getFirst();
 		}
-		else
+	};
+	auto scripted = [&](Uint8& destStuff, const Uint8& srcStuff)
+	{
+		if (srcStuff)
 		{
-			ShaderDrawFunc(
-				[&](Uint8& destStuff, const Uint8& srcStuff)
-				{
-					if (srcStuff)
-					{
-						ScriptWorkerBlit::Output arg = { srcStuff, destStuff };
-						set(arg);
-						scriptExe(*this, _proc);
-						get(arg);
-						if (arg.getFirst()) destStuff = arg.getFirst();
-					}
-				},
-				destShader,
-				srcShader
-			);
+			ScriptWorkerBlit::Output arg = { srcStuff, destStuff };
+			set(arg);
+			scriptExe(*this, _proc);
+			get(arg);
+			if (arg.getFirst()) destStuff = arg.getFirst();
 		}
+	};
+	auto shaded = [&](Uint8& destStuff, const Uint8& srcStuff)
+	{
+		if (srcStuff)
+		{
+			helper::StandardShade::func(destStuff, srcStuff, shade);
+		}
+	};
+
+	// DX (cloaked units): draw a pixel only on even (x+y) - a checkerboard. The skipped pixels are LEFT
+	// ALONE, so the background shows through the holes; that is what reads as translucency on a paletted
+	// surface with no alpha. (Writing index 0 on the skipped pixels instead, as the legacy fork's stealth
+	// shader did, punches black holes through the terrain on the composited map - which is why its
+	// battlescape path never shipped.)
+	auto drawGhost = [&](auto&& pixelFunc)
+	{
+		ShaderDrawFunc(
+			[&](Uint8& destStuff, const Uint8& srcStuff, const CurrentPixel& pixel)
+			{
+				if (((pixel.x + pixel.y) & 1) == 0)
+				{
+					pixelFunc(destStuff, srcStuff);
+				}
+			},
+			destShader,
+			srcShader,
+			ShaderCurrentPixel()
+		);
+	};
+
+	if (ghost)
+	{
+		if (!_proc)       drawGhost(shaded);
+		else if (_events) drawGhost(scriptedWithEvents);
+		else              drawGhost(scripted);
 	}
 	else
 	{
-		ShaderDraw<helper::StandardShade>(destShader, srcShader, ShaderScalar(shade));
+		// No ghost and no script: the plain shade, as its own ShaderDraw so it stays vectorizable.
+		if (!_proc)       ShaderDraw<helper::StandardShade>(destShader, srcShader, ShaderScalar(shade));
+		else if (_events) ShaderDrawFunc(scriptedWithEvents, destShader, srcShader);
+		else              ShaderDrawFunc(scripted, destShader, srcShader);
 	}
 }
 

@@ -69,6 +69,9 @@ void MeleeAttackBState::init()
 		return;
 	}
 
+	// DX: report the attack (drops overwatch unless this is a reaction hit; breaks a dynamic cloak).
+	_parent->unitActed(_action.actor, UA_ATTACK, _action.reaction);
+
 	_unit = _action.actor;
 
 	bool reactionShoot = _unit->getFaction() != _parent->getSave()->getSide();

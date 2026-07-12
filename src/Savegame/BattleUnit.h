@@ -118,6 +118,7 @@ private:
 	bool _kneeled, _floating, _dontReselect, _aiMedikitUsed;
 	bool _haveNoFloorBelow = false;
 	bool _personalLightOn = true; // DX: per-unit personal-light switch (ANDed with the squad master toggle)
+	bool _cloakBroken = false; // DX: dynamic-cloak armor only - the cloak is down until this unit's next turn
 	int _currentArmor[SIDE_MAX], _maxArmor[SIDE_MAX];
 	int _maxArmorBase[SIDE_MAX];
 	int _armorDamage[SIDE_MAX];
@@ -343,6 +344,22 @@ public:
 	bool isPersonalLightOn() const { return _personalLightOn; }
 	/// DX: switches this unit's personal light on/off.
 	void setPersonalLightOn(bool on) { _personalLightOn = on; }
+
+	/// DX: does this unit wear a dynamic-cloak armor (camouflage that breaks when it acts)?
+	bool hasDynamicCloak() const { return _armor->getCloak().dynamic; }
+	/// DX: is the cloak currently up? (always true for a static-camouflage armor)
+	bool isCloakActive() const { return !(hasDynamicCloak() && _cloakBroken); }
+	/// DX: breaks a dynamic cloak until the unit's next turn, if the armor breaks on this action.
+	/// Returns true if the cloak was up and is now down (so the caller can refresh visibility).
+	bool breakCloak(UnitAction action);
+	/// DX: restores a broken cloak (called at the start of the unit's turn).
+	void restoreCloak() { _cloakBroken = false; }
+	/// DX: effective camouflage - the armor's, or none while a dynamic cloak is broken.
+	int getCamouflageAtDay() const { return isCloakActive() ? _armor->getCamouflageAtDay() : 0; }
+	/// DX: effective camouflage - the armor's, or none while a dynamic cloak is broken.
+	int getCamouflageAtDark() const { return isCloakActive() ? _armor->getCamouflageAtDark() : 0; }
+	/// DX: is this unit currently hard to see (has active camouflage)? Drives the ghost render.
+	bool isCamouflaged() const { return getCamouflageAtDay() != 0 || getCamouflageAtDark() != 0; }
 
 	/// Aim.
 	void aim(bool aiming);

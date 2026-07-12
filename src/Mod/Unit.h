@@ -39,6 +39,61 @@ enum SpecialTileType : int;
 enum MovementType : int;
 
 
+/**
+ * DX: something a unit just *did*, reported to BattlescapeGame::unitActed.
+ *
+ * Several systems must react when a unit acts - overwatch drops its held fire, a dynamic cloak breaks -
+ * and each one used to patch its own check into every action site, so the sites drifted apart and a new
+ * consumer meant touching them all again. Instead the battle-action states report *what happened* once,
+ * and unitActed() owns the policy of who cares. Add a consumer there, not at the call sites.
+ *
+ * The values are single bits so a ruleset can express a *set* of actions (e.g. an armor's
+ * `cloak: breaksOn:`) as one mask and test it with a single `&`.
+ */
+enum UnitAction : Uint8
+{
+	UA_MOVE_WALK  = 0x01, ///< normal or strafing movement
+	UA_MOVE_RUN   = 0x02, ///< sprinting
+	UA_MOVE_SNEAK = 0x04, ///< creeping (deliberately quiet)
+	UA_TURN       = 0x08, ///< a commanded turn in place (engine-driven turns - reaction fire, panic - are not reported)
+	UA_ATTACK     = 0x10, ///< shoot, throw, melee or psi
+	UA_USE_ITEM   = 0x20, ///< medikit, scanner, prime/unprime, ...
+
+	UA_ANY_MOVE   = UA_MOVE_WALK | UA_MOVE_RUN | UA_MOVE_SNEAK,
+	UA_ANY        = UA_ANY_MOVE | UA_TURN | UA_ATTACK | UA_USE_ITEM,
+};
+
+/// DX: every UnitAction bit, in ruleset order - for iterating or naming the bits of a mask.
+constexpr UnitAction UnitActionsAll[] = { UA_MOVE_WALK, UA_MOVE_RUN, UA_MOVE_SNEAK, UA_TURN, UA_ATTACK, UA_USE_ITEM };
+
+/// DX: the ruleset key of one `UnitAction` ("walk", "run", "sneak", "turn", "attack", "useItem").
+inline const char* unitActionName(UnitAction action)
+{
+	switch (action)
+	{
+	case UA_MOVE_WALK:  return "walk";
+	case UA_MOVE_RUN:   return "run";
+	case UA_MOVE_SNEAK: return "sneak";
+	case UA_TURN:       return "turn";
+	case UA_ATTACK:     return "attack";
+	case UA_USE_ITEM:   return "useItem";
+	default:            return "";
+	}
+}
+
+/// DX: parses one `UnitAction` ruleset key ("walk", "run", "sneak", "turn", "attack", "useItem"); 0 if unknown.
+inline UnitAction unitActionFromName(const std::string& name)
+{
+	for (UnitAction action : UnitActionsAll)
+	{
+		if (name == unitActionName(action))
+		{
+			return action;
+		}
+	}
+	return (UnitAction)0;
+}
+
 enum ForcedTorso : Uint8 { TORSO_USE_GENDER, TORSO_ALWAYS_MALE, TORSO_ALWAYS_FEMALE };
 enum UnitSide : Uint8 { SIDE_FRONT, SIDE_LEFT, SIDE_RIGHT, SIDE_REAR, SIDE_UNDER, SIDE_MAX };
 enum UnitStatus {STATUS_STANDING, STATUS_WALKING, STATUS_FLYING, STATUS_TURNING, STATUS_AIMING, STATUS_COLLAPSING, STATUS_DEAD, STATUS_UNCONSCIOUS, STATUS_PANICKING, STATUS_BERSERK, STATUS_IGNORE_ME};

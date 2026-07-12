@@ -858,8 +858,9 @@ public:
 
 	/// Programmable blitting using script.
 	void executeBlit(const Surface* src, Surface* dest, int x, int y, int shade);
-	/// Programmable blitting using script.
-	void executeBlit(const Surface* src, Surface* dest, int x, int y, int shade, GraphSubset mask);
+	/// Programmable blitting using script. `ghost` (DX) draws the sprite as a checkerboard of itself,
+	/// leaving the background showing through the gaps - the cloaked-unit look.
+	void executeBlit(const Surface* src, Surface* dest, int x, int y, int shade, GraphSubset mask, bool ghost = false);
 
 	/// Clear all worker data.
 	void clear()

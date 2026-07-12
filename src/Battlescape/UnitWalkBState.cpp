@@ -61,8 +61,8 @@ UnitWalkBState::~UnitWalkBState()
 void UnitWalkBState::init()
 {
 	_unit = _action.actor;
-	// DX: moving is a commanded action, so it cancels any overwatch the unit was holding.
-	_unit->clearOverwatch();
+	// DX: report the move (drops overwatch; breaks a dynamic cloak unless the unit is sneaking).
+	_parent->unitActed(_unit, unitActionFromMove(_action.getMoveType()));
 	_numUnitsSpotted = _unit->getUnitsSpottedThisTurn().size();
 	setNormalWalkSpeed();
 	_pf = _parent->getPathfinding();

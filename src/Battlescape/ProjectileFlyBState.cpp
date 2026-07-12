@@ -157,11 +157,9 @@ void ProjectileFlyBState::init()
 		return;
 	}
 
-	// DX: a commanded (non-reaction) shot cancels the unit's overwatch; an overwatch/reaction shot does not.
-	if (!_action.reaction && _action.actor && _action.actor->isOnOverwatch())
-	{
-		_action.actor->clearOverwatch();
-	}
+	// DX: report the attack. A commanded shot drops the unit's overwatch (a reaction/overwatch shot
+	// doesn't - that IS overwatch firing); either way, shooting gives away a cloak.
+	_parent->unitActed(_action.actor, UA_ATTACK, _action.reaction);
 
 	if (!_parent->getSave()->getTile(_action.target)) // invalid target position
 	{

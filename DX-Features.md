@@ -3,6 +3,80 @@
 This document tracks features added in OpenXcom DX on top of OXCE-Plus. Entries will be added
 here as features are implemented.
 
+## Stealth / Cloaking Armor (dynamic cloak + ghost render)
+
+OXCE already has the *spotting math* for stealth: an armor's `camouflageAtDay` / `camouflageAtDark`
+shrink how far away anyone can spot the wearer (positive = an absolute cap in tiles, negative = a
+relative reduction), and the observer's `antiCamouflageAtDay` / `AtDark` claw range back. It runs
+inside the single `TileEngine::visible()` funnel, so the AI, reaction fire, overwatch, FOV and the
+visible-unit buttons all honor it. DX adds the two things that were missing.
+
+- **Dynamic cloak** — a new per-armor `cloak:` node turns the armor's camouflage from a constant into a
+  *state*. The cloak is up at the start of the unit's turn; it **breaks the moment the unit acts** and
+  stays down until its next turn, during which the armor provides no camouflage at all. **Sneaking and
+  turning never break it** — that's the point: creep while cloaked, and expose yourself when you shoot.
+
+  ```yaml
+  armors:
+    - type: STR_STEALTH_SUIT_UC
+      camouflageAtDay: 6      # the OXCE fields - these are the values that apply while the cloak is up
+      camouflageAtDark: 3
+      cloak:
+        dynamic: true                            # opt in; without this node the camouflage is always on
+        breaksOn: [walk, run, attack, useItem]   # the default set
+  ```
+
+  `breaksOn` accepts any of the reported unit actions: `walk` (normal/strafe movement), `run` (sprint),
+  `sneak` (creeping), `turn` (a commanded turn in place), `attack` (shoot, throw, melee, psi — including
+  reaction and overwatch shots), `useItem` (medikit, scanner, prime/unprime, …). The default set omits
+  `sneak` and `turn`. Omitting the `cloak:` node entirely leaves an armor on **stock OXCE behavior**
+  (always-on camouflage), so existing content is unaffected. The cloak state is saved with the unit;
+  breaking it re-runs FOV, so spotters that were outside the cloak's reduced range see the unit
+  immediately. **Stats for Nerds** shows the cloak on any armor that opts in: a `Dynamic cloak:` heading
+  with the flag and the list of actions that break it.
+- **Ghost render** — a unit with **active camouflage** (a static camo armor, or a dynamic cloak that is
+  currently up) draws as a **checkerboard of itself**, body and held item alike, with the background
+  showing through the gaps. This is the visible tell that a cloak is up — and it drops the instant the
+  cloak breaks. It applies to any camouflaged unit, so a spotted alien with camouflage also reads as
+  hard-to-see.
+
+  The engine has no alpha (the battlescape is 8-bit paletted), so the ghost is a true dither: the
+  shader **leaves the destination pixel untouched** on culled pixels. (The legacy fork's stealth shader
+  wrote palette index 0 on those pixels instead, which punches black holes through the terrain on the
+  composited map — which is why its battlescape path was never enabled and only the inventory paperdoll
+  ever showed the effect.) Implemented as a `ghost` flag on `ScriptWorkerBlit::executeBlit` plus a new
+  `CurrentPixel` shader argument in `ShaderDraw.h` that reports destination-surface coordinates — needed
+  so the dither stays in phase across a unit's separately-blitted body parts.
+
+Both the cloak and overwatch hang off the same **unit-action report** (below).
+
+*(design + audit of what OXCE already provided: [plans/Feature-StealthArmor.md](plans/Feature-StealthArmor.md))*
+
+## Unit-action Reports (`BattlescapeGame::unitActed`)
+
+Several DX systems have to react when a unit *does* something: overwatch drops its held fire, a dynamic
+cloak breaks. Each used to patch its own check into every action site (`UnitWalkBState`,
+`ProjectileFlyBState`, the melee/psi states, the turn order, the item-use paths), so the checks drifted
+apart and every new consumer meant touching them all again.
+
+Now the battle-action states just **report what happened** — `unitActed(unit, action, reaction)` with a
+`UnitAction` of `UA_MOVE_WALK` / `UA_MOVE_RUN` / `UA_MOVE_SNEAK` / `UA_TURN` / `UA_ATTACK` /
+`UA_USE_ITEM` — and one function owns the policy of who cares:
+
+- **Overwatch** drops on any commanded action except item use. A unit's *own* reaction/overwatch shot
+  doesn't drop it (that's overwatch firing, not the unit abandoning it), which is what the `reaction`
+  flag distinguishes.
+- **Dynamic cloak** breaks per the armor's `cloak: breaksOn:` set — and it breaks on a reaction shot
+  too, because firing gives you away no matter who ordered it.
+
+Engine-driven turns (reaction fire, panic) aren't reported, so they never cancel either. New consumers
+of "the unit acted" belong in `unitActed`, not at the call sites.
+
+`UnitAction` lives in [Unit.h](src/Mod/Unit.h) alongside the other shared unit enums, and its values are
+**single bits**, so a ruleset can express a *set* of actions as one mask and the engine can test it with
+a single `&`. The armor cloak's `breaksOn:` list is exactly that: the loader ORs the named actions into
+a mask, and breaking the cloak is one bit test.
+
 ## Light Equipment (directional cone light + sneak light gate)
 
 Builds on OXCE's native carried light (a held, lit `BT_FLARE` already lights its carrier; power =

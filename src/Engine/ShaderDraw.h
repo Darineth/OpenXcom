@@ -284,6 +284,78 @@ struct BurnShade
 
 }//namespace helper
 
+/**
+ * DX: `ShaderDraw` argument that reports the coordinates of the pixel currently being written, in the
+ * DESTINATION surface's own coordinate space. Needed by any shader whose output depends on *where* the
+ * pixel lands rather than just its color - e.g. the cloaked-unit ghost, a checkerboard dither.
+ *
+ * Destination-space (rather than blit-range-relative) coordinates matter: a unit is blitted as several
+ * separate body parts with different source offsets, so a range-relative parity would put the dither
+ * out of phase between the parts and show seams.
+ */
+class CurrentPixel
+{
+public:
+	int x = 0;
+	int y = 0;
+};
+
+namespace helper
+{
+
+/// Implementation of the current-pixel argument: tracks the raster position as ShaderDraw walks it.
+template<>
+struct controler<CurrentPixel>
+{
+	CurrentPixel _pixel;
+	int _originX = 0, _originY = 0, _rowX = 0;
+
+	inline controler(const CurrentPixel&)
+	{
+	}
+
+	// This argument imposes no range of its own; it only observes the one the real surfaces agree on.
+	inline void mod_range(GraphSubset&) { }
+	inline void set_range(const GraphSubset& range)
+	{
+		_originX = range.beg_x;
+		_originY = range.beg_y;
+	}
+
+	inline void mod_y(int&, int&) { }
+	inline void set_y(const int& begin, const int&)
+	{
+		_pixel.y = _originY + begin;
+	}
+	inline void inc_y()
+	{
+		++_pixel.y;
+	}
+
+	inline void mod_x(int&, int&) { }
+	inline void set_x(const int& begin, const int&)
+	{
+		_rowX = _originX + begin;
+		_pixel.x = _rowX;
+	}
+	inline void inc_x()
+	{
+		++_pixel.x;
+	}
+
+	inline CurrentPixel& get_ref()
+	{
+		return _pixel;
+	}
+};
+
+}//namespace helper
+
+static inline CurrentPixel ShaderCurrentPixel()
+{
+	return CurrentPixel();
+}
+
 template<typename T>
 static inline helper::Scalar<T> ShaderScalar(T& t)
 {

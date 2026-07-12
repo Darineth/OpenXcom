@@ -64,6 +64,9 @@ void PsiAttackBState::init()
 		return;
 	}
 
+	// DX: report the attack (drops overwatch unless this is a reaction attack; breaks a dynamic cloak).
+	_parent->unitActed(_action.actor, UA_ATTACK, _action.reaction);
+
 	if (!_parent->getSave()->getTile(_action.target)) // invalid target position
 	{
 		_parent->popState();
