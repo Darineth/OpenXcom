@@ -99,6 +99,25 @@ namespace OpenXcom
 {
 
 /**
+ * DX: layout of the "Pathfinding2" tile-marker sprite sheet (bin/common/Resources/Pathfinding/
+ * Pathfinding2.png). Each COLUMN is one marker type; row 0 holds its solid variant and row 1 its
+ * dithered (translucent-reading) variant. SurfaceSet frames number row-major, so the frame index
+ * of a variant depends on the sheet's column count - always resolve frames through solidFrame()/
+ * ditheredFrame() and keep Columns in sync when the sheet grows a new marker column.
+ */
+namespace Pathfinding2Markers
+{
+	/// Number of marker columns in the sheet - UPDATE when new columns are added.
+	const int Columns = 1;
+	/// Column 0: the full-tile outline marker.
+	const int FullTile = 0;
+	/// Frame index of a marker's solid variant (row 0).
+	inline int solidFrame(int column) { return column; }
+	/// Frame index of a marker's dithered variant (row 1).
+	inline int ditheredFrame(int column) { return Columns + column; }
+}
+
+/**
  * Sets up a map with the specified size and position.
  * @param game Pointer to the core game.
  * @param width Width in pixels.
@@ -3284,12 +3303,11 @@ void Map::drawOverwatchCone(Surface *surface)
 	int minRange = rule->getOverwatchMinRange();
 	int angle = rule->getOverwatchConeAngle();
 
-	// Use a tile-level marker (the Pathfinding dithered "target reticle" frame, like the path preview
-	// draws its tile markers) rather than a floating dot, so the watched area reads as a filled region.
-	// Frame 22 is the sparse/dithered variant of the frame-10 reticle - its blank pixels make the marker
-	// read as translucent, so the underlying map stays visible even at full brightness.
-	SurfaceSet *pathSet = _game->getMod()->getSurfaceSet("Pathfinding");
-	Surface *marker = pathSet ? pathSet->getFrame(22) : nullptr;
+	// Use a tile-level marker rather than a floating dot, so the watched area reads as a filled
+	// region. The dithered full-tile outline shows each tile's bounds while its blank pixels keep
+	// the map visible underneath (see Pathfinding2Markers for the sheet layout).
+	SurfaceSet *pathSet = _game->getMod()->getSurfaceSet("Pathfinding2", false);
+	Surface *marker = pathSet ? pathSet->getFrame(Pathfinding2Markers::ditheredFrame(Pathfinding2Markers::FullTile)) : nullptr;
 	if (!marker)
 	{
 		return;

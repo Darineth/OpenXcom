@@ -38,6 +38,16 @@ extraSprites: #done
     height: 80
     subX: 32
     subY: 40
+  # DX: extra tile markers (kept as a separate set so the stock Pathfinding sheet's frame
+  # numbering stays untouched). Frame 0 = solid tile outline, frame 1 = dithered tile outline
+  # (used by the overwatch cone markers).
+  - type: Pathfinding2
+    files:
+      0: Resources/Pathfinding/Pathfinding2.png
+    width: 32
+    height: 80
+    subX: 32
+    subY: 40
   - type: Projectiles
     width: 105
     height: 33
