@@ -108,9 +108,15 @@ namespace OpenXcom
 namespace Pathfinding2Markers
 {
 	/// Number of marker columns in the sheet - UPDATE when new columns are added.
-	const int Columns = 1;
+	const int Columns = 4;
 	/// Column 0: the full-tile outline marker.
 	const int FullTile = 0;
+	/// Column 1: the crossed-out tile marker (no consumer yet).
+	const int Cross = 1;
+	/// Column 2: the target marker.
+	const int Target = 2;
+	/// Column 3: the X "no" marker (overwatch dead zones).
+	const int No = 3;
 	/// Frame index of a marker's solid variant (row 0).
 	inline int solidFrame(int column) { return column; }
 	/// Frame index of a marker's dithered variant (row 1).
@@ -1279,30 +1285,20 @@ void Map::drawTerrain(Surface *surface)
 
 					auto* unit = tile->getUnit();
 
-					// DX on-map overlay: motion-detector reading. Highlight the floor of an
-					// enemy/neutral unit detected this turn (getScannedTurn == current turn, set only
-					// when the player uses a motion scanner) with a pulsing amber target reticle, drawn
-					// as a floor decal in the same style as the path-preview markers (the "Pathfinding"
-					// set's frame 10, recolored). It pulses, and is brighter the more the unit moved
-					// (its motion points). Drawn before this tile's walls/unit so it reads as ground.
-					// Detection gating is unchanged - this only displays already-scanned units.
-					if (Options::motionDetectorOverlayEnabled && unit && unit->getFaction() != FACTION_PLAYER
-						&& !unit->isOut() && unit->getMotionPoints() > 0
-						&& unit->getScannedTurn() == _save->getTurn()
+					// DX on-map overlay: motion-detector reading, ground-decal layer. Drawn before
+					// this tile's walls/unit so it reads as ground; drawMotionMarkersOverlay()
+					// re-draws the dithered variant on top of the finished scene so the reading
+					// stays visible through terrain. Shared checks/pulse in isMotionMarkerActive/
+					// blitMotionMarker. Detection gating is unchanged - only already-scanned units.
+					if (isMotionMarkerActive(unit)
 						&& unit->getPosition() == tile->getPosition()) // anchor tile only (big units)
 					{
-						Surface* motionMarker = _game->getMod()->getSurfaceSet("Pathfinding")->getFrame(10); // target reticle
+						SurfaceSet* markerSet = _game->getMod()->getSurfaceSet("Pathfinding2", false);
+						Surface* motionMarker = markerSet ? markerSet->getFrame(Pathfinding2Markers::solidFrame(Pathfinding2Markers::Target)) : nullptr;
 						if (motionMarker)
 						{
-							const int Pulsate[8] = { 0, 1, 2, 3, 4, 3, 2, 1 };
-							int intensity = unit->getMotionPoints() / 5;
-							if (intensity > 5)
-								intensity = 5;
-							// brighter (lower shade) the more the unit moved, on top of an alarm pulse
-							int shade = (5 - intensity) + Pulsate[_animFrame % 8];
-							Surface::blitRaw(surface, motionMarker,
-								screenPosition.x, screenPosition.y + tile->getTerrainLevel(),
-								shade, false, 2 /* newBaseColor: block 1 = amber, palette-safe in UFO+TFTD */);
+							blitMotionMarker(surface, unit, motionMarker,
+								screenPosition.x, screenPosition.y + tile->getTerrainLevel());
 						}
 					}
 
@@ -2552,6 +2548,9 @@ void Map::drawTerrain(Surface *surface)
 	// DX: draw the overwatch cone markers (while aiming overwatch, or reviewing a unit on overwatch).
 	drawOverwatchCone(surface);
 
+	// DX: re-draw motion-detector readings (dithered) on top, so they show through walls/vegetation.
+	drawMotionMarkersOverlay(surface);
+
 	// DX: crosshair text (hovered-unit name + accuracy/hit-chance readout) is prepared during the
 	// tile pass but blitted here, AFTER the tracers/dots, so it stays legible on top of the cloud.
 	if (_pendingUnitName)
@@ -3255,6 +3254,82 @@ void Map::drawTargetingPreview(Surface *surface)
  * overwatch is selected (toward its committed target), so the player sees exactly what's watched.
  * Geometry only for now (no per-tile line-of-fire test).
  */
+/**
+ * DX: is this unit an active motion-detector reading? (overlay enabled, non-player unit scanned
+ * this turn with recorded motion). Shared by the ground-decal draw and the overlay post-pass;
+ * detection gating is unchanged - this only ever displays already-scanned units.
+ * @param unit The unit (may be null).
+ * @return True when a reading marker should be drawn for it.
+ */
+bool Map::isMotionMarkerActive(const BattleUnit *unit) const
+{
+	return Options::motionDetectorOverlayEnabled && unit
+		&& unit->getFaction() != FACTION_PLAYER && !unit->isOut()
+		&& unit->getMotionPoints() > 0
+		&& unit->getScannedTurn() == _save->getTurn();
+}
+
+/**
+ * DX: blits one motion-detector reading marker - amber, alarm-pulsing, brighter (lower shade)
+ * the more the unit moved (its motion points). Shared by the ground decal and the overlay pass.
+ * @param surface The surface to draw on.
+ * @param unit The scanned unit (drives the intensity).
+ * @param marker The marker sprite (solid or dithered variant).
+ * @param x Screen x.
+ * @param y Screen y.
+ */
+void Map::blitMotionMarker(Surface *surface, const BattleUnit *unit, Surface *marker, int x, int y)
+{
+	static const int Pulsate[8] = { 0, 1, 2, 3, 4, 3, 2, 1 };
+	int intensity = std::min(5, unit->getMotionPoints() / 5);
+	int shade = (5 - intensity) + Pulsate[_animFrame % 8];
+	Surface::blitRaw(surface, marker, x, y, shade, false, 2 /* newBaseColor: block 1 = amber, palette-safe in UFO+TFTD */);
+}
+
+/**
+ * DX: post-pass for the motion-detector readings. The solid marker drawn during the tile pass sits
+ * under walls/units (a ground decal), which makes it near-invisible in dense terrain - so after the
+ * whole scene has rendered, re-draw each reading in its DITHERED variant on top of everything. The
+ * dithering keeps the obscuring terrain readable while the reading stays visible through walls,
+ * vegetation and units. Same pulse/intensity as the ground decal.
+ * @param surface The surface to draw on.
+ */
+void Map::drawMotionMarkersOverlay(Surface *surface)
+{
+	if (!Options::motionDetectorOverlayEnabled)
+	{
+		return;
+	}
+	SurfaceSet *markerSet = _game->getMod()->getSurfaceSet("Pathfinding2", false);
+	Surface *marker = markerSet ? markerSet->getFrame(Pathfinding2Markers::ditheredFrame(Pathfinding2Markers::Target)) : nullptr;
+	if (!marker)
+	{
+		return;
+	}
+
+	for (BattleUnit *unit : *_save->getUnits())
+	{
+		if (!isMotionMarkerActive(unit))
+		{
+			continue;
+		}
+		Position pos = unit->getPosition();
+		if (pos.z > _camera->getViewLevel())
+		{
+			continue;
+		}
+		Tile *tile = _save->getTile(pos);
+		if (!tile || !tile->isDiscovered(O_FLOOR))
+		{
+			continue;
+		}
+		Position screen;
+		_camera->convertMapToScreen(pos, &screen);
+		screen += _camera->getMapOffset();
+		blitMotionMarker(surface, unit, marker, screen.x, screen.y + tile->getTerrainLevel());
+	}
+}
+
 void Map::drawOverwatchCone(Surface *surface)
 {
 	BattleUnit *unit = _save->getSelectedUnit();
@@ -3303,12 +3378,14 @@ void Map::drawOverwatchCone(Surface *surface)
 	int minRange = rule->getOverwatchMinRange();
 	int angle = rule->getOverwatchConeAngle();
 
-	// Use a tile-level marker rather than a floating dot, so the watched area reads as a filled
-	// region. The dithered full-tile outline shows each tile's bounds while its blank pixels keep
-	// the map visible underneath (see Pathfinding2Markers for the sheet layout).
+	// Use tile-level markers rather than floating dots, so the watched area reads as a filled
+	// region (dithered variants keep the map visible underneath - see Pathfinding2Markers).
+	// Watched tiles get the full-tile outline; tiles the watcher can't actually hit get the
+	// X "no" marker, so dead zones differ by shape as well as colour.
 	SurfaceSet *pathSet = _game->getMod()->getSurfaceSet("Pathfinding2", false);
 	Surface *marker = pathSet ? pathSet->getFrame(Pathfinding2Markers::ditheredFrame(Pathfinding2Markers::FullTile)) : nullptr;
-	if (!marker)
+	Surface *blockedMarker = pathSet ? pathSet->getFrame(Pathfinding2Markers::ditheredFrame(Pathfinding2Markers::No)) : nullptr;
+	if (!marker || !blockedMarker)
 	{
 		return;
 	}
@@ -3366,7 +3443,8 @@ void Map::drawOverwatchCone(Surface *surface)
 			_camera->convertMapToScreen(t, &screen);
 			screen += _camera->getMapOffset();
 			// Full brightness (shade 0), vibrant colour - the dithered sprite supplies the translucency.
-			Surface::blitRaw(surface, marker, screen.x, screen.y - tile->getTerrainLevel(), 0, false,
+			// Hittable tiles: yellow outline; dead zones: red X marker (shape + colour cues).
+			Surface::blitRaw(surface, inLos ? marker : blockedMarker, screen.x, screen.y - tile->getTerrainLevel(), 0, false,
 				inLos ? Pathfinding::yellow : Pathfinding::red);
 		}
 	}

@@ -31,9 +31,10 @@ dedicated on-map per-unit overwatch indicator, and AI use of overwatch (see Foll
    cancel it), and can be toggled off by re-selecting **Overwatch** from the menu.
 7. **Aim:** the player **clicks a target tile** to set the cone direction (`unit→tile`).
 8. **Markers:** cone trigger-tiles drawn **while aiming and when a unit already on overwatch is
-   reselected**, using a **tile-level marker** — the dithered square tile outline from the DX
-   `Pathfinding2` set (a separate sheet so the stock Pathfinding frame numbering stays untouched) —
-   so the area reads as a filled region rather than scattered dots.
+   reselected**, using **tile-level markers** from the DX `Pathfinding2` set (a separate sheet so the
+   stock Pathfinding frame numbering stays untouched): hittable tiles get the dithered full-tile
+   outline in yellow, dead zones (no line of fire) get the dithered **X "no" marker** in red — shape
+   and colour both signal coverage, and the area reads as a filled region rather than scattered dots.
 
 ## Audit
 

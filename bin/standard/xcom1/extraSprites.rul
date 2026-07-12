@@ -81,12 +81,14 @@ extraSprites:
     subX: 32
     subY: 40
   # DX: extra tile markers (kept as a separate set so the stock Pathfinding sheet's frame
-  # numbering stays untouched). Frame 0 = solid tile outline, frame 1 = dithered tile outline
-  # (used by the overwatch cone markers).
+  # numbering stays untouched; layout constants in Map.cpp Pathfinding2Markers). One marker
+  # type per COLUMN (row 0 = solid, row 1 = dithered): column 0 = full-tile outline (dithered:
+  # overwatch watched tiles), column 1 = crossed tile (unused), column 2 = target marker
+  # (solid: motion-detector reading), column 3 = X "no" marker (dithered: overwatch dead zones).
   - type: Pathfinding2
     files:
       0: Resources/Pathfinding/Pathfinding2.png
-    width: 32
+    width: 128
     height: 80
     subX: 32
     subY: 40

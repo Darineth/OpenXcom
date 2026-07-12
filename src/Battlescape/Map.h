@@ -152,6 +152,12 @@ private:
 	/// DX: draws markers over the tiles inside the active overwatch cone (while aiming, or when a unit
 	/// already on overwatch is selected).
 	void drawOverwatchCone(Surface *surface);
+	/// DX: post-pass re-draw of motion-detector readings (dithered variant, on top of terrain/walls).
+	void drawMotionMarkersOverlay(Surface *surface);
+	/// DX: should a motion-detector reading marker be drawn for this unit?
+	bool isMotionMarkerActive(const BattleUnit *unit) const;
+	/// DX: blits one motion-detector reading marker (amber, pulsing, motion-scaled brightness).
+	void blitMotionMarker(Surface *surface, const BattleUnit *unit, Surface *marker, int x, int y);
 	void drawTerrain(Surface *surface);
 	int getTerrainLevel(const Position& pos, int size) const;
 	int getWallShade(TilePart part, Tile* tileFrot);
