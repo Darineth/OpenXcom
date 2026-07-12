@@ -6,6 +6,10 @@
 - Document more modded field details from OXCE (such as camouflageAtDay, which is not really documented)
 - Write a full ruleset document.  Explain fields, structures, options.
 
+# Documentation
+
+Two possible engine bugs surfaced and are noted in the docs, worth a separate look if you use those features: the adhoc tag-matching loop in GeoscapeState.cpp has an unconditional break, so only the first entry of adhocMissionScriptTags is ever compared; and RuleMissionScript/RuleArcScript never initialize _counterMin/_counterMax (only RuleEventScript does).
+
 # Questions
 - Overwatch+dual fire?
 - Overwatch range vs. weapon's (attacktype)Range?  What does that field do in DX anyway?
