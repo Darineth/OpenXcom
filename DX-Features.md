@@ -719,6 +719,9 @@ in via `tuAuto`; weapons without it behave exactly as before.
   - `accuracyBurst` — burst accuracy.
   - `burstShots` — rounds per burst (default `2`).
   - `burstRange` — effective range band (default `10` tiles, between snap's 15 and auto's 7).
+    Like the other range bands it only bites when `battleUFOExtenderAccuracy` is on: accuracy
+    drops by `dropoff` points per tile beyond it. (Weapons opted into the aim-cone model via
+    `baseAccuracy` ignore all the range bands — see Aim Cone Trajectory.)
   - `flatBurst:` — flat-cost flag (falls back to aimed).
   - `confBurst:` — the generic action block (custom `name`/`shortName`, `ammoSlot`,
     `spendPerShot`, etc.). The mode's default display name is `STR_BURST_SHOT` ("Burst Shot").
@@ -727,6 +730,8 @@ in via `tuAuto`; weapons without it behave exactly as before.
   once), rather than as a simultaneous shotgun-style volley.
 - **AI support.** Battlescape AI now includes Burst in both its vanilla and extended fire-mode
   selection logic, scoring it by the same accuracy/TU heuristic as the other firearm modes.
+- **Stats for Nerds** lists the burst fields (`burstRange`, `accuracyBurst`, `costBurst`, and the
+  `confBurst` action block) alongside the snap/auto/aimed ones.
 - **Own action-menu entry & hotkey** — labeled from `confBurst.name`, bound to
   `keyBattleActionItem6` (the DX-added 6th key; `keyBattleActionItem5` is taken by Throw on
   throwable firearms); the menu shows its shot count and flags an ammo warning when the loaded

@@ -1060,6 +1060,8 @@ public:
 	int getSnapRange() const;
 	/// Get the max range of auto shots with this weapon.
 	int getAutoRange() const;
+	/// DX: get the max range of burst shots with this weapon.
+	int getBurstRange() const;
 	/// Get the minimum effective range of this weapon.
 	int getMinRange() const;
 	/// Gets the item's throw dropoff range.

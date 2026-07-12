@@ -1,10 +1,9 @@
 # TODO
-- Escape menu on geoscape wrong palette?  There was some cases where I saw this happening after entering/exiting some screens from in a real game.
+
 
 # Questions
 - Overwatch+dual fire?
 - Overwatch range vs. weapon's (attacktype)Range?  What does that field do in DX anyway?
-- Clarify tiles that cannot be hit from unit's current position (e.g. behind a wall).
 
 # TFTD
 - Unit stats colors are wrong in inventory

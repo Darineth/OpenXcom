@@ -1937,6 +1937,7 @@ void StatsForNerdsState::initItemList()
 	int aimRangeDefault = itemBattleType == BT_PSIAMP ? 0 : 200;
 	addInteger(ss, itemRule->getAimRange(), "aimRange", aimRangeDefault);
 	addInteger(ss, itemRule->getAutoRange(), "autoRange", 7);
+	addInteger(ss, itemRule->getBurstRange(), "burstRange", 10); // DX
 	addInteger(ss, itemRule->getSnapRange(), "snapRange", 15);
 	int dropoffDefault = itemBattleType == BT_PSIAMP ? 1 : 2;
 	addInteger(ss, itemRule->getDropoff(), "dropoff", dropoffDefault);
@@ -1947,9 +1948,11 @@ void StatsForNerdsState::initItemList()
 	addRuleStatBonus(ss, *itemRule->getAccuracyMultiplierRaw(), "accuracyMultiplier");
 	addIntegerPercent(ss, itemRule->getConfigAimed()->accuracy, "accuracyAimed");
 	addIntegerPercent(ss, itemRule->getConfigAuto()->accuracy, "accuracyAuto");
+	addIntegerPercent(ss, itemRule->getConfigBurst()->accuracy, "accuracyBurst"); // DX
 	addIntegerPercent(ss, itemRule->getConfigSnap()->accuracy, "accuracySnap");
 	addRuleItemUseCostFull(ss, itemRule->getCostAimed(), "costAimed", RuleItemUseCost(), true, itemRule->getFlatAimed());
 	addRuleItemUseCostFull(ss, itemRule->getCostAuto(), "costAuto", RuleItemUseCost(), true, itemRule->getFlatAuto());
+	addRuleItemUseCostFull(ss, itemRule->getCostBurst(), "costBurst", RuleItemUseCost(), true, itemRule->getFlatBurst()); // DX
 	addRuleItemUseCostFull(ss, itemRule->getCostSnap(), "costSnap", RuleItemUseCost(), true, itemRule->getFlatSnap());
 
 	addRuleStatBonus(ss, *itemRule->getMeleeMultiplierRaw(), "meleeMultiplier");
@@ -2149,6 +2152,21 @@ void StatsForNerdsState::initItemList()
 		addInteger(ss, itemRule->getConfigAuto()->ammoSpawnUnitChanceOverride, "ammoSpawnUnitChanceOverride", -1);
 		addInteger(ss, itemRule->getConfigAuto()->ammoSpawnItemChanceOverride, "ammoSpawnItemChanceOverride", -1);
 		addBoolean(ss, itemRule->getConfigAuto()->arcing, "arcing");
+		endHeading();
+	}
+
+	addHeading("confBurst"); // DX
+	{
+		addInteger(ss, itemRule->getConfigBurst()->shots, "shots", 2);
+		addInteger(ss, itemRule->getConfigBurst()->spendPerShot, "spendPerShot", 1);
+		addBoolean(ss, itemRule->getConfigBurst()->followProjectiles, "followProjectiles", true);
+		addSingleString(ss, itemRule->getConfigBurst()->name, "name", "STR_BURST_SHOT");
+		addSingleString(ss, itemRule->getConfigBurst()->shortName, "shortName");
+		addInteger(ss, itemRule->getConfigBurst()->ammoSlot, "ammoSlot");
+		addInteger(ss, itemRule->getConfigBurst()->ammoZombieUnitChanceOverride, "ammoZombieUnitChanceOverride", -1);
+		addInteger(ss, itemRule->getConfigBurst()->ammoSpawnUnitChanceOverride, "ammoSpawnUnitChanceOverride", -1);
+		addInteger(ss, itemRule->getConfigBurst()->ammoSpawnItemChanceOverride, "ammoSpawnItemChanceOverride", -1);
+		addBoolean(ss, itemRule->getConfigBurst()->arcing, "arcing");
 		endHeading();
 	}
 

@@ -285,3 +285,16 @@ en-US:
   STR_COLOR_PINK: "Pink"
   STR_COLOR_BEIGE: "Beige"
   STR_COLOR_BROWN: "Brown"
+#=================== DX Stats for Nerds (technical) ===================
+#StatsForNerdsState.cpp
+  baseAccuracy: "Weapon base accuracy"
+  burstRange: "Burst shot range"
+  accuracyBurst: "Burst shot accuracy"
+  costBurst: "Burst shot cost"
+  confBurst: "Burst action:"
+  overwatch: "Overwatch:"
+  overwatchRange: "Overwatch range"
+  overwatchMinRange: "Overwatch minimum range"
+  overwatchConeAngle: "Overwatch cone angle"
+  overwatchModifier: "Overwatch accuracy modifier"
+  overwatchShot: "Overwatch shot type"

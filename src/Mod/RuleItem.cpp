@@ -2505,6 +2505,15 @@ int RuleItem::getAutoRange() const
 }
 
 /**
+ * DX: gets the maximum effective range of this weapon for Burst Shot.
+ * @return The maximum range.
+ */
+int RuleItem::getBurstRange() const
+{
+	return _confBurst.range;
+}
+
+/**
  * Gets the minimum effective range of this weapon.
  * @return The minimum effective range.
  */
@@ -2554,6 +2563,9 @@ int RuleItem::calculateLimits(int& upperLimit, int& lowerLimit, int depth, Battl
 			break;
 		case BA_AUTOSHOT:
 			upperLimit = getAutoRange();
+			break;
+		case BA_BURSTSHOT:
+			upperLimit = getBurstRange();
 			break;
 		case BA_THROW:
 			upperLimit = depth > 0 ? getUnderwaterThrowDropoffRange() : getThrowDropoffRange();
