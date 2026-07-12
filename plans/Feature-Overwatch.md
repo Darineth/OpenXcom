@@ -25,8 +25,10 @@ dedicated on-map per-unit overwatch indicator, and AI use of overwatch (see Foll
    does **not** take ordinary reaction fire at things outside the cone.
 5. **Reaction score:** an overwatch shot uses the unit's **full reactions stat** × `overwatchModifier`
    (not the TU-depleted score), so a committed watcher reacts reliably.
-6. **Cancellation:** overwatch auto-cancels when the unit is commanded to do anything else (move, or a
-   non-reaction shot), and can be toggled off by re-selecting **Overwatch** from the menu.
+6. **Cancellation:** overwatch auto-cancels when the unit is commanded to do anything else (move, a
+   non-reaction shot, or an **explicit turn order that changes facing** — right-clicking the already-
+   faced tile, e.g. the open-door gesture, keeps it; engine-driven turns from reaction fire/panic never
+   cancel it), and can be toggled off by re-selecting **Overwatch** from the menu.
 7. **Aim:** the player **clicks a target tile** to set the cone direction (`unit→tile`).
 8. **Markers:** cone trigger-tiles drawn **while aiming and when a unit already on overwatch is
    reselected**, using a **tile-level marker** (the Pathfinding target-reticle sprite, like the path

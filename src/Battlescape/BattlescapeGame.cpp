@@ -2194,6 +2194,17 @@ void BattlescapeGame::secondaryAction(Position pos)
 	_currentAction.target = pos;
 	_currentAction.actor = _save->getSelectedUnit();
 	_currentAction.strafe = Options::strafe && _save->isCtrlPressed(true) && _save->getSelectedUnit()->getTurretType() > -1;
+
+	// DX: an explicit turn order re-aims the unit, so it cancels overwatch - you can't keep
+	// watching a lane you deliberately turn away from. Right-clicking the tile the unit already
+	// faces (e.g. the open-door gesture) doesn't turn and keeps the overwatch. Engine-driven
+	// turns (reaction fire, panic) don't come through here and never cancel it.
+	BattleUnit *turnActor = _currentAction.actor;
+	if (turnActor && turnActor->isOnOverwatch() && turnActor->directionTo(pos) != turnActor->getDirection())
+	{
+		turnActor->clearOverwatch();
+	}
+
 	statePushBack(new UnitTurnBState(this, _currentAction));
 }
 
