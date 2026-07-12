@@ -1313,7 +1313,12 @@ void TileEngine::addLight(MapSubset gs, Position center, int power, LightLayers 
 	const auto accuracy = TileEngine::voxelTileSize / divide;
 	const auto offsetCenter = (accuracy / 2 + Position(-1, -1, (ground ? 0 : accuracy.z/4) - tileHeight * accuracy.z / 24));
 	const auto offsetTarget = (accuracy / 2 + Position(-1, -1, 0));
-	const auto clasicLighting = !(getEnhancedLighting() & ((fire ? 1 : 0) | (items ? 2 : 0) | (units ? 4 : 0)));
+	// DX: directional (cone) lights ALWAYS use the occluded/raycast path - a flashlight beam
+	// leaking through walls is far more jarring than a circular glow doing so, and the beam is a
+	// DX feature free to define its own semantics. (The block cache this needs is built on every
+	// battle start/terrain change regardless of the enhanced-lighting setting.) Circular lights
+	// keep honouring the mod's enhanced-lighting bitmask as before.
+	const auto clasicLighting = !cone && !(getEnhancedLighting() & ((fire ? 1 : 0) | (items ? 2 : 0) | (units ? 4 : 0)));
 	const auto topTargetVoxel = static_cast<Sint16>(_save->getMapSizeZ() * accuracy.z - 1);
 	const auto topCenterVoxel = static_cast<Sint16>((getBlockUp(_blockVisibility[_save->getTileIndex(center)]) ? (center.z + 1) : _save->getMapSizeZ()) * accuracy.z - 1);
 	const auto maxFirePower = std::min(15, getMaxStaticLightDistance() - 1);

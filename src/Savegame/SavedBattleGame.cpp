@@ -1546,6 +1546,14 @@ void SavedBattleGame::endTurn()
 
 	if (_side == FACTION_PLAYER)
 	{
+		// DX: motion-scanner readings are per-player-turn intel - clear them the moment the
+		// player's side ends so the on-map markers can't track hidden alien movement during
+		// the enemy turn (the draw-side gate alone still flickered during turn transitions).
+		for (auto* bu : _units)
+		{
+			bu->setScannedTurn(-1);
+		}
+
 		if (_selectedUnit && _selectedUnit->getOriginalFaction() == FACTION_PLAYER)
 			_lastSelectedUnit = _selectedUnit;
 		else

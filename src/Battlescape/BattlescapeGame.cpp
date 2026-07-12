@@ -674,6 +674,10 @@ void BattlescapeGame::endTurn()
 	// fires could have been started, stopped or smoke could reveal/conceal units.
 	_save->getTileEngine()->calculateLighting(LL_FIRE, TileEngine::invalid, 0, true);
 	_save->getTileEngine()->recalculateFOV();
+	// DX: the side just switched and per-turn overlays changed with it (motion-detector readings
+	// were cleared) - invalidate the cached map render so the transition screens don't sit on a
+	// stale frame that still shows them.
+	getMap()->invalidate();
 
 	// Calculate values
 	BattlescapeTally tally = _save->getBattleGame()->tallyUnits();

@@ -1,8 +1,6 @@
 # TODO
-- Flashlights are going through walls
-- Motion detection persists through the alien turn, allowing you to see how they moved before your turn starts.
-- Need to re-document OXCE's features.  Extended.txt is incomplete (e.g. extendedItemReloadCost is not documented).
-- Escape menu on geoscape wrong palette?
+- Mod level option to disable personal lights going through walls.
+- Escape menu on geoscape wrong palette?  There was some cases where I saw this happening after entering/exiting some screens from in a real game.
 
 # Questions
 - Overwatch+dual fire?

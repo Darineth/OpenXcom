@@ -3263,7 +3263,11 @@ void Map::drawTargetingPreview(Surface *surface)
  */
 bool Map::isMotionMarkerActive(const BattleUnit *unit) const
 {
+	// Only while it's the player's side of the round: the turn number spans the whole round, and
+	// the marker draws at the unit's CURRENT position - during the alien half it would track
+	// hidden alien movement live, leaking exactly what the scanner shouldn't know yet.
 	return Options::motionDetectorOverlayEnabled && unit
+		&& _save->getSide() == FACTION_PLAYER
 		&& unit->getFaction() != FACTION_PLAYER && !unit->isOut()
 		&& unit->getMotionPoints() > 0
 		&& unit->getScannedTurn() == _save->getTurn();
