@@ -19,6 +19,20 @@ moveCostDefaults:
   runPercent:   [50, 100]   # sprint: half TU (fast, covers ground), double walking's energy
 
 # =====================================================================
+#  OXCE enhanced (occluded) lighting - bitmask: 1 = fire, 2 = items,
+#  4 = units. With 7, ALL light sources stop at walls instead of shining
+#  through them (classic mode attenuates purely by distance). The
+#  occlusion cache is terrain-only: units cast no shadows; tall objects
+#  (poles etc.) only mildly dim light passing over them; smoke dims it
+#  slightly. DX cone lights (flashlights) are always occluded regardless.
+#
+#  What to check: stand a lit soldier next to a wall at night - the room
+#  on the far side should stay dark until the door opens.
+# =====================================================================
+lighting:
+  enhanced: 7
+
+# =====================================================================
 #  DX: mod-wide defaults for how sprint/sneak scale a moving unit's
 #  DEFENSIVE evasion (reaction-fire resistance). Percent, 100 = no change.
 #  Armors override per-unit via evasionSprint / evasionSneak.
