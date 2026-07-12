@@ -176,16 +176,14 @@ detailed compiling instructions are available at the
 [wiki](https://ufopaedia.org/index.php/Compiling_(OpenXcom)), along with
 pre-compiled dependency packages.
 
-## OpenXcom DX
+# OpenXcom DX
 
 This fork ("OpenXcom DX") extends OXCE-Plus with gameplay systems and quality-of-life work of its
-own. [DX-Features.md](DX-Features.md) documents everything in detail (options, ruleset keys,
-formulas); [DX-Roadmap.md](DX-Roadmap.md) tracks the plan. The summary below separates what is
-**always on** out of the box from what is **moddable / opt-in** capability.
+own.
 
-### Always-on gameplay & UI
+## Always-on gameplay & UI
 
-*Battlescape combat*
+### Battlescape combat
 
 - **Concurrent projectiles & explosions** — volleys fly and resolve independently (auto/burst fire
   walks around the target, shotgun pellets are real projectiles, impact explosions animate while
@@ -215,7 +213,7 @@ formulas); [DX-Roadmap.md](DX-Roadmap.md) tracks the plan. The summary below sep
   per-role armor colors. Default roles + icons ship for both UFO and TFTD.
 - **Overwatch cancellation on turn** — explicit turn orders drop overwatch (reaction pivots don't).
 
-*Strategy layer & UI*
+### Strategy layer & UI
 
 - **Geoscape activity display** — last-month score/economy readouts (toggleable, default on).
 - **Maximized info screens** — every info/detail screen can drop to 320×200 (extends the OXCE
@@ -230,7 +228,7 @@ formulas); [DX-Roadmap.md](DX-Roadmap.md) tracks the plan. The summary below sep
 - **New Battle QoL** — edit soldier inventories before starting, one-click craft Fill, and loadout
   templates/roles persist across sessions.
 
-### Moddable / opt-in capabilities
+## Moddable / opt-in capabilities
 
 These ship in the engine but activate via ruleset keys or (off-by-default) options — the stock game
 is unchanged until a mod (or the bundled `dx-test` testing mod) enables them:
