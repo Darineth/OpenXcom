@@ -4341,13 +4341,20 @@ void GeoscapeState::determineAlienMissions(bool isNewMonth, const RuleEvent* eve
 		// level zero condition check: filter adhoc mission scripts by tags
 		if (!isNewMonth && eventRules)
 		{
+			// DX fix: the inner break was unconditional, so the inner loop never reached a second
+			// iteration - every event tag was compared against the script's tag[0] and nothing else,
+			// making a script's later tags unreachable. Now any event tag may match any script tag,
+			// which is what the (correctly guarded) outer loop always implied. See DX-OXCE-Fixes.md.
 			bool matchFound = false;
 			for (auto& atag : eventRules->getAdhocMissionScriptTags())
 			{
 				for (auto& btag : command->getAdhocMissionScriptTags())
 				{
-					if (atag == btag) matchFound = true;
-					break;
+					if (atag == btag)
+					{
+						matchFound = true;
+						break;
+					}
 				}
 				if (matchFound) break;
 			}

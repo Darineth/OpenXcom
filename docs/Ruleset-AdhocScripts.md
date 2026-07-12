@@ -57,10 +57,12 @@ tables (`firstMonth`/`lastMonth`, `executionOdds`, `varName`/`maxRuns`/`avoidRep
 - **Site-type validation** is shared with `missionScripts:`: a command may not mix mission-site
   (`objective: 3`) and non-site missions, and an unknown mission type throws at mod load.
 
-> **Tag-matching quirk (engine behavior):** the matching loop in `determineAlienMissions` breaks out
-> of the inner loop unconditionally, so only the **first** tag in the ad-hoc script's
-> `adhocMissionScriptTags:` list is ever compared against the event's tags. Give each ad-hoc script
-> a single tag (or make sure the tag you want matched is listed first).
+> **Note — DX fixes an upstream tag-matching bug.** In stock OXCE the inner loop of the tag match had
+> an *unconditional* `break`, so each of the event's tags was compared against the ad-hoc script's
+> **`tag[0]` and nothing else** — every later tag on a script was structurally unreachable. DX guards
+> the `break`, so matching now works as the tag lists imply: **any event tag may match any script
+> tag.** A script with a single tag is unaffected; a script with several tags now fires for events it
+> previously ignored. Full write-up: [DX-OXCE-Fixes.md](../DX-OXCE-Fixes.md).
 
 ## See also
 

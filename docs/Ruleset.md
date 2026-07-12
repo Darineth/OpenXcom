@@ -154,6 +154,10 @@ instead of re-explaining:
 
 ---
 
+*Upstream bugs:* where DX has fixed — or knowingly left alone — a bug in inherited OXCE behavior, the
+affected page says so and links to [DX-OXCE-Fixes.md](../DX-OXCE-Fixes.md), the register of those
+deltas.
+
 *Conventions used throughout these docs:* field tables give **Key · Type · Default · Meaning**;
 **[DX]** marks fields/roots added by OpenXcom DX (absent in stock OXCE); engine source is linked as
 the ultimate authority. See also [DX-Features.md](../DX-Features.md) for feature-level descriptions

@@ -78,3 +78,9 @@ explicitly when you use `missionVarName`/`missionMarkerName` gating.
 - [`research:`](Ruleset-Research.md) — the topics an arc unlocks (and whose `lookup:` article pops up)
 - [`missionScripts:`](Ruleset-MissionScripts.md) — run right after arc scripts, and can gate on the freshly unlocked arcs
 - [`eventScripts:`](Ruleset-EventScripts.md) / [`events:`](Ruleset-Events.md) — the other half of the monthly scripting pass
+
+## Note: `counterMin` / `counterMax` defaults
+
+Upstream, these two members were **never initialized**. DX initializes them to `0` / `-1` (the "no
+constraint" sentinels the checks test for), matching `eventScripts:`. See
+[DX-OXCE-Fixes.md](../DX-OXCE-Fixes.md).

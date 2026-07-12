@@ -101,3 +101,11 @@ first.
 - [`arcScripts:`](Ruleset-ArcScripts.md) — runs just *before* mission scripts each month, unlocking research these scripts can trigger on
 - [`eventScripts:`](Ruleset-EventScripts.md) / [`events:`](Ruleset-Events.md) — run just *after* mission scripts
 - [`regions:`](Ruleset-Regions.md) · [`alienRaces:`](Ruleset-AlienRaces.md) · [`ufoTrajectories:`](Ruleset-UfoTrajectories.md)
+
+## Note: `counterMin` / `counterMax` defaults
+
+Upstream, these two members were **never initialized** — a script that used `missionVarName:` /
+`missionMarkerName:` but left a counter unset had its eligibility decided by uninitialized memory.
+DX initializes them to `0` / `-1` (the "no constraint" sentinels the checks already test for), matching
+`eventScripts:`, which always did. See [DX-OXCE-Fixes.md](../DX-OXCE-Fixes.md). The same fix applies to
+[`arcScripts:`](Ruleset-ArcScripts.md).
