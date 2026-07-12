@@ -817,6 +817,34 @@ void InventoryState::edtSoldierChange(Action *)
 }
 
 /**
+ * DX: gets the color a stat line's value is drawn in, identified by the stat-bar element id it
+ * belongs to (barHealth, barTUs, ...), so each value matches its stat bar.
+ *
+ * The bar color is looked up in the "inventory" interface first and only then in "stats". The
+ * override exists because a bar color is not always usable as a text color: a Text drawn with
+ * setHighContrast() maps font shades to color + shade * 3, so a value must sit at the start of a
+ * 16-shade ramp to keep its whole shade range in one hue. Every UFO stat bar happens to be a ramp
+ * start, but several TFTD ones are not (and some are leftover UFO indices, which are entirely
+ * different hues in the TFTD palette) - so xcom2 overrides them in interfaces.rul.
+ * @param barId The stat-bar element id.
+ * @param fallback Color to use when neither interface defines the element.
+ * @return The palette index to draw the value in.
+ */
+Uint8 InventoryState::statColor(const std::string &barId, Uint8 fallback) const
+{
+	for (const char *interfaceName : { "inventory", "stats" })
+	{
+		const RuleInterface *rule = _game->getMod()->getInterface(interfaceName);
+		const Element *element = rule ? rule->getElementOptional(barId) : nullptr;
+		if (element)
+		{
+			return static_cast<Uint8>(element->color);
+		}
+	}
+	return fallback;
+}
+
+/**
  * Updates the soldier stats (Weight, TU).
  */
 void InventoryState::updateStats()
@@ -826,12 +854,6 @@ void InventoryState::updateStats()
 
 	const BattleItem* excludedItem = (heldItem && heldItem->getOwner() == unit && heldItem->getSlot() != nullptr) ? heldItem : nullptr;
 	const UnitStats displayStats = unit->getBaseStatsPreview(excludedItem);
-	const RuleInterface *statsInterface = _game->getMod()->getInterface("stats");
-	auto getBarColor = [&](const std::string &elementId, Uint8 fallback)
-	{
-		const Element *element = statsInterface ? statsInterface->getElementOptional(elementId) : nullptr;
-		return element ? static_cast<Uint8>(element->color) : fallback;
-	};
 
 	int weight = unit->getCarriedWeight(heldItem);
 	_txtWeight->setText(tr("STR_WEIGHT").arg(weight).arg(displayStats.strength));
@@ -869,18 +891,18 @@ void InventoryState::updateStats()
 	_txtArmorBack->setText(tr("STR_DX_INVENTORY_ARMOR_B_SHORT").arg(unit->getArmor(SIDE_REAR)));
 	_txtArmorUnder->setText(tr("STR_DX_INVENTORY_ARMOR_U_SHORT").arg(unit->getArmor(SIDE_UNDER)));
 
-	_txtStatLine1->setSecondaryColor(getBarColor("barHealth", _txtStatLine1->getColor()));
-	_txtTus->setSecondaryColor(getBarColor("barTUs", _txtTus->getColor()));
-	_txtStatLine2->setSecondaryColor(getBarColor("barReactions", _txtStatLine2->getColor()));
-	_txtStatLine3->setSecondaryColor(getBarColor("barFiring", _txtStatLine3->getColor()));
-	_txtStatLine4->setSecondaryColor(getBarColor("barThrowing", _txtStatLine4->getColor()));
-	_txtStatLine5->setSecondaryColor(getBarColor("barPsiSkill", _txtStatLine5->getColor()));
-	_txtStatLine6->setSecondaryColor(getBarColor("barPsiStrength", _txtStatLine6->getColor()));
-	_txtArmorFront->setSecondaryColor(getBarColor("barFrontArmor", _txtArmorFront->getColor()));
-	_txtArmorLeft->setSecondaryColor(getBarColor("barLeftArmor", _txtArmorLeft->getColor()));
-	_txtArmorRight->setSecondaryColor(getBarColor("barRightArmor", _txtArmorRight->getColor()));
-	_txtArmorBack->setSecondaryColor(getBarColor("barRearArmor", _txtArmorBack->getColor()));
-	_txtArmorUnder->setSecondaryColor(getBarColor("barUnderArmor", _txtArmorUnder->getColor()));
+	_txtStatLine1->setSecondaryColor(statColor("barHealth", _txtStatLine1->getColor()));
+	_txtTus->setSecondaryColor(statColor("barTUs", _txtTus->getColor()));
+	_txtStatLine2->setSecondaryColor(statColor("barReactions", _txtStatLine2->getColor()));
+	_txtStatLine3->setSecondaryColor(statColor("barFiring", _txtStatLine3->getColor()));
+	_txtStatLine4->setSecondaryColor(statColor("barThrowing", _txtStatLine4->getColor()));
+	_txtStatLine5->setSecondaryColor(statColor("barPsiSkill", _txtStatLine5->getColor()));
+	_txtStatLine6->setSecondaryColor(statColor("barPsiStrength", _txtStatLine6->getColor()));
+	_txtArmorFront->setSecondaryColor(statColor("barFrontArmor", _txtArmorFront->getColor()));
+	_txtArmorLeft->setSecondaryColor(statColor("barLeftArmor", _txtArmorLeft->getColor()));
+	_txtArmorRight->setSecondaryColor(statColor("barRightArmor", _txtArmorRight->getColor()));
+	_txtArmorBack->setSecondaryColor(statColor("barRearArmor", _txtArmorBack->getColor()));
+	_txtArmorUnder->setSecondaryColor(statColor("barUnderArmor", _txtArmorUnder->getColor()));
 
 	_statPanelShowsItem = false;
 }
@@ -965,8 +987,6 @@ bool InventoryState::showItemStats(const BattleItem *item)
 
 	_statPanelShowsItem = true;
 
-	const RuleInterface *statsInterface = _game->getMod()->getInterface("stats");
-
 	// Fill the panel lines (everything below the weight line), blanking any unused ones.
 	Text *panel[] = {
 		_txtStatLine1, _txtTus, _txtStatLine2, _txtStatLine3, _txtStatLine4,
@@ -979,8 +999,7 @@ bool InventoryState::showItemStats(const BattleItem *item)
 		if (i < (int)lines.size())
 		{
 			panel[i]->setText(lines[i].first);
-			const Element *element = statsInterface ? statsInterface->getElementOptional(lines[i].second) : nullptr;
-			panel[i]->setSecondaryColor(element ? static_cast<Uint8>(element->color) : panel[i]->getColor());
+			panel[i]->setSecondaryColor(statColor(lines[i].second, panel[i]->getColor()));
 		}
 		else
 		{

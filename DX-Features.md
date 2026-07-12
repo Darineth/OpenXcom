@@ -353,6 +353,18 @@ Items with none of the above keep the soldier stats; moving off the item restore
 panel. The panel reuses the expanded stat rows, so it follows the `showMoreStatsInInventoryView`
 option. (See `plans/Feature-InventoryContextualInfoPanel.md`.)
 
+**Stat-panel value colors.** Every value in the panel (the soldier's own stats and the hovered
+item's) is drawn in the color of the stat bar it belongs to, taken from the `stats` interface's
+`bar*` elements. Because these values are high-contrast text — which maps font shades to
+`color + shade * 3`, walking up to 15 indices past its base — a bar color is only usable as a text
+color if it starts a 16-shade ramp. The `inventory` interface may therefore define its own `bar*`
+elements, which take precedence over `stats` for the panel text (bars are unaffected). `xcom2` uses
+this: several TFTD stat-bar colors are mid-ramp indices, or leftover UFO indices that land on an
+unrelated hue in TFTD's tactical palette (strength on white, armor on lime, fatal wounds on cream,
+bravery and both psi stats all on the same near-white), so the inventory overrides them with the
+equivalent TFTD hues at ramp starts. `xcom1` needs no overrides — its bar colors are already ramp
+starts.
+
 ## Inventory Move TU Costs in Pre-Battle Setup
 
 The per-slot inventory move TU costs (shown on the slot labels while an item is held) now also

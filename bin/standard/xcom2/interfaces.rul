@@ -2382,6 +2382,51 @@ interfaces: #done
       - id: textAmmo
         color: 48
         color2: 16
+      # DX: colors for the stat-panel values, overriding the "stats" bar colors (see
+      # InventoryState::statColor). The panel's values are drawn as high-contrast text, which walks
+      # up to +15 indices past its base color, so each one must start a 16-shade ramp to stay in a
+      # single hue - and several of TFTD's stat-bar colors are mid-ramp indices, or leftover UFO
+      # indices that land on a completely different hue in the TFTD tactical palette (strength on
+      # white, armor on lime, wounds on cream, bravery/psi all on the same near-white). These are
+      # the equivalent TFTD hues, all ramp starts.
+      - id: barHealth
+        color: 176   # orange-red (the tactical palette has no red ramp)
+      - id: barWounds
+        color: 176   # orange-red
+      - id: barTUs
+        color: 128   # gold
+      - id: barEnergy
+        color: 160   # orange
+      - id: barReactions
+        color: 16    # yellow
+      - id: barFiring
+        color: 240   # cyan
+      - id: barThrowing
+        color: 64    # brown
+      - id: barStrength
+        color: 96    # aqua-green
+      - id: barBravery
+        color: 192   # blue-grey
+      - id: barMorale
+        color: 224   # pink
+      - id: barMelee
+        color: 32    # cream
+      - id: barMana
+        color: 208   # peach
+      - id: barPsiStrength
+        color: 224   # pink
+      - id: barPsiSkill
+        color: 224   # pink
+      - id: barFrontArmor
+        color: 80    # lime, matching the TFTD armor bars
+      - id: barLeftArmor
+        color: 80
+      - id: barRightArmor
+        color: 80
+      - id: barRearArmor
+        color: 80
+      - id: barUnderArmor
+        color: 80
       - id: buttonOK
         TFTDMode: true
       - id: buttonPrev

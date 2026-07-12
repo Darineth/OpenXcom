@@ -93,6 +93,8 @@ public:
 	void edtSoldierChange(Action *action);
 	/// Updates the soldier info (Weight, TU).
 	void updateStats();
+	/// Gets the value color for a stat line, by stat-bar element id.
+	Uint8 statColor(const std::string &barId, Uint8 fallback) const;
 	/// Fills the stat panel (below weight) with info about the hovered item; returns false if the item has no contextual info.
 	bool showItemStats(const BattleItem *item);
 	/// Saves the soldiers' equipment-layout.
