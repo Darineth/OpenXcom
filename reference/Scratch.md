@@ -1,5 +1,4 @@
 # TODO
-- Mod level option to disable personal lights going through walls.
 - Escape menu on geoscape wrong palette?  There was some cases where I saw this happening after entering/exiting some screens from in a real game.
 
 # Questions

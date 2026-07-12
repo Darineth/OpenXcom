@@ -419,6 +419,17 @@ SoldierInfoState::~SoldierInfoState()
 void SoldierInfoState::init()
 {
 	State::init();
+
+	// DX: reset the savegame when coming back from the inventory. The Inventory button spins up a
+	// temporary battlescape (runInventory) that must not stay attached to the save - a stale battle
+	// corrupts any save made afterwards (it loads into a broken battlescape) and flips battle-aware
+	// palettes like the pause menu. Same resume-cleanup pattern as SoldiersState/CraftEquipmentState.
+	if (_base)
+	{
+		_game->getSavedGame()->setBattleGame(0);
+		_base->setInBattlescape(false);
+	}
+
 	if (_list->empty())
 	{
 		_game->popState();
