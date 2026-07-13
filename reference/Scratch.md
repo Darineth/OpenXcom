@@ -1,6 +1,4 @@
 # TODO
-- Motion detector blips are not saved
-- Rename existing role icons to be more physical
 - Create new role icons for heavy weapons and stealth
 - Can we add key stealth metrics to the armor info screens
 - Document more modded field details from OXCE (such as camouflageAtDay, which is not really documented)

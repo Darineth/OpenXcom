@@ -7,66 +7,69 @@
 #  TFTD tactical-palette indices (a different block layout than UFO), so
 #  this file carries its own soldierArmorBaseColors set, armor accent
 #  groups, and seed colours.
+#
+#  Icon names describe WHAT THEY DEPICT (RIFLE, CROSSHAIR, MEDICAL_CROSS...),
+#  not the role using them - see xcom1/roles.rul for why.
 # =====================================================================
 extraSprites:
   - typeSingle: RoleIconNone
     fileSingle: Resources/DX/Roles/RoleIconNone.png
-  - typeSingle: RoleIconInfantry
-    fileSingle: Resources/DX/Roles/RoleIconInfantry.png
-  - typeSingle: RoleIconInfantryMap
-    fileSingle: Resources/DX/Roles/RoleIconInfantryMap.png
-  - typeSingle: RoleIconMarksman
-    fileSingle: Resources/DX/Roles/RoleIconMarksman.png
-  - typeSingle: RoleIconMarksmanMap
-    fileSingle: Resources/DX/Roles/RoleIconMarksmanMap.png
-  - typeSingle: RoleIconSniper
-    fileSingle: Resources/DX/Roles/RoleIconSniper.png
-  - typeSingle: RoleIconSniperMap
-    fileSingle: Resources/DX/Roles/RoleIconSniperMap.png
-  - typeSingle: RoleIconScout
-    fileSingle: Resources/DX/Roles/RoleIconScout.png
-  - typeSingle: RoleIconScoutMap
-    fileSingle: Resources/DX/Roles/RoleIconScoutMap.png
-  - typeSingle: RoleIconAssault
-    fileSingle: Resources/DX/Roles/RoleIconAssault.png
-  - typeSingle: RoleIconAssaultMap
-    fileSingle: Resources/DX/Roles/RoleIconAssaultMap.png
-  - typeSingle: RoleIconMachineGunner
-    fileSingle: Resources/DX/Roles/RoleIconMachineGunner.png
-  - typeSingle: RoleIconMachineGunnerMap
-    fileSingle: Resources/DX/Roles/RoleIconMachineGunnerMap.png
-  - typeSingle: RoleIconHeavy
-    fileSingle: Resources/DX/Roles/RoleIconHeavy.png
-  - typeSingle: RoleIconHeavyMap
-    fileSingle: Resources/DX/Roles/RoleIconHeavyMap.png
-  - typeSingle: RoleIconAntiArmor
-    fileSingle: Resources/DX/Roles/RoleIconAntiArmor.png
-  - typeSingle: RoleIconAntiArmorMap
-    fileSingle: Resources/DX/Roles/RoleIconAntiArmorMap.png
-  - typeSingle: RoleIconRocketeer
-    fileSingle: Resources/DX/Roles/RoleIconRocketeer.png
-  - typeSingle: RoleIconRocketeerMap
-    fileSingle: Resources/DX/Roles/RoleIconRocketeerMap.png
-  - typeSingle: RoleIconGrenadier
-    fileSingle: Resources/DX/Roles/RoleIconGrenadier.png
-  - typeSingle: RoleIconGrenadierMap
-    fileSingle: Resources/DX/Roles/RoleIconGrenadierMap.png
-  - typeSingle: RoleIconDemolitions
-    fileSingle: Resources/DX/Roles/RoleIconDemolitions.png
-  - typeSingle: RoleIconDemolitionsMap
-    fileSingle: Resources/DX/Roles/RoleIconDemolitionsMap.png
-  - typeSingle: RoleIconMedic
-    fileSingle: Resources/DX/Roles/RoleIconMedic.png
-  - typeSingle: RoleIconMedicMap
-    fileSingle: Resources/DX/Roles/RoleIconMedicMap.png
-  - typeSingle: RoleIconPsionics
-    fileSingle: Resources/DX/Roles/RoleIconPsionics.png
-  - typeSingle: RoleIconPsionicsMap
-    fileSingle: Resources/DX/Roles/RoleIconPsionicsMap.png
-  - typeSingle: RoleIconSpecialist
-    fileSingle: Resources/DX/Roles/RoleIconSpecialist.png
-  - typeSingle: RoleIconSpecialistMap
-    fileSingle: Resources/DX/Roles/RoleIconSpecialistMap.png
+  - typeSingle: RoleIconRifle
+    fileSingle: Resources/DX/Roles/RoleIconRifle.png
+  - typeSingle: RoleIconRifleMap
+    fileSingle: Resources/DX/Roles/RoleIconRifleMap.png
+  - typeSingle: RoleIconScopedRifle
+    fileSingle: Resources/DX/Roles/RoleIconScopedRifle.png
+  - typeSingle: RoleIconScopedRifleMap
+    fileSingle: Resources/DX/Roles/RoleIconScopedRifleMap.png
+  - typeSingle: RoleIconCrosshair
+    fileSingle: Resources/DX/Roles/RoleIconCrosshair.png
+  - typeSingle: RoleIconCrosshairMap
+    fileSingle: Resources/DX/Roles/RoleIconCrosshairMap.png
+  - typeSingle: RoleIconBinoculars
+    fileSingle: Resources/DX/Roles/RoleIconBinoculars.png
+  - typeSingle: RoleIconBinocularsMap
+    fileSingle: Resources/DX/Roles/RoleIconBinocularsMap.png
+  - typeSingle: RoleIconShotgun
+    fileSingle: Resources/DX/Roles/RoleIconShotgun.png
+  - typeSingle: RoleIconShotgunMap
+    fileSingle: Resources/DX/Roles/RoleIconShotgunMap.png
+  - typeSingle: RoleIconAmmoBelt
+    fileSingle: Resources/DX/Roles/RoleIconAmmoBelt.png
+  - typeSingle: RoleIconAmmoBeltMap
+    fileSingle: Resources/DX/Roles/RoleIconAmmoBeltMap.png
+  - typeSingle: RoleIconFist
+    fileSingle: Resources/DX/Roles/RoleIconFist.png
+  - typeSingle: RoleIconFistMap
+    fileSingle: Resources/DX/Roles/RoleIconFistMap.png
+  - typeSingle: RoleIconBrokenShield
+    fileSingle: Resources/DX/Roles/RoleIconBrokenShield.png
+  - typeSingle: RoleIconBrokenShieldMap
+    fileSingle: Resources/DX/Roles/RoleIconBrokenShieldMap.png
+  - typeSingle: RoleIconRocket
+    fileSingle: Resources/DX/Roles/RoleIconRocket.png
+  - typeSingle: RoleIconRocketMap
+    fileSingle: Resources/DX/Roles/RoleIconRocketMap.png
+  - typeSingle: RoleIconGrenade
+    fileSingle: Resources/DX/Roles/RoleIconGrenade.png
+  - typeSingle: RoleIconGrenadeMap
+    fileSingle: Resources/DX/Roles/RoleIconGrenadeMap.png
+  - typeSingle: RoleIconBomb
+    fileSingle: Resources/DX/Roles/RoleIconBomb.png
+  - typeSingle: RoleIconBombMap
+    fileSingle: Resources/DX/Roles/RoleIconBombMap.png
+  - typeSingle: RoleIconMedicalCross
+    fileSingle: Resources/DX/Roles/RoleIconMedicalCross.png
+  - typeSingle: RoleIconMedicalCrossMap
+    fileSingle: Resources/DX/Roles/RoleIconMedicalCrossMap.png
+  - typeSingle: RoleIconWaves
+    fileSingle: Resources/DX/Roles/RoleIconWaves.png
+  - typeSingle: RoleIconWavesMap
+    fileSingle: Resources/DX/Roles/RoleIconWavesMap.png
+  - typeSingle: RoleIconBolt
+    fileSingle: Resources/DX/Roles/RoleIconBolt.png
+  - typeSingle: RoleIconBoltMap
+    fileSingle: Resources/DX/Roles/RoleIconBoltMap.png
 
 # =====================================================================
 #  Role-icon registry (same names as xcom1, so saves/mods line up).
@@ -74,48 +77,48 @@ extraSprites:
 roleIcons:
   - name: NONE
     sprite: RoleIconNone
-  - name: INFANTRY
-    sprite: RoleIconInfantry
-    mapSprite: RoleIconInfantryMap
-  - name: MARKSMAN
-    sprite: RoleIconMarksman
-    mapSprite: RoleIconMarksmanMap
-  - name: SNIPER
-    sprite: RoleIconSniper
-    mapSprite: RoleIconSniperMap
-  - name: SCOUT
-    sprite: RoleIconScout
-    mapSprite: RoleIconScoutMap
-  - name: ASSAULT
-    sprite: RoleIconAssault
-    mapSprite: RoleIconAssaultMap
-  - name: MACHINE_GUNNER
-    sprite: RoleIconMachineGunner
-    mapSprite: RoleIconMachineGunnerMap
-  - name: HEAVY
-    sprite: RoleIconHeavy
-    mapSprite: RoleIconHeavyMap
-  - name: ANTI_ARMOR
-    sprite: RoleIconAntiArmor
-    mapSprite: RoleIconAntiArmorMap
-  - name: ROCKETEER
-    sprite: RoleIconRocketeer
-    mapSprite: RoleIconRocketeerMap
-  - name: GRENADIER
-    sprite: RoleIconGrenadier
-    mapSprite: RoleIconGrenadierMap
-  - name: DEMOLITIONS
-    sprite: RoleIconDemolitions
-    mapSprite: RoleIconDemolitionsMap
-  - name: MEDIC
-    sprite: RoleIconMedic
-    mapSprite: RoleIconMedicMap
-  - name: PSIONICS
-    sprite: RoleIconPsionics
-    mapSprite: RoleIconPsionicsMap
-  - name: SPECIALIST
-    sprite: RoleIconSpecialist
-    mapSprite: RoleIconSpecialistMap
+  - name: RIFLE
+    sprite: RoleIconRifle
+    mapSprite: RoleIconRifleMap
+  - name: SCOPED_RIFLE
+    sprite: RoleIconScopedRifle
+    mapSprite: RoleIconScopedRifleMap
+  - name: CROSSHAIR
+    sprite: RoleIconCrosshair
+    mapSprite: RoleIconCrosshairMap
+  - name: BINOCULARS
+    sprite: RoleIconBinoculars
+    mapSprite: RoleIconBinocularsMap
+  - name: SHOTGUN
+    sprite: RoleIconShotgun
+    mapSprite: RoleIconShotgunMap
+  - name: AMMO_BELT
+    sprite: RoleIconAmmoBelt
+    mapSprite: RoleIconAmmoBeltMap
+  - name: FIST
+    sprite: RoleIconFist
+    mapSprite: RoleIconFistMap
+  - name: BROKEN_SHIELD
+    sprite: RoleIconBrokenShield
+    mapSprite: RoleIconBrokenShieldMap
+  - name: ROCKET
+    sprite: RoleIconRocket
+    mapSprite: RoleIconRocketMap
+  - name: GRENADE
+    sprite: RoleIconGrenade
+    mapSprite: RoleIconGrenadeMap
+  - name: BOMB
+    sprite: RoleIconBomb
+    mapSprite: RoleIconBombMap
+  - name: MEDICAL_CROSS
+    sprite: RoleIconMedicalCross
+    mapSprite: RoleIconMedicalCrossMap
+  - name: WAVES
+    sprite: RoleIconWaves
+    mapSprite: RoleIconWavesMap
+  - name: BOLT
+    sprite: RoleIconBolt
+    mapSprite: RoleIconBoltMap
 
 # =====================================================================
 #  Soldier armor colours - TFTD tactical-palette values.
@@ -192,56 +195,56 @@ armors:
 roles:
   - name: STR_ROLE_INFANTRY
     shortName: INF
-    icon: INFANTRY
+    icon: RIFLE
     color: 192           # Blue
   - name: STR_ROLE_MARKSMAN
     shortName: MRK
-    icon: MARKSMAN
+    icon: SCOPED_RIFLE
     color: 48            # Gray
   - name: STR_ROLE_SNIPER
     shortName: SNP
-    icon: SNIPER
+    icon: CROSSHAIR
     color: 63            # Black
   - name: STR_ROLE_SCOUT
     shortName: SCT
-    icon: SCOUT
+    icon: BINOCULARS
     color: 17            # Yellow
   - name: STR_ROLE_ASSAULT
     shortName: ASL
-    icon: ASSAULT
+    icon: SHOTGUN
     color: 241           # Light Blue
   - name: STR_ROLE_MACHINE_GUNNER
     shortName: MGN
-    icon: MACHINE_GUNNER
+    icon: AMMO_BELT
     color: 95            # Dark Green
   - name: STR_ROLE_HEAVY
     shortName: HVY
-    icon: HEAVY
+    icon: FIST
     color: 64            # Brown
   - name: STR_ROLE_ANTI_ARMOR
     shortName: AAR
-    icon: ANTI_ARMOR
+    icon: BROKEN_SHIELD
   - name: STR_ROLE_ROCKETEER
     shortName: RKT
-    icon: ROCKETEER
+    icon: ROCKET
     color: 176           # Red
   - name: STR_ROLE_GRENADIER
     shortName: GRN
-    icon: GRENADIER
+    icon: GRENADE
     color: 161           # Orange
   - name: STR_ROLE_DEMOLITIONS
     shortName: DEM
-    icon: DEMOLITIONS
+    icon: BOMB
   - name: STR_ROLE_MEDIC
     shortName: MED
-    icon: MEDIC
+    icon: MEDICAL_CROSS
     color: 49            # White
   - name: STR_ROLE_PSIONICS
     shortName: PSI
-    icon: PSIONICS
+    icon: WAVES
     color: 225           # Pink
   - name: STR_ROLE_SPECIALIST
     shortName: SPC
-    icon: SPECIALIST
+    icon: BOLT
 
 # Seed-role display names live in Language/DX/en-US.yml (shared with xcom1).

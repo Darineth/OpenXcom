@@ -25,22 +25,22 @@ See [DX-Features.md](../DX-Features.md#soldier-roles-in-progress) and the design
 ```yaml
 # 1. the icon art: ordinary named single-image surfaces
 extraSprites:
-  - typeSingle: RoleIconSniper
-    fileSingle: Resources/DX/Roles/RoleIconSniper.png
-  - typeSingle: RoleIconSniperMap
-    fileSingle: Resources/DX/Roles/RoleIconSniperMap.png
+  - typeSingle: RoleIconCrosshair
+    fileSingle: Resources/DX/Roles/RoleIconCrosshair.png
+  - typeSingle: RoleIconCrosshairMap
+    fileSingle: Resources/DX/Roles/RoleIconCrosshairMap.png
 
 # 2. the registry: bundles a badge + map marker under a stable name
 roleIcons:
-  - name: SNIPER
-    sprite: RoleIconSniper
-    mapSprite: RoleIconSniperMap
+  - name: CROSSHAIR          # named for what it DEPICTS, not for a role
+    sprite: RoleIconCrosshair
+    mapSprite: RoleIconCrosshairMap
 
 # 3. the seed role copied into a new game's editable role list
 roles:
   - name: STR_ROLE_SNIPER
     shortName: SNP
-    icon: SNIPER            # a roleIcons entry, by name
+    icon: CROSSHAIR         # a roleIcons entry, by name
     color: 15               # a soldierArmorBaseColors value (Black)
 
 # 4. the colour set the in-game picker offers
