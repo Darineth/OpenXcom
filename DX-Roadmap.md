@@ -426,7 +426,13 @@ therefore reframed as targeted deltas:
   *(design + audit: [plans/Feature-StealthArmor.md](plans/Feature-StealthArmor.md);
   legacy: [Legacy-DX-Features.md](Legacy-DX-Features.md) §15)*
 - [ ] **Channeled Mind Control** — with backlash/counter-control. Per-turn upkeep state on
-  `BattleUnit`, implemented directly (the overwatch pattern).
+  `BattleUnit`, implemented directly (the overwatch pattern). **Audit done (Jul 2026):** the delta is
+  real and unreachable from mods — `convertToFaction` and `_mindControllerID` are unbound to script and
+  the `tryPsiAttack*` hooks are `const`, so a mod cannot end control, identify a controller, or apply
+  backlash. Note the audit's surprise: **stock MC is not permanent** — `BattleUnit::prepareNewTurn`
+  already reverts the faction at the victim's next turn, so channeling replaces a one-turn expiry rather
+  than an infinite one. **Mod opt-in** (`mindControl:` node on the psi-amp); no node = stock behavior.
+  *(design + audit: [plans/Feature-ChanneledMindControl.md](plans/Feature-ChanneledMindControl.md))*
 - [ ] **Mind Blast** — direct psychic damage *(needs damage-model pieces).*
 - [ ] **Clairvoyance** — area reveal power *(needs Phase 1 fog-of-war).*
 - [ ] **Psi-Amp Ammo Mechanics** — per-use round cost; percentage-based, armor-reducible
@@ -513,6 +519,9 @@ implementation (see CLAUDE.md "Planning Features").*
     with reaction fire and TU reserves; AI usage; whether the debt is a flat carryover or
     scaled. Touches `BattleUnit` TU accounting (`spendTimeUnits`, `prepareNewTurn`/turn
     recovery) and the action-cost checks that gate actions on available TUs.
+  - It might be better to do a very different approach, where there's a "base TU" and a
+    "bonus TU" pool?  Rather than negative, just clamp the %TU action costs, and also
+    keep TU restoration from going beyond that base set.  Needs thought.
 
 - [x] **Editable base damage type properties** — make the built-in damage types' properties
   moddable instead of hard-coded, so mods can tune the base behavior of each damage type.

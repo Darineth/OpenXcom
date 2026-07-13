@@ -529,6 +529,8 @@ void SavedBattleGame::loadMapResources(Mod *mod)
 	}
 
 	initUtilities(mod);
+	// DX: the mind-control links survive as unit ids + a psi-amp item TYPE; re-resolve the rule pointers.
+	resolveMindControlRules();
 	// matches up tiles and units
 	resetUnitTiles();
 	getTileEngine()->calculateLighting(LL_AMBIENT, TileEngine::invalid, 0, true);
@@ -1533,6 +1535,264 @@ const RuleCraftDeployment& SavedBattleGame::getCustomDeployment(const RuleCraft*
 /**
  * Ends the current turn and progresses to the next one.
  */
+/**
+ * DX: resolves a unit id to a live unit.
+ * @param id Unit id.
+ * @return The unit, or nullptr if there is no such unit.
+ */
+BattleUnit *SavedBattleGame::getUnitById(int id) const
+{
+	if (id < 0)
+	{
+		return nullptr;
+	}
+	for (auto* bu : _units)
+	{
+		if (bu->getId() == id)
+		{
+			return bu;
+		}
+	}
+	return nullptr;
+}
+
+/**
+ * DX: the unit currently channeling a mind control on this one.
+ * @param thrall The controlled unit.
+ * @return The controller, or nullptr if it isn't channeled (or the controller is gone).
+ */
+BattleUnit *SavedBattleGame::getMindController(const BattleUnit *thrall) const
+{
+	return thrall ? getUnitById(thrall->getMindControlledBy()) : nullptr;
+}
+
+/**
+ * DX: establishes a channeled mind control - the controller takes the thrall, which changes faction and
+ * stays that way until the link breaks (rather than reverting on its next turn, as stock MC does).
+ * Any link the thrall was already under is broken first, so a thrall always has exactly one controller;
+ * that is also how counter-control steals a thrall from another psi unit.
+ * @param controller The unit doing the channeling.
+ * @param thrall The unit being taken.
+ */
+void SavedBattleGame::linkMindControl(BattleUnit *controller, BattleUnit *thrall)
+{
+	if (!controller || !thrall || controller == thrall)
+	{
+		return;
+	}
+
+	// A thrall has exactly one master: whoever held it loses it.
+	if (BattleUnit *previous = getMindController(thrall))
+	{
+		previous->removeThrall(thrall->getId());
+	}
+
+	thrall->setMindControlledBy(controller->getId());
+	controller->addThrall(thrall->getId());
+	thrall->convertToFaction(controller->getFaction());
+}
+
+/**
+ * DX: breaks one channeled link. The thrall goes back to its own side (which is exactly what stock MC
+ * does at the victim's next turn - here it simply happens when the controller can no longer hold on).
+ * @param thrall The controlled unit.
+ * @param revert False to unlink without changing faction (the caller is handling the faction itself,
+ *               e.g. because the thrall just died).
+ */
+void SavedBattleGame::breakMindControl(BattleUnit *thrall, bool revert)
+{
+	if (!thrall || !thrall->isMindControlled())
+	{
+		return;
+	}
+
+	if (BattleUnit *controller = getMindController(thrall))
+	{
+		controller->removeThrall(thrall->getId());
+	}
+	thrall->setMindControlledBy(-1);
+
+	if (revert && thrall->getFaction() != thrall->getOriginalFaction())
+	{
+		thrall->convertToFaction(thrall->getOriginalFaction());
+		thrall->setTimeUnits(0); // it spent the turn under someone else's orders
+	}
+}
+
+/**
+ * DX: tears down every channeled link this unit is part of, in both directions. Called when a unit dies,
+ * falls unconscious, or the mission stage ends - a dangling id would otherwise outlive the unit.
+ * @param unit The unit leaving the fight.
+ */
+void SavedBattleGame::breakAllMindControl(BattleUnit *unit)
+{
+	if (!unit)
+	{
+		return;
+	}
+
+	// as a thrall: I go back to my own side
+	breakMindControl(unit);
+
+	// as a controller: everyone I was holding goes back to theirs
+	if (unit->isChanneling())
+	{
+		for (int id : std::vector<int>(unit->getThralls()))
+		{
+			if (BattleUnit *thrall = getUnitById(id))
+			{
+				breakMindControl(thrall);
+			}
+		}
+		unit->clearThralls();
+	}
+}
+
+/**
+ * DX: re-resolves the RuleMindControl behind every channeled link. The link itself is stored as unit ids
+ * and the governing psi-amp as an item TYPE (both survive a save); the rule POINTER does not, so it has
+ * to be looked up again after loading.
+ */
+void SavedBattleGame::resolveMindControlRules()
+{
+	for (auto* bu : _units)
+	{
+		const std::string &type = bu->getChannelWeaponType();
+		if (!type.empty())
+		{
+			const RuleItem *rule = _rule->getItem(type, false);
+			bu->setChannelWeapon(type, rule ? &rule->getMindControl() : nullptr);
+		}
+	}
+}
+
+/**
+ * DX: deducts one thrall's worth of flat upkeep from a controller.
+ *
+ * All-or-nothing: if he cannot cover every configured resource, nothing is taken and the caller drops the
+ * link. Health and stun are the exception - they are *inflicted*, not spent, so they always "succeed"
+ * (a mod that charges health for channeling is choosing to let a controller bleed himself dry).
+ * @param controller The channeling unit.
+ * @param rule The governing psi-amp's mind-control rules.
+ * @return True if the upkeep was paid.
+ */
+bool SavedBattleGame::payMindControlUpkeep(BattleUnit *controller, const RuleMindControl *rule)
+{
+	if (!rule->upkeep.anyCost())
+	{
+		return true; // free to hold - the mod is using recovery penalties, or nothing at all
+	}
+
+	// Reuse the engine's own affordability rules rather than re-deriving them: BattleActionCost::haveTU
+	// covers every resource, including the "this would knock me out" health/stun guard, so a controller can
+	// never channel himself unconscious or dead. Can't cover it => nothing is spent and the link drops.
+	BattleActionCost cost(controller);
+	static_cast<RuleItemUseCost&>(cost) = rule->upkeep.cost;
+	cost.type = BA_MINDCONTROL;
+
+	if (!cost.haveTU())
+	{
+		return false;
+	}
+
+	controller->spendCost(rule->upkeep.cost);
+	return true;
+}
+
+/**
+ * DX: the thrall's per-turn struggle, when the amp's rules enable it (`resist: perTurn`). The contest is
+ * re-run with the thrall's psi defence against the controller's psi strength - the same shape as the
+ * original attack - plus the amp's `resist: modifier` on the defence.
+ * @param controller The channeling unit.
+ * @param thrall The controlled unit.
+ * @param rule The governing psi-amp's mind-control rules.
+ * @return True if the thrall breaks free this turn.
+ */
+bool SavedBattleGame::thrallResists(const BattleUnit *controller, const BattleUnit *thrall, const RuleMindControl *rule) const
+{
+	const int grip = controller->getBaseStats()->psiStrength + controller->getBaseStats()->psiSkill / 5;
+	const int struggle = thrall->getBaseStats()->psiStrength + rule->resistModifier + RNG::generate(0, 55);
+
+	return struggle > grip;
+}
+
+/**
+ * DX: the channeled-mind-control upkeep, run at the start of a side's turn - after its units have had
+ * their stats refreshed, so a controller pays out of the pool he just recovered rather than out of last
+ * turn's leftovers.
+ *
+ * For each of the incoming side's controllers: check he can still channel at all, then charge the flat
+ * upkeep once per thrall. Anything he cannot pay for is released - and a released thrall simply reverts
+ * to its own side, which is exactly what stock mind control does every turn anyway. (The other half of
+ * the upkeep, the recovery penalties, is applied while the stats are computed: BattleUnit::channelRecovery.)
+ */
+void SavedBattleGame::processMindControlUpkeep()
+{
+	for (auto* controller : _units)
+	{
+		if (!controller->isChanneling() || controller->getFaction() != _side)
+		{
+			continue;
+		}
+
+		const RuleMindControl *rule = controller->getChannelRule();
+
+		// Can he still hold on at all? Death, unconsciousness and panic break the concentration; so does
+		// losing the amp, when the amp's rules say it must be held.
+		bool ableToChannel = rule && !controller->isOut() && !controller->isOutThresholdExceed()
+			&& controller->getStatus() != STATUS_PANICKING && controller->getStatus() != STATUS_BERSERK;
+
+		if (ableToChannel && rule->requiresWeapon)
+		{
+			bool holdingAmp = false;
+			for (const auto* item : *controller->getInventory())
+			{
+				if (item->getRules()->getBattleType() == BT_PSIAMP && item->getSlot()
+					&& item->getSlot()->isRightHand() + item->getSlot()->isLeftHand() > 0)
+				{
+					holdingAmp = true;
+					break;
+				}
+			}
+			ableToChannel = holdingAmp;
+		}
+
+		if (!ableToChannel)
+		{
+			breakAllMindControl(controller);
+			continue;
+		}
+
+		for (int thrallId : std::vector<int>(controller->getThralls()))
+		{
+			BattleUnit *thrall = getUnitById(thrallId);
+			if (!thrall || thrall->isOut())
+			{
+				breakMindControl(thrall);
+				controller->removeThrall(thrallId);
+				continue;
+			}
+
+			// The thrall may get a fresh chance to struggle free, if the amp's rules allow it.
+			if (rule->resistPerTurn && thrallResists(controller, thrall, rule))
+			{
+				breakMindControl(thrall);
+				continue;
+			}
+
+			if (!payMindControlUpkeep(controller, rule))
+			{
+				breakMindControl(thrall);
+			}
+		}
+
+		if (!controller->isChanneling())
+		{
+			controller->setChannelWeapon("", nullptr);
+		}
+	}
+}
+
 void SavedBattleGame::endTurn()
 {
 	// reset turret direction for all hostile and neutral units (as it may have been changed during reaction fire)
@@ -1684,6 +1944,10 @@ void SavedBattleGame::endTurn()
 			bu->setVisible(false);
 		}
 	}
+
+	// DX: the incoming side's controllers now pay for their thralls, out of the pool they just recovered.
+	// Anything they can't pay for is released (and reverts, exactly as stock mind control does anyway).
+	processMindControlUpkeep();
 
 	//scripts update
 	newTurnUpdateScripts();

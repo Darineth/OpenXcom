@@ -419,6 +419,27 @@ public:
 	const RuleCraftDeployment& getCustomDeployment(const RuleCraft* rule) const;
 	/// Ends the turn.
 	void endTurn();
+
+	// DX channeled mind control. The controller<->thrall link lives on BattleUnit as unit IDs; these are
+	// the ONLY sanctioned ways to make or break it, so the two sides can never drift out of sync.
+	/// DX: resolves a unit id to a unit (nullptr if gone).
+	BattleUnit *getUnitById(int id) const;
+	/// DX: the unit channeling a mind control on this one, if any.
+	BattleUnit *getMindController(const BattleUnit *thrall) const;
+	/// DX: links controller -> thrall (converts the thrall's faction). Breaks any link the thrall was under.
+	void linkMindControl(BattleUnit *controller, BattleUnit *thrall);
+	/// DX: breaks one link and reverts the thrall to its own faction.
+	void breakMindControl(BattleUnit *thrall, bool revert = true);
+	/// DX: charges the incoming side's controllers for their thralls; breaks the links they can't pay for.
+	void processMindControlUpkeep();
+	/// DX: deducts one thrall's flat upkeep from the controller. False = he can't pay (the link breaks).
+	bool payMindControlUpkeep(BattleUnit *controller, const RuleMindControl *rule);
+	/// DX: the thrall's per-turn struggle (only when the amp enables it). True = it breaks free.
+	bool thrallResists(const BattleUnit *controller, const BattleUnit *thrall, const RuleMindControl *rule) const;
+	/// DX: re-resolves the psi-amp rules behind every channeled link (pointers don't survive a load).
+	void resolveMindControlRules();
+	/// DX: breaks every link this unit is part of (as controller and as thrall). Call on death/KO/stage end.
+	void breakAllMindControl(BattleUnit *unit);
 	/// Gets animation frame.
 	int getAnimFrame() const;
 	/// Increase animation frame.

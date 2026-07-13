@@ -1,6 +1,5 @@
 # TODO
-- Document more modded field details from OXCE (such as camouflageAtDay, which is not really documented)
-
+- Write a TD catalogue document, explaining all the items, units, and mechanics specific to the original Terror Defense mod.  This will be the starting point for future work building the real mod.
 
 # Documentation
 - Write a full ruleset document.  Explain fields, structures, options. **DONE, but might need a review pass?**

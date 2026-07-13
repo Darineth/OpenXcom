@@ -295,6 +295,129 @@ inline RuleItemUseRuleBase<T> getDefault(const RuleItemUseRuleBase<NullableValue
 }
 
 /**
+ * DX: a min/max roll, used by the mind-control backlash costs. [0,0] = nothing happens.
+ * Accepts either a pair (`[20, 40]`) or a single scalar (`30`, i.e. a fixed value).
+ */
+struct RuleRandomRange
+{
+	int min = 0;
+	int max = 0;
+
+	bool any() const { return min != 0 || max != 0; }
+
+	void load(const YAML::YamlNodeReader& reader)
+	{
+		if (!reader) return;
+		if (reader.isSeq())
+		{
+			if (reader.childrenCount() > 0) reader[0].tryReadVal(min);
+			if (reader.childrenCount() > 1) reader[1].tryReadVal(max);
+		}
+		else
+		{
+			reader.tryReadVal(min);
+			max = min;
+		}
+		if (max < min) std::swap(min, max);
+	}
+};
+
+/**
+ * DX: what the controller pays, each turn, per thrall, to keep a channeled mind control up.
+ *
+ * Two independent and stackable kinds, so a mod picks its own flavour instead of inheriting one:
+ *  - FLAT costs (time/energy/morale/health/stun/mana), deducted outright. Cannot pay => the link breaks.
+ *  - RECOVERY penalties: the percent of the controller's normal per-turn regeneration that is WITHHELD.
+ *    100 = that resource does not regenerate at all while channeling. (The legacy fork's entire upkeep
+ *    model was one of these: `timeRecoveryPercent: 90`, i.e. recover only 10% of your TU.)
+ * Everything defaults to 0 = free.
+ */
+struct RuleMindControlUpkeep
+{
+	RuleItemUseCost cost;              // flat, per turn, per thrall
+	int timeRecoveryPercent = 0;       // percent of normal regen withheld while channeling
+	int energyRecoveryPercent = 0;
+	int manaRecoveryPercent = 0;
+	int moraleRecoveryPercent = 0;
+
+	bool anyCost() const
+	{
+		return cost.Time || cost.Energy || cost.Morale || cost.Health || cost.Stun || cost.Mana;
+	}
+
+	void load(const YAML::YamlNodeReader& reader)
+	{
+		if (!reader) return;
+		cost.load(reader);   // time / energy / morale / health / stun / mana
+		reader.tryRead("timeRecoveryPercent", timeRecoveryPercent);
+		reader.tryRead("energyRecoveryPercent", energyRecoveryPercent);
+		reader.tryRead("manaRecoveryPercent", manaRecoveryPercent);
+		reader.tryRead("moraleRecoveryPercent", moraleRecoveryPercent);
+	}
+};
+
+/**
+ * DX: backlash - what the CONTROLLER suffers when a mind control goes wrong.
+ */
+struct RuleMindControlBacklash
+{
+	RuleRandomRange damage;   // psychic damage dealt to the controller
+	RuleRandomRange stun;
+	int morale = 0;           // morale lost
+
+	bool any() const { return damage.any() || stun.any() || morale != 0; }
+
+	void load(const YAML::YamlNodeReader& reader)
+	{
+		if (!reader) return;
+		damage.load(reader["damage"]);
+		stun.load(reader["stun"]);
+		reader.tryRead("morale", morale);
+	}
+};
+
+/**
+ * DX: per-psi-amp mind-control config, loaded from the item's `mindControl:` node.
+ *
+ * Without the node (or with `channeled: false`) mind control behaves exactly as in stock OXCE: the
+ * victim is yours for the rest of your turn and reverts to its own faction at the start of its next one
+ * (see BattleUnit::prepareNewTurn), free of charge. With `channeled: true` the control instead PERSISTS
+ * as long as the controller keeps paying the upkeep - and breaks the moment he cannot, dies, falls
+ * unconscious, panics, or (when requiresWeapon) stops holding the amp.
+ */
+struct RuleMindControl
+{
+	bool channeled = false;              // opt in; false = stock one-turn mind control, unchanged
+	int maxThralls = 1;                  // how many units one controller may hold at once
+	bool requiresWeapon = true;          // must still hold the amp at turn start to keep the link
+	bool thrallRecoversTimeUnits = true; // stock gives the victim a full TU bar on capture
+
+	RuleMindControlUpkeep upkeep;
+	RuleMindControlBacklash backlashOnThrallDeath;  // a thrall dies while controlled
+	RuleMindControlBacklash backlashOnFailure;      // the attempt fails (stock does nothing here)
+
+	bool resistPerTurn = false;          // the thrall re-rolls the psi contest at the start of its turns
+	int resistModifier = 0;              // added to the thrall's defence on that re-roll
+
+	void load(const YAML::YamlNodeReader& reader)
+	{
+		if (!reader) return;
+		reader.tryRead("channeled", channeled);
+		reader.tryRead("maxThralls", maxThralls);
+		reader.tryRead("requiresWeapon", requiresWeapon);
+		reader.tryRead("thrallRecoversTimeUnits", thrallRecoversTimeUnits);
+		upkeep.load(reader["upkeep"]);
+		backlashOnThrallDeath.load(reader["backlashOnThrallDeath"]);
+		backlashOnFailure.load(reader["backlashOnFailure"]);
+		if (const auto& resist = reader["resist"])
+		{
+			resist.tryRead("perTurn", resistPerTurn);
+			resist.tryRead("modifier", resistModifier);
+		}
+	}
+};
+
+/**
  * Common configuration of item action.
  */
 struct RuleItemAction
@@ -452,6 +575,7 @@ private:
 	int _noLOSAccuracyPenalty;
 	int _explodeInventory;
 	RuleItemUseCostRule _costUse, _costMind, _costPanic, _costThrow, _costPrime, _costUnprime;
+	RuleMindControl _mindControl; // DX: channeled mind control (opt-in per psi-amp)
 	int _clipSize, _battleClipSize, _specialChance, _tuLoad[AmmoSlotMax], _tuUnload[AmmoSlotMax];
 	// DX: overwatch (set-and-hold reaction fire over a cone). Range/min-range in tiles, cone angle is
 	// the full cone width in degrees, modifier scales the offensive reaction score, shot is the fire mode.
@@ -836,6 +960,8 @@ public:
 	RuleItemUseCost getCostUse() const;
 	/// Gets the item's mind control cost.
 	RuleItemUseCost getCostMind() const;
+	/// DX: gets the channeled-mind-control config (channeled=false => stock one-turn MC).
+	const RuleMindControl &getMindControl() const { return _mindControl; }
 	/// Gets the item's panic cost.
 	RuleItemUseCost getCostPanic() const;
 	/// Gets the item's throw cost.

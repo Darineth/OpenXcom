@@ -696,6 +696,10 @@ void BattleUnit::load(const YAML::YamlNodeReader& node, const Mod *mod, const Sc
 	}
 	reader.tryRead("motionPoints", _motionPoints);
 	reader.tryRead("scannedTurn", _scannedTurn); // DX: keep motion-detector blips across save/load
+	// DX channeled mind control: the link is serialized as unit ids (pointers don't survive a load).
+	reader.tryRead("mindControlledBy", _mindControlledBy);
+	reader.tryRead("thralls", _thralls);
+	reader.tryRead("channelWeapon", _channelWeaponType);
 	reader.tryRead("customMarker", _customMarker);
 	reader.tryRead("alreadyRespawned", _alreadyRespawned);
 	if (const auto& ah = reader["activeHand"])
@@ -826,6 +830,12 @@ void BattleUnit::save(YAML::YamlNodeWriter writer, const ScriptGlobal *shared) c
 		writer.write("personalLightOn", _personalLightOn); // DX: per-unit light switch (default on)
 	if (_cloakBroken)
 		writer.write("cloakBroken", _cloakBroken); // DX: dynamic cloak is down until this unit's next turn
+	if (_mindControlledBy >= 0)
+		writer.write("mindControlledBy", _mindControlledBy); // DX: who is channeling me
+	if (!_thralls.empty())
+		writer.write("thralls", _thralls); // DX: who I am channeling
+	if (!_channelWeaponType.empty())
+		writer.write("channelWeapon", _channelWeaponType); // DX: the psi-amp governing my links
 	if (_aiMedikitUsed)
 		writer.write("aiMedikitUsed", _aiMedikitUsed);
 	if (_previousOwner)
@@ -3114,7 +3124,12 @@ void BattleUnit::prepareNewTurn(bool fullProcess)
 
 	// don't give it back its TUs or anything this round
 	// because it's no longer a unit of the team getting TUs back
-	if (_faction != _originalFaction)
+	//
+	// DX: ...unless a channeled mind control is still holding it. Stock MC expires here, at the victim's
+	// next turn; a channeled one instead persists until its controller can no longer pay the upkeep (see
+	// SavedBattleGame::processMindControlUpkeep, which runs after this and breaks the link if he can't).
+	// A unit that isn't channeled is untouched, so stock behavior is preserved exactly.
+	if (_faction != _originalFaction && !isMindControlled())
 	{
 		_faction = _originalFaction;
 		if (_faction == FACTION_PLAYER && _currentAIState)
@@ -3141,6 +3156,27 @@ void BattleUnit::prepareNewTurn(bool fullProcess)
 	}
 
 	updateUnitStats(false, true);
+}
+
+/**
+ * DX: withholds part of a per-turn recovery while this unit is channeling a mind control.
+ *
+ * This is one of the two upkeep kinds a mod can configure (the other is a flat cost, deducted in
+ * SavedBattleGame::processMindControlUpkeep). The penalty is a PERCENT of the normal regeneration, and it
+ * STACKS per thrall - holding two units with a 50% penalty means no recovery at all. Capped at 100%, so a
+ * recovery is throttled to nothing but never turns into a drain (that is what the flat costs are for).
+ * @param recovery The recovery this unit would normally get.
+ * @param percentWithheldPerThrall The armor's/amp's configured penalty, per thrall (0 = no penalty).
+ * @return The recovery actually granted.
+ */
+int BattleUnit::channelRecovery(int recovery, int percentWithheldPerThrall) const
+{
+	if (percentWithheldPerThrall <= 0 || _thralls.empty() || recovery <= 0)
+	{
+		return recovery;
+	}
+	const int withheld = std::min(100, percentWithheldPerThrall * (int)_thralls.size());
+	return recovery * (100 - withheld) / 100;
 }
 
 /**
@@ -3191,16 +3227,16 @@ void BattleUnit::updateUnitStats(bool tuAndEnergy, bool rest)
 
 		// update stats
 		prepareHealth(_armor->getHealthRecovery(this, HPRecovery));
-		prepareMana(_armor->getManaRecovery(this, MNRecovery));
-		prepareMorale(_armor->getMoraleRecovery(this, MRRecovery));
+		prepareMana(channelRecovery(_armor->getManaRecovery(this, MNRecovery), _channelRule ? _channelRule->upkeep.manaRecoveryPercent : 0));
+		prepareMorale(channelRecovery(_armor->getMoraleRecovery(this, MRRecovery), _channelRule ? _channelRule->upkeep.moraleRecoveryPercent : 0));
 		prepareStun(_armor->getStunRegeneration(this, STRecovery));
 	}
 
 	if (tuAndEnergy)
 	{
 		// update stats
-		prepareTimeUnits(_armor->getTimeRecovery(this, TURecovery));
-		prepareEnergy(_armor->getEnergyRecovery(this, ENRecovery));
+		prepareTimeUnits(channelRecovery(_armor->getTimeRecovery(this, TURecovery), _channelRule ? _channelRule->upkeep.timeRecoveryPercent : 0));
+		prepareEnergy(channelRecovery(_armor->getEnergyRecovery(this, ENRecovery), _channelRule ? _channelRule->upkeep.energyRecoveryPercent : 0));
 	}
 }
 

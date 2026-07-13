@@ -555,6 +555,7 @@ void RuleItem::load(const YAML::YamlNodeReader& node, Mod *mod, const ModScript&
 	reader.tryRead("accuracyBurst", _confBurst.accuracy);
 	reader.tryRead("accuracyUse", _accuracyUse);
 	reader.tryRead("accuracyMindControl", _accuracyMind);
+	_mindControl.load(reader["mindControl"]); // DX
 	reader.tryRead("accuracyPanic", _accuracyPanic);
 	reader.tryRead("accuracyThrow", _accuracyThrow);
 	reader.tryRead("accuracyCloseQuarters", _accuracyCloseQuarters);

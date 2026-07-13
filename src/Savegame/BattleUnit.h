@@ -20,6 +20,8 @@
 #include <vector>
 #include <string>
 #include <unordered_set>
+#include <algorithm>
+#include "../Engine/Collections.h"
 #include "../Battlescape/Position.h"
 #include "../Mod/Armor.h"
 #include "../Mod/RuleItem.h"
@@ -119,6 +121,14 @@ private:
 	bool _haveNoFloorBelow = false;
 	bool _personalLightOn = true; // DX: per-unit personal-light switch (ANDed with the squad master toggle)
 	bool _cloakBroken = false; // DX: dynamic-cloak armor only - the cloak is down until this unit's next turn
+	// DX channeled mind control (opt-in per psi-amp; see RuleMindControl). The link is stored as unit
+	// IDs, not pointers, because pointers do not survive save/load - the same trick the overwatch weapon
+	// uses. _mindControlledBy is set on the THRALL, _thralls on the CONTROLLER; the two are always kept
+	// in sync through BattleUnit::setMindControlledBy / addThrall / releaseThrall.
+	int _mindControlledBy = -1;     // id of the unit channeling me, or -1
+	std::vector<int> _thralls;      // ids of the units I am channeling
+	std::string _channelWeaponType; // the psi-amp whose rules govern my links (persisted; the rule below is not)
+	const RuleMindControl *_channelRule = nullptr; // resolved from _channelWeaponType at link time / on load
 	int _currentArmor[SIDE_MAX], _maxArmor[SIDE_MAX];
 	int _maxArmorBase[SIDE_MAX];
 	int _armorDamage[SIDE_MAX];
@@ -361,6 +371,29 @@ public:
 	/// DX: is this unit currently hard to see (has active camouflage)? Drives the ghost render.
 	bool isCamouflaged() const { return getCamouflageAtDay() != 0 || getCamouflageAtDark() != 0; }
 
+	/// DX: id of the unit channeling a mind control on me (-1 = none).
+	int getMindControlledBy() const { return _mindControlledBy; }
+	/// DX: sets/clears my controller (thrall side of the link; use SavedBattleGame helpers to link properly).
+	void setMindControlledBy(int unitId) { _mindControlledBy = unitId; }
+	/// DX: am I being held by a channeled mind control?
+	bool isMindControlled() const { return _mindControlledBy >= 0; }
+	/// DX: the units I am channeling (ids).
+	const std::vector<int> &getThralls() const { return _thralls; }
+	/// DX: am I channeling anyone?
+	bool isChanneling() const { return !_thralls.empty(); }
+	/// DX: adds a thrall (controller side of the link).
+	void addThrall(int unitId) { if (std::find(_thralls.begin(), _thralls.end(), unitId) == _thralls.end()) _thralls.push_back(unitId); }
+	/// DX: removes a thrall (controller side of the link).
+	void removeThrall(int unitId) { Collections::removeIf(_thralls, [&](int id){ return id == unitId; }); }
+	/// DX: forgets every thrall (controller side only - the caller must revert them).
+	void clearThralls() { _thralls.clear(); }
+	/// DX: the psi-amp rules governing my links (nullptr when not channeling).
+	const RuleMindControl *getChannelRule() const { return _channelRule; }
+	/// DX: remembers which psi-amp established the link (its rules apply for the link's whole life).
+	void setChannelWeapon(const std::string &type, const RuleMindControl *rule) { _channelWeaponType = type; _channelRule = rule; }
+	/// DX: the psi-amp item type that established my links (for save/load resolution).
+	const std::string &getChannelWeaponType() const { return _channelWeaponType; }
+
 	/// Aim.
 	void aim(bool aiming);
 	/// Get direction to a certain point
@@ -464,6 +497,8 @@ public:
 	/// Prepare for a new turn.
 	void prepareNewTurn(bool fullProcess = true);
 	/// Calculate change in unit stats.
+	/// DX: withholds part of a recovery while channeling a mind control (stacks per thrall, capped at 100%).
+	int channelRecovery(int recovery, int percentWithheldPerThrall) const;
 	void updateUnitStats(bool tuAndEnergy, bool rest);
 	/// Morale change
 	void moraleChange(int change);
