@@ -103,6 +103,12 @@ extraSprites:
   - typeSingle: RoleIconSlashedEyeMap
     fileSingle: Resources/DX/Roles/RoleIconSlashedEyeMap.png
 
+  # DX heavy weapons: a heavy shell (large-calibre ordnance).
+  - typeSingle: RoleIconShell
+    fileSingle: Resources/DX/Roles/RoleIconShell.png
+  - typeSingle: RoleIconShellMap
+    fileSingle: Resources/DX/Roles/RoleIconShellMap.png
+
 roleIcons:
   - name: NONE
     sprite: RoleIconNone
@@ -161,6 +167,10 @@ roleIcons:
   - name: SLASHED_EYE
     sprite: RoleIconSlashedEye
     mapSprite: RoleIconSlashedEyeMap
+
+  - name: SHELL
+    sprite: RoleIconShell
+    mapSprite: RoleIconShellMap
 
 roles:
   - name: STR_ROLE_INFANTRY
