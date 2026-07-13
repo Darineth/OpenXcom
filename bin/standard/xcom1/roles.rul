@@ -97,6 +97,12 @@ extraSprites:
 #  by this name; the picker enumerates this list. NONE is the "no role"
 #  badge - it has no map marker (an unassigned unit keeps the default arrow).
 # =====================================================================
+  # DX stealth: an eye with a slash through it - "unseen".
+  - typeSingle: RoleIconSlashedEye
+    fileSingle: Resources/DX/Roles/RoleIconSlashedEye.png
+  - typeSingle: RoleIconSlashedEyeMap
+    fileSingle: Resources/DX/Roles/RoleIconSlashedEyeMap.png
+
 roleIcons:
   - name: NONE
     sprite: RoleIconNone
@@ -152,6 +158,10 @@ roleIcons:
 #  palette block bases; see RoleColorSelectState for the name<->value map).
 #  Anti-Armor / Demolitions / Specialist ship uncoloured, as in legacy.
 # =====================================================================
+  - name: SLASHED_EYE
+    sprite: RoleIconSlashedEye
+    mapSprite: RoleIconSlashedEyeMap
+
 roles:
   - name: STR_ROLE_INFANTRY
     shortName: INF

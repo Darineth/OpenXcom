@@ -74,6 +74,12 @@ extraSprites:
 # =====================================================================
 #  Role-icon registry (same names as xcom1, so saves/mods line up).
 # =====================================================================
+  # DX stealth: an eye with a slash through it - "unseen".
+  - typeSingle: RoleIconSlashedEye
+    fileSingle: Resources/DX/Roles/RoleIconSlashedEye.png
+  - typeSingle: RoleIconSlashedEyeMap
+    fileSingle: Resources/DX/Roles/RoleIconSlashedEyeMap.png
+
 roleIcons:
   - name: NONE
     sprite: RoleIconNone
@@ -130,6 +136,10 @@ roleIcons:
 #  ramp, so the purple names are omitted here. FIRST-GUESS VALUES - tune
 #  in play (deep-water palette variants tint all ramps bluer).
 # =====================================================================
+  - name: SLASHED_EYE
+    sprite: RoleIconSlashedEye
+    mapSprite: RoleIconSlashedEyeMap
+
 soldierArmorBaseColors:
   - name: STR_COLOR_WHITE
     color: 49            # block 3 greyscale, lighten
