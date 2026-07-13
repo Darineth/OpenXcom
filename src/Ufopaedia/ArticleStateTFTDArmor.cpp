@@ -148,6 +148,9 @@ namespace OpenXcom
 		addStat("STR_PSIONIC_STRENGTH", armor->getStats()->psiStrength, true);
 		addStat("STR_PSIONIC_SKILL", armor->getStats()->psiSkill, true);
 
+		// DX: how hard the suit is to see (camouflage, cloak, glow, psi sight).
+		addArmorStealthStats(_lstInfo, _row, armor, _listColor2);
+
 		centerAllSurfaces();
 	}
 

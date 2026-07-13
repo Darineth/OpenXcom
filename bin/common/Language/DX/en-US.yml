@@ -301,3 +301,16 @@ en-US:
   cloak: "Dynamic cloak:"
   dynamic: "Cloak is dynamic?"
   breaksOn: "Broken by"
+#=================== DX Stealth (UFOpaedia armor articles) ===================
+#ArticleState.cpp
+  STR_DX_PEDIA_SEEN_FROM_DAY: "Seen from (day)"
+  STR_DX_PEDIA_SEEN_FROM_DARK: "Seen from (night)"
+  STR_DX_PEDIA_CAMOUFLAGE_DAY: "Camouflage (day)"
+  STR_DX_PEDIA_CAMOUFLAGE_DARK: "Camouflage (night)"
+  STR_DX_PEDIA_CLOAK: "Cloak"
+  STR_DX_PEDIA_CLOAK_DYNAMIC: "DYN"
+  STR_DX_PEDIA_ANTI_CAMOUFLAGE_DAY: "Anti-camouflage (day)"
+  STR_DX_PEDIA_ANTI_CAMOUFLAGE_DARK: "Anti-camouflage (night)"
+  STR_DX_PEDIA_PSI_VISION: "Psi vision"
+  STR_DX_PEDIA_PSI_CAMOUFLAGE: "Psi camouflage"
+  STR_DX_PEDIA_PERSONAL_LIGHT: "Personal light"

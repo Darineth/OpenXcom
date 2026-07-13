@@ -29,6 +29,8 @@ namespace OpenXcom
 	class Surface;
 	class TextButton;
 	class ArticleDefinition;
+	class Armor;
+	class TextList;
 
 
 	/// Current state of ufopedia
@@ -94,6 +96,10 @@ namespace OpenXcom
 
 		/// converts damage type to string
 		std::string getDamageTypeText(ItemDamageType dt) const;
+
+		/// DX: appends the armor's stealth summary (camouflage, cloak, glow, psi sight) to an article's
+		/// stat list. A no-op for armors with nothing stealth-related to say.
+		void addArmorStealthStats(TextList *list, int &row, const Armor *armor, Uint8 valueColor);
 
 		/// screen layout helpers
 		void initLayout();

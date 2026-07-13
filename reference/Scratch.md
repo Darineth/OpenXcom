@@ -1,12 +1,10 @@
 # TODO
-- Create new role icons for heavy weapons and stealth
-- Can we add key stealth metrics to the armor info screens
 - Document more modded field details from OXCE (such as camouflageAtDay, which is not really documented)
-- Write a full ruleset document.  Explain fields, structures, options.
+
 
 # Documentation
+- Write a full ruleset document.  Explain fields, structures, options. **DONE, but might need a review pass?**
 
-Two possible engine bugs surfaced and are noted in the docs, worth a separate look if you use those features: the adhoc tag-matching loop in GeoscapeState.cpp has an unconditional break, so only the first entry of adhocMissionScriptTags is ever compared; and RuleMissionScript/RuleArcScript never initialize _counterMin/_counterMax (only RuleEventScript does).
 
 # Questions
 - Overwatch+dual fire?

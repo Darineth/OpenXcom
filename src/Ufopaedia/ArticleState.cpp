@@ -24,6 +24,8 @@
 #include "../Engine/Surface.h"
 #include "../Interface/TextButton.h"
 #include "../Mod/ArticleDefinition.h"
+#include "../Mod/Armor.h"
+#include "../Interface/TextList.h"
 #include "../Mod/Mod.h"
 #include "../Savegame/SavedGame.h"
 
@@ -144,6 +146,69 @@ namespace OpenXcom
 	 */
 	ArticleState::~ArticleState()
 	{}
+
+/**
+ * DX: appends a short stealth summary to an armor article's stat list - the numbers a player needs to
+ * judge how hard the suit is to see, without opening Stats for Nerds. Only the lines that actually
+ * apply are shown, so ordinary armors gain nothing.
+ *
+ * Camouflage is reported the way the engine treats it (BattleUnit::getMaxViewDistance): a POSITIVE
+ * value is an absolute cap, in tiles, on how far away anyone can spot the wearer, so it reads as a
+ * "seen from" distance; a NEGATIVE value is a relative reduction of the observer's sight range, so it
+ * reads as a sight penalty. The two get different labels rather than one raw, ambiguous number.
+ * @param list The article's stat list.
+ * @param row Current row (advanced as lines are added).
+ * @param armor The armor being described.
+ * @param valueColor Colour for the value column.
+ */
+void ArticleState::addArmorStealthStats(TextList *list, int &row, const Armor *armor, Uint8 valueColor)
+{
+	const auto &cloak = armor->getCloak();
+	const int camoDay = armor->getCamouflageAtDay();
+	const int camoDark = armor->getCamouflageAtDark();
+	const int antiDay = armor->getAntiCamouflageAtDay();
+	const int antiDark = armor->getAntiCamouflageAtDark();
+	const int light = armor->getPersonalLightFriend();
+	const int psiVision = armor->getPsiVision();
+	const int psiCamo = armor->getPsiCamouflage();
+
+	// Personal light is listed only when it is stealth-relevant, i.e. bright enough to block sneaking.
+	const bool glowBlocksSneak = light > Armor::sneakDefaults.maxLight;
+
+	if (!camoDay && !camoDark && !antiDay && !antiDark && !psiVision && !psiCamo && !cloak.dynamic && !glowBlocksSneak)
+	{
+		return;
+	}
+
+	auto addLine = [&](const std::string &label, const std::string &value)
+	{
+		list->addRow(2, tr(label).c_str(), value.c_str());
+		list->setCellColor(row, 1, valueColor);
+		++row;
+	};
+
+	list->addRow(0);
+	++row;
+
+	if (camoDay > 0)  addLine("STR_DX_PEDIA_SEEN_FROM_DAY", std::to_string(camoDay));
+	if (camoDay < 0)  addLine("STR_DX_PEDIA_CAMOUFLAGE_DAY", std::to_string(-camoDay));
+	if (camoDark > 0) addLine("STR_DX_PEDIA_SEEN_FROM_DARK", std::to_string(camoDark));
+	if (camoDark < 0) addLine("STR_DX_PEDIA_CAMOUFLAGE_DARK", std::to_string(-camoDark));
+
+	if (cloak.dynamic)
+	{
+		// The cloak's camouflage only applies while it is up; sneaking and turning keep it by default.
+		addLine("STR_DX_PEDIA_CLOAK", tr("STR_DX_PEDIA_CLOAK_DYNAMIC"));
+	}
+
+	if (antiDay)  addLine("STR_DX_PEDIA_ANTI_CAMOUFLAGE_DAY", std::to_string(antiDay));
+	if (antiDark) addLine("STR_DX_PEDIA_ANTI_CAMOUFLAGE_DARK", std::to_string(antiDark));
+
+	if (psiVision) addLine("STR_DX_PEDIA_PSI_VISION", std::to_string(psiVision));
+	if (psiCamo)   addLine("STR_DX_PEDIA_PSI_CAMOUFLAGE", std::to_string(psiCamo));
+
+	if (glowBlocksSneak) addLine("STR_DX_PEDIA_PERSONAL_LIGHT", std::to_string(light));
+}
 
 	std::string ArticleState::getDamageTypeText(ItemDamageType dt) const
 	{
