@@ -695,6 +695,7 @@ void BattleUnit::load(const YAML::YamlNodeReader& node, const Mod *mod, const Sc
 		reader.tryRead("spawnUnitFaction", _spawnUnitFaction);
 	}
 	reader.tryRead("motionPoints", _motionPoints);
+	reader.tryRead("scannedTurn", _scannedTurn); // DX: keep motion-detector blips across save/load
 	reader.tryRead("customMarker", _customMarker);
 	reader.tryRead("alreadyRespawned", _alreadyRespawned);
 	if (const auto& ah = reader["activeHand"])
@@ -836,6 +837,8 @@ void BattleUnit::save(YAML::YamlNodeWriter writer, const ScriptGlobal *shared) c
 		writer.write("spawnUnitFaction", _spawnUnitFaction);
 	}
 	writer.write("motionPoints", _motionPoints);
+	if (_scannedTurn >= 0)
+		writer.write("scannedTurn", _scannedTurn); // DX: the blip is drawn while this matches the current turn
 	if (_customMarker > 0)
 		writer.write("customMarker", _customMarker);
 	if (_alreadyRespawned)
