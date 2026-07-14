@@ -77,6 +77,41 @@ of "the unit acted" belong in `unitActed`, not at the call sites.
 a single `&`. The armor cloak's `breaksOn:` list is exactly that: the loader ORs the named actions into
 a mask, and breaking the cloak is one bit test.
 
+## Clairvoyance (opt-in per psi-amp)
+
+A psychic sweep of an area around a **target tile** — the psi operative reaches out and the map opens up
+somewhere he can't see. New `BA_CLAIRVOYANCE` action, offered on a psi-amp that opts in.
+
+```yaml
+items:
+  - type: STR_PSI_AMP
+    tuClairvoyance: 30       # or costClairvoyance: { time: 30, mana: 5, ... } - the usual cost block
+    clairvoyance:
+      enabled: true          # opt in; without this the action does not exist
+      radius: 7              # tiles revealed around the target, at full power
+      levels: 1              # Z levels swept above AND below the target (0 = only its own)
+      revealUnits: true      # also mark units in the area
+      minPsiScore: 60        # psiStrength + psiSkill below this can't use it at all (0 = no gate)
+      scaleWithPsi: 140      # psi score at which the FULL radius is reached; below it, scales down
+                             # linearly. 0 = every psi soldier gets the full radius.
+```
+
+- **Terrain becomes known, not seen.** Revealed tiles are marked *discovered* but **not** *visible*, so
+  DX's fog of war draws them **remembered-and-dimmed** — which is exactly what sensing a place rather than
+  looking at it should look like — and they stay known afterwards, just as walking past them would.
+  (The legacy fork instead bumped the tiles' visible count with no matching decrement, which left them
+  permanently lit and quietly broke fog of war for the rest of the mission.)
+- **Units are marked, not spotted.** Any unit in the area gets DX's existing motion-detector treatment: a
+  tile marker, visible through walls, cleared when the player's turn ends. Clairvoyance tells you something
+  is *there* — it does not hand your squad a free shot at it.
+- **Psi score gates and scales it.** `minPsiScore` decides who can use it at all; `scaleWithPsi` ramps the
+  radius linearly up to full. Two plain knobs instead of legacy's hard-coded threshold and magic
+  square-root curve, neither of which a mod could touch.
+- **Targeting** is limited by the amp's range, like the other psi actions, and costs `tuClairvoyance` /
+  `costClairvoyance` (falling back to `costUse`), so it supports TU/energy/mana/morale like anything else.
+
+*(design + audit: [plans/Feature-Clairvoyance.md](plans/Feature-Clairvoyance.md))*
+
 ## Channeled Mind Control (opt-in per psi-amp)
 
 Stock mind control is **not permanent and it is free**: the victim is yours for the rest of your turn,

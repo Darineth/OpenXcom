@@ -363,6 +363,35 @@ items:
 #    * Save/load mid-channel -> the link survives.
 # =====================================================================
   - type: STR_PSI_AMP
+    # =====================================================================
+    #  DX: clairvoyance - a psychic sweep of an area around a TARGET TILE.
+    #
+    #  The terrain there becomes KNOWN but not SEEN: fog of war draws it
+    #  remembered-and-dimmed, which is exactly what sensing a place rather
+    #  than looking at it should look like - and it stays known afterwards,
+    #  just as if you'd walked past it. Units in the area are marked the way
+    #  the motion detector marks them (a blip through walls, gone at the end
+    #  of your turn) - it tells you something is THERE, it does not hand your
+    #  squad a free shot at it.
+    #
+    #  What to check:
+    #    * Fire it at the far side of the map: the terrain there appears,
+    #      dimmed, and STAYS on the map afterwards.
+    #    * Aliens inside the radius show as motion blips through the walls,
+    #      and clear when you end your turn.
+    #    * A weak psychic (score < 60) isn't offered the action at all; a
+    #      middling one gets a smaller radius than a strong one.
+    #    * It's limited by the amp's range, like the other psi actions.
+    # =====================================================================
+    tuClairvoyance: 30
+    clairvoyance:
+      enabled: true
+      radius: 7            # tiles, at full power
+      levels: 1            # also sweeps one Z level above and below the target
+      revealUnits: true
+      minPsiScore: 60      # psiStrength + psiSkill below this can't reach at all
+      scaleWithPsi: 140    # full radius at 140; below that it scales down linearly
+
     mindControl:
       channeled: true          # opt in. Remove this node to get stock one-turn MC back.
       maxThralls: 1            # one at a time (legacy's cap)

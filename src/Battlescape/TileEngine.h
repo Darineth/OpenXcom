@@ -244,6 +244,8 @@ public:
 
 	/// Calculate success rate of psi attack.
 	int psiAttackCalculate(BattleActionAttack::ReadOnly attack, const BattleUnit *victim);
+	/// DX: a clairvoyant sweep - reveals the map around a target tile, and marks the units in it.
+	bool clairvoyance(BattleUnit *actor, Position target, const RuleItem *amp);
 	/// DX: makes a psi controller suffer for a mind control that went wrong (failed attempt / thrall death).
 	void applyMindControlBacklash(BattleUnit *controller, const RuleItem *amp, const RuleMindControlBacklash &backlash);
 	/// Attempts a panic or mind control action.

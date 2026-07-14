@@ -193,5 +193,7 @@ If the feature is entirely new and is not in the roadmap, add it to `DX-Roadmap.
 - **`DX-Features.md`** — add or refresh the feature's entry (including any option names/defaults), matching the final behavior, not the original intent.
 - **The design doc in `plans/`** — update its status line and any details that changed during implementation (approaches tried, bugs fixed, final tuning).
 - **`DX-Roadmap.md`** — tick the relevant checkbox(es) and note anything discovered (e.g. "already provided by OXCE-Plus").
+- **`docs/Ruleset-*.md`** — **if the change adds, renames, or alters ANY ruleset key, document it.** Update the reference page for that root (`docs/Ruleset.md` is the index); tag DX-added keys **[DX]**; a whole new root also needs a row in the index. A key that isn't in the ruleset docs effectively doesn't exist for a modder, so this ships with the code like the rest of the docs — it is not optional cleanup.
+- **`DX-OXCE-Fixes.md`** — only if the change alters *pre-existing upstream OXCE behavior* (a bug fix or a deliberate deviation). Not for DX's own features.
 
 Keep the docs honest: describe the behavior that shipped (final colors, formulas, option names), and revise earlier wording if the implementation diverged from the plan.

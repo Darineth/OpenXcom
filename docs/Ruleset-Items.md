@@ -269,9 +269,55 @@ Applies to `battleType: 9` (psi-amp) and `8` (mind probe).
 | `psiAnimation` / `psiMissAnimation` | sprite | −1 | Hit/miss animation (HIT.PCK). |
 | `psiAnimFrames` / `psiMissAnimFrames` | int | −1 | Frame counts (−1 = auto-detect). |
 
-Psi costs are `costMindControl`/`costPanic`/`costUse` (see [Ruleset-UseCost.md](Ruleset-UseCost.md));
-a psi-amp's `aimRange` defaults to 0 and its `dropoff` to 1, and its accuracy formula defaults to
-the psi-attack one.
+Psi costs are `costMindControl`/`costPanic`/`costUse`/`costClairvoyance` **[DX]** (see
+[Ruleset-UseCost.md](Ruleset-UseCost.md)); a psi-amp's `aimRange` defaults to 0 and its `dropoff` to 1,
+and its accuracy formula defaults to the psi-attack one.
+
+### **[DX]** `mindControl:` — channeled mind control
+
+Without this node, mind control is stock: the victim is yours for the rest of your turn and reverts to
+its own side at the start of its next one, free of charge. `channeled: true` makes it a link the
+controller must **hold** — it persists until he can't pay the upkeep, drops the amp, dies, is knocked
+out, or panics. *(feature: [DX-Features.md](../DX-Features.md); design:
+[plans/Feature-ChanneledMindControl.md](../plans/Feature-ChanneledMindControl.md))*
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `channeled` | bool | false | Opt in. False/absent = stock one-turn mind control, unchanged. |
+| `maxThralls` | int | 1 | How many units one controller may hold at once (upkeep stacks per thrall). |
+| `requiresWeapon` | bool | true | The link breaks if the controller isn't holding the amp at his turn start. |
+| `thrallRecoversTimeUnits` | bool | true | Whether the victim gets the full TU bar stock always grants it on capture. |
+| `backlashDamageType` | int ResistType | −1 | The type the backlash damage lands as (−1 = the amp's own). Point it at a type nothing resists for an unblockable backlash. |
+| `upkeep:` | map | all 0 | What the controller pays each turn, per thrall — see below. |
+| `backlashOnThrallDeath:` / `backlashOnFailure:` | map | all 0 | `damage: [min,max]`, `stun: [min,max]`, `morale: int` inflicted on the controller when a thrall dies / an attempt fails. |
+| `resist: perTurn` | bool | false | The thrall re-rolls the psi contest each turn and may break free. |
+| `resist: modifier` | int | 0 | Added to the thrall's defence on that re-roll. |
+
+`upkeep:` has **two independent, stackable kinds**, so a mod picks its own flavour:
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `time` / `energy` / `mana` / `morale` / `health` / `stun` | int | 0 | **Flat** cost deducted each turn, per thrall. Can't pay ⇒ the link breaks. |
+| `timeRecoveryPercent` / `energyRecoveryPercent` / `manaRecoveryPercent` / `moraleRecoveryPercent` | int % | 0 | Percent of the controller's normal per-turn **regeneration** withheld while channeling (100 = no regen at all). Stacks per thrall, capped at 100. |
+
+The legacy DX fork's entire upkeep model is one line of this: `timeRecoveryPercent: 90`.
+
+### **[DX]** `clairvoyance:` — psychic area reveal
+
+A `BA_CLAIRVOYANCE` action that sweeps an area around a **target tile** (no target unit). Terrain there
+becomes *discovered but not visible*, so fog of war draws it remembered-and-dimmed and it stays known;
+units in it are marked like motion-detector contacts (through walls, cleared at end of turn) rather than
+spotted. Costs `tuClairvoyance` / `costClairvoyance` (falls back to `costUse`).
+*(design: [plans/Feature-Clairvoyance.md](../plans/Feature-Clairvoyance.md))*
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `enabled` | bool | false | Opt in. Without it the action is never offered. |
+| `radius` | int tiles | 6 | Tiles revealed around the target, at full power. |
+| `levels` | int | 1 | Z levels swept above **and** below the target (0 = only its own). |
+| `revealUnits` | bool | true | Also mark units in the area (motion-detector style). |
+| `minPsiScore` | int | 0 | `psiStrength + psiSkill` below this can't use it at all (0 = no gate). |
+| `scaleWithPsi` | int | 0 | Psi score at which the **full** radius is reached; below it the radius scales down linearly. 0 = everyone gets full radius. |
 
 ## Throwing
 

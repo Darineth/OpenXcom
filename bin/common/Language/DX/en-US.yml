@@ -317,3 +317,4 @@ en-US:
 #=================== DX Channeled Mind Control ===================
 #ActionMenuState.cpp
   STR_DX_RELEASE_MIND_CONTROL: "Release Mind Control"
+  STR_DX_CLAIRVOYANCE: "Clairvoyance"

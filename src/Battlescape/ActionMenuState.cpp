@@ -247,6 +247,16 @@ ActionMenuState::ActionMenuState(BattleAction *action, int x, int y) : _action(a
 		{
 			addItem(BA_USE, weapon->getPsiAttackName(), &id, Options::keyBattleActionItem1);
 		}
+		// DX: clairvoyance - a psychic sweep of an area. Only offered when the amp opts in, and only to a
+		// caster whose psi score clears the amp's gate (a weak psychic simply cannot reach).
+		{
+			const RuleClairvoyance &cv = weapon->getClairvoyance();
+			const int psiScore = _action->actor->getBaseStats()->psiStrength + _action->actor->getBaseStats()->psiSkill;
+			if (cv.enabled && psiScore >= cv.minPsiScore)
+			{
+				addItem(BA_CLAIRVOYANCE, "STR_DX_CLAIRVOYANCE", &id, Options::keyBattleActionItem5);
+			}
+		}
 	}
 	else if (weapon->getBattleType() == BT_MINDPROBE)
 	{

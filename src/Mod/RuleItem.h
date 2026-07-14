@@ -103,6 +103,10 @@ enum BattleActionType : Uint8
 
 	// DX: Release a channeled mind control (free, no target). Appended to keep serialized values stable.
 	BA_RELEASE_MIND_CONTROL = 24,
+
+	// DX: Clairvoyance — a psychic sweep that reveals an area of the map around a TARGET TILE (no target
+	// unit). Appended to keep serialized values stable.
+	BA_CLAIRVOYANCE = 25,
 };
 
 enum class BattleActionOrigin { CENTRE = 0, LEFT, RIGHT }; // Used for off-centre shooting.
@@ -431,6 +435,51 @@ struct RuleMindControl
 };
 
 /**
+ * DX: per-psi-amp clairvoyance config, loaded from the item's `clairvoyance:` node.
+ *
+ * A psychic sweep of an area around a target TILE: the terrain there becomes known (discovered, but not
+ * *visible* - so it shows as remembered/dimmed map, which is exactly right for something seen with the
+ * mind rather than the eyes), and optionally any units in it are marked the way the motion detector marks
+ * them - a tile marker through walls, gone at the end of the turn. It tells you something is THERE; it
+ * does not spot it.
+ *
+ * Without the node the action does not exist, so a psi-amp gains nothing by default.
+ */
+struct RuleClairvoyance
+{
+	bool enabled = false;      // opt in; without this the action is never offered
+	int radius = 6;            // tiles revealed around the target, at full power
+	int levels = 1;            // Z levels swept above AND below the target (0 = only its own level)
+	bool revealUnits = true;   // also mark units in the area, as the motion detector does
+	int minPsiScore = 0;       // psiStrength + psiSkill below this can't use it at all (0 = no gate)
+	int scaleWithPsi = 0;      // psi score at which the FULL radius is reached; below it the radius
+	                           // scales down linearly. 0 = every psi soldier gets the full radius.
+
+	void load(const YAML::YamlNodeReader& reader)
+	{
+		if (!reader) return;
+		reader.tryRead("enabled", enabled);
+		reader.tryRead("radius", radius);
+		reader.tryRead("levels", levels);
+		reader.tryRead("revealUnits", revealUnits);
+		reader.tryRead("minPsiScore", minPsiScore);
+		reader.tryRead("scaleWithPsi", scaleWithPsi);
+	}
+
+	/// The radius this caster actually achieves, given his psi score.
+	int radiusFor(int psiScore) const
+	{
+		if (scaleWithPsi <= 0 || psiScore >= scaleWithPsi)
+		{
+			return radius;
+		}
+		const int above = std::max(0, psiScore - minPsiScore);
+		const int span = std::max(1, scaleWithPsi - minPsiScore);
+		return std::max(1, radius * above / span);
+	}
+};
+
+/**
  * Common configuration of item action.
  */
 struct RuleItemAction
@@ -589,6 +638,8 @@ private:
 	int _explodeInventory;
 	RuleItemUseCostRule _costUse, _costMind, _costPanic, _costThrow, _costPrime, _costUnprime;
 	RuleMindControl _mindControl; // DX: channeled mind control (opt-in per psi-amp)
+	RuleClairvoyance _clairvoyance; // DX: psychic area reveal (opt-in per psi-amp)
+	RuleItemUseCostRule _costClairvoyance; // DX
 	int _clipSize, _battleClipSize, _specialChance, _tuLoad[AmmoSlotMax], _tuUnload[AmmoSlotMax];
 	// DX: overwatch (set-and-hold reaction fire over a cone). Range/min-range in tiles, cone angle is
 	// the full cone width in degrees, modifier scales the offensive reaction score, shot is the fire mode.
@@ -975,6 +1026,10 @@ public:
 	RuleItemUseCost getCostMind() const;
 	/// DX: gets the channeled-mind-control config (channeled=false => stock one-turn MC).
 	const RuleMindControl &getMindControl() const { return _mindControl; }
+	/// DX: gets the clairvoyance config (enabled=false => the action doesn't exist for this item).
+	const RuleClairvoyance &getClairvoyance() const { return _clairvoyance; }
+	/// DX: gets the cost of a clairvoyant sweep (falls back to costUse, like the other psi actions).
+	RuleItemUseCost getCostClairvoyance() const;
 	/// Gets the item's panic cost.
 	RuleItemUseCost getCostPanic() const;
 	/// Gets the item's throw cost.

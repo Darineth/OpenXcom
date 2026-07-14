@@ -5267,6 +5267,81 @@ bool TileEngine::psiAttack(BattleActionAttack attack, BattleUnit *victim)
 }
 
 /**
+ * DX: a clairvoyant sweep - the caster reaches out with his mind and the map opens up around a point he
+ * cannot see.
+ *
+ * Terrain in the area is marked DISCOVERED but not VISIBLE, which is the whole trick: DX's fog of war
+ * then draws it as remembered-but-unobserved (dimmed), which is exactly what "I sensed this, I am not
+ * looking at it" should look like - and it stays known afterwards, just as walking past it would.
+ * (The legacy fork instead bumped the tiles' visible count with no matching decrement, which left them
+ * permanently lit and quietly broke fog of war for the rest of the mission.)
+ *
+ * Units are marked the way the motion detector marks them - a tile marker, visible through walls, gone
+ * when the player's turn ends. They are NOT spotted: clairvoyance tells you something is there, it does
+ * not hand your squad a free shot at it.
+ * @param actor The caster.
+ * @param target The tile to sweep around.
+ * @param amp The psi-amp being used.
+ * @return True if the sweep happened.
+ */
+bool TileEngine::clairvoyance(BattleUnit *actor, Position target, const RuleItem *amp)
+{
+	const RuleClairvoyance &rule = amp->getClairvoyance();
+	if (!rule.enabled || !actor)
+	{
+		return false;
+	}
+
+	const int psiScore = actor->getBaseStats()->psiStrength + actor->getBaseStats()->psiSkill;
+	if (psiScore < rule.minPsiScore)
+	{
+		return false;
+	}
+
+	const int radius = rule.radiusFor(psiScore);
+	const int radiusSq = radius * radius;
+	const int turn = _save->getTurn();
+
+	for (int z = target.z - rule.levels; z <= target.z + rule.levels; ++z)
+	{
+		for (int x = target.x - radius; x <= target.x + radius; ++x)
+		{
+			for (int y = target.y - radius; y <= target.y + radius; ++y)
+			{
+				const int dx = x - target.x;
+				const int dy = y - target.y;
+				if (dx * dx + dy * dy > radiusSq)
+				{
+					continue;
+				}
+
+				Tile *tile = _save->getTile(Position(x, y, z));
+				if (!tile)
+				{
+					continue;
+				}
+
+				// Known, but not currently seen - so fog of war draws it dimmed.
+				tile->setDiscovered(true, O_FLOOR);
+				tile->setDiscovered(true, O_WESTWALL);
+				tile->setDiscovered(true, O_NORTHWALL);
+
+				if (rule.revealUnits)
+				{
+					if (BattleUnit *sensed = tile->getUnit())
+					{
+						sensed->setScannedTurn(turn);
+					}
+				}
+			}
+		}
+	}
+
+	_save->getBattleGame()->getMap()->invalidate(); // the newly-known terrain has to be redrawn
+	return true;
+}
+
+/**
  * DX: makes a psi controller suffer for a mind control that went wrong - a failed attempt, or a thrall
  * dying while held. All costs default to 0, so this does nothing unless the amp's `mindControl:` node
  * asks for it.

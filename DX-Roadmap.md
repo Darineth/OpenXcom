@@ -434,7 +434,12 @@ therefore reframed as targeted deltas:
   than an infinite one. **Mod opt-in** (`mindControl:` node on the psi-amp); no node = stock behavior.
   *(design + audit: [plans/Feature-ChanneledMindControl.md](plans/Feature-ChanneledMindControl.md))*
 - [ ] **Mind Blast** — direct psychic damage *(needs damage-model pieces).*
-- [ ] **Clairvoyance** — area reveal power *(needs Phase 1 fog-of-war).*
+- [x] **Clairvoyance** — ✅ **Done.** A psychic sweep around a target tile (`BA_CLAIRVOYANCE`), opt-in per
+  psi-amp (`clairvoyance:` node). Terrain is marked *discovered but not visible*, so DX's fog of war draws
+  it remembered-and-dimmed and it stays known; units in the area are marked like motion-detector contacts
+  (through walls, cleared at end of turn) rather than spotted. Psi score gates (`minPsiScore`) and scales
+  (`scaleWithPsi`) the radius — replacing legacy's hard-coded 100-point threshold and magic square-root
+  curve. *(design: [plans/Feature-Clairvoyance.md](plans/Feature-Clairvoyance.md))*
 - [ ] **Psi-Amp Ammo Mechanics** — per-use round cost; percentage-based, armor-reducible
   psychic damage *(needs Phase 6 `battleClipSize`).*
 

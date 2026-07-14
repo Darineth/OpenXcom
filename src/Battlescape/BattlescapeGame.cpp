@@ -1229,7 +1229,8 @@ void BattlescapeGame::setupCursor()
 		{
 			getMap()->setCursorType(CT_THROW);
 		}
-		else if (_currentAction.type == BA_MINDCONTROL || _currentAction.type == BA_PANIC || _currentAction.type == BA_USE)
+		else if (_currentAction.type == BA_MINDCONTROL || _currentAction.type == BA_PANIC || _currentAction.type == BA_USE
+			|| _currentAction.type == BA_CLAIRVOYANCE) // DX
 		{
 			getMap()->setCursorType(CT_PSI);
 		}
@@ -2007,6 +2008,27 @@ void BattlescapeGame::primaryAction(Position pos)
 				{
 					_parentState->warning("STR_LINE_OF_SIGHT_REQUIRED");
 				}
+			}
+		}
+		else if (_currentAction.type == BA_CLAIRVOYANCE && _currentAction.weapon->getRules()->getBattleType() == BT_PSIAMP)
+		{
+			// DX: clairvoyance sweeps an AREA around a tile - it needs no target unit, which is why it
+			// can't ride the unit-targeted psi branch below.
+			std::string error;
+			if (_currentAction.weapon->getRules()->isOutOfRange(_currentAction.actor->distance3dToPositionSq(pos)))
+			{
+				_parentState->warning("STR_OUT_OF_RANGE");
+			}
+			else if (!_currentAction.spendTU(&error))
+			{
+				_parentState->warning(error);
+			}
+			else if (getTileEngine()->clairvoyance(_currentAction.actor, pos, _currentAction.weapon->getRules()))
+			{
+				playSound(_currentAction.weapon->getRules()->getHitSound());
+				_currentAction.type = BA_NONE;
+				_parentState->updateSoldierInfo();
+				setupCursor();
 			}
 		}
 		else if ((_currentAction.type == BA_PANIC || _currentAction.type == BA_MINDCONTROL || _currentAction.type == BA_USE) && _currentAction.weapon->getRules()->getBattleType() == BT_PSIAMP)
