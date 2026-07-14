@@ -2025,10 +2025,12 @@ void BattlescapeGame::primaryAction(Position pos)
 			}
 			else if (getTileEngine()->clairvoyance(_currentAction.actor, pos, _currentAction.weapon->getRules()))
 			{
+				// Stay in targeting mode, like the other psi actions: the caster can sweep again while he
+				// has the TU, and right-click cancels. (Clearing the action type here but leaving
+				// `targeting` set would drop setupCursor() into the generic aim cursor with a dead action -
+				// the cursor would change and further clicks would do nothing.)
 				playSound(_currentAction.weapon->getRules()->getHitSound());
-				_currentAction.type = BA_NONE;
 				_parentState->updateSoldierInfo();
-				setupCursor();
 			}
 		}
 		else if ((_currentAction.type == BA_PANIC || _currentAction.type == BA_MINDCONTROL || _currentAction.type == BA_USE) && _currentAction.weapon->getRules()->getBattleType() == BT_PSIAMP)
