@@ -228,6 +228,13 @@ ActionMenuState::ActionMenuState(BattleAction *action, int x, int y) : _action(a
 	}
 	else if (weapon->getBattleType() == BT_PSIAMP)
 	{
+		// DX: a channeling unit can let its thralls go, for free, at any time. Offered ALONGSIDE the
+		// normal psi actions rather than replacing them - a controller keeps all his abilities, he is
+		// simply limited by the resources his upkeep is eating.
+		if (_action->actor->isChanneling())
+		{
+			addItem(BA_RELEASE_MIND_CONTROL, "STR_DX_RELEASE_MIND_CONTROL", &id, Options::keyBattleActionItem4);
+		}
 		if (weapon->getCostMind().Time > 0)
 		{
 			addItem(BA_MINDCONTROL, "STR_MIND_CONTROL", &id, Options::keyBattleActionItem3);
@@ -573,6 +580,21 @@ void ActionMenuState::handleAction()
 			{
 				save->getBattleState()->updateSoldierInfo();
 			}
+			_action->type = BA_NONE;
+			_game->popState();
+		}
+		else if (_action->type == BA_RELEASE_MIND_CONTROL)
+		{
+			// DX: free the thralls. Costs nothing - letting go is not an effort, and charging for it would
+			// just trap a controller who can no longer afford the upkeep.
+			SavedBattleGame *save = _game->getSavedGame()->getSavedBattle();
+			save->breakAllMindControl(_action->actor);
+			_action->actor->setChannelWeapon("", nullptr);
+			if (save->getBattleState())
+			{
+				save->getBattleState()->updateSoldierInfo();
+			}
+			save->getTileEngine()->calculateFOV(_action->actor->getPosition());
 			_action->type = BA_NONE;
 			_game->popState();
 		}

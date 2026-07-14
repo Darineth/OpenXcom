@@ -821,6 +821,26 @@ void BattlescapeGame::checkForCasualties(const RuleDamageType *damageType, Battl
 			}
 		}
 
+		// DX channeled mind control: a unit leaving the fight tears down every link it is part of - as a
+		// thrall (it goes back to its own side) and as a controller (everyone it held is released). A
+		// controller whose thrall just died also takes the backlash, if the amp asks for one.
+		if (killStat.status == STATUS_DEAD || killStat.status == STATUS_UNCONSCIOUS)
+		{
+			if (victim->isMindControlled())
+			{
+				if (BattleUnit *controller = _save->getMindController(victim))
+				{
+					const RuleMindControl *rule = controller->getChannelRule();
+					const RuleItem *amp = _save->getMod()->getItem(controller->getChannelWeaponType(), false);
+					if (rule && amp)
+					{
+						getTileEngine()->applyMindControlBacklash(controller, amp, rule->backlashOnThrallDeath);
+					}
+				}
+			}
+			_save->breakAllMindControl(victim);
+		}
+
 		// Assume that, in absence of a murderer and an explosion, the laster unit to hit the victim is the murderer.
 		// Possible causes of death: bleed out, fire.
 		// Possible causes of unconsciousness: wounds, smoke.

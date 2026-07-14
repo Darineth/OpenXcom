@@ -425,7 +425,7 @@ therefore reframed as targeted deltas:
   `ScriptWorkerBlit::executeBlit`, leaving the background pixel alone rather than zeroing it).
   *(design + audit: [plans/Feature-StealthArmor.md](plans/Feature-StealthArmor.md);
   legacy: [Legacy-DX-Features.md](Legacy-DX-Features.md) §15)*
-- [ ] **Channeled Mind Control** — with backlash/counter-control. Per-turn upkeep state on
+- [x] **Channeled Mind Control** — ✅ **Done.** with backlash/counter-control. Per-turn upkeep state on
   `BattleUnit`, implemented directly (the overwatch pattern). **Audit done (Jul 2026):** the delta is
   real and unreachable from mods — `convertToFaction` and `_mindControllerID` are unbound to script and
   the `tryPsiAttack*` hooks are `const`, so a mod cannot end control, identify a controller, or apply

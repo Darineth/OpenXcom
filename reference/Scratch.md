@@ -1,5 +1,6 @@
 # TODO
-- Write a TD catalogue document, explaining all the items, units, and mechanics specific to the original Terror Defense mod.  This will be the starting point for future work building the real mod.
+
+* Sort Icon List
 
 # Documentation
 - Write a full ruleset document.  Explain fields, structures, options. **DONE, but might need a review pass?**
@@ -15,6 +16,10 @@
 # Terror Defense Future Notes
 
 These are notes for the future Terror Defense mod.  *Ignore them for now, they are just notes for me.*
+
+## TODO
+
+- Write a TD catalogue document, explaining all the items, units, and mechanics specific to the original Terror Defense mod.  This will be the starting point for future work building the real mod.
 
 ## Armor Damage Config
 

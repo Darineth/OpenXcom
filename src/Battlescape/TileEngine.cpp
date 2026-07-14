@@ -5068,6 +5068,18 @@ int TileEngine::psiAttackCalculate(BattleActionAttack::ReadOnly attack, const Ba
 	int attackStrength = BattleUnit::getPsiAccuracy(attack);
 	int defenseStrength = 30 + victim->getArmor()->getPsiDefence(victim);
 
+	// DX counter-control: prising a unit out of someone else's channeled mind control is a contest
+	// against the CONTROLLER, not against the puppet - it is his grip you have to break. A strong psi
+	// operative therefore holds his thralls against weaker rivals, and a captured soldier can be freed by
+	// out-muscling the alien holding him rather than by beating the (possibly feeble) soldier himself.
+	if (type == BA_MINDCONTROL && victim->isMindControlled())
+	{
+		if (const BattleUnit *controller = _save->getMindController(victim))
+		{
+			defenseStrength = 30 + controller->getArmor()->getPsiDefence(controller);
+		}
+	}
+
 	float dis = Position::distance(attacker->getPosition().toVoxel(), victim->getPosition().toVoxel());
 
 	auto rng = RNG::globalRandomState().subSequence();
@@ -5193,11 +5205,40 @@ bool TileEngine::psiAttack(BattleActionAttack attack, BattleUnit *victim)
 			}
 			else
 			{
-				victim->convertToFaction(attack.attacker->getFaction());
+				// DX: a CHANNELED amp establishes a persistent link instead of a one-turn conversion. The
+				// link does the faction swap itself, and (unlike stock) the victim will NOT revert at the
+				// start of its next turn - it stays taken until the controller can no longer pay the upkeep.
+				const RuleMindControl &mc = attack.weapon_item->getRules()->getMindControl();
+
+				// DX counter-control: we just beat the unit's current controller (see psiAttackCalculate).
+				// If the unit is ours to begin with, we don't take it - we FREE it, and it comes home.
+				if (victim->isMindControlled() && victim->getOriginalFaction() == attack.attacker->getFaction())
+				{
+					_save->breakMindControl(victim);
+				}
+				else if (mc.channeled)
+				{
+					// linkMindControl drops whatever link the victim was under, so this also STEALS a
+					// thrall straight out of a rival psi unit's grip.
+					_save->linkMindControl(attack.attacker, victim);
+					attack.attacker->setChannelWeapon(attack.weapon_item->getRules()->getType(), &mc);
+				}
+				else
+				{
+					// A non-channeled amp converts the old way - but it must still tear down any channeled
+					// link the victim was under, or the old controller would keep a dangling thrall.
+					_save->breakMindControl(victim, false);
+					victim->convertToFaction(attack.attacker->getFaction());
+				}
 				calculateLighting(LL_UNITS, victim->getPosition());
 				calculateFOV(victim->getPosition()); //happens fairly rarely, so do a full recalc for units in range to handle the potential unit visible cache issues.
 			}
-			victim->recoverTimeUnits();
+			// DX: a channeled amp may deny the victim its free TU bar (stock always grants it).
+			if (!attack.weapon_item->getRules()->getMindControl().channeled
+				|| attack.weapon_item->getRules()->getMindControl().thrallRecoversTimeUnits)
+			{
+				victim->recoverTimeUnits();
+			}
 			victim->allowReselect();
 			victim->abortTurn(); // resets unit status to STANDING
 			// if all units from either faction are mind controlled - auto-end the mission.
@@ -5214,7 +5255,61 @@ bool TileEngine::psiAttack(BattleActionAttack attack, BattleUnit *victim)
 		{
 			victim->addPsiStrengthExp(); // experience for the victim, not the attacker
 		}
+
+		// DX: backlash on a failed attempt. Stock does nothing to the attacker here, so this is purely
+		// additive - a mod that leaves backlashOnFailure at 0 gets exactly the stock behavior.
+		if (attack.type == BA_MINDCONTROL || attack.type == BA_PANIC)
+		{
+			applyMindControlBacklash(attack.attacker, attack.weapon_item->getRules(), attack.weapon_item->getRules()->getMindControl().backlashOnFailure);
+		}
 		return false;
+	}
+}
+
+/**
+ * DX: makes a psi controller suffer for a mind control that went wrong - a failed attempt, or a thrall
+ * dying while held. All costs default to 0, so this does nothing unless the amp's `mindControl:` node
+ * asks for it.
+ *
+ * The damage is dealt with the AMP'S OWN damage type, so a mod decides what "psychic feedback" means
+ * (and what resists it) rather than DX hard-coding a type. It is routed through BattleUnit::damage, so a
+ * backlash that kills or knocks the controller out is handled by the normal casualty path.
+ * @param controller The unit to punish (may be null).
+ * @param amp The psi-amp whose rules apply.
+ * @param backlash The configured costs.
+ */
+void TileEngine::applyMindControlBacklash(BattleUnit *controller, const RuleItem *amp, const RuleMindControlBacklash &backlash)
+{
+	if (!controller || !amp || !backlash.any() || controller->isOut())
+	{
+		return;
+	}
+
+	if (backlash.damage.any())
+	{
+		// The backlash's damage type is the mod's call: `backlashDamageType` if it set one, else the amp's
+		// own type. That is how a mod decides whether backlash can be blocked at all - nothing resists a
+		// ResistType no armor declares a damageModifier for, and the enum has free slots for exactly this.
+		// DX ships no "psychic" type of its own; defining one is a mod's business, not the engine's.
+		const int typeId = amp->getMindControl().backlashDamageType;
+		const RuleDamageType *type = (typeId >= 0 && typeId < DAMAGE_TYPES)
+			? _save->getMod()->getDamageType((ItemDamageType)typeId)
+			: amp->getDamageType();
+
+		const int power = RNG::generate(backlash.damage.min, backlash.damage.max);
+		controller->damage(Position(0, 0, 0), power, type, _save, BattleActionAttack{}, SIDE_FRONT, BODYPART_HEAD);
+	}
+	if (backlash.stun.any())
+	{
+		// Routed through damage() with DT_STUN rather than poking _stunlevel: that way the armor's
+		// DT_STUN modifier applies, the damage script hooks fire, and a mod can retune it via the global
+		// `damageTypes:` node - the same path the engine already uses to stun a unit standing in smoke.
+		const int power = RNG::generate(backlash.stun.min, backlash.stun.max);
+		controller->damage(Position(0, 0, 0), power, _save->getMod()->getDamageType(DT_STUN), _save, BattleActionAttack{}, SIDE_FRONT, BODYPART_HEAD);
+	}
+	if (backlash.morale)
+	{
+		controller->moraleChange(-backlash.morale);
 	}
 }
 

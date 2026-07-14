@@ -314,3 +314,6 @@ en-US:
   STR_DX_PEDIA_PSI_VISION: "Psi vision"
   STR_DX_PEDIA_PSI_CAMOUFLAGE: "Psi camouflage"
   STR_DX_PEDIA_PERSONAL_LIGHT: "Personal light"
+#=================== DX Channeled Mind Control ===================
+#ActionMenuState.cpp
+  STR_DX_RELEASE_MIND_CONTROL: "Release Mind Control"

@@ -77,6 +77,85 @@ of "the unit acted" belong in `unitActed`, not at the call sites.
 a single `&`. The armor cloak's `breaksOn:` list is exactly that: the loader ORs the named actions into
 a mask, and breaking the cloak is one bit test.
 
+## Channeled Mind Control (opt-in per psi-amp)
+
+Stock mind control is **not permanent and it is free**: the victim is yours for the rest of your turn,
+then `BattleUnit::prepareNewTurn` hands it straight back at the start of its next one, at no cost. A psi
+amp with a `mindControl:` node replaces that with a link you have to **hold** — the victim stays taken
+indefinitely, and the moment the controller can't pay the upkeep, drops the amp, dies, falls unconscious
+or panics, it reverts.
+
+**Opt-in:** no `mindControl:` node (or `channeled: false`) ⇒ **stock behavior, byte for byte**. Nothing in
+`bin/standard/` enables it; it ships in `dx-test` only.
+
+```yaml
+items:
+  - type: STR_PSI_AMP
+    mindControl:
+      channeled: true          # opt in
+      maxThralls: 1            # how many units one controller may hold (upkeep stacks per thrall)
+      requiresWeapon: true     # the link breaks if he isn't holding the amp at turn start
+      thrallRecoversTimeUnits: true   # stock hands the victim a full TU bar on capture
+
+      upkeep:                  # paid by the CONTROLLER at his turn start, per thrall
+        # (a) flat costs, deducted outright - can't pay, the link breaks
+        time: 0
+        energy: 0
+        mana: 0
+        morale: 0
+        health: 0
+        stun: 0
+        # (b) recovery penalties - percent of his normal per-turn REGEN withheld (100 = no regen at all)
+        timeRecoveryPercent: 90
+        energyRecoveryPercent: 0
+        manaRecoveryPercent: 0
+        moraleRecoveryPercent: 0
+
+      backlashDamageType: ~    # the ResistType the backlash damage is dealt as (unset = the amp's own)
+      backlashOnThrallDeath:   # a thrall dies while you hold it
+        damage: [20, 40]
+        stun: [20, 20]
+        morale: 15
+      backlashOnFailure:       # a failed attempt (stock does nothing at all here, so this is additive)
+        stun: [5, 15]
+        morale: 5
+
+      resist:
+        perTurn: false         # true = the thrall re-rolls the psi contest each turn and may break free
+        modifier: 0            # added to its defence on that re-roll
+```
+
+- **The upkeep is the mod's choice, not DX's.** Two independent, stackable kinds: **flat costs** (any of
+  time/energy/mana/morale/health/stun, deducted outright — can't pay and the link drops) and **recovery
+  penalties** (a percentage of the controller's per-turn regeneration withheld, per resource). Everything
+  defaults to `0`, so the legacy DX fork's entire model is a single line of this — `timeRecoveryPercent: 90`,
+  i.e. "recover only 10% of your TU while channeling" — and a mana- or flat-TU-based model is just different
+  config. Charged from the pool the controller *just recovered*, and it reuses the engine's own affordability
+  rules, so a controller can never channel himself unconscious.
+- **A controller keeps all his abilities.** He can still panic, mind-blast, shoot — he is limited by the
+  *resources* the upkeep is eating, not by a special-cased menu.
+- **Whether backlash can be blocked is also the mod's call.** `backlashDamageType` sets the ResistType the
+  backlash damage is dealt as (unset = the amp's own type, i.e. as blockable as anything else that amp
+  does). For an *unblockable* backlash, define a damage type nothing resists — the enum has free slots and
+  no stock armor declares a `damageModifier` for them — via the global `damageTypes:` node, and point this
+  at it. **DX ships no "psychic" damage type**: what psychic feedback *is*, and what resists it, is content,
+  not engine.
+- **Counter-control** — psi-targeting a unit that someone else is already holding is a **contest against the
+  controller**, not against the puppet: it's his grip you have to break. Win and you **take** the thrall — or
+  **free** it, if it's originally one of yours. **The AI uses it** to wrest back captured comrades (stock
+  filters such targets out on original faction, which is exactly why the legacy fork's counter-control could
+  never actually fire).
+- **Release Mind Control** — a free action-menu entry on the amp while channeling, so a controller can let go
+  deliberately rather than by dropping his amp.
+- **On-map indicators** — both ends of a link are shown over the units (a radiating "grip" over the
+  controller, a closed ring over the thrall), with mod art hooks (`FloorChannelingIndicator` /
+  `FloorEnthralledIndicator`) and procedural fallbacks. Without them the upkeep would be invisible — the
+  player would just see his psi soldier mysteriously starved of TU.
+- Links are stored as **unit ids**, so they survive save/load; they are torn down on death, unconsciousness
+  and stage change.
+
+*(design + audit of what OXCE already provided: [plans/Feature-ChanneledMindControl.md](plans/Feature-ChanneledMindControl.md))*
+
 ## Light Equipment (directional cone light + sneak light gate)
 
 Builds on OXCE's native carried light (a held, lit `BT_FLARE` already lights its carrier; power =

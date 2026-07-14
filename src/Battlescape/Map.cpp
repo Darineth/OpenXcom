@@ -136,6 +136,7 @@ Map::Map(Game *game, int width, int height, int x, int y, int visibleMapHeight) 
 	_game(game), _isTFTD(false), _arrow(0), _grenadeIndicator(0), _proxyPing{},
 	_stunIndicatorFallback(0), _woundIndicatorFallback(0), _burnIndicatorFallback(0), _shockIndicatorFallback(0),
 	_bleedoutIndicator(0), _bleedoutIndicatorFallback(0),
+	_channelingIndicator(0), _enthralledIndicator(0), _channelingIndicatorFallback(0), _enthralledIndicatorFallback(0),
 	_anyIndicator(false), _isAltPressed(false), _isCtrlPressed(false),
 	_selectorX(0), _selectorY(0), _mouseX(0), _mouseY(0), _cursorType(CT_NORMAL), _cursorSize(1), _animFrame(0),
 	_followProjectile(true), _projectileInFOV(false), _explosionInFOV(false), _launch(false), _visibleMapHeight(visibleMapHeight),
@@ -277,6 +278,9 @@ Map::Map(Game *game, int width, int height, int x, int y, int visibleMapHeight) 
 	_burnIndicator = _game->getMod()->getSurface("FloorBurnIndicator", false);
 	_shockIndicator = _game->getMod()->getSurface("FloorShockIndicator", false);
 	_bleedoutIndicator = _game->getMod()->getSurface("FloorBleedoutIndicator", false);
+	// DX: the two ends of a channeled mind-control link.
+	_channelingIndicator = _game->getMod()->getSurface("FloorChannelingIndicator", false);
+	_enthralledIndicator = _game->getMod()->getSurface("FloorEnthralledIndicator", false);
 	_anyIndicator = _stunIndicator || _woundIndicator || _burnIndicator || _shockIndicator || _bleedoutIndicator;
 
 	if (enviro)
@@ -578,6 +582,38 @@ void Map::init()
 			0,0,0,0,1,1,1,0,0,0,0,
 			0,0,0,0,1,1,1,0,0,0,0,
 			0,0,0,0,0,0,0,0,0,0,0 };
+
+		// DX channeled mind control. Two glyphs so the two ends of a link read differently at a glance:
+		// the CONTROLLER gets a radiating "grip" (a dot with waves coming off it - he is projecting), the
+		// THRALL gets a ring closed around a dot (he is the one being held).
+		const int psiColors[3] = { 0, 208, 210 }; // purple ramp, palette-safe in both games
+		const int channeling[121] = {
+			0,0,0,0,0,0,0,0,0,0,0,
+			0,0,0,1,0,0,0,1,0,0,0,
+			0,0,1,0,1,0,1,0,1,0,0,
+			0,0,0,0,0,1,0,0,0,0,0,
+			0,0,1,0,1,2,1,0,1,0,0,
+			0,0,0,1,2,2,2,1,0,0,0,
+			0,0,1,0,1,2,1,0,1,0,0,
+			0,0,0,0,0,1,0,0,0,0,0,
+			0,0,1,0,1,0,1,0,1,0,0,
+			0,0,0,1,0,0,0,1,0,0,0,
+			0,0,0,0,0,0,0,0,0,0,0 };
+		const int enthralled[121] = {
+			0,0,0,0,0,0,0,0,0,0,0,
+			0,0,0,1,1,1,1,1,0,0,0,
+			0,0,1,0,0,0,0,0,1,0,0,
+			0,1,0,0,0,0,0,0,0,1,0,
+			0,1,0,0,2,2,2,0,0,1,0,
+			0,1,0,0,2,2,2,0,0,1,0,
+			0,1,0,0,2,2,2,0,0,1,0,
+			0,1,0,0,0,0,0,0,0,1,0,
+			0,0,1,0,0,0,0,0,1,0,0,
+			0,0,0,1,1,1,1,1,0,0,0,
+			0,0,0,0,0,0,0,0,0,0,0 };
+
+		_channelingIndicatorFallback = buildIcon(channeling, 11, 11, psiColors);
+		_enthralledIndicatorFallback = buildIcon(enthralled, 11, 11, psiColors);
 
 		_woundIndicatorFallback = buildIcon(wound, 11, 11, woundColors);
 		_burnIndicatorFallback = buildIcon(burn, 11, 11, burnColors);
@@ -2392,7 +2428,7 @@ void Map::drawTerrain(Surface *surface)
 				continue;
 
 			// Gather the active condition glyphs (mod art preferred, procedural fallback otherwise).
-			Surface* markers[4];
+			Surface* markers[6];
 			int markerCount = 0;
 			auto addMarker = [&](Surface* mod, Surface* fb)
 			{
@@ -2409,6 +2445,13 @@ void Map::drawTerrain(Surface *surface)
 			// Stun: warn when the unit is within a quarter of its current health of being knocked out.
 			if (statusUnit->getHealth() > 0 && statusUnit->getStunlevel() * 4 >= statusUnit->getHealth() * 3)
 				addMarker(_stunIndicator, _stunIndicatorFallback);
+			// DX channeled mind control: show both ends of a link - my psi soldier holding a thrall, and
+			// the thrall he is holding. The upkeep is otherwise invisible (it just eats his regen), so
+			// without this the player has no way to see WHY his psi soldier has no TU.
+			if (statusUnit->isChanneling())
+				addMarker(_channelingIndicator, _channelingIndicatorFallback);
+			if (statusUnit->isMindControlled())
+				addMarker(_enthralledIndicator, _enthralledIndicatorFallback);
 			if (markerCount == 0)
 				continue;
 

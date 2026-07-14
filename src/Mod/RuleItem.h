@@ -100,6 +100,9 @@ enum BattleActionType : Uint8
 	// DX: Overwatch — set-and-hold reaction fire over a directional cone. Appended to keep
 	// serialized values stable.
 	BA_OVERWATCH = 23,
+
+	// DX: Release a channeled mind control (free, no target). Appended to keep serialized values stable.
+	BA_RELEASE_MIND_CONTROL = 24,
 };
 
 enum class BattleActionOrigin { CENTRE = 0, LEFT, RIGHT }; // Used for off-centre shooting.
@@ -361,7 +364,7 @@ struct RuleMindControlUpkeep
  */
 struct RuleMindControlBacklash
 {
-	RuleRandomRange damage;   // psychic damage dealt to the controller
+	RuleRandomRange damage;   // damage dealt to the controller (see RuleMindControl::backlashDamageType)
 	RuleRandomRange stun;
 	int morale = 0;           // morale lost
 
@@ -399,6 +402,15 @@ struct RuleMindControl
 	bool resistPerTurn = false;          // the thrall re-rolls the psi contest at the start of its turns
 	int resistModifier = 0;              // added to the thrall's defence on that re-roll
 
+	/// The ResistType the backlash DAMAGE is dealt as. -1 = the amp's own damage type.
+	///
+	/// This exists so a mod can make backlash unblockable - or blockable - on its own terms, rather than
+	/// DX deciding. Nothing resists a type no armor lists a `damageModifier` for, and the enum has ten
+	/// free slots (DT_10..DT_19) that stock armors don't cover; define one via the global `damageTypes:`
+	/// node (e.g. ArmorEffectiveness: 0.0 for "armor doesn't stop it") and point this at it. DX ships no
+	/// such type - what "psychic feedback" is, and what resists it, is the mod's call.
+	int backlashDamageType = -1;
+
 	void load(const YAML::YamlNodeReader& reader)
 	{
 		if (!reader) return;
@@ -406,6 +418,7 @@ struct RuleMindControl
 		reader.tryRead("maxThralls", maxThralls);
 		reader.tryRead("requiresWeapon", requiresWeapon);
 		reader.tryRead("thrallRecoversTimeUnits", thrallRecoversTimeUnits);
+		reader.tryRead("backlashDamageType", backlashDamageType);
 		upkeep.load(reader["upkeep"]);
 		backlashOnThrallDeath.load(reader["backlashOnThrallDeath"]);
 		backlashOnFailure.load(reader["backlashOnFailure"]);

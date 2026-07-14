@@ -2778,8 +2778,12 @@ bool AIModule::psiAction()
 			// don't target tanks
 			if (bu->getArmor()->getSize() == 1 &&
 				validTarget(bu, true, false) &&
-				// they must be player units
-				bu->getOriginalFaction() != _unit->getFaction() &&
+				// they must be player units...
+				// DX counter-control: ...OR one of OUR OWN, currently held by an enemy psi unit - psi-ing
+				// it is how we wrest it back (TileEngine::psiAttack frees a unit whose original faction is
+				// the attacker's). Stock filters these out on original faction, which is exactly why the
+				// legacy fork's counter-control could never actually be reached by the AI.
+				(bu->getOriginalFaction() != _unit->getFaction() || bu->isMindControlled()) &&
 				(!LOSRequired ||
 				std::find(_unit->getVisibleUnits()->begin(), _unit->getVisibleUnits()->end(), bu) != _unit->getVisibleUnits()->end()))
 			{
@@ -2804,11 +2808,25 @@ bool AIModule::psiAction()
 						continue;
 					}
 
+					// DX: don't try to panic a unit that someone else is driving - the puppet's morale is
+					// not what's making it shoot at us. Only mind control (i.e. counter-control) helps.
+					if (cost[j].type == BA_PANIC && victim->isMindControlled())
+					{
+						continue;
+					}
+
 					// different bonus per attack.
 					if (cost[j].type == BA_MINDCONTROL)
 					{
 						// target cannot be mind controlled
 						if (victim->getUnitRules() && !victim->getUnitRules()->canBeMindControlled()) continue;
+
+						// DX counter-control: rescuing one of our own from an enemy's grip is worth a lot -
+						// it removes a gun from their side and returns one to ours in a single action.
+						if (victim->isMindControlled() && victim->getOriginalFaction() == _unit->getFaction())
+						{
+							weightToAttackMe += 80;
+						}
 
 						int controlOdds = 40;
 						int morale = victim->getMorale();

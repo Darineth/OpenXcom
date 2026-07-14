@@ -1,6 +1,7 @@
 # Feature: Channeled Mind Control
 
-**Status:** Audit complete; design decided (upkeep + resist are mod-configurable, counter-control is a contest). Ready to implement.
+**Status:** ✅ Implemented (Jul 2026). Test config in `bin/standard/dx-test/dx-test.rul` reproduces the
+legacy fork's model (which turns out to be one line: `timeRecoveryPercent: 90`).
 **Roadmap:** Phase 8 (Lighting & Psionics).
 **Legacy reference:** `Legacy-DX-Features.md` §psionics; legacy source at `D:\Code\Projects\OpenXcomDX-Legacy`.
 **Hard requirement:** **mod opt-in.** With no ruleset opt-in, mind control behaves exactly as stock

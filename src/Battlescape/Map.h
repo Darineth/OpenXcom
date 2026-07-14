@@ -82,10 +82,13 @@ private:
 	Surface *_proxyPing[PROXY_PING_FRAMES];
 	Surface *_stunIndicator, *_woundIndicator, *_burnIndicator, *_shockIndicator;
 	Surface *_bleedoutIndicator; // DX: "dying / bleeding out" glyph (FloorBleedoutIndicator mod art)
+	Surface *_channelingIndicator; // DX: holding a channeled mind control (FloorChannelingIndicator)
+	Surface *_enthralledIndicator; // DX: held by one (FloorEnthralledIndicator)
 	// DX: procedural fallback status icons, built in init() and owned by Map, used when the mod
 	// supplies no matching Floor*Indicator surface so the on-map status glyphs work out of the box.
 	Surface *_stunIndicatorFallback, *_woundIndicatorFallback, *_burnIndicatorFallback, *_shockIndicatorFallback;
 	Surface *_bleedoutIndicatorFallback; // DX: procedural fallback for the bleedout glyph
+	Surface *_channelingIndicatorFallback, *_enthralledIndicatorFallback; // DX: mind-control link glyphs
 	bool _anyIndicator, _isAltPressed, _isCtrlPressed;
 	int _spriteWidth, _spriteHeight;
 	int _selectorX, _selectorY;

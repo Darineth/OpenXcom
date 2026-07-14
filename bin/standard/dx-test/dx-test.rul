@@ -339,6 +339,69 @@ items:
     listOrder: 3401
 
 # =====================================================================
+#  DX: channeled mind control (opt-in per psi-amp, plans/Feature-ChanneledMindControl.md)
+#
+#  Stock mind control is NOT permanent and it is free: the victim is yours for
+#  the rest of your turn and snaps back to its own side at the start of its next
+#  one, costing you nothing. `channeled: true` replaces that with a link you have
+#  to HOLD: the victim stays yours indefinitely - and the moment you can't pay the
+#  upkeep, drop the amp, die, fall unconscious or panic, it reverts.
+#
+#  This config reproduces the legacy DX fork's model, which turns out to be a
+#  single line of it: the controller recovers only 10% of his TU while channeling
+#  (timeRecoveryPercent: 90). Everything else here is DX-only tuning that legacy
+#  never had. Retune freely - none of these numbers are a house style.
+#
+#  What to check:
+#    * MC an alien, then END TURN: it STAYS yours (stock would hand it back).
+#    * While channeling, your psi soldier recovers almost no TU each turn - that
+#      is the price. He can still act, he just has very little to act with.
+#    * Drop/unload the psi-amp -> the link breaks at your next turn start.
+#    * Kill your own thrall -> backlash: 20-40 damage + 20 stun to the controller.
+#    * A failed MC attempt now stuns the caster a little (stock does nothing).
+#    * Knock the controller out -> the thrall reverts immediately.
+#    * Save/load mid-channel -> the link survives.
+# =====================================================================
+  - type: STR_PSI_AMP
+    mindControl:
+      channeled: true          # opt in. Remove this node to get stock one-turn MC back.
+      maxThralls: 1            # one at a time (legacy's cap)
+      requiresWeapon: true     # must still be holding the amp at turn start
+      thrallRecoversTimeUnits: true
+
+      upkeep:
+        # Legacy's entire upkeep model, in one line: withhold 90% of the controller's
+        # TU regeneration while he is channeling (i.e. he recovers only 10%).
+        timeRecoveryPercent: 90
+        # Flat costs are the other, independent kind - a mod can use either or both.
+        # Left at 0 here so this stays a faithful legacy reproduction.
+        # time: 0
+        # mana: 0
+
+      # The damage type the backlash DAMAGE is dealt as (a ResistType index). Unset = the amp's own type.
+      #
+      # Here: 2 = DT_IN (incendiary) - the psychic feedback burns the controller, so a suit with fire
+      # resistance shrugs some of it off and a flammable one suffers, and the controller can catch fire.
+      # That is the point of the field: what "psychic feedback" is, and what resists it, is a MOD's
+      # decision. For an UNBLOCKABLE backlash instead, define a damage type nothing resists - the enum
+      # has free slots (10-19) and no stock armor declares a damageModifier for them - via the global
+      # `damageTypes:` node (e.g. ArmorEffectiveness: 0.0), and point this at it. DX ships no such type.
+      backlashDamageType: 2
+
+      backlashOnThrallDeath:   # your puppet dies while you hold it - it hurts
+        damage: [5, 10]
+        stun: [50, 100]
+        morale: 25
+
+      backlashOnFailure:       # a failed attempt costs you something (stock: nothing at all)
+        stun: [5, 15]
+        morale: 5
+
+      resist:
+        perTurn: false         # the thrall does not get to struggle; the cost is the tension
+        modifier: 0
+
+# =====================================================================
 #  DX: configurable inventory layouts (per-armor)
 #  Exercises RuleInventoryLayout + Armor.inventoryLayout. Each soldier
 #  armor below gets a different layout so you can swap armor in the base
