@@ -10,6 +10,7 @@
 # Questions
 - Overwatch+dual fire?
 - Overwatch range vs. weapon's (attacktype)Range?  What does that field do in DX anyway?
+- Multiple reaction fires in the log during a multi-shot attack maybe?
 
 # TFTD
 
