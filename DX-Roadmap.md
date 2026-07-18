@@ -443,8 +443,13 @@ therefore reframed as targeted deltas:
   (through walls, cleared at end of turn) rather than spotted. Psi score gates (`minPsiScore`) and scales
   (`scaleWithPsi`) the radius — replacing legacy's hard-coded 100-point threshold and magic square-root
   curve. *(design: [plans/Feature-Clairvoyance.md](plans/Feature-Clairvoyance.md))*
-- [ ] **Psi-Amp Ammo Mechanics** — per-use round cost; percentage-based, armor-reducible
-  psychic damage *(needs Phase 6 `battleClipSize`).*
+- [x] **Psi-Amp Ammo Mechanics** — ✅ **Done (ammo).** A `psiAmmo:` node (opt-in per psi-amp) makes each
+  psi action — panic, mind control, `BA_USE`, clairvoyance, mind blast — draw a configurable number of
+  rounds from the amp's loaded clip; spent on the attempt, gated before TU, shown in the action menu.
+  Pairs with `battleClipSize`. The bundled *"percentage-based, armor-reducible psychic damage"* is
+  effectively covered by Mind Blast (mod-chosen, armor-aware damage type) + the global `damageTypes:`
+  node; a true %-of-max-health mode is deferred as a separate small Mind-Blast option if wanted.
+  *(design: [plans/Feature-PsiAmpAmmo.md](plans/Feature-PsiAmpAmmo.md))*
 
 ## Phase 9: AI
 

@@ -77,6 +77,41 @@ of "the unit acted" belong in `unitActed`, not at the call sites.
 a single `&`. The armor cloak's `breaksOn:` list is exactly that: the loader ORs the named actions into
 a mask, and breaking the cloak is one bit test.
 
+## Psi-Amp Ammo (opt-in per psi-amp)
+
+Psi is free in stock OXCE. A psi-amp with a `psiAmmo:` node instead draws **charges from a loaded clip**,
+so each psi action costs a number of rounds and a psi operative can run dry.
+
+```yaml
+items:
+  - type: STR_PSI_AMP
+    compatibleAmmo: [ STR_PSI_ORB ]   # the amp loads a clip (stock OXCE ammo path)
+    psiAmmo:                          # DX: per-cast round cost. Absent = psi is free (stock).
+      mindControl: 4
+      mindBlast: 2
+      clairvoyance: 2
+      panic: 1
+      use: 1                          # the BA_USE psi-damage attack; unlisted actions cost 0
+
+  - type: STR_PSI_ORB
+    battleType: 2                     # BT_AMMO
+    clipSize: 1
+    battleClipSize: 12                # bought/stored one orb at a time, packed into 12-round mags
+```
+
+- **Each psi action has its own round cost** — a mod can make mind control expensive and panic cheap. A
+  missing key is 0 (free), so `psiAmmo:` with only `mindControl:` charges only for MC.
+- **Spent on the attempt, hit or miss** — you fire the orb regardless of whether the target resists. The
+  action is gated *before* TU is spent (a dry amp costs nothing), and refused with the same
+  `STR_NO_ROUNDS_LEFT` / `STR_NO_AMMUNITION_LOADED` messages the firing path uses.
+- **The action menu** shows the round cost (in the shot-count slot) and flags the action red "No Ammo"
+  when the clip can't cover it, so it stays discoverable when dry.
+- Because every psi action reads its cost through one path, this covers panic, mind control, the `BA_USE`
+  attack, clairvoyance and mind blast at once. Pairs with `battleClipSize` (bought one orb at a time,
+  magazined at battle start).
+
+*(design: [plans/Feature-PsiAmpAmmo.md](plans/Feature-PsiAmpAmmo.md))*
+
 ## Mind Blast (opt-in per psi-amp)
 
 A direct psychic attack that **hurts** — the offensive psi power next to the coercive ones (panic / mind
@@ -541,7 +576,10 @@ In New Battle, the **Equip Craft → Equipment** screen gains a **Fill** button 
 
 - **Fill** instantly stocks the craft with a generous spread of every usable item (recoverable,
   non-corpse inventory items): **40** of each ammo / grenade / proximity grenade / flare, **10** of
-  everything else (weapons, tools, medikits). Open the inventory afterward to distribute them.
+  everything else (weapons, tools, medikits). Open the inventory afterward to distribute them. A
+  `battleClipSize` ammo is stocked as individual rounds, so Fill scales it by the magazine size
+  (40 × `battleClipSize` rounds) — 40 full magazines' worth, comparable to 40 ordinary clips rather
+  than a mere handful.
 - **Unload Craft** (unchanged) empties the craft.
 
 Both buttons appear only in New Battle, where the loadout is a sandbox — the real geoscape craft

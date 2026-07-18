@@ -302,6 +302,22 @@ out, or panics. *(feature: [DX-Features.md](../DX-Features.md); design:
 
 The legacy DX fork's entire upkeep model is one line of this: `timeRecoveryPercent: 90`.
 
+### **[DX]** `psiAmmo:` — per-cast round cost
+
+Makes psi actions draw rounds from the amp's loaded clip (ammo slot 0, via the stock `compatibleAmmo`
+path). Every field defaults to 0 (free), so without the node psi is free exactly as in stock OXCE. Spent
+on the attempt (hit or miss); a dry or unloaded amp refuses the action. Covers panic, mind control, the
+`BA_USE` attack, clairvoyance and mind blast through one path.
+*(design: [plans/Feature-PsiAmpAmmo.md](../plans/Feature-PsiAmpAmmo.md))*
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `mindControl` | int | 0 | Rounds a mind control draws from the clip. |
+| `panic` | int | 0 | Rounds a panic draws. |
+| `use` | int | 0 | Rounds the `BA_USE` psi-damage attack draws. |
+| `clairvoyance` | int | 0 | Rounds a clairvoyant sweep draws. |
+| `mindBlast` | int | 0 | Rounds a mind blast draws. |
+
 ### **[DX]** `mindBlast:` — direct psychic damage
 
 A `BA_MINDBLAST` attack on a target unit, resolved through the same psi contest as panic/mind control

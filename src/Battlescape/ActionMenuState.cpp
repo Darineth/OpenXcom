@@ -426,6 +426,13 @@ void ActionMenuState::addItem(BattleActionType ba, const std::string &name, int 
 		std::string pelletsText = tr("STR_ACTION_PELLETS_SHORT").arg(pellets);
 		shotsText = shotsText.empty() ? pelletsText : shotsText + " " + pelletsText;
 	}
+	// DX: psi actions draw rounds from the amp's clip (getActionConf is null for them, so they miss the
+	// firing-ammo path above) - show the per-cast round cost where the shot count would go.
+	const int psiAmmoCost = _action->weapon->getRules()->getPsiAmmoCost(ba);
+	if (psiAmmoCost > 0)
+	{
+		shotsText = tr("STR_ACTION_SHOTS_SHORT").arg(psiAmmoCost);
+	}
 	if (!shotsText.empty())
 	{
 		_actionMenu[*id]->setShots(shotsText);
@@ -454,6 +461,10 @@ void ActionMenuState::addItem(BattleActionType ba, const std::string &name, int 
 		{
 			partialAmmo = true;
 		}
+	}
+	else if (psiAmmoCost > 0 && !_action->weapon->hasPsiAmmo(ba)) // DX: dry (or unloaded) psi-amp
+	{
+		reason = tr("STR_ACTION_NO_AMMO");
 	}
 	if (!reason.empty())
 	{

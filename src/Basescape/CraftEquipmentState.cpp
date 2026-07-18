@@ -1010,6 +1010,13 @@ void CraftEquipmentState::btnFillClick(Action *)
 			qty = 10; // weapons and other gear
 			break;
 		}
+		// DX: a battleClipSize item is stocked as individual ROUNDS (packed into magazines at battle
+		// start), so a flat 40 units is only ~40/battleClipSize magazines - a fraction of what 40 normal
+		// clips would give. Scale it up so the fill yields a comparable number of full magazines.
+		if (rule->getBattleClipSize() > 0)
+		{
+			qty *= rule->getBattleClipSize();
+		}
 		c->getItems()->addItem(rule, qty);
 	}
 	initList();

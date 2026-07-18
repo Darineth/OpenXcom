@@ -518,6 +518,46 @@ struct RuleMindBlast
 };
 
 /**
+ * DX: per-psi-amp ammo cost, loaded from the item's `psiAmmo:` node - the number of rounds each psi
+ * action draws from the amp's loaded clip (ammo slot 0). Every field defaults to 0 (= free), so without
+ * the node, or for an action it doesn't list, psi costs no ammo exactly as in stock OXCE.
+ */
+struct RulePsiAmmo
+{
+	int mindControl = 0;
+	int panic = 0;
+	int use = 0;         // the BA_USE psi-damage attack
+	int clairvoyance = 0;
+	int mindBlast = 0;
+
+	bool any() const { return mindControl || panic || use || clairvoyance || mindBlast; }
+
+	void load(const YAML::YamlNodeReader& reader)
+	{
+		if (!reader) return;
+		reader.tryRead("mindControl", mindControl);
+		reader.tryRead("panic", panic);
+		reader.tryRead("use", use);
+		reader.tryRead("clairvoyance", clairvoyance);
+		reader.tryRead("mindBlast", mindBlast);
+	}
+
+	/// Rounds this psi action costs (0 = free).
+	int forAction(BattleActionType action) const
+	{
+		switch (action)
+		{
+		case BA_MINDCONTROL: return mindControl;
+		case BA_PANIC:       return panic;
+		case BA_USE:         return use;
+		case BA_CLAIRVOYANCE:return clairvoyance;
+		case BA_MINDBLAST:   return mindBlast;
+		default:             return 0;
+		}
+	}
+};
+
+/**
  * Common configuration of item action.
  */
 struct RuleItemAction
@@ -680,6 +720,7 @@ private:
 	RuleItemUseCostRule _costClairvoyance; // DX
 	RuleMindBlast _mindBlast; // DX: direct psychic damage (opt-in per psi-amp)
 	RuleItemUseCostRule _costMindBlast; // DX
+	RulePsiAmmo _psiAmmo; // DX: per-cast round cost from the amp's clip (opt-in)
 	int _clipSize, _battleClipSize, _specialChance, _tuLoad[AmmoSlotMax], _tuUnload[AmmoSlotMax];
 	// DX: overwatch (set-and-hold reaction fire over a cone). Range/min-range in tiles, cone angle is
 	// the full cone width in degrees, modifier scales the offensive reaction score, shot is the fire mode.
@@ -1074,6 +1115,10 @@ public:
 	const RuleMindBlast &getMindBlast() const { return _mindBlast; }
 	/// DX: gets the cost of a mind blast (falls back to costUse, like the other psi actions).
 	RuleItemUseCost getCostMindBlast() const;
+	/// DX: rounds a psi action draws from the amp's clip (0 = free / no psiAmmo node).
+	int getPsiAmmoCost(BattleActionType action) const { return _psiAmmo.forAction(action); }
+	/// DX: does this amp charge ammo for any psi action?
+	bool usesPsiAmmo() const { return _psiAmmo.any(); }
 	/// Gets the item's panic cost.
 	RuleItemUseCost getCostPanic() const;
 	/// Gets the item's throw cost.

@@ -62,7 +62,10 @@ BattleItem::BattleItem(const RuleItem *rules, int *id) : _id(*id), _rules(rules)
 			setStimulantQuantity (_rules->getStimulantQuantity());
 		}
 		// weapon does not need ammo, ammo item points to weapon
-		else if (_rules->getBattleType() == BT_FIREARM || _rules->getBattleType() == BT_MELEE)
+		// DX: BT_PSIAMP is included so a psi-amp with compatibleAmmo becomes a loadable weapon-with-ammo
+		// (the psi-ammo feature). Psi actions have no firing conf, so a psi-amp's slots are never "used"
+		// below; the loaded clip is still tracked and shown, just not tied to a firing mode.
+		else if (_rules->getBattleType() == BT_FIREARM || _rules->getBattleType() == BT_MELEE || _rules->getBattleType() == BT_PSIAMP)
 		{
 			_confAimedOrLaunch = _rules->getConfigAimed();
 			_confAuto = _rules->getConfigAuto();
@@ -88,7 +91,9 @@ BattleItem::BattleItem(const RuleItem *rules, int *id) : _id(*id), _rules(rules)
 				}
 				else
 				{
-					_ammoVisibility[slot] = used;
+					// DX: psi-amps have no firing conf, so `used` is always false - force the loaded clip
+					// visible so the orb shows in the inventory like any other loaded ammo.
+					_ammoVisibility[slot] = used || _rules->getBattleType() == BT_PSIAMP;
 					_isWeaponWithAmmo = true;
 				}
 			}
@@ -451,6 +456,49 @@ bool BattleItem::spendBullet(int spendPerShot)
 		return false;
 	else
 		return true;
+}
+
+/**
+ * DX: the clip a psi-amp draws charges from - its ammo in slot 0. Psi actions don't go through the normal
+ * per-shot ammo path (getActionConf returns null for them), so the psi-ammo cost reads the clip directly.
+ * @return The loaded clip, or null if none.
+ */
+BattleItem *BattleItem::getPsiClip()
+{
+	return getAmmoForSlot(0);
+}
+
+/**
+ * DX: whether the amp has enough loaded rounds for this psi action (true if the action is free).
+ * @param action The psi action.
+ * @return True if it can be paid for.
+ */
+bool BattleItem::hasPsiAmmo(BattleActionType action) const
+{
+	const int cost = _rules->getPsiAmmoCost(action);
+	if (cost <= 0)
+	{
+		return true; // free - no psiAmmo node, or this action isn't charged
+	}
+	const BattleItem *clip = const_cast<BattleItem*>(this)->getPsiClip();
+	return clip && clip->getAmmoQuantity() >= cost;
+}
+
+/**
+ * DX: spends this psi action's round cost from the loaded clip. A no-op when the action is free.
+ * @param action The psi action.
+ */
+void BattleItem::spendPsiAmmo(BattleActionType action)
+{
+	const int cost = _rules->getPsiAmmoCost(action);
+	if (cost <= 0)
+	{
+		return;
+	}
+	if (BattleItem *clip = getPsiClip())
+	{
+		clip->spendBullet(cost);
+	}
 }
 
 void BattleItem::spendHealingItemUse(BattleMediKitAction mediKitAction)

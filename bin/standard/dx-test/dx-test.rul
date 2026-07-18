@@ -362,7 +362,40 @@ items:
 #    * Knock the controller out -> the thrall reverts immediately.
 #    * Save/load mid-channel -> the link survives.
 # =====================================================================
+  # =====================================================================
+  #  DX: psi-amp ammo (Feature-PsiAmpAmmo.md). The psi-amp now draws charges
+  #  from a loaded clip of psi orbs; each psi action costs a number of rounds
+  #  (`psiAmmo:` below). Without the node psi is free, as in stock OXCE.
+  #
+  #  The orb uses battleClipSize (Phase 6): it's bought/stored ONE at a time
+  #  but packs into 12-round magazines at mission start.
+  #
+  #  What to check:
+  #    * Buy psi orbs, load one into the amp, and the psi action menu shows a
+  #      round cost (in the shot-count slot). Cast until dry -> the actions go
+  #      red "No Ammo" and refuse.
+  #    * Mind control costs 4 orbs, mind blast 2, clairvoyance 2, panic 1.
+  # =====================================================================
+  - type: STR_PSI_ORB
+    battleType: 2          # BT_AMMO
+    size: 0.1
+    costBuy: 4000
+    costSell: 3000
+    weight: 1
+    bigSprite: 4
+    floorSprite: 4
+    clipSize: 1
+    battleClipSize: 20     # stored 1 at a time, packed into 12-round mags at battle start
+
   - type: STR_PSI_AMP
+    compatibleAmmo:
+      - STR_PSI_ORB
+    psiAmmo:
+      mindControl: 4
+      mindBlast: 2
+      clairvoyance: 2
+      panic: 1
+      use: 1
     # =====================================================================
     #  DX: clairvoyance - a psychic sweep of an area around a TARGET TILE.
     #
@@ -754,6 +787,7 @@ extraStrings:
       STR_FIELD_SURGERY_UNIT: "Field Surgery"
       STR_FIELD_SURGERY_UNIT_UFOPEDIA: "Advances in field medicine let our surgeons treat battlefield trauma far more effectively. Wounded soldiers now recover from their injuries noticeably faster."
       STR_HEAVY_CANNON: "Heavy Sniper"
+      STR_PSI_ORB: "Psi Orb"
       STR_STEALTH_SUIT: "Stealth Suit"
       STR_STEALTH_SUIT_UC: "STEALTH SUIT"
       STR_FLASHLIGHT: "Flashlight"

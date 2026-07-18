@@ -560,6 +560,7 @@ void RuleItem::load(const YAML::YamlNodeReader& node, Mod *mod, const ModScript&
 	_costClairvoyance.loadCost(reader, "Clairvoyance"); // DX: tuClairvoyance / costClairvoyance
 	_mindBlast.load(reader["mindBlast"]); // DX
 	_costMindBlast.loadCost(reader, "MindBlast"); // DX: tuMindBlast / costMindBlast
+	_psiAmmo.load(reader["psiAmmo"]); // DX: per-cast round cost
 	reader.tryRead("accuracyPanic", _accuracyPanic);
 	reader.tryRead("accuracyThrow", _accuracyThrow);
 	reader.tryRead("accuracyCloseQuarters", _accuracyCloseQuarters);

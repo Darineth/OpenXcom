@@ -183,6 +183,12 @@ public:
 	BattleItem *setAmmoForSlot(int slot, BattleItem *item);
 	/// Gets the item's ammo item.
 	BattleItem *getAmmoForSlot(int slot);
+	/// DX: the psi-amp's loaded clip (ammo slot 0), or null. Used by the psi-ammo cost.
+	BattleItem *getPsiClip();
+	/// DX: does this amp have enough rounds loaded for this psi action? True if the action is free.
+	bool hasPsiAmmo(BattleActionType action) const;
+	/// DX: spends this psi action's round cost from the loaded clip (no-op if the action is free).
+	void spendPsiAmmo(BattleActionType action);
 	/// Gets the item's ammo item.
 	const BattleItem *getAmmoForSlot(int slot) const;
 	/// Get ammo count visibility for slot.

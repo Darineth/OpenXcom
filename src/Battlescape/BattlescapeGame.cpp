@@ -2043,12 +2043,17 @@ void BattlescapeGame::primaryAction(Position pos)
 			{
 				_parentState->warning("STR_OUT_OF_RANGE");
 			}
+			else if (!_currentAction.weapon->hasPsiAmmo(BA_CLAIRVOYANCE)) // DX: psi-amp ammo gate
+			{
+				_parentState->warning(_currentAction.weapon->getPsiClip() ? "STR_NO_ROUNDS_LEFT" : "STR_NO_AMMUNITION_LOADED");
+			}
 			else if (!_currentAction.spendTU(&error))
 			{
 				_parentState->warning(error);
 			}
 			else if (getTileEngine()->clairvoyance(_currentAction.actor, pos, _currentAction.weapon->getRules()))
 			{
+				_currentAction.weapon->spendPsiAmmo(BA_CLAIRVOYANCE); // DX: expend the rounds
 				// Stay in targeting mode, like the other psi actions: the caster can sweep again while he
 				// has the TU, and right-click cancels. (Clearing the action type here but leaving
 				// `targeting` set would drop setupCursor() into the generic aim cursor with a dead action -

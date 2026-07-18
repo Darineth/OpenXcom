@@ -92,11 +92,22 @@ void PsiAttackBState::init()
 		return;
 	}
 
+	// DX: psi-amp ammo gate - a charged action needs enough rounds in the amp's clip. Checked before TU
+	// is spent so a dry amp costs nothing; the rounds are spent once the action commits (below).
+	if (!_item->hasPsiAmmo(_action.type))
+	{
+		_action.result = _item->getPsiClip() ? "STR_NO_ROUNDS_LEFT" : "STR_NO_AMMUNITION_LOADED";
+		_parent->popState();
+		return;
+	}
+
 	if (!_action.spendTU(&_action.result)) // not enough time units
 	{
 		_parent->popState();
 		return;
 	}
+
+	_item->spendPsiAmmo(_action.type); // DX: expend the rounds (hit or miss - the orb is fired)
 
 	// DX: mind blast rides the same ExplosionBState as panic/mind control, so it gets the psi hit
 	// animation, sound, and casualty sequencing for free. ExplosionBState branches to TileEngine::mindBlast

@@ -114,7 +114,7 @@ Inventory::Inventory(Game *game, int width, int height, int x, int y, bool base)
 	_gridLabels = new Surface(width, height, 0, 0);
 	_selection = new Surface(RuleInventory::HAND_W * RuleInventory::SLOT_W, RuleInventory::HAND_H * RuleInventory::SLOT_H, x, y);
 	_warning = new WarningMessage(224, 24, 48, 176);
-	_stackNumber = new NumberText(15, 15, 0, 0);
+	_stackNumber = new NumberText(25, 15, 0, 0); // DX: wide enough for 3-4 digit stacks (e.g. 480 orbs)
 	_stackNumber->setBordered(true);
 
 	_warning->initText(_game->getMod()->getFont("FONT_BIG"), _game->getMod()->getFont("FONT_SMALL"), _game->getLanguage());
@@ -619,10 +619,8 @@ void Inventory::drawItems()
 			if (fatalWounds > 0)
 			{
 				_stackNumber->setX((groundItem->getSlot()->getX() + ((groundItem->getSlotX() + groundItem->getRules()->getInventoryWidth()) - _groundOffset) * RuleInventory::SLOT_W)-4);
-				if (fatalWounds > 9)
-				{
-					_stackNumber->setX(_stackNumber->getX()-4);
-				}
+				// DX: shift left one glyph-width per extra digit so multi-digit values stay inside the slot.
+				_stackNumber->setX(_stackNumber->getX() - 4 * (fatalWounds > 999 ? 3 : fatalWounds > 99 ? 2 : fatalWounds > 9 ? 1 : 0));
 				_stackNumber->setY((groundItem->getSlot()->getY() + (groundItem->getSlotY() + groundItem->getRules()->getInventoryHeight()) * RuleInventory::SLOT_H)-6);
 				_stackNumber->setValue(fatalWounds);
 				_stackNumber->draw();
@@ -633,11 +631,11 @@ void Inventory::drawItems()
 			// item stacking
 			if (_stackLevel[groundItem->getSlotX()][groundItem->getSlotY()] > 1)
 			{
+				const int stackCount = _stackLevel[groundItem->getSlotX()][groundItem->getSlotY()];
 				_stackNumber->setX((groundItem->getSlot()->getX() + ((groundItem->getSlotX() + groundItem->getRules()->getInventoryWidth()) - _groundOffset) * RuleInventory::SLOT_W)-5);
-				if (_stackLevel[groundItem->getSlotX()][groundItem->getSlotY()] > 9)
-				{
-					_stackNumber->setX(_stackNumber->getX()-4);
-				}
+				// DX: shift left one glyph-width per extra digit (2, 3, 4 digits) so a 3-digit stack (e.g.
+				// 480 psi orbs after Fill) no longer overflows off the right edge of the slot.
+				_stackNumber->setX(_stackNumber->getX() - 4 * (stackCount > 999 ? 3 : stackCount > 99 ? 2 : stackCount > 9 ? 1 : 0));
 				_stackNumber->setY((groundItem->getSlot()->getY() + (groundItem->getSlotY() + groundItem->getRules()->getInventoryHeight()) * RuleInventory::SLOT_H)-6);
 				_stackNumber->setValue(_stackLevel[groundItem->getSlotX()][groundItem->getSlotY()]);
 				_stackNumber->draw();
