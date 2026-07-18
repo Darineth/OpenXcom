@@ -5260,10 +5260,75 @@ bool TileEngine::psiAttack(BattleActionAttack attack, BattleUnit *victim)
 		// additive - a mod that leaves backlashOnFailure at 0 gets exactly the stock behavior.
 		if (attack.type == BA_MINDCONTROL || attack.type == BA_PANIC)
 		{
-			applyMindControlBacklash(attack.attacker, attack.weapon_item->getRules(), attack.weapon_item->getRules()->getMindControl().backlashOnFailure);
+			applyPsiBacklash(attack.attacker, attack.weapon_item->getRules(), attack.weapon_item->getRules()->getMindControl().backlashOnFailure, attack.weapon_item->getRules()->getMindControl().backlashDamageType);
 		}
 		return false;
 	}
+}
+
+/**
+ * DX: a mind blast - a direct psychic attack. It resolves through the SAME psi contest as panic/mind
+ * control (psiAttackCalculate, which already folds in accuracy, the armor's psiDefence, distance falloff
+ * and the tryPsiAttack* hooks), and on a win deals damage scaled by the MARGIN of that contest - a
+ * decisive win hurts far more than a narrow one. On a miss the caster takes the configured backlash.
+ *
+ * The damage type is the mod's choice (RuleMindBlast::damageType, -1 = the amp's own), so whether armor
+ * blocks a blast is a ruleset decision, not a hard-coded one - unlike the legacy fork's DT_PSYCHIC, which
+ * ignored armor unconditionally.
+ * @param actor The caster.
+ * @param victim The target.
+ * @param amp The psi-amp being used.
+ * @return True if the blast resolved (hit or miss).
+ */
+bool TileEngine::mindBlast(BattleUnit *actor, BattleUnit *victim, BattleItem *ampItem)
+{
+	if (!actor || !victim || !ampItem)
+	{
+		return false;
+	}
+	const RuleItem *amp = ampItem->getRules();
+	const RuleMindBlast &rule = amp->getMindBlast();
+	if (!rule.enabled)
+	{
+		return false;
+	}
+
+	// Reuse the shared psi roll: a BA_MINDBLAST attack resolved as a psi contest. The return is the
+	// MARGIN - positive is a hit, and how positive is how hard it lands.
+	BattleActionAttack attack = BattleActionAttack::GetBeforeShoot(BA_MINDBLAST, actor, ampItem);
+	const int margin = psiAttackCalculate(attack, victim);
+
+	if (margin <= 0)
+	{
+		// A missed blast recoils on the caster (all costs default to 0, so this is off unless the mod asks).
+		applyPsiBacklash(actor, amp, rule.backlashOnFailure, rule.backlashDamageType);
+		return false; // miss - the caller (ExplosionBState) plays the miss animation
+	}
+
+	int power = rule.basePower + (int)(rule.powerPerMargin * margin);
+	if (power < 0) power = 0;
+	if (rule.randomRange > 0 && power > 0)
+	{
+		const int lo = power * (100 - rule.randomRange) / 100;
+		const int hi = power * (100 + rule.randomRange) / 100;
+		power = RNG::generate(std::max(0, lo), hi);
+	}
+
+	const RuleDamageType *type = (rule.damageType >= 0 && rule.damageType < DAMAGE_TYPES)
+		? _save->getMod()->getDamageType((ItemDamageType)rule.damageType)
+		: amp->getDamageType();
+
+	victim->damage(Position(0, 0, 0), power, type, _save, attack, SIDE_FRONT, BODYPART_HEAD);
+
+	// Award psi XP the same way the panic/MC success path does.
+	if (actor->getGeoscapeSoldier())
+	{
+		actor->addPsiSkillExp();
+	}
+
+	// Casualties are resolved by ExplosionBState (which called us), inside the state loop, so the
+	// knockout/death animation sequences correctly.
+	return true;
 }
 
 /**
@@ -5353,7 +5418,7 @@ bool TileEngine::clairvoyance(BattleUnit *actor, Position target, const RuleItem
  * @param amp The psi-amp whose rules apply.
  * @param backlash The configured costs.
  */
-void TileEngine::applyMindControlBacklash(BattleUnit *controller, const RuleItem *amp, const RuleMindControlBacklash &backlash)
+void TileEngine::applyPsiBacklash(BattleUnit *controller, const RuleItem *amp, const RulePsiBacklash &backlash, int damageTypeId)
 {
 	if (!controller || !amp || !backlash.any() || controller->isOut())
 	{
@@ -5362,13 +5427,12 @@ void TileEngine::applyMindControlBacklash(BattleUnit *controller, const RuleItem
 
 	if (backlash.damage.any())
 	{
-		// The backlash's damage type is the mod's call: `backlashDamageType` if it set one, else the amp's
-		// own type. That is how a mod decides whether backlash can be blocked at all - nothing resists a
-		// ResistType no armor declares a damageModifier for, and the enum has free slots for exactly this.
-		// DX ships no "psychic" type of its own; defining one is a mod's business, not the engine's.
-		const int typeId = amp->getMindControl().backlashDamageType;
-		const RuleDamageType *type = (typeId >= 0 && typeId < DAMAGE_TYPES)
-			? _save->getMod()->getDamageType((ItemDamageType)typeId)
+		// The backlash's damage type is the mod's call: the caller's `damageTypeId` if it set one (>= 0),
+		// else the amp's own type. That is how a mod decides whether backlash can be blocked at all -
+		// nothing resists a ResistType no armor declares a damageModifier for, and the enum has free slots
+		// for exactly this. DX ships no "psychic" type of its own; defining one is a mod's business.
+		const RuleDamageType *type = (damageTypeId >= 0 && damageTypeId < DAMAGE_TYPES)
+			? _save->getMod()->getDamageType((ItemDamageType)damageTypeId)
 			: amp->getDamageType();
 
 		const int power = RNG::generate(backlash.damage.min, backlash.damage.max);

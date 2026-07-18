@@ -558,6 +558,8 @@ void RuleItem::load(const YAML::YamlNodeReader& node, Mod *mod, const ModScript&
 	_mindControl.load(reader["mindControl"]); // DX
 	_clairvoyance.load(reader["clairvoyance"]); // DX
 	_costClairvoyance.loadCost(reader, "Clairvoyance"); // DX: tuClairvoyance / costClairvoyance
+	_mindBlast.load(reader["mindBlast"]); // DX
+	_costMindBlast.loadCost(reader, "MindBlast"); // DX: tuMindBlast / costMindBlast
 	reader.tryRead("accuracyPanic", _accuracyPanic);
 	reader.tryRead("accuracyThrow", _accuracyThrow);
 	reader.tryRead("accuracyCloseQuarters", _accuracyCloseQuarters);
@@ -1651,6 +1653,15 @@ RuleItemUseCost RuleItem::getCostPanic() const
 RuleItemUseCost RuleItem::getCostClairvoyance() const
 {
 	return getDefault(_costClairvoyance, _costUse);
+}
+
+/**
+ * DX: gets the cost of a mind blast. Falls back to costUse, like the other psi actions.
+ * @return The cost.
+ */
+RuleItemUseCost RuleItem::getCostMindBlast() const
+{
+	return getDefault(_costMindBlast, _costUse);
 }
 
 /**

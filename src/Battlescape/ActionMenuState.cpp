@@ -247,6 +247,11 @@ ActionMenuState::ActionMenuState(BattleAction *action, int x, int y) : _action(a
 		{
 			addItem(BA_USE, weapon->getPsiAttackName(), &id, Options::keyBattleActionItem1);
 		}
+		// DX: mind blast - direct psychic damage to a unit. Only offered when the amp opts in.
+		if (weapon->getMindBlast().enabled)
+		{
+			addItem(BA_MINDBLAST, "STR_DX_MIND_BLAST", &id, Options::keyBattleActionItem6);
+		}
 		// DX: clairvoyance - a psychic sweep of an area. Only offered when the amp opts in, and only to a
 		// caster whose psi score clears the amp's gate (a weak psychic simply cannot reach).
 		{

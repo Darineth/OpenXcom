@@ -98,6 +98,9 @@ void PsiAttackBState::init()
 		return;
 	}
 
+	// DX: mind blast rides the same ExplosionBState as panic/mind control, so it gets the psi hit
+	// animation, sound, and casualty sequencing for free. ExplosionBState branches to TileEngine::mindBlast
+	// (rather than psiAttack) for a BA_MINDBLAST, so the *effect* is the margin-scaled damage.
 	int height = _target->getFloatHeight() + (_target->getHeight() / 2) - _parent->getSave()->getTile(_action.target)->getTerrainLevel();
 	Position voxel = _action.target.toVoxel() + Position(8, 8, height);
 	_parent->statePushFront(new ExplosionBState(_parent, voxel, BattleActionAttack::GetAferShoot(_action, _action.weapon)));

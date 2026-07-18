@@ -383,6 +383,30 @@ items:
     #      middling one gets a smaller radius than a strong one.
     #    * It's limited by the amp's range, like the other psi actions.
     # =====================================================================
+    # =====================================================================
+    #  DX: mind blast - a direct psychic attack on a unit. It uses the same
+    #  psi contest as panic/mind control, and deals damage scaled by the
+    #  MARGIN of that contest: a lopsided win hurts far more than a squeaker.
+    #  A miss recoils on the caster. Here the blast is DT_STUN (6) so it
+    #  knocks targets out non-lethally and you can see it work without
+    #  killing your test aliens.
+    #
+    #  What to check:
+    #    * Blast a low-psi alien: big stun damage. Blast a strong-willed one:
+    #      little or nothing, and on an outright miss the caster takes 5-15 stun.
+    #    * Stays in targeting mode - blast again while you have TU.
+    # =====================================================================
+    tuMindBlast: 25
+    mindBlast:
+      enabled: true
+      damageType: 6         # DT_STUN, so it's a non-lethal knockout for testing
+      basePower: 10
+      powerPerMargin: 0.8   # + 0.8 * contest margin
+      randomRange: 40       # +/- 40% roll
+      backlashOnFailure:
+        stun: [5, 15]
+        morale: 5
+
     tuClairvoyance: 30
     clairvoyance:
       enabled: true

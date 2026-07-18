@@ -2405,6 +2405,9 @@ RuleItemUseCost BattleUnit::getActionTUs(BattleActionType actionType, const Rule
 			case BA_CLAIRVOYANCE: // DX
 				cost = item->getCostClairvoyance();
 				break;
+			case BA_MINDBLAST: // DX
+				cost = item->getCostMindBlast();
+				break;
 			default:
 				break;
 		}

@@ -77,6 +77,47 @@ of "the unit acted" belong in `unitActed`, not at the call sites.
 a single `&`. The armor cloak's `breaksOn:` list is exactly that: the loader ORs the named actions into
 a mask, and breaking the cloak is one bit test.
 
+## Mind Blast (opt-in per psi-amp)
+
+A direct psychic attack that **hurts** — the offensive psi power next to the coercive ones (panic / mind
+control). New `BA_MINDBLAST` action, offered on a psi-amp that opts in.
+
+```yaml
+items:
+  - type: STR_PSI_AMP
+    tuMindBlast: 25         # or costMindBlast: { time: 25, mana: 5, ... }
+    mindBlast:
+      enabled: true         # opt in; without this the action does not exist
+      damageType: -1        # ResistType the blast deals; -1 = the amp's own damage type
+      basePower: 10         # flat damage on any successful blast
+      powerPerMargin: 0.8   # + this * (psi contest margin) - a decisive win hits far harder
+      randomRange: 40       # damage rolls in [ (100-r)%, (100+r)% ] of the computed power (0 = exact)
+      backlashOnFailure:    # what the CASTER suffers on a miss (all default 0 = off)
+        stun: [5, 15]
+        morale: 5
+      backlashDamageType: -1 # ResistType that backlash deals; -1 = the amp's own
+```
+
+- **Resolved as a psi contest**, through the same `psiAttackCalculate` path as panic and mind control —
+  so it inherits their accuracy, the armor's `psiDefence`, distance falloff, and the `tryPsiAttack*`
+  script hooks, rather than the legacy fork's parallel `psiStrength + psiSkill` formula.
+- **Damage scales with the margin.** On a win, `power = basePower + powerPerMargin × margin` (how badly
+  you won the contest), rolled by `randomRange`. `powerPerMargin: 0` gives a flat blast; a low `basePower`
+  with a higher `powerPerMargin` makes the psi *duel* matter — a lopsided win crushes, a squeaker barely
+  stings. Replaces legacy's hard-coded three-tier constants with two plain knobs.
+- **The damage type is the mod's choice** (`damageType`, −1 = the amp's own). Point it at a free
+  `DT_10..DT_19` slot with `ArmorEffectiveness: 0.0` (via the global `damageTypes:` node) for legacy's
+  armor-ignoring psychic damage — but DX doesn't hard-code that, so a mod where armor *does* blunt a
+  blast simply leaves it. Dealt through `BattleUnit::damage`, so armor modifiers, the damage script hooks
+  and the casualty path all apply.
+- **A miss recoils on the caster** via `backlashOnFailure` (reusing the shared psi backlash) — the "it
+  can go wrong" risk, optional and tunable. A successful blast is clean (legacy's narrow-win self-damage
+  is dropped).
+- **Targeting** is limited by the amp's range like the other psi actions; cost is `tuMindBlast` /
+  `costMindBlast`, falling back to `costUse`.
+
+*(design: [plans/Feature-MindBlast.md](plans/Feature-MindBlast.md))*
+
 ## Clairvoyance (opt-in per psi-amp)
 
 A psychic sweep of an area around a **target tile** — the psi operative reaches out and the map opens up

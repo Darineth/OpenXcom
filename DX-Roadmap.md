@@ -433,7 +433,10 @@ therefore reframed as targeted deltas:
   already reverts the faction at the victim's next turn, so channeling replaces a one-turn expiry rather
   than an infinite one. **Mod opt-in** (`mindControl:` node on the psi-amp); no node = stock behavior.
   *(design + audit: [plans/Feature-ChanneledMindControl.md](plans/Feature-ChanneledMindControl.md))*
-- [ ] **Mind Blast** — direct psychic damage *(needs damage-model pieces).*
+- [x] **Mind Blast** — ✅ **Done.** A `BA_MINDBLAST` attack (opt-in per psi-amp, `mindBlast:` node) that
+  reuses the shared psi contest and deals damage scaled by the win margin, with a mod-chosen damage type
+  and an optional caster backlash on a miss. Replaces legacy's parallel formula, hard-coded three-tier
+  constants and armor-ignoring DT_PSYCHIC. *(design: [plans/Feature-MindBlast.md](plans/Feature-MindBlast.md))*
 - [x] **Clairvoyance** — ✅ **Done.** A psychic sweep around a target tile (`BA_CLAIRVOYANCE`), opt-in per
   psi-amp (`clairvoyance:` node). Terrain is marked *discovered but not visible*, so DX's fog of war draws
   it remembered-and-dimmed and it stays known; units in the area are marked like motion-detector contacts

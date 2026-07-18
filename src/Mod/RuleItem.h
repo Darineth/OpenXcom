@@ -107,6 +107,10 @@ enum BattleActionType : Uint8
 	// DX: Clairvoyance — a psychic sweep that reveals an area of the map around a TARGET TILE (no target
 	// unit). Appended to keep serialized values stable.
 	BA_CLAIRVOYANCE = 25,
+
+	// DX: Mind Blast — direct psychic damage to a target unit, scaled by the psi contest margin.
+	// Appended to keep serialized values stable.
+	BA_MINDBLAST = 26,
 };
 
 enum class BattleActionOrigin { CENTRE = 0, LEFT, RIGHT }; // Used for off-centre shooting.
@@ -366,7 +370,7 @@ struct RuleMindControlUpkeep
 /**
  * DX: backlash - what the CONTROLLER suffers when a mind control goes wrong.
  */
-struct RuleMindControlBacklash
+struct RulePsiBacklash
 {
 	RuleRandomRange damage;   // damage dealt to the controller (see RuleMindControl::backlashDamageType)
 	RuleRandomRange stun;
@@ -400,8 +404,8 @@ struct RuleMindControl
 	bool thrallRecoversTimeUnits = true; // stock gives the victim a full TU bar on capture
 
 	RuleMindControlUpkeep upkeep;
-	RuleMindControlBacklash backlashOnThrallDeath;  // a thrall dies while controlled
-	RuleMindControlBacklash backlashOnFailure;      // the attempt fails (stock does nothing here)
+	RulePsiBacklash backlashOnThrallDeath;  // a thrall dies while controlled
+	RulePsiBacklash backlashOnFailure;      // the attempt fails (stock does nothing here)
 
 	bool resistPerTurn = false;          // the thrall re-rolls the psi contest at the start of its turns
 	int resistModifier = 0;              // added to the thrall's defence on that re-roll
@@ -476,6 +480,40 @@ struct RuleClairvoyance
 		const int above = std::max(0, psiScore - minPsiScore);
 		const int span = std::max(1, scaleWithPsi - minPsiScore);
 		return std::max(1, radius * above / span);
+	}
+};
+
+/**
+ * DX: per-psi-amp mind-blast config, loaded from the item's `mindBlast:` node.
+ *
+ * A direct psychic attack: it resolves through the same psi contest as panic/mind control (so it inherits
+ * their accuracy, the armor's psiDefence, distance falloff and the tryPsiAttack* script hooks), and on a
+ * win deals damage scaled by the MARGIN of that contest - a lopsided win hurts far more than a squeaker.
+ * The damage type is the mod's choice, so whether armor blocks it is up to the ruleset, not the engine.
+ *
+ * Without the node (or with enabled=false) the action does not exist.
+ */
+struct RuleMindBlast
+{
+	bool enabled = false;       // opt in; without this the action is never offered
+	int damageType = -1;        // ResistType the blast deals; -1 = the amp's own damage type
+	int basePower = 0;          // flat damage on any successful blast
+	float powerPerMargin = 0.0f;// + this * (psi contest margin) damage
+	int randomRange = 0;        // damage rolls in [ (100-r)%, (100+r)% ] of the computed power (0 = exact)
+
+	RulePsiBacklash backlashOnFailure; // what the CASTER suffers on a miss
+	int backlashDamageType = -1;       // ResistType that backlash deals; -1 = the amp's own
+
+	void load(const YAML::YamlNodeReader& reader)
+	{
+		if (!reader) return;
+		reader.tryRead("enabled", enabled);
+		reader.tryRead("damageType", damageType);
+		reader.tryRead("basePower", basePower);
+		reader.tryRead("powerPerMargin", powerPerMargin);
+		reader.tryRead("randomRange", randomRange);
+		backlashOnFailure.load(reader["backlashOnFailure"]);
+		reader.tryRead("backlashDamageType", backlashDamageType);
 	}
 };
 
@@ -640,6 +678,8 @@ private:
 	RuleMindControl _mindControl; // DX: channeled mind control (opt-in per psi-amp)
 	RuleClairvoyance _clairvoyance; // DX: psychic area reveal (opt-in per psi-amp)
 	RuleItemUseCostRule _costClairvoyance; // DX
+	RuleMindBlast _mindBlast; // DX: direct psychic damage (opt-in per psi-amp)
+	RuleItemUseCostRule _costMindBlast; // DX
 	int _clipSize, _battleClipSize, _specialChance, _tuLoad[AmmoSlotMax], _tuUnload[AmmoSlotMax];
 	// DX: overwatch (set-and-hold reaction fire over a cone). Range/min-range in tiles, cone angle is
 	// the full cone width in degrees, modifier scales the offensive reaction score, shot is the fire mode.
@@ -1030,6 +1070,10 @@ public:
 	const RuleClairvoyance &getClairvoyance() const { return _clairvoyance; }
 	/// DX: gets the cost of a clairvoyant sweep (falls back to costUse, like the other psi actions).
 	RuleItemUseCost getCostClairvoyance() const;
+	/// DX: gets the mind-blast config (enabled=false => the action doesn't exist for this item).
+	const RuleMindBlast &getMindBlast() const { return _mindBlast; }
+	/// DX: gets the cost of a mind blast (falls back to costUse, like the other psi actions).
+	RuleItemUseCost getCostMindBlast() const;
 	/// Gets the item's panic cost.
 	RuleItemUseCost getCostPanic() const;
 	/// Gets the item's throw cost.

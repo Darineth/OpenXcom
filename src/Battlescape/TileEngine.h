@@ -244,10 +244,12 @@ public:
 
 	/// Calculate success rate of psi attack.
 	int psiAttackCalculate(BattleActionAttack::ReadOnly attack, const BattleUnit *victim);
+	/// DX: a mind blast - a psi contest that deals damage scaled by the margin, or backlashes on a miss.
+	bool mindBlast(BattleUnit *actor, BattleUnit *victim, BattleItem *ampItem);
 	/// DX: a clairvoyant sweep - reveals the map around a target tile, and marks the units in it.
 	bool clairvoyance(BattleUnit *actor, Position target, const RuleItem *amp);
 	/// DX: makes a psi controller suffer for a mind control that went wrong (failed attempt / thrall death).
-	void applyMindControlBacklash(BattleUnit *controller, const RuleItem *amp, const RuleMindControlBacklash &backlash);
+	void applyPsiBacklash(BattleUnit *controller, const RuleItem *amp, const RulePsiBacklash &backlash, int damageTypeId = -1);
 	/// Attempts a panic or mind control action.
 	bool psiAttack(BattleActionAttack attack, BattleUnit *victim);
 	/// Calculate success rate of melee attack action.

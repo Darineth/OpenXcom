@@ -151,7 +151,18 @@ void ExplosionBState::init()
 			{
 				_power = 0;
 			}
-			if (!_parent->getTileEngine()->psiAttack(_attack, _targetPsiOrHit))
+			// DX: a mind blast deals margin-scaled damage instead of the panic/MC faction effect, but rides
+			// this same state for the psi hit animation, sound and casualty sequencing. mindBlast applies the
+			// damage itself (power stays 0 here so explode() doesn't double-hit); it returns hit/miss so we
+			// pick the right animation, exactly like psiAttack.
+			if (action == BA_MINDBLAST)
+			{
+				if (!_parent->getTileEngine()->mindBlast(_attack.attacker, _targetPsiOrHit, _attack.weapon_item))
+				{
+					miss = true;
+				}
+			}
+			else if (!_parent->getTileEngine()->psiAttack(_attack, _targetPsiOrHit))
 			{
 				_power = 0;
 				miss = true;

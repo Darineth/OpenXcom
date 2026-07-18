@@ -269,7 +269,7 @@ Applies to `battleType: 9` (psi-amp) and `8` (mind probe).
 | `psiAnimation` / `psiMissAnimation` | sprite | −1 | Hit/miss animation (HIT.PCK). |
 | `psiAnimFrames` / `psiMissAnimFrames` | int | −1 | Frame counts (−1 = auto-detect). |
 
-Psi costs are `costMindControl`/`costPanic`/`costUse`/`costClairvoyance` **[DX]** (see
+Psi costs are `costMindControl`/`costPanic`/`costUse`/`costClairvoyance`/`costMindBlast` **[DX]** (see
 [Ruleset-UseCost.md](Ruleset-UseCost.md)); a psi-amp's `aimRange` defaults to 0 and its `dropoff` to 1,
 and its accuracy formula defaults to the psi-attack one.
 
@@ -301,6 +301,23 @@ out, or panics. *(feature: [DX-Features.md](../DX-Features.md); design:
 | `timeRecoveryPercent` / `energyRecoveryPercent` / `manaRecoveryPercent` / `moraleRecoveryPercent` | int % | 0 | Percent of the controller's normal per-turn **regeneration** withheld while channeling (100 = no regen at all). Stacks per thrall, capped at 100. |
 
 The legacy DX fork's entire upkeep model is one line of this: `timeRecoveryPercent: 90`.
+
+### **[DX]** `mindBlast:` — direct psychic damage
+
+A `BA_MINDBLAST` attack on a target unit, resolved through the same psi contest as panic/mind control
+(so it inherits their accuracy, `psiDefence`, distance falloff and script hooks). On a win it deals
+damage scaled by the contest **margin**; on a miss it recoils on the caster. Costs `tuMindBlast` /
+`costMindBlast` (falls back to `costUse`). *(design: [plans/Feature-MindBlast.md](../plans/Feature-MindBlast.md))*
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `enabled` | bool | false | Opt in. Without it the action is never offered. |
+| `damageType` | int ResistType | −1 | The type the blast deals (−1 = the amp's own). Point it at a type nothing resists for an armor-ignoring blast. |
+| `basePower` | int | 0 | Flat damage on any successful blast. |
+| `powerPerMargin` | float | 0.0 | Added damage per point of psi-contest margin (0 = flat; a decisive win hits harder). |
+| `randomRange` | int % | 0 | Damage rolls in `[(100−r)%, (100+r)%]` of the computed power (0 = exact). |
+| `backlashOnFailure:` | map | all 0 | `damage: [min,max]`, `stun: [min,max]`, `morale: int` inflicted on the caster on a miss. |
+| `backlashDamageType` | int ResistType | −1 | The type the backlash deals (−1 = the amp's own). |
 
 ### **[DX]** `clairvoyance:` — psychic area reveal
 

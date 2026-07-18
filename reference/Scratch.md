@@ -1,6 +1,7 @@
 # TODO
 
 * Sort Icon List
+* Should psi backlash potentially be able to take the target's stats into account?
 
 # Documentation
 - Write a full ruleset document.  Explain fields, structures, options. **DONE, but might need a review pass?**

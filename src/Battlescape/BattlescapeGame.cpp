@@ -834,7 +834,7 @@ void BattlescapeGame::checkForCasualties(const RuleDamageType *damageType, Battl
 					const RuleItem *amp = _save->getMod()->getItem(controller->getChannelWeaponType(), false);
 					if (rule && amp)
 					{
-						getTileEngine()->applyMindControlBacklash(controller, amp, rule->backlashOnThrallDeath);
+						getTileEngine()->applyPsiBacklash(controller, amp, rule->backlashOnThrallDeath, rule->backlashDamageType);
 					}
 				}
 			}
@@ -1230,7 +1230,7 @@ void BattlescapeGame::setupCursor()
 			getMap()->setCursorType(CT_THROW);
 		}
 		else if (_currentAction.type == BA_MINDCONTROL || _currentAction.type == BA_PANIC || _currentAction.type == BA_USE
-			|| _currentAction.type == BA_CLAIRVOYANCE) // DX
+			|| _currentAction.type == BA_CLAIRVOYANCE || _currentAction.type == BA_MINDBLAST) // DX
 		{
 			getMap()->setCursorType(CT_PSI);
 		}
@@ -2007,6 +2007,30 @@ void BattlescapeGame::primaryAction(Position pos)
 				else
 				{
 					_parentState->warning("STR_LINE_OF_SIGHT_REQUIRED");
+				}
+			}
+		}
+		else if (_currentAction.type == BA_MINDBLAST && _currentAction.weapon->getRules()->getBattleType() == BT_PSIAMP)
+		{
+			// DX: a direct psychic attack on a unit. Runs through PsiAttackBState (like panic/mind control)
+			// rather than dealing damage inline, so the state loop sequences the damage, the knockout/death
+			// animation and the cursor restore - doing it synchronously in this handler queued the death
+			// state with the cursor hidden and never restored, which read as a hang.
+			BattleUnit *targetUnit = _save->selectUnit(pos);
+			if (targetUnit && (_currentAction.actor->getFaction() != FACTION_PLAYER || targetUnit->getVisible()))
+			{
+				if (_currentAction.weapon->getRules()->isOutOfRange(_currentAction.actor->distance3dToUnitSq(targetUnit)))
+				{
+					_parentState->warning("STR_OUT_OF_RANGE");
+				}
+				else
+				{
+					_currentAction.updateTU();
+					_currentAction.target = pos;
+					getMap()->setCursorType(CT_NONE);
+					_parentState->getGame()->getCursor()->setVisible(false);
+					_currentAction.cameraPosition = getMap()->getCamera()->getMapOffset();
+					statePushBack(new PsiAttackBState(this, _currentAction));
 				}
 			}
 		}
