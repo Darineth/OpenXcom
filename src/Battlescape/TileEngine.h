@@ -209,9 +209,8 @@ public:
 	/// Handles experience training.
 	bool awardExperience(BattleActionAttack attack, BattleUnit *target, bool rangeAtack);
 	/// Handles unit hit. `sideOverride`/`bodypartOverride` force where the hit lands instead of deriving
-	/// it from `relative` (DX: a mind blast always strikes the head). `awardExp` lets a caller that awards
-	/// its own experience opt out of the standard weapon-based award.
-	bool hitUnit(BattleActionAttack attack, BattleUnit *target, const Position &relative, int damage, const RuleDamageType *type, bool rangeAtack = true, UnitSide sideOverride = SIDE_MAX, UnitBodyPart bodypartOverride = BODYPART_MAX, bool awardExp = true);
+	/// it from `relative` (DX: a mind blast always strikes the head).
+	bool hitUnit(BattleActionAttack attack, BattleUnit *target, const Position &relative, int damage, const RuleDamageType *type, bool rangeAtack = true, UnitSide sideOverride = SIDE_MAX, UnitBodyPart bodypartOverride = BODYPART_MAX);
 	/// Handles bullet/weapon hits.
 	void hit(BattleActionAttack attack, Position center, int power, const RuleDamageType *type, bool rangeAtack = true, int terrainMeleeTilePart = 0);
 	/// Handles explosions.

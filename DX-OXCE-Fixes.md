@@ -144,6 +144,70 @@ that appeared to do nothing — will behave differently under DX. Nothing in `bi
 
 ---
 
+## ✅ Psi-amps trained **firing** experience
+
+**Where:** [`TileEngine::awardExperience`](src/Battlescape/TileEngine.cpp) · reached from
+[`TileEngine::hitUnit`](src/Battlescape/TileEngine.cpp)
+**Found:** Jul 2026, while routing DX's mind blast through the standard hit path.
+
+### What was wrong
+
+`awardExperience` handles an explicit `experienceTrainingMode:` first. Failing that, it falls back to a
+heuristic over the weapon's `battleType`, with cases for grenades/proxies (throwing), melee (melee) and
+medikits (nothing) — and then a catch-all `else` labelled *"FIREARMS and other"* that picks a stat from
+the weapon's `maxRange`:
+
+```cpp
+int maxRange = weapon->getRules()->getMaxRange();
+if (maxRange > 10)
+{
+    expType = ETM_FIRING_100;
+    expFuncA = &BattleUnit::addFiringExp;
+}
+```
+
+There is **no `BT_PSIAMP` case**, so a psi-amp fell into that catch-all. Psi-amps are long-ranged, so
+`maxRange > 10` held and the caster was awarded **firing** experience: a psi soldier got better with a
+rifle by using a psi-amp on someone.
+
+### Why it mattered (and why nobody noticed)
+
+`awardExperience` is only reached for a psi-amp when the amp actually **damages** a unit, via `hitUnit`.
+Panic and mind control never do — `ExplosionBState` zeroes their power — so the stock psi actions never hit
+this path. It was reachable only through `BA_USE` on a damaging psi-amp, which no ruleset in
+`bin/standard/` defines.
+
+The upstream code is clearly *aware* of the gap without closing it:
+[`TileEngine::psiAttack`](src/Battlescape/TileEngine.cpp) pointedly does **not** call `awardExperience`
+in the default training mode, awarding psi skill directly instead, and calls it only when the modder set
+an explicit mode. The heuristic simply cannot speak for psi.
+
+### What changed
+
+A `BT_PSIAMP` case was added to the heuristic, alongside the medikit one, returning **false** — no award:
+
+```cpp
+// PSI-AMPS
+else if (weapon->getRules()->getBattleType() == BT_PSIAMP)
+{
+    return false;
+}
+```
+
+In the default training mode the psi paths already award psi skill themselves (`psiAttack` for
+panic/mind control, `mindBlast` for a blast), so returning false leaves that as the only award rather
+than adding a bogus second one. An explicit `experienceTrainingMode:` is handled earlier and never
+reaches this branch, so a mod that asks for a specific stat still gets exactly that.
+
+### What a mod would observe
+
+A damaging `BA_USE` psi-amp with **no** `experienceTrainingMode:` no longer trains firing. It still
+trains psi skill through `psiAttack`, which was always the intended award. A mod that set an explicit
+`experienceTrainingMode:` is unaffected. Nothing in `bin/standard/` defines such an amp, so the stock
+games are unaffected.
+
+---
+
 *If you fix an upstream bug, add an entry here in the same shape — what the code did, why it is
 wrong, what changed, and what a mod would notice — and cross-link it from the relevant
 [ruleset doc](docs/Ruleset.md).*

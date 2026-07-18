@@ -3363,6 +3363,19 @@ bool TileEngine::awardExperience(BattleActionAttack attack, BattleUnit *target, 
 			// medikits don't train anything by default
 			return false;
 		}
+		// PSI-AMPS
+		else if (weapon->getRules()->getBattleType() == BT_PSIAMP)
+		{
+			// DX: a psi-amp trains nothing HERE. It has no case in the heuristic below, so it used to fall
+			// through to "FIREARMS and other" and - having a long range - trained FIRING: a psi soldier got
+			// better with a rifle by mind-blasting people. In the default training mode the psi paths award
+			// psi skill themselves (TileEngine::psiAttack for panic/mind control, ::mindBlast for a blast),
+			// precisely because this generic weapon heuristic cannot speak for psi; returning false here
+			// leaves that award as the only one, rather than adding a bogus second one.
+			// A mod that wants something else sets an explicit experienceTrainingMode, which is handled
+			// above and never reaches this branch.
+			return false;
+		}
 		// FIREARMS and other
 		else
 		{
@@ -3449,7 +3462,7 @@ bool TileEngine::awardExperience(BattleActionAttack attack, BattleUnit *target, 
  * @param type damage type of hit.
  * @return Did unit get hit?
  */
-bool TileEngine::hitUnit(BattleActionAttack attack, BattleUnit *target, const Position &relative, int damage, const RuleDamageType *type, bool rangeAtack, UnitSide sideOverride, UnitBodyPart bodypartOverride, bool awardExp)
+bool TileEngine::hitUnit(BattleActionAttack attack, BattleUnit *target, const Position &relative, int damage, const RuleDamageType *type, bool rangeAtack, UnitSide sideOverride, UnitBodyPart bodypartOverride)
 {
 	if (_save->isPreview())
 	{
@@ -3503,7 +3516,7 @@ bool TileEngine::hitUnit(BattleActionAttack attack, BattleUnit *target, const Po
 	}
 
 	// single place for firing/throwing/melee experience training
-	if (awardExp && attack.attacker && attack.attacker->getOriginalFaction() == FACTION_PLAYER)
+	if (attack.attacker && attack.attacker->getOriginalFaction() == FACTION_PLAYER)
 	{
 		awardExperience(attack, target, rangeAtack);
 	}
@@ -5363,15 +5376,22 @@ bool TileEngine::mindBlast(BattleUnit *actor, BattleUnit *victim, BattleItem *am
 	// from, and the head is where it lands. That is passed as an explicit override because `relative` is
 	// (0,0,0), which damage() would otherwise read as an under-the-feet hit.
 	//
-	// Experience is opted OUT of here: awardExperience has no BT_PSIAMP case, so a default-training-mode
-	// psi-amp falls into its "firearms and other" branch and would train FIRING. Psi XP is awarded below
-	// instead, matching what the panic/mind-control path does for the same reason.
-	hitUnit(attack, victim, Position(0, 0, 0), power, type, true, SIDE_FRONT, BODYPART_HEAD, false);
+	// hitUnit also runs the standard experience award, which now recognises psi-amps: in an explicit
+	// experienceTrainingMode it applies whatever the mod asked for, and in the default mode it awards
+	// nothing so the psi-skill award below is the only one.
+	hitUnit(attack, victim, Position(0, 0, 0), power, type, true, SIDE_FRONT, BODYPART_HEAD);
 
-	// Award psi XP the same way the panic/MC success path does.
-	if (actor->getGeoscapeSoldier())
+	// Award psi XP the way the panic/mind-control success path does - but only in the DEFAULT training
+	// mode, otherwise the mod's own experienceTrainingMode (applied by hitUnit above) would be doubled up.
+	// The psi-capability gate mirrors psiAttack: a soldier with no natural psi skill trains none, while a
+	// non-soldier (an alien) has no stats to train either way.
+	if (amp->getExperienceTrainingMode() == ETM_DEFAULT)
 	{
-		actor->addPsiSkillExp();
+		const bool isNaturallyPsiCapable = !(actor->getGeoscapeSoldier() && actor->getGeoscapeSoldier()->getCurrentStats()->psiSkill <= 0);
+		if (isNaturallyPsiCapable)
+		{
+			actor->addPsiSkillExp();
+		}
 	}
 
 	// Casualties are resolved by ExplosionBState (which called us), inside the state loop, so the

@@ -99,11 +99,13 @@ items:
 - **Always strikes the head**, front side, passed to `hitUnit` as an explicit side/bodypart override: a
   blast has no physical trajectory to derive a facing from, and a `relative` of `(0,0,0)` would otherwise
   be read by `damage()` as an under-the-feet hit.
-- **Experience is awarded separately** (psi skill, directly), with `hitUnit`'s standard award opted out
-  via its `awardExp` parameter. `awardExperience` has no `BT_PSIAMP` case, so a default-training-mode
-  psi-amp falls into its "FIREARMS and other" branch and would train **firing** — the same trap
-  `TileEngine::psiAttack` already sidesteps in `ETM_DEFAULT`. Teaching `awardExperience` about
-  `BT_PSIAMP` would be the proper fix and is out of scope here.
+- **Experience** follows the panic/mind-control convention: in `ETM_DEFAULT` the blast awards psi skill
+  directly (gated on the caster being naturally psi-capable, as `psiAttack` does); with an explicit
+  `experienceTrainingMode:` it defers entirely to `awardExperience` via `hitUnit`.
+  This initially needed an opt-out parameter on `hitUnit`, because `awardExperience` had no `BT_PSIAMP`
+  case and would have trained **firing**. That gap has since been fixed at the source — `awardExperience`
+  now returns no award for a psi-amp in the default mode (see [DX-OXCE-Fixes.md](../DX-OXCE-Fixes.md)) —
+  so the opt-out was removed again and the blast uses the plain `hitUnit` call.
 - **Range / LOS**: limited by the amp's range like the other psi actions. (Legacy also required line of
   fire; the shared psi path already honours `LOSRequired`, so a mod gets that by setting it on the amp.)
 - Cost: `tuMindBlast` / `costMindBlast`, falling back to `costUse`.

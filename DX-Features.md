@@ -147,8 +147,9 @@ items:
   and explosions — so armor modifiers, the damage script hooks, the casualty path, kill attribution
   (a blast that kills, or that leaves the victim to bleed out, credits the caster) and both logs all
   apply. It always lands on the **head**, front side: a blast has no trajectory to derive a facing from.
-  Experience is the one deliberate exception — the blast awards psi skill directly, because the standard
-  award path has no psi-amp case and would otherwise train *firing*.
+  Experience follows the panic/mind-control convention: psi skill in the default training mode, or
+  whatever an explicit `experienceTrainingMode:` asks for. (Psi-amps used to train *firing* through the
+  standard award path — see [DX-OXCE-Fixes.md](DX-OXCE-Fixes.md).)
 - **A miss recoils on the caster** via `backlashOnFailure` (reusing the shared psi backlash) — the "it
   can go wrong" risk, optional and tunable. A successful blast is clean (legacy's narrow-win self-damage
   is dropped).
