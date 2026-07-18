@@ -171,7 +171,12 @@ void BattleItem::save(YAML::YamlNodeWriter writer, const ScriptGlobal *shared) c
 	}
 	if (_tile)
 		writer.write("position", _tile->getPosition());
-	if (_ammoQuantity || _rules->isAmmoRechargeable()) // To consider: maybe it would be better to just always write also zero?
+	// DX: also persist a ZERO quantity for any item that carries a magazine (getBattleMagazineSize() > 0).
+	// The constructor initializes such an item to its full magazine size, so if a 0-round clip omits the
+	// ammoqty field (as the original `_ammoQuantity || rechargeable` guard did), it reloads FULL - an
+	// emptied psi-amp clip refilling itself on load. Normal weapons dodged this only because an emptied
+	// clip is removed from them; a psi-amp keeps its clip loaded, so the zero must be written.
+	if (_ammoQuantity || _rules->isAmmoRechargeable() || _rules->getBattleMagazineSize() > 0)
 		writer.write("ammoqty", _ammoQuantity);
 	if (_ammoItem[0])
 		writer.write("ammoItem", _ammoItem[0]->getId());
@@ -488,16 +493,14 @@ bool BattleItem::hasPsiAmmo(BattleActionType action) const
  * DX: spends this psi action's round cost from the loaded clip. A no-op when the action is free.
  * @param action The psi action.
  */
-void BattleItem::spendPsiAmmo(BattleActionType action)
+void BattleItem::spendPsiAmmo(BattleActionType action, SavedBattleGame *save)
 {
+	// Psi actions have no getActionConf, so they can't ride spendAmmoForAction directly - but the round
+	// cost + clip resolve the same way, and the actual spend-and-drop-empty-clip is the shared helper.
 	const int cost = _rules->getPsiAmmoCost(action);
-	if (cost <= 0)
+	if (cost > 0)
 	{
-		return;
-	}
-	if (BattleItem *clip = getPsiClip())
-	{
-		clip->spendBullet(cost);
+		spendClipRounds(getPsiClip(), cost, save);
 	}
 }
 
@@ -1006,6 +1009,43 @@ BattleItem *BattleItem::getAmmoForAction(BattleActionType action, std::string* m
  * @param action Battle Action done using this item.
  * @param save Save game.
  */
+/**
+ * DX: draws `rounds` from a loaded clip and, if the clip runs dry, unloads and removes it - the shared
+ * core of both the firing path (spendAmmoForAction) and the psi path (spendPsiAmmo). A self-powered or
+ * rechargeable clip, or one with no magazine, is never removed.
+ * @param ammo The clip (an ammo item, or this weapon itself for self-powered).
+ * @param rounds Rounds to spend.
+ * @param save The battle game (for removing an emptied clip).
+ */
+void BattleItem::spendClipRounds(BattleItem* ammo, int rounds, SavedBattleGame* save)
+{
+	if (!ammo)
+	{
+		return;
+	}
+	// spendBullet returns false once the clip is empty; a magazined, non-rechargeable clip that hit zero
+	// is consumed - removed from the game and unhooked from every slot that referenced it - so the weapon
+	// reads as unloaded and can take a fresh clip. (A dead clip left loaded blocks reloading.)
+	// A self-powered weapon (ammo == this) draws from its own battery: decrement it, but never remove it
+	// as spent ammo. Only a separate, magazined, non-rechargeable clip is consumed.
+	if (ammo->getRules()->getBattleMagazineSize() > 0 && ammo->spendBullet(rounds) == false
+		&& !ammo->getRules()->isAmmoRechargeable() && ammo != this)
+	{
+		if (save)
+		{
+			save->removeItem(ammo);
+		}
+		ammo->setIsAmmo(false);
+		for (auto*& a : _ammoItem)
+		{
+			if (a == ammo)
+			{
+				a = nullptr;
+			}
+		}
+	}
+}
+
 void BattleItem::spendAmmoForAction(BattleActionType action, SavedBattleGame* save)
 {
 	if (save->getDebugMode() || getActionConf(action)->ammoSlot == RuleItem::AmmoSlotSelfUse)
@@ -1014,25 +1054,7 @@ void BattleItem::spendAmmoForAction(BattleActionType action, SavedBattleGame* sa
 	}
 
 	int spendPerShot = 1;
-	auto* ammo = getAmmoForAction(action, nullptr, &spendPerShot);
-	if (ammo)
-	{
-		if (ammo->getRules()->getBattleMagazineSize() > 0 && ammo->spendBullet(spendPerShot) == false && !ammo->getRules()->isAmmoRechargeable())
-		{
-			save->removeItem(ammo);
-			ammo->setIsAmmo(false);
-			if (ammo != this)
-			{
-				for (auto*& a : _ammoItem)
-				{
-					if (a == ammo)
-					{
-						a = nullptr;
-					}
-				}
-			}
-		}
-	}
+	spendClipRounds(getAmmoForAction(action, nullptr, &spendPerShot), spendPerShot, save);
 }
 
 /**

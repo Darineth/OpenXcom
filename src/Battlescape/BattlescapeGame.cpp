@@ -2053,7 +2053,7 @@ void BattlescapeGame::primaryAction(Position pos)
 			}
 			else if (getTileEngine()->clairvoyance(_currentAction.actor, pos, _currentAction.weapon->getRules()))
 			{
-				_currentAction.weapon->spendPsiAmmo(BA_CLAIRVOYANCE); // DX: expend the rounds
+				_currentAction.weapon->spendPsiAmmo(BA_CLAIRVOYANCE, _save); // DX: expend the rounds
 				// Stay in targeting mode, like the other psi actions: the caster can sweep again while he
 				// has the TU, and right-click cancels. (Clearing the action type here but leaving
 				// `targeting` set would drop setupCursor() into the generic aim cursor with a dead action -

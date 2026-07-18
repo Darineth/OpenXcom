@@ -187,8 +187,11 @@ public:
 	BattleItem *getPsiClip();
 	/// DX: does this amp have enough rounds loaded for this psi action? True if the action is free.
 	bool hasPsiAmmo(BattleActionType action) const;
-	/// DX: spends this psi action's round cost from the loaded clip (no-op if the action is free).
-	void spendPsiAmmo(BattleActionType action);
+	/// DX: spends this psi action's round cost from the loaded clip, removing the clip if it empties
+	/// (so the amp reads as unloaded and a fresh clip can be loaded). No-op if the action is free.
+	void spendPsiAmmo(BattleActionType action, SavedBattleGame *save);
+	/// DX: shared "spend N rounds, drop the clip if it empties" - core of both firing and psi ammo spend.
+	void spendClipRounds(BattleItem* ammo, int rounds, SavedBattleGame* save);
 	/// Gets the item's ammo item.
 	const BattleItem *getAmmoForSlot(int slot) const;
 	/// Get ammo count visibility for slot.

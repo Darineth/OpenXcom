@@ -107,7 +107,7 @@ void PsiAttackBState::init()
 		return;
 	}
 
-	_item->spendPsiAmmo(_action.type); // DX: expend the rounds (hit or miss - the orb is fired)
+	_item->spendPsiAmmo(_action.type, _parent->getSave()); // DX: expend the rounds (hit or miss - the orb is fired)
 
 	// DX: mind blast rides the same ExplosionBState as panic/mind control, so it gets the psi hit
 	// animation, sound, and casualty sequencing for free. ExplosionBState branches to TileEngine::mindBlast
