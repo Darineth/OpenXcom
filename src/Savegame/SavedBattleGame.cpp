@@ -4362,6 +4362,200 @@ void SavedBattleGame::logMindControlBreakEvent(const BattleUnit *controller, con
 }
 
 /**
+ * DX: maps a psi action to the localized name shown in its combat-log lines ("Mind Control",
+ * "Panic", "Mind Blast", "Clairvoyance"). Anything else (notably BA_USE, whose effect is entirely
+ * the mod's business) falls back to a generic "psi attack".
+ * @param type The psi action.
+ * @return Language key for the action's display name.
+ */
+static const char *combatLogPsiActionKey(BattleActionType type)
+{
+	switch (type)
+	{
+	case BA_MINDCONTROL:  return "STR_COMBATLOG_PSI_ACTION_MINDCONTROL";
+	case BA_PANIC:        return "STR_COMBATLOG_PSI_ACTION_PANIC";
+	case BA_MINDBLAST:    return "STR_COMBATLOG_PSI_ACTION_MINDBLAST";
+	case BA_CLAIRVOYANCE: return "STR_COMBATLOG_PSI_ACTION_CLAIRVOYANCE";
+	default:              return "STR_COMBATLOG_PSI_ACTION_GENERIC";
+	}
+}
+
+/**
+ * DX: logs a psi action being cast, reading "<caster> focuses <amp> on <target> (Mind Control)".
+ * This is the psi counterpart of logFireEvent - it fires for every faction from the shared cast path,
+ * so the player also sees an alien reaching for one of his soldiers. Both names and the amp's name are
+ * knowledge-aware, and the tone follows the caster (ours good, an enemy's attempt bad).
+ * @param attacker The casting unit.
+ * @param weapon The psi-amp used.
+ * @param victim The targeted unit.
+ * @param type The psi action being cast.
+ */
+void SavedBattleGame::logPsiCastEvent(const BattleUnit *attacker, const BattleItem *weapon, const BattleUnit *victim, BattleActionType type)
+{
+	if (!attacker || !weapon || !victim)
+	{
+		return;
+	}
+	std::string actionName = _lang->getString(combatLogPsiActionKey(type));
+	_combatLog->add(_lang->getString("STR_COMBATLOG_PSI_CAST")
+		.arg(getCombatLogName(attacker)).arg(getCombatLogWeaponName(attacker, weapon))
+		.arg(getCombatLogName(victim)).arg(actionName), combatLogActorOutcome(attacker));
+}
+
+/**
+ * DX: logs how a psi contest resolved - "<caster>'s mind control takes hold of <target>" on a win,
+ * "<target> resists <caster>'s mind control" on a loss. Toned from the victim's side (an enemy losing
+ * its mind is good news, one of ours losing his is not), and inverted on a resist: our soldier shrugging
+ * off an alien probe is a good outcome even though the subject is one of ours.
+ * @param attacker The casting unit.
+ * @param victim The targeted unit.
+ * @param type The psi action attempted.
+ * @param success Whether the contest was won.
+ */
+void SavedBattleGame::logPsiResultEvent(const BattleUnit *attacker, const BattleUnit *victim, BattleActionType type, bool success)
+{
+	if (!attacker || !victim)
+	{
+		return;
+	}
+	std::string actionName = _lang->getString(combatLogPsiActionKey(type));
+	// A resist flips the tone: the harm did NOT land, so the unit that shrugged it off got the good news.
+	CombatLogOutcome outcome = combatLogVictimOutcome(victim);
+	if (!success)
+	{
+		outcome = (outcome == OUTCOME_BAD) ? OUTCOME_GOOD : (outcome == OUTCOME_GOOD ? OUTCOME_BAD : outcome);
+	}
+	_combatLog->add(_lang->getString(success ? "STR_COMBATLOG_PSI_SUCCESS" : "STR_COMBATLOG_PSI_RESIST", victim->getGender())
+		.arg(getCombatLogName(attacker)).arg(getCombatLogName(victim)).arg(actionName), outcome);
+}
+
+/**
+ * DX: logs the raw psi contest numbers, reading "<caster> vs <target> (Mind Control): psi 78 vs 45,
+ * dist 9, margin 12". Verbose-only diagnostic (gated by Options::combatLogVerbose at the call site)
+ * meant to make the psi maths legible while tuning an amp, so it reports exact values regardless of
+ * research. Tone NEUTRAL.
+ * @param attacker The casting unit.
+ * @param victim The targeted unit.
+ * @param type The psi action attempted.
+ * @param attackStrength The caster's psi attack score.
+ * @param defenseStrength The defender's psi defence score (the CONTROLLER's, on a counter-control).
+ * @param distance Tile distance between them.
+ * @param margin The contest result (positive is a win, and by how much).
+ */
+void SavedBattleGame::logPsiRollEvent(const BattleUnit *attacker, const BattleUnit *victim, BattleActionType type, int attackStrength, int defenseStrength, int distance, int margin)
+{
+	if (!attacker || !victim)
+	{
+		return;
+	}
+	std::string actionName = _lang->getString(combatLogPsiActionKey(type));
+	_combatLog->add(_lang->getString("STR_COMBATLOG_PSI_ROLL")
+		.arg(getCombatLogName(attacker)).arg(getCombatLogName(victim)).arg(actionName)
+		.arg(attackStrength).arg(defenseStrength).arg(distance).arg(margin), OUTCOME_NEUTRAL);
+}
+
+/**
+ * DX: logs mind blast damage, reading "<caster>'s mind blast sears <target> for N damage". A mind blast
+ * bypasses the normal hit path (it damages the unit directly rather than through TileEngine::hit), so it
+ * would otherwise leave no trace in the log at all. Damage detail is research-gated exactly like
+ * logHitEvent: an unresearched hostile only yields a vague severity band, and an unseen one nothing.
+ * @param attacker The casting unit.
+ * @param victim The blasted unit.
+ * @param damage Health damage actually dealt.
+ */
+void SavedBattleGame::logMindBlastEvent(const BattleUnit *attacker, const BattleUnit *victim, int damage)
+{
+	if (!attacker || !victim)
+	{
+		return;
+	}
+	// Don't report blasts on hostiles the player can't currently see (same gate as logHitEvent).
+	if (victim->getOriginalFaction() == FACTION_HOSTILE && !victim->getVisible())
+	{
+		return;
+	}
+
+	bool fullInfo = victim->getOriginalFaction() != FACTION_HOSTILE;
+	if (!fullInfo)
+	{
+		const SavedGame *geo = getGeoscapeSave();
+		fullInfo = geo && geo->isResearched(victim->getType());
+	}
+
+	if (damage < 0)
+	{
+		damage = 0;
+	}
+
+	std::string damagePhrase;
+	if (fullInfo)
+	{
+		damagePhrase = _lang->getString("STR_COMBATLOG_DAMAGE_EXACT").arg(damage);
+	}
+	else if (damage == 0)
+	{
+		damagePhrase = _lang->getString("STR_COMBATLOG_DAMAGE_NONE");
+	}
+	else
+	{
+		const int maxHp = victim->getBaseStats()->health;
+		bool heavy = (maxHp > 0) && (damage * 100 / maxHp > 50);
+		damagePhrase = _lang->getString(heavy ? "STR_COMBATLOG_DAMAGE_HEAVY" : "STR_COMBATLOG_DAMAGE_LIGHT");
+	}
+
+	_combatLog->add(_lang->getString("STR_COMBATLOG_MIND_BLAST_HIT")
+		.arg(getCombatLogName(attacker)).arg(getCombatLogName(victim)).arg(damagePhrase),
+		combatLogVictimOutcome(victim));
+}
+
+/**
+ * DX: logs psychic backlash recoiling on a caster whose psi action failed, reading "<caster> suffers
+ * psychic backlash (3 damage, 5 stun, 10 morale)" - only the components the mod actually configured are
+ * named. Tone follows the caster as a victim: our operative hurting himself is bad news, an alien doing
+ * so is good.
+ * @param caster The unit that took the recoil.
+ * @param health Health damage dealt.
+ * @param stun Stun dealt.
+ * @param morale Morale lost.
+ */
+void SavedBattleGame::logPsiBacklashEvent(const BattleUnit *caster, int health, int stun, int morale)
+{
+	if (!caster || (health <= 0 && stun <= 0 && morale <= 0))
+	{
+		return;
+	}
+	std::string detail;
+	auto append = [&](const char *key, int value)
+	{
+		if (value <= 0) return;
+		if (!detail.empty()) detail += ", ";
+		detail += (std::string)_lang->getString(key).arg(value);
+	};
+	append("STR_COMBATLOG_BACKLASH_DAMAGE", health);
+	append("STR_COMBATLOG_BACKLASH_STUN", stun);
+	append("STR_COMBATLOG_BACKLASH_MORALE", morale);
+
+	_combatLog->add(_lang->getString("STR_COMBATLOG_PSI_BACKLASH")
+		.arg(getCombatLogName(caster)).arg(detail), combatLogVictimOutcome(caster));
+}
+
+/**
+ * DX: logs a clairvoyance sweep, reading "<caster> sweeps the area with clairvoyance (radius N)".
+ * Unlike the other psi actions this has no target unit, so it stands alone; the tone follows the caster.
+ * @param actor The casting unit.
+ * @param radius The swept radius in tiles.
+ */
+void SavedBattleGame::logClairvoyanceEvent(const BattleUnit *actor, int radius)
+{
+	if (!actor)
+	{
+		return;
+	}
+	_combatLog->add(_lang->getString("STR_COMBATLOG_CLAIRVOYANCE")
+		.arg(getCombatLogName(actor)).arg(radius), combatLogActorOutcome(actor));
+}
+
+/**
  * Resets all unit hit state flags.
  */
 void SavedBattleGame::resetUnitHitStates()

@@ -325,3 +325,31 @@ en-US:
   STR_COMBATLOG_MC_BREAK_UPKEEP: "could not sustain it"
   STR_COMBATLOG_MC_BREAK_RESIST: "broke free"
   STR_COMBATLOG_MC_BREAK_CONTROLLER: "concentration broken"
+  STR_COMBATLOG_MC_BREAK_COUNTER: "torn free by a rival psi"
+#SavedBattleGame.cpp (psi actions)
+  # Action names substituted into the psi lines below as {3} / {2}.
+  STR_COMBATLOG_PSI_ACTION_MINDCONTROL: "Mind Control"
+  STR_COMBATLOG_PSI_ACTION_PANIC: "Panic"
+  STR_COMBATLOG_PSI_ACTION_MINDBLAST: "Mind Blast"
+  STR_COMBATLOG_PSI_ACTION_CLAIRVOYANCE: "Clairvoyance"
+  STR_COMBATLOG_PSI_ACTION_GENERIC: "psi attack"
+  # {0} caster, {1} psi-amp, {2} target, {3} action name.
+  STR_COMBATLOG_PSI_CAST: "{0} focuses {1} on {2} ({3})"
+  # {0} caster, {1} target, {2} action name.
+  STR_COMBATLOG_PSI_SUCCESS_MALE: "{0}'s {2} takes hold of {1}"
+  STR_COMBATLOG_PSI_SUCCESS_FEMALE: "{0}'s {2} takes hold of {1}"
+  STR_COMBATLOG_PSI_RESIST_MALE: "{1} resists {0}'s {2}"
+  STR_COMBATLOG_PSI_RESIST_FEMALE: "{1} resists {0}'s {2}"
+  # {0} caster, {1} target, {2} damage phrase (exact or vague, as for a normal hit).
+  STR_COMBATLOG_MIND_BLAST_HIT: "{0}'s mind blast sears {1} {2}"
+  # {0} caster, {1} the components that landed (damage/stun/morale, only those configured).
+  STR_COMBATLOG_PSI_BACKLASH: "{0} suffers psychic backlash ({1})"
+  STR_COMBATLOG_BACKLASH_DAMAGE: "{0} damage"
+  STR_COMBATLOG_BACKLASH_STUN: "{0} stun"
+  STR_COMBATLOG_BACKLASH_MORALE: "{0} morale"
+  # {0} caster, {1} swept radius in tiles.
+  STR_COMBATLOG_CLAIRVOYANCE: "{0} sweeps the area with clairvoyance (radius {1})"
+  # Verbose-only psi contest diagnostic (shown when the hidden combatLogVerbose option is on):
+  # {0} caster, {1} target, {2} action name, {3} psi attack score, {4} psi defence score,
+  # {5} tile distance, {6} contest margin (positive is a win).
+  STR_COMBATLOG_PSI_ROLL: "{0} vs {1} ({2}): psi {3} vs {4}, dist {5}, margin {6}"

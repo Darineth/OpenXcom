@@ -1,6 +1,6 @@
 # Feature - Combat Log
 
-**Status:** ✅ Implemented. Core infrastructure plus all scoped emit points (#1–#8) are wired and committed. A hidden `combatLogVerbose` option (#12) gates extra diagnostic detail, starting with per-side armor-damage lines. Remaining items are optional/deferred only: pre-fire no-LOF warnings (#8b), finer research-gated text (#9), and configurable options (#10).
+**Status:** ✅ Implemented. Core infrastructure plus all scoped emit points (#1–#17) are wired and committed, including the psi coverage (#12–#17: cast, contest outcome, mind blast damage, backlash, clairvoyance, and the verbose contest maths). A hidden `combatLogVerbose` option gates extra diagnostic detail (per-side armor damage, the damage-calc breakdown, overwatch evaluation, MC upkeep, and the psi roll). Remaining items are optional/deferred only: pre-fire no-LOF warnings (#8b), finer research-gated text (#9), and configurable options (#10).
 
 ## Overview
 
@@ -63,6 +63,12 @@ All planned emit points are active:
 | 9 | Out-of-ammo (weapon emptied by the shot) | `ProjectileFlyBState::createNewProjectile` + `SavedBattleGame::logOutOfAmmoEvent` | WARNING | ✅ Active |
 | 10 | Armor takes damage (verbose only) | `BattleUnit::damage` + `SavedBattleGame::logArmorDamageEvent` | GOOD/BAD via victim | ✅ Active (gated on `combatLogVerbose`) |
 | 11 | Damage calculation breakdown (verbose only) | `BattleUnit::damage` + `SavedBattleGame::logDamageCalcEvent` | GOOD/BAD via victim | ✅ Active (gated on `combatLogVerbose`) |
+| 12 | Psi cast (panic / MC / mind blast) | `PsiAttackBState::init` + `SavedBattleGame::logPsiCastEvent` | actor-based | ✅ Active |
+| 13 | Psi contest outcome (took hold / resisted) | `TileEngine::psiAttack` + `::mindBlast` + `SavedBattleGame::logPsiResultEvent` | GOOD/BAD via victim, inverted on a resist | ✅ Active |
+| 14 | Mind blast damage | `TileEngine::hitUnit` (BA_MINDBLAST branch) + `SavedBattleGame::logMindBlastEvent` | GOOD/BAD via victim | ✅ Active |
+| 15 | Psychic backlash on the caster | `TileEngine::applyPsiBacklash` + `SavedBattleGame::logPsiBacklashEvent` | GOOD/BAD via caster-as-victim | ✅ Active |
+| 16 | Clairvoyance sweep | `TileEngine::clairvoyance` + `SavedBattleGame::logClairvoyanceEvent` | actor-based | ✅ Active |
+| 17 | Psi contest maths (verbose only) | `TileEngine::psiAttack` + `::mindBlast` + `SavedBattleGame::logPsiRollEvent` | NEUTRAL | ✅ Active (gated on `combatLogVerbose`) |
 
 ---
 
@@ -139,3 +145,22 @@ The current `getCombatLogName()` already handles basic knowledge-aware naming ("
 **What:** Logs "{0}'s {1}: {2} damage vs {3} armor, {4} through ({5} to health)" so the armor maths are legible at a glance. Always exact — developer-facing diagnostic.
 **Color:** `combatLogVictimOutcome(unit)` — damage to our unit is BAD, to an enemy GOOD.
 **Strings:** `STR_COMBATLOG_DAMAGE_CALC` (reuses the `STR_COMBATLOG_ARMOR_SIDE_*` side words).
+### 14. Psi actions ✅ DONE
+**Motivation:** Psi was entirely silent in the log. A mind control, a mind blast or a clairvoyance sweep produced no line at all, so the only feedback was the stock infobox on the player's own successes — nothing for alien casts, nothing for failures, and nothing for the DX-specific psi features (mind blast, backlash, clairvoyance, counter-control).
+
+**Hooks:**
+- **Cast (#12):** `PsiAttackBState::init`, immediately after TU and psi-amp rounds are spent, via `logPsiCastEvent(caster, amp, target, type)`. Placed after the commit so an aborted attempt (out of range, no rounds, no TU) logs nothing. Being on the shared cast path, it covers AI casts too. Reads "{0} focuses {1} on {2} ({3})".
+- **Outcome (#13):** `TileEngine::psiAttack` and `TileEngine::mindBlast`, via `logPsiResultEvent(caster, victim, type, success)` — "{0}'s {2} takes hold of {1}" / "{1} resists {0}'s {2}". Toned by `combatLogVictimOutcome(victim)`, **inverted on a resist** so our soldier shrugging off an alien probe reads GOOD.
+- **Mind blast damage (#14):** emitted from `hitUnit` itself, which branches to `logMindBlastEvent` when `attack.type == BA_MINDBLAST` (flavor wording; identical research gating to `logHitEvent`). Wiring this initially revealed that mind blast was calling `BattleUnit::damage` directly and so bypassed `hitUnit` altogether — see the note below.
+- **Backlash (#15):** `TileEngine::applyPsiBacklash`, capturing health/stun before and after so the line reports what actually landed rather than the configured roll range; morale comes straight from the rule. Only the configured components are named: "{0} suffers psychic backlash (3 damage, 5 stun, 10 morale)".
+- **Clairvoyance (#16):** logged inside `TileEngine::clairvoyance` rather than at the `BattlescapeGame` call site, because that is where the psi-score-derived radius is known.
+- **Counter-control:** freeing one of our own from an enemy's grip is a won `BA_MINDCONTROL` contest, but "his mind control takes hold of our own soldier" reads wrong. That case is detected before the contest resolves (so the ousted controller can still be identified) and logged via the existing `logMindControlBreakEvent` with a new reason `STR_COMBATLOG_MC_BREAK_COUNTER` ("torn free by a rival psi") instead of the generic success line.
+- **Verbose contest maths (#17):** `psiAttackCalculate` gained three optional out-params (attack score, defence score, tile distance) so a caller that *resolves* an attack can print the maths without recomputing them. The AI's speculative target scoring (`AIModule`) passes nothing and therefore logs nothing — important, since it evaluates every candidate target every turn.
+
+**Strings:** `STR_COMBATLOG_PSI_CAST`, `STR_COMBATLOG_PSI_SUCCESS_MALE/FEMALE`, `STR_COMBATLOG_PSI_RESIST_MALE/FEMALE`, `STR_COMBATLOG_MIND_BLAST_HIT`, `STR_COMBATLOG_PSI_BACKLASH`, `STR_COMBATLOG_BACKLASH_DAMAGE/STUN/MORALE`, `STR_COMBATLOG_CLAIRVOYANCE`, `STR_COMBATLOG_PSI_ROLL`, `STR_COMBATLOG_PSI_ACTION_*` (action names), `STR_COMBATLOG_MC_BREAK_COUNTER`.
+
+**Follow-up: mind blast now goes through the standard damage path.** Wiring #14 exposed that `TileEngine::mindBlast` called `BattleUnit::damage` directly instead of `TileEngine::hitUnit`. That skipped more than logging — most importantly **murderer attribution** (`setMurdererId` / `setMurdererWeapon`, set only in `hitUnit`), so a blast that killed, or that left the victim to bleed out or burn, credited nobody: no kill statistic and no promotion credit. It also skipped the OXCE hit log and the `isPreview` / already-dead guards.
+
+`mindBlast` now calls `hitUnit`, which needed two small extensions:
+- **Side/bodypart overrides.** `hitUnit` gained optional `sideOverride`/`bodypartOverride` params forwarded to `damage()` (which already accepted them). A blast passes `SIDE_FRONT, BODYPART_HEAD` — it has no physical trajectory to derive a facing from, and `relative` of `(0,0,0)` would otherwise be read as an under-the-feet hit.
+- **An experience opt-out.** `hitUnit` gained `awardExp` (default true); `mindBlast` passes false. This is not cosmetic: `awardExperience` has **no `BT_PSIAMP` case**, so a psi-amp in the default training mode falls through to its "FIREARMS and other" branch and would train **firing**. `mindBlast` awards psi skill itself instead — exactly the reason `TileEngine::psiAttack` also avoids `awardExperience` in `ETM_DEFAULT`. Fixing the gap properly (teaching `awardExperience` about `BT_PSIAMP`) is a wider upstream change and was left out of scope.

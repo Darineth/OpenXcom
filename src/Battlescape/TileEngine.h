@@ -22,6 +22,7 @@
 #include "BattlescapeGame.h"
 #include "../Mod/RuleItem.h"
 #include "../Mod/MapData.h"
+#include "../Mod/Unit.h" // UnitSide / UnitBodyPart - needed as hitUnit's default arguments
 
 namespace OpenXcom
 {
@@ -207,8 +208,10 @@ public:
 	int hitTile(Tile *tile, int damage, const RuleDamageType* type);
 	/// Handles experience training.
 	bool awardExperience(BattleActionAttack attack, BattleUnit *target, bool rangeAtack);
-	/// Handles unit hit.
-	bool hitUnit(BattleActionAttack attack, BattleUnit *target, const Position &relative, int damage, const RuleDamageType *type, bool rangeAtack = true);
+	/// Handles unit hit. `sideOverride`/`bodypartOverride` force where the hit lands instead of deriving
+	/// it from `relative` (DX: a mind blast always strikes the head). `awardExp` lets a caller that awards
+	/// its own experience opt out of the standard weapon-based award.
+	bool hitUnit(BattleActionAttack attack, BattleUnit *target, const Position &relative, int damage, const RuleDamageType *type, bool rangeAtack = true, UnitSide sideOverride = SIDE_MAX, UnitBodyPart bodypartOverride = BODYPART_MAX, bool awardExp = true);
 	/// Handles bullet/weapon hits.
 	void hit(BattleActionAttack attack, Position center, int power, const RuleDamageType *type, bool rangeAtack = true, int terrainMeleeTilePart = 0);
 	/// Handles explosions.
@@ -242,8 +245,11 @@ public:
 	/// Checks the vertical blockage of a tile.
 	int verticalBlockage(Tile *startTile, Tile *endTile, ItemDamageType type, bool skipObject = false);
 
-	/// Calculate success rate of psi attack.
-	int psiAttackCalculate(BattleActionAttack::ReadOnly attack, const BattleUnit *victim);
+	/// Calculate success rate of psi attack. The optional out-params report the contest inputs (attack
+	/// score, defence score, tile distance) for DX's verbose combat log, so a caller that actually
+	/// resolves an attack can show the maths without recomputing it; speculative callers (the AI's
+	/// target scoring) simply pass nothing and log nothing.
+	int psiAttackCalculate(BattleActionAttack::ReadOnly attack, const BattleUnit *victim, int *attackStrengthOut = nullptr, int *defenseStrengthOut = nullptr, int *distanceOut = nullptr);
 	/// DX: a mind blast - a psi contest that deals damage scaled by the margin, or backlashes on a miss.
 	bool mindBlast(BattleUnit *actor, BattleUnit *victim, BattleItem *ampItem);
 	/// DX: a clairvoyant sweep - reveals the map around a target tile, and marks the units in it.

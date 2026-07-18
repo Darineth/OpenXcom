@@ -3449,7 +3449,7 @@ bool TileEngine::awardExperience(BattleActionAttack attack, BattleUnit *target, 
  * @param type damage type of hit.
  * @return Did unit get hit?
  */
-bool TileEngine::hitUnit(BattleActionAttack attack, BattleUnit *target, const Position &relative, int damage, const RuleDamageType *type, bool rangeAtack)
+bool TileEngine::hitUnit(BattleActionAttack attack, BattleUnit *target, const Position &relative, int damage, const RuleDamageType *type, bool rangeAtack, UnitSide sideOverride, UnitBodyPart bodypartOverride, bool awardExp)
 {
 	if (_save->isPreview())
 	{
@@ -3464,7 +3464,7 @@ bool TileEngine::hitUnit(BattleActionAttack attack, BattleUnit *target, const Po
 	const int stunLevelOrig = target->getStunlevel();
 	const int woundsOrig = target->getFatalWounds();
 
-	target->damage(relative, damage, type, _save, attack);
+	target->damage(relative, damage, type, _save, attack, sideOverride, bodypartOverride);
 
 	const int healthDamage = healthOrig - target->getHealth();
 	const int stunDamage = target->getStunlevel() - stunLevelOrig;
@@ -3490,12 +3490,20 @@ bool TileEngine::hitUnit(BattleActionAttack attack, BattleUnit *target, const Po
 			_save->appendToHitLog(HITLOG_NO_DAMAGE, attack.attacker->getFaction());
 		}
 
-		// combat log - report the hit with research-gated damage/wound detail
-		_save->logHitEvent(attack.attacker, target, healthDamage, woundsInflicted);
+		// combat log - report the hit with research-gated damage/wound detail. A mind blast gets its own
+		// wording ("<caster>'s mind blast sears <target> ..."); the detail gating is identical.
+		if (attack.type == BA_MINDBLAST)
+		{
+			_save->logMindBlastEvent(attack.attacker, target, healthDamage);
+		}
+		else
+		{
+			_save->logHitEvent(attack.attacker, target, healthDamage, woundsInflicted);
+		}
 	}
 
 	// single place for firing/throwing/melee experience training
-	if (attack.attacker && attack.attacker->getOriginalFaction() == FACTION_PLAYER)
+	if (awardExp && attack.attacker && attack.attacker->getOriginalFaction() == FACTION_PLAYER)
 	{
 		awardExperience(attack, target, rangeAtack);
 	}
@@ -5056,7 +5064,7 @@ void TileEngine::toggleUnitPersonalLight(BattleUnit *unit)
  * @param weapon Attack item.
  * @return Value greater than zero mean successful attack.
  */
-int TileEngine::psiAttackCalculate(BattleActionAttack::ReadOnly attack, const BattleUnit *victim)
+int TileEngine::psiAttackCalculate(BattleActionAttack::ReadOnly attack, const BattleUnit *victim, int *attackStrengthOut, int *defenseStrengthOut, int *distanceOut)
 {
 	if (!victim)
 		return 0;
@@ -5081,6 +5089,11 @@ int TileEngine::psiAttackCalculate(BattleActionAttack::ReadOnly attack, const Ba
 	}
 
 	float dis = Position::distance(attacker->getPosition().toVoxel(), victim->getPosition().toVoxel());
+
+	// DX: hand the contest inputs back for the verbose combat log (see the declaration).
+	if (attackStrengthOut) *attackStrengthOut = attackStrength;
+	if (defenseStrengthOut) *defenseStrengthOut = defenseStrength;
+	if (distanceOut) *distanceOut = (int)Position::distance(attacker->getPosition(), victim->getPosition());
 
 	auto rng = RNG::globalRandomState().subSequence();
 	int psiAttackResult = 0;
@@ -5140,7 +5153,23 @@ bool TileEngine::psiAttack(BattleActionAttack attack, BattleUnit *victim)
 		victim->addPsiStrengthExp(); // experience for the victim, not the attacker
 	}
 
-	if (psiAttackCalculate(attack, victim) > 0)
+	int psiAttackStrength = 0, psiDefenseStrength = 0, psiDistance = 0;
+	const int psiMargin = psiAttackCalculate(attack, victim, &psiAttackStrength, &psiDefenseStrength, &psiDistance);
+	if (Options::combatLogVerbose)
+	{
+		_save->logPsiRollEvent(attack.attacker, victim, attack.type, psiAttackStrength, psiDefenseStrength, psiDistance, psiMargin);
+	}
+	// A won contest that FREES one of our own from an enemy's grip is logged as a broken link instead
+	// (below), which reads far better than "his mind control takes hold of our own soldier".
+	const bool counterControlFree = (psiMargin > 0 && attack.type == BA_MINDCONTROL
+		&& victim->isMindControlled() && victim->getOriginalFaction() == attack.attacker->getFaction());
+	const BattleUnit *oustedController = counterControlFree ? _save->getMindController(victim) : nullptr;
+	if (!counterControlFree)
+	{
+		_save->logPsiResultEvent(attack.attacker, victim, attack.type, psiMargin > 0);
+	}
+
+	if (psiMargin > 0)
 	{
 		if (isDefaultExpTrainingMode)
 		{
@@ -5215,6 +5244,7 @@ bool TileEngine::psiAttack(BattleActionAttack attack, BattleUnit *victim)
 				if (victim->isMindControlled() && victim->getOriginalFaction() == attack.attacker->getFaction())
 				{
 					_save->breakMindControl(victim);
+					_save->logMindControlBreakEvent(oustedController, victim, "STR_COMBATLOG_MC_BREAK_COUNTER");
 				}
 				else if (mc.channeled)
 				{
@@ -5296,7 +5326,13 @@ bool TileEngine::mindBlast(BattleUnit *actor, BattleUnit *victim, BattleItem *am
 	// Reuse the shared psi roll: a BA_MINDBLAST attack resolved as a psi contest. The return is the
 	// MARGIN - positive is a hit, and how positive is how hard it lands.
 	BattleActionAttack attack = BattleActionAttack::GetBeforeShoot(BA_MINDBLAST, actor, ampItem);
-	const int margin = psiAttackCalculate(attack, victim);
+	int blastAttackStrength = 0, blastDefenseStrength = 0, blastDistance = 0;
+	const int margin = psiAttackCalculate(attack, victim, &blastAttackStrength, &blastDefenseStrength, &blastDistance);
+	if (Options::combatLogVerbose)
+	{
+		_save->logPsiRollEvent(actor, victim, BA_MINDBLAST, blastAttackStrength, blastDefenseStrength, blastDistance, margin);
+	}
+	_save->logPsiResultEvent(actor, victim, BA_MINDBLAST, margin > 0);
 
 	if (margin <= 0)
 	{
@@ -5318,7 +5354,19 @@ bool TileEngine::mindBlast(BattleUnit *actor, BattleUnit *victim, BattleItem *am
 		? _save->getMod()->getDamageType((ItemDamageType)rule.damageType)
 		: amp->getDamageType();
 
-	victim->damage(Position(0, 0, 0), power, type, _save, attack, SIDE_FRONT, BODYPART_HEAD);
+	// Routed through hitUnit (the single place every attack's damage reaches a unit) rather than
+	// BattleUnit::damage directly, so a blast gets the same bookkeeping as any other hit: murderer
+	// attribution (without it a blast that kills, or that leaves the victim to bleed out, credits nobody
+	// - no kill statistic, no promotion), the OXCE hit log, and the combat-log hit line.
+	//
+	// It always strikes the head, front side: a mind blast has no physical trajectory to derive a facing
+	// from, and the head is where it lands. That is passed as an explicit override because `relative` is
+	// (0,0,0), which damage() would otherwise read as an under-the-feet hit.
+	//
+	// Experience is opted OUT of here: awardExperience has no BT_PSIAMP case, so a default-training-mode
+	// psi-amp falls into its "firearms and other" branch and would train FIRING. Psi XP is awarded below
+	// instead, matching what the panic/mind-control path does for the same reason.
+	hitUnit(attack, victim, Position(0, 0, 0), power, type, true, SIDE_FRONT, BODYPART_HEAD, false);
 
 	// Award psi XP the same way the panic/MC success path does.
 	if (actor->getGeoscapeSoldier())
@@ -5402,6 +5450,7 @@ bool TileEngine::clairvoyance(BattleUnit *actor, Position target, const RuleItem
 		}
 	}
 
+	_save->logClairvoyanceEvent(actor, radius); // logged here, where the psi-score-derived radius is known
 	_save->getBattleGame()->getMap()->invalidate(); // the newly-known terrain has to be redrawn
 	return true;
 }
@@ -5424,6 +5473,10 @@ void TileEngine::applyPsiBacklash(BattleUnit *controller, const RuleItem *amp, c
 	{
 		return;
 	}
+
+	// Track what the recoil actually cost so it can be reported as one combat-log line at the end.
+	const int healthBefore = controller->getHealth();
+	const int stunBefore = controller->getStunlevel();
 
 	if (backlash.damage.any())
 	{
@@ -5450,6 +5503,8 @@ void TileEngine::applyPsiBacklash(BattleUnit *controller, const RuleItem *amp, c
 	{
 		controller->moraleChange(-backlash.morale);
 	}
+
+	_save->logPsiBacklashEvent(controller, healthBefore - controller->getHealth(), controller->getStunlevel() - stunBefore, backlash.morale);
 }
 
 /**

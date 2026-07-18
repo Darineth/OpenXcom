@@ -109,6 +109,11 @@ void PsiAttackBState::init()
 
 	_item->spendPsiAmmo(_action.type, _parent->getSave()); // DX: expend the rounds (hit or miss - the orb is fired)
 
+	// DX: log the cast itself (the psi counterpart of logFireEvent). Done here, after the action has
+	// committed TU and ammo, so an aborted attempt leaves no line; the contest result is logged
+	// separately by TileEngine once ExplosionBState resolves it.
+	_parent->getSave()->logPsiCastEvent(_unit, _item, _target, _action.type);
+
 	// DX: mind blast rides the same ExplosionBState as panic/mind control, so it gets the psi hit
 	// animation, sound, and casualty sequencing for free. ExplosionBState branches to TileEngine::mindBlast
 	// (rather than psiAttack) for a BA_MINDBLAST, so the *effect* is the margin-scaled damage.

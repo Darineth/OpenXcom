@@ -736,6 +736,18 @@ public:
 	void logMindControlUpkeepEvent(const BattleUnit *controller, int thralls, int regenWithheldPct);
 	/// DX: logs a channeled link ending, reading "<unit> mind control ended: <reason>".
 	void logMindControlBreakEvent(const BattleUnit *controller, const BattleUnit *thrall, const std::string &reasonKey);
+	/// DX: logs a psi action being cast ("<caster> focuses <amp> on <target> (Mind Control)").
+	void logPsiCastEvent(const BattleUnit *attacker, const BattleItem *weapon, const BattleUnit *victim, BattleActionType type);
+	/// DX: logs the outcome of a psi contest ("<caster> seizes control of <target>" / "<target> resists ...").
+	void logPsiResultEvent(const BattleUnit *attacker, const BattleUnit *victim, BattleActionType type, bool success);
+	/// DX: logs the raw psi contest numbers - attack vs defence, distance, margin (verbose only).
+	void logPsiRollEvent(const BattleUnit *attacker, const BattleUnit *victim, BattleActionType type, int attackStrength, int defenseStrength, int distance, int margin);
+	/// DX: logs mind blast damage ("<caster>'s mind blast sears <target> for N damage").
+	void logMindBlastEvent(const BattleUnit *attacker, const BattleUnit *victim, int damage);
+	/// DX: logs psychic backlash recoiling on a caster after a failed psi action.
+	void logPsiBacklashEvent(const BattleUnit *caster, int health, int stun, int morale);
+	/// DX: logs a clairvoyance sweep ("<caster> sweeps the area with clairvoyance (radius N)").
+	void logClairvoyanceEvent(const BattleUnit *actor, int radius);
 	/// Reset all the unit hit state flags.
 	void resetUnitHitStates();
 };

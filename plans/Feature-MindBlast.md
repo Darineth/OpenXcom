@@ -88,9 +88,22 @@ items:
 - Targets a **unit**, joins the psi actions (`BA_MINDBLAST`, appended action type). Offered only when the
   amp has the node.
 - Resolves through `psiAttackCalculate`: on a positive margin, `power = (basePower + powerPerMargin ×
-  margin)`, rolled by `randomRange`, dealt via `BattleUnit::damage` with the chosen type (so armor
-  modifiers, the damage script hooks and the casualty path all apply). On a miss, the `backlashOnFailure`
-  lands on the caster.
+  margin)`, rolled by `randomRange`, dealt via `TileEngine::hitUnit` with the chosen type. On a miss, the
+  `backlashOnFailure` lands on the caster.
+- **Damage goes through the standard hit path.** The first implementation called `BattleUnit::damage`
+  directly; it now routes through `hitUnit`, the single entry point every other attack uses, so armor
+  modifiers, the damage script hooks, the casualty path, the OXCE hit log, the combat log and — the part
+  that was actually broken — **murderer attribution** all apply. Without `hitUnit`'s
+  `setMurdererId`/`setMurdererWeapon`, a blast that killed (or that left the victim to bleed out or burn)
+  credited nobody: no kill statistic, no promotion credit.
+- **Always strikes the head**, front side, passed to `hitUnit` as an explicit side/bodypart override: a
+  blast has no physical trajectory to derive a facing from, and a `relative` of `(0,0,0)` would otherwise
+  be read by `damage()` as an under-the-feet hit.
+- **Experience is awarded separately** (psi skill, directly), with `hitUnit`'s standard award opted out
+  via its `awardExp` parameter. `awardExperience` has no `BT_PSIAMP` case, so a default-training-mode
+  psi-amp falls into its "FIREARMS and other" branch and would train **firing** — the same trap
+  `TileEngine::psiAttack` already sidesteps in `ETM_DEFAULT`. Teaching `awardExperience` about
+  `BT_PSIAMP` would be the proper fix and is out of scope here.
 - **Range / LOS**: limited by the amp's range like the other psi actions. (Legacy also required line of
   fire; the shared psi path already honours `LOSRequired`, so a mod gets that by setting it on the amp.)
 - Cost: `tuMindBlast` / `costMindBlast`, falling back to `costUse`.

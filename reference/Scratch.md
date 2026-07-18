@@ -2,6 +2,8 @@
 
 * Sort Icon List
 * Should psi backlash potentially be able to take the target's stats into account?
+* Configure a modded psi damage type in the dx ruleset
+* Show chance for psi actions on hover?
 
 # Documentation
 - Write a full ruleset document.  Explain fields, structures, options. **DONE, but might need a review pass?**

@@ -143,8 +143,12 @@ items:
 - **The damage type is the mod's choice** (`damageType`, −1 = the amp's own). Point it at a free
   `DT_10..DT_19` slot with `ArmorEffectiveness: 0.0` (via the global `damageTypes:` node) for legacy's
   armor-ignoring psychic damage — but DX doesn't hard-code that, so a mod where armor *does* blunt a
-  blast simply leaves it. Dealt through `BattleUnit::damage`, so armor modifiers, the damage script hooks
-  and the casualty path all apply.
+  blast simply leaves it. Dealt through `TileEngine::hitUnit` — the same entry point as bullets, melee
+  and explosions — so armor modifiers, the damage script hooks, the casualty path, kill attribution
+  (a blast that kills, or that leaves the victim to bleed out, credits the caster) and both logs all
+  apply. It always lands on the **head**, front side: a blast has no trajectory to derive a facing from.
+  Experience is the one deliberate exception — the blast awards psi skill directly, because the standard
+  award path has no psi-amp case and would otherwise train *firing*.
 - **A miss recoils on the caster** via `backlashOnFailure` (reusing the shared psi backlash) — the "it
   can go wrong" risk, optional and tunable. A successful blast is clean (legacy's narrow-win self-damage
   is dropped).
@@ -768,7 +772,7 @@ perspective). Reported events: new turn; weapon fire and throws (with shot mode,
 Rifle (Snap Shot)"); melee attacks; reaction shots/swings (tagged as such); hits, with
 research-gated damage detail (exact damage and fatal wounds for your units and researched
 enemies, a vague light/heavy band for un-researched enemies); kills and knockouts; panic and
-berserk; and a player-only warning when a shot empties a weapon. Entries fade out over time and
+berserk; psi actions (see below); and a player-only warning when a shot empties a weapon. Entries fade out over time and
 the list is capped, so it self-empties when combat is quiet. Unit and weapon names respect the
 player's knowledge — own soldiers and researched enemies are named, while unseen/un-researched
 hostiles show as "Hostile"/"Unknown" and their gear as "an unknown weapon". The log is
@@ -781,6 +785,31 @@ transient (never serialized) and distinct from the on-demand OXCE hit log (Ctrl-
 - Theming: the `combatLog` element in the `battlescape` interface ruleset sets the panel's
   position and size; `combatLogNeutral` / `combatLogGood` / `combatLogWarning` / `combatLogBad`
   set the four outcome colors.
+
+### Psi actions in the combat log
+
+Psi was previously silent in the log — a mind control or a mind blast left no trace, so the only
+feedback was the infobox on your own successes. Every psi action now reports, for both sides:
+
+- **The cast** — "*Ramirez focuses Psi-Amp on Sectoid Soldier (Mind Control)*", logged once the
+  action has committed its TU and psi-amp rounds (an aborted attempt logs nothing). This is the psi
+  counterpart of the weapon-fire line and fires from the shared cast path, so you also see an alien
+  reaching for one of your soldiers.
+- **The outcome** — "*… takes hold of …*" on a win, "*… resists …*" on a loss. A resist flips the
+  color: your soldier shrugging off an alien probe reads as a good outcome.
+- **Mind blast damage** — "*Ramirez's mind blast sears Sectoid Soldier for 14 damage*", with the same
+  research gating as a normal hit (exact for your own units and researched enemies, a vague band
+  otherwise, nothing at all for an unseen hostile).
+- **Psychic backlash** — "*Ramirez suffers psychic backlash (3 damage, 5 stun, 10 morale)*", naming
+  only the components the amp actually configured.
+- **Clairvoyance** — "*Ramirez sweeps the area with clairvoyance (radius 9)*".
+- **Counter-control** — wresting one of your own back out of an alien's grip logs as a broken link
+  ("*Sectoid Commander lost control of Ramirez: torn free by a rival psi*") rather than as a mind
+  control landing on your own soldier.
+
+With the hidden `combatLogVerbose` option on, each contest also prints its maths — "*Ramirez vs
+Sectoid Soldier (Mind Control): psi 78 vs 45, dist 9, margin 12*" — for tuning an amp. The AI's
+speculative target scoring runs the same calculation but logs nothing.
 
 ## Action Menu Revamp
 
