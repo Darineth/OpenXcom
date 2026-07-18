@@ -732,6 +732,10 @@ public:
 	void logOverwatchEvalEvent(const BattleUnit *watcher, const BattleUnit *mover, int distance, bool inCone, bool seen, int score, int evade);
 	/// Logs the terminal outcome of an overwatch check (verbose only): resultKey resolves to a localized reason.
 	void logOverwatchOutcomeEvent(const BattleUnit *watcher, const BattleUnit *mover, const std::string &resultKey);
+	/// DX: logs a channeled-mind-control upkeep tick (who paid, how much regen was withheld). Verbose.
+	void logMindControlUpkeepEvent(const BattleUnit *controller, int thralls, int regenWithheldPct);
+	/// DX: logs a channeled link ending, reading "<unit> mind control ended: <reason>".
+	void logMindControlBreakEvent(const BattleUnit *controller, const BattleUnit *thrall, const std::string &reasonKey);
 	/// Reset all the unit hit state flags.
 	void resetUnitHitStates();
 };

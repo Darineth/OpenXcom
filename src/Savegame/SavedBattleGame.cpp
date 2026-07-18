@@ -1678,24 +1678,28 @@ void SavedBattleGame::resolveMindControlRules()
  */
 bool SavedBattleGame::payMindControlUpkeep(BattleUnit *controller, const RuleMindControl *rule)
 {
+	const RuleItemUseCost &cost = rule->upkeep.cost;
 	if (!rule->upkeep.anyCost())
 	{
 		return true; // free to hold - the mod is using recovery penalties, or nothing at all
 	}
 
-	// Reuse the engine's own affordability rules rather than re-deriving them: BattleActionCost::haveTU
-	// covers every resource, including the "this would knock me out" health/stun guard, so a controller can
-	// never channel himself unconscious or dead. Can't cover it => nothing is spent and the link drops.
-	BattleActionCost cost(controller);
-	static_cast<RuleItemUseCost&>(cost) = rule->upkeep.cost;
-	cost.type = BA_MINDCONTROL;
-
-	if (!cost.haveTU())
+	// Can he afford it? We check the resources ourselves rather than reusing BattleActionCost::haveTU,
+	// which early-returns false when Time <= 0 - it treats a zero-TU cost as "not a real action", which
+	// would spuriously break a link whose upkeep is energy/mana/morale-only. The health/stun terms use
+	// the same "would this knock me out?" guard the engine's own check uses, so a controller can never
+	// channel himself unconscious or dead (a link on a downed controller is the death path's job).
+	if (controller->getTimeUnits() < cost.Time
+		|| controller->getEnergy() < cost.Energy
+		|| controller->getMorale() < cost.Morale
+		|| controller->getMana() < cost.Mana
+		|| controller->getHealth() <= cost.Health
+		|| controller->getHealth() - controller->getStunlevel() <= cost.Stun + cost.Health)
 	{
 		return false;
 	}
 
-	controller->spendCost(rule->upkeep.cost);
+	controller->spendCost(cost); // deducts all six resources at once, the engine's own cost path
 	return true;
 }
 
@@ -1759,6 +1763,14 @@ void SavedBattleGame::processMindControlUpkeep()
 
 		if (!ableToChannel)
 		{
+			// Report each thrall it drops (before breakAllMindControl clears the list).
+			for (int thrallId : controller->getThralls())
+			{
+				if (BattleUnit *thrall = getUnitById(thrallId))
+				{
+					logMindControlBreakEvent(controller, thrall, "STR_COMBATLOG_MC_BREAK_CONTROLLER");
+				}
+			}
 			breakAllMindControl(controller);
 			continue;
 		}
@@ -1776,13 +1788,23 @@ void SavedBattleGame::processMindControlUpkeep()
 			// The thrall may get a fresh chance to struggle free, if the amp's rules allow it.
 			if (rule->resistPerTurn && thrallResists(controller, thrall, rule))
 			{
+				logMindControlBreakEvent(controller, thrall, "STR_COMBATLOG_MC_BREAK_RESIST");
 				breakMindControl(thrall);
 				continue;
 			}
 
 			if (!payMindControlUpkeep(controller, rule))
 			{
+				logMindControlBreakEvent(controller, thrall, "STR_COMBATLOG_MC_BREAK_UPKEEP");
 				breakMindControl(thrall);
+				continue;
+			}
+
+			// Held for another turn. Log the cost so a tester can watch it land (verbose only).
+			if (Options::combatLogVerbose)
+			{
+				const int withheldPct = std::min(100, rule->upkeep.timeRecoveryPercent * (int)controller->getThralls().size());
+				logMindControlUpkeepEvent(controller, (int)controller->getThralls().size(), withheldPct);
 			}
 		}
 
@@ -4291,6 +4313,52 @@ void SavedBattleGame::logOverwatchOutcomeEvent(const BattleUnit *watcher, const 
 	std::string reason = _lang->getString(resultKey);
 	_combatLog->add(_lang->getString("STR_COMBATLOG_OVERWATCH_RESULT")
 		.arg(getCombatLogName(watcher)).arg(getCombatLogName(mover)).arg(reason), OUTCOME_NEUTRAL);
+}
+
+/**
+ * DX: logs one channeled-mind-control upkeep tick - "<controller> sustains mind control ...".
+ * Verbose-only diagnostic (gated by Options::combatLogVerbose at the call site) so a tester can watch
+ * the cost land turn by turn. Toned by the controller's side: keeping a thrall is GOOD news when it's
+ * your own psi soldier, BAD when an alien is holding one of yours.
+ * @param controller The channeling unit.
+ * @param thralls How many units it is holding.
+ * @param regenWithheldPct Percent of TU regeneration withheld this turn (0 if none).
+ */
+void SavedBattleGame::logMindControlUpkeepEvent(const BattleUnit *controller, int thralls, int regenWithheldPct)
+{
+	if (!controller)
+	{
+		return;
+	}
+	_combatLog->add(_lang->getString("STR_COMBATLOG_MC_UPKEEP")
+		.arg(getCombatLogName(controller)).arg(thralls).arg(regenWithheldPct), combatLogActorOutcome(controller));
+}
+
+/**
+ * DX: logs a channeled mind control ending, reading "<controller> lost control of <thrall>: <reason>".
+ * A meaningful gameplay event (not verbose-gated) - the player wants to know the moment a thrall slips
+ * free. Tone WARNING.
+ * @param controller The former controller (may be null if it already left the fight).
+ * @param thrall The unit that reverted.
+ * @param reasonKey Language key for why the link ended.
+ */
+void SavedBattleGame::logMindControlBreakEvent(const BattleUnit *controller, const BattleUnit *thrall, const std::string &reasonKey)
+{
+	if (!thrall)
+	{
+		return;
+	}
+	std::string reason = _lang->getString(reasonKey);
+	std::string controllerName;
+	if (controller)
+		controllerName = getCombatLogName(controller);
+	else
+		controllerName = _lang->getString("STR_COMBATLOG_UNKNOWN_UNIT");
+	// Losing a thrall is the inverse of keeping one: bad when your own psi soldier's grip slips, good when
+	// you've just wrested a comrade back from an alien. Fall back to WARNING when the controller is gone.
+	CombatLogOutcome outcome = controller ? combatLogVictimOutcome(controller) : OUTCOME_WARNING;
+	_combatLog->add(_lang->getString("STR_COMBATLOG_MC_BREAK")
+		.arg(controllerName).arg(getCombatLogName(thrall)).arg(reason), outcome);
 }
 
 /**

@@ -399,13 +399,14 @@ items:
       thrallRecoversTimeUnits: true
 
       upkeep:
-        # Legacy's entire upkeep model, in one line: withhold 90% of the controller's
-        # TU regeneration while he is channeling (i.e. he recovers only 10%).
-        timeRecoveryPercent: 90
-        # Flat costs are the other, independent kind - a mod can use either or both.
-        # Left at 0 here so this stays a faithful legacy reproduction.
-        # time: 0
-        # mana: 0
+        # Deliberately LOUD for testing - the point is to make the cost impossible to miss:
+        #  * withhold 100% of TU regeneration (the controller recovers NO TU while channeling), and
+        #  * drain a flat 15 energy up front each turn on top.
+        # With combatLogVerbose on (above) the log prints "<soldier> sustains mind control ..." every
+        # turn the link holds, and a break prints why. Legacy's own model was just timeRecoveryPercent:
+        # 90 with no flat cost; dial these back for a playable value.
+        timeRecoveryPercent: 100
+        energy: 15
 
       # The damage type the backlash DAMAGE is dealt as (a ResistType index). Unset = the amp's own type.
       #
@@ -746,7 +747,7 @@ extraStrings:
 #  User options forced on while this test mod is active
 # =====================================================================
 fixedUserOptions:
-  combatLogVerbose: false           # DX: extra detail in the combat log (hidden option)
+  combatLogVerbose: true            # DX: extra detail in the combat log - shows the mind-control upkeep tick
   battleRealisticThrowing: true     # DX: physical launch-error throw accuracy (short/long along the throw line)
   battleWeightBasedReloadCost: true # DX: reload/unload timed by magazine weight (weight*2 + reduced base)
 

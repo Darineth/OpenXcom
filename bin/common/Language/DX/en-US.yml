@@ -318,3 +318,9 @@ en-US:
 #ActionMenuState.cpp
   STR_DX_RELEASE_MIND_CONTROL: "Release Mind Control"
   STR_DX_CLAIRVOYANCE: "Clairvoyance"
+#SavedBattleGame.cpp (mind control upkeep)
+  STR_COMBATLOG_MC_UPKEEP: "{0} sustains mind control ({1} held, {2}% TU recovery lost)"
+  STR_COMBATLOG_MC_BREAK: "{0} lost control of {1}: {2}"
+  STR_COMBATLOG_MC_BREAK_UPKEEP: "could not sustain it"
+  STR_COMBATLOG_MC_BREAK_RESIST: "broke free"
+  STR_COMBATLOG_MC_BREAK_CONTROLLER: "concentration broken"
