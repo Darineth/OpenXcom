@@ -239,11 +239,13 @@ RuleItem::RuleItem(const std::string &type, int listOrder) :
 	_confAimed.cost = { 0 };
 	_confSnap.cost = { 0, {} };
 	_confAuto.cost = { 0, {} };
+	_confBurst.cost = { 0, {} };
 	_confMelee.cost = { 0 };
 
 	_confAimed.flat = { {}, {} };
 	_confSnap.flat = { {}, {} };
 	_confAuto.flat = { {}, {} };
+	_confBurst.flat = { {}, {} };
 	_confMelee.flat = { {}, {} };
 
 	_confAimed.name = "STR_AIMED_SHOT";
