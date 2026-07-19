@@ -89,3 +89,5 @@ OpenXcom-oxce-plus/
 Legacy-DX-Screenshots/
 # Ignore temporary reference files
 reference/__pycache__/
+# Notes
+notes/
