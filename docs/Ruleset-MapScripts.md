@@ -25,8 +25,8 @@ mapScripts:
       - type: addCraft              # drop the X-COM craft somewhere in the middle
         rects: [[1, 1, 4, 4]]
         label: 1
-      - type: addUFO                # try to place the UFO; if it fails, we still want a map
-        canBeSkipped: true
+      - type: addUFO                # try to place the UFO
+        canBeSkipped: false         # ...and abort generation if it can't be placed
         label: 2
       - type: addLine               # a road across the map
         direction: both
@@ -60,10 +60,11 @@ test through `conditionals:`: positive = "that command must have succeeded", neg
 failed" (`conditionals: [1, -2]` = command 1 succeeded **and** command 2 failed). Referencing a label
 that has not been defined *earlier* in the script is a fatal error, as is reusing a label.
 
-`addCraft`/`addUFO` throw a generation exception if placement fails **and** `label: 0` (the default) —
-the assumption being that a labelled command's failure is handled by a follow-up command. `addUFO`
-alone can additionally set `canBeSkipped: true` to log-and-continue instead of throwing.
-`digTunnel` always reports success.
+An unlabelled (`label: 0`, the default) `addCraft` throws a generation exception if placement
+fails — the assumption being that a labelled command's failure is handled by a follow-up command.
+An unlabelled failed `addUFO` **logs and continues by default** (`canBeSkipped` defaults to true);
+set `canBeSkipped: false` to make the failure abort generation instead. `addCraft` ignores
+`canBeSkipped` entirely. `digTunnel` always reports success.
 
 ## Command parameters
 
@@ -93,7 +94,7 @@ does not read them.
 | `craftName` | string | — | `addCraft`: force a specific [`crafts:`](Ruleset-Crafts.md) type's map instead of the player's actual craft (a [starting condition](Ruleset-StartingConditions.md) `craftTransformations:` can still override this). |
 | `terrain` | string | mission terrain | Take the blocks for this command from another [terrain](Ruleset-Terrains.md) (clears `randomTerrain`). |
 | `randomTerrain` | list of strings | — | Pool of terrains; one is rolled per execution (overrides `terrain`). |
-| `canBeSkipped` | bool | true | `addUFO`: on failed placement, log and continue instead of aborting map generation. |
+| `canBeSkipped` | bool | true | `addUFO` only: on failed unlabelled placement, log and continue (the default); `false` aborts map generation instead. `addCraft` ignores it (always aborts). |
 | `markAsReinforcementsBlock` | bool | false | Mark every cell this command fills as a valid spawn cell for [reinforcement waves](Ruleset-AlienDeployments.md#reinforcements-reinforcements) whose `mapBlockFilterType` includes the map-script filter (1, 3 or 4). |
 | `verticalLevels` | list of maps | — | Stack several blocks in Z on the same cells; see [below](#vertical-levels-verticallevels). |
 
@@ -127,7 +128,7 @@ can build a multi-storey structure (a cellar, several floors, a roof). Each entr
 
 | Key | Type | Default | Meaning |
 |---|---|---|---|
-| `type` | string | `middle` | Level role: `ground`, `middle`, `ceiling`, `empty`, `decoration`, `craft`, `line` (an unrecognized value warns and loads as `middle`). |
+| `type` | string | **required** | Level role: `ground`, `middle`, `ceiling`, `empty`, `decoration`, `craft`, `line`. An entry with no `type:` at all is **silently skipped**; a present-but-unrecognized value warns and loads as `middle`. |
 | `size` | int or `[x, y, z]` | `1, 1, −1` (`decoration`: z = 0) | Footprint of this level's blocks in cells; z = −1 means "use the block's own height". |
 | `maxRepeats` | int | −1 | How many times this level may repeat while filling the Z column (−1 = unlimited). |
 | `groups` | int or list | — | Block groups to pick this level's block from. |

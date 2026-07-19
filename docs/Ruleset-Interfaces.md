@@ -39,7 +39,7 @@ Entries **merge** by `type`, and `refNode:` copies another entry's fields first.
 | `palette` | string | inherited/`PAL_GEOSCAPE` | Which palette the screen loads (`PAL_GEOSCAPE`, `PAL_BASESCAPE`, `PAL_UFOPAEDIA`, `PAL_BATTLEPEDIA`, `PAL_BATTLESCAPE`, or a [custom palette](Ruleset-CustomPalettes.md)). |
 | `parent` | string | — | Another interface entry to fall back to for the `palette` and the `palette` element when this one doesn't define them. |
 | `backgroundImage` | string | — | The screen's background surface (an image from [`extraSprites:`](Ruleset-ExtraSprites.md) or a vanilla SCR). |
-| `altBackgroundImage` | string | `TAC00.SCR` | Background used when the screen is drawn in the battlescape theme (a Geoscape screen opened mid-battle). |
+| `altBackgroundImage` | string | — | Background used when the screen is drawn in the battlescape theme (a Geoscape screen opened mid-battle); when unset the engine falls back to `TAC00.SCR`. |
 | `upgBackgroundImage` | list of `[research, image]` | — | Conditional backgrounds: the first pair whose research is done replaces `backgroundImage`. |
 | `music` | string | — | [Music track](Ruleset-Musics.md) to play on this screen. |
 | `sound` | int | −1 | Sound (index into `GEO.CAT`) played when the screen opens. |
@@ -76,7 +76,8 @@ colors are normally multiples of 16 (`0`, `16`, … `240`) and shades are offset
   loads its window backgrounds with; `color2` is the alternate used when the screen requests the
   alternate palette. If absent, the `parent` interface's `palette` element is used.
 - **`battlescapeTheme`** (on `mainMenu`) — the colors every screen is recolored to when displayed in
-  the battlescape theme: `color` for surfaces, `color2`/`border` for the rest.
+  the battlescape theme: `color` for all surfaces, `border` for TextList/ComboBox arrows (`color2`
+  is not read here).
 
 ## See also
 

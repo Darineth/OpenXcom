@@ -41,8 +41,8 @@ Entries **merge** across mods/files by `type`, support `refNode:` inheritance an
 | `cost` | int $ | 0 | Cost of building a new X-COM base inside this region. |
 | `areas` | list of `[lonMin, lonMax, latMin, latMax]` | — | Rectangles (degrees) forming the region's territory; **appended** to any inherited list. A region with no areas is a "technical" region (mission zones only). |
 | `deleteOldAreas` | bool | false | Clear the inherited/previous `areas` list before loading this entry's `areas`. |
-| `missionZones` | list of zones | — | Each zone is a **list of areas** — `[lonMin, lonMax, latMin, latMax]` plus optional 5th (texture id) and 6th (name) elements. Zones are referenced *by index* from [`ufoTrajectories:`](Ruleset-UfoTrajectories.md) waypoints and [`alienMissions:`](Ruleset-AlienMissions.md) `spawnZone`/`objectiveZone`. |
-| `missionWeights` | map name → int | — | Weighted list of [alien mission](Ruleset-AlienMissions.md) types generated in this region (vanilla-style generation; `missionScripts:` can bypass it). |
+| `missionZones` | list of zones | — | Each zone is a **list of areas** — `[lonMin, lonMax, latMin, latMax]` plus optional 5th (texture id) and 6th (name) elements. Zones are referenced *by index* from [`ufoTrajectories:`](Ruleset-UfoTrajectories.md) waypoints and [`alienMissions:`](Ruleset-AlienMissions.md) `spawnZone`/`objectiveZone`. Unlike `areas`, redefining replaces the inherited list wholesale. |
+| `missionWeights` | map name → int | — | Weighted list of [alien mission](Ruleset-AlienMissions.md) types generated in this region (vanilla-style generation; `missionScripts:` can bypass it). May **not** contain site-type (`objective: 3`) missions — that is a fatal load error; invoke those via mission scripts. |
 | `regionWeight` | int | 0 | This region's weight when the game picks a region for a new alien mission (initial value; it shifts during a campaign). |
 | `missionRegion` | string region | — | Substitute region: missions targeted at this region actually run in the named one (used e.g. for technical/ocean regions). |
 | `provideBaseFunc` | list of tags | — | Base-function tags an X-COM base in this region gains. |
@@ -57,8 +57,8 @@ Entries **merge** across mods/files by `type`, support `refNode:` inheritance an
   own terrain).
 - Don't mix point and non-point areas in one zone — the loader logs a warning.
 - Areas **crossing the prime meridian** must use the extended syntax: write `[350, 368, 20, 30]`,
-  **not** `[350, 8, 20, 30]` — the latter is a load-time error (`lonMin > lonMax` inside a
-  mission zone).
+  **not** `[350, 8, 20, 30]` — the latter is logged as an error (non-fatal, but the zone
+  misbehaves) when `lonMin > lonMax` inside a mission zone.
 - Swapped `latMin`/`latMax` are auto-corrected on load.
 - When a mission needs a point in a zone, the engine picks a random area of that zone and a random
   point inside it (`RuleRegion::getRandomPoint`).

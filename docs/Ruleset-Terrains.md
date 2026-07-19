@@ -63,7 +63,7 @@ plus its `.RMP` (route nodes), both found by `name`. Blocks are the unit of map 
 
 | Key | Type | Default | Meaning |
 |---|---|---|---|
-| `name` | string | — | The MAP/RMP file base name; also how `checkBlock` / a map script's `blocks:` list refers to it. |
+| `name` | string | — | The MAP/RMP file base name. (Map scripts select blocks by **index** into this list or by group — never by name.) |
 | `width` | int | 10 | X size in tiles; **must be a multiple of 10** (load error otherwise). |
 | `length` | int | 10 | Y size in tiles; must be a multiple of 10. |
 | `height` | int | 4 | Z size in levels (must match the battle map height unless vertical levels stack blocks). |

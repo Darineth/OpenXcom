@@ -58,7 +58,7 @@ Entries merge across mods/files by `name` (`delete: true` supported; **no `refNo
 | Key | Type | Default | Meaning |
 |---|---|---|---|
 | `name` | string | — | Unique id; also the role's display-name string key (`STR_ROLE_*`). |
-| `shortName` | string | — | 3-letter abbreviation shown in the roster/craft lists as a rank prefix (`SNP-Rookie`); empty = the UI falls back to the first three letters of the name. |
+| `shortName` | string | — | 3-letter abbreviation shown in the roster/craft lists as a rank prefix (`SNP-Rookie`); empty = the UI falls back to the first three alphanumeric characters of the name, uppercased. |
 | `icon` | string | — | The `roleIcons:` entry to use (see below), **by registry name**; empty = no icon. |
 | `color` | int | −1 | Armor accent colour for soldiers with this role: a battlescape-palette index from `soldierArmorBaseColors:`. −1 = "Armor Default" (no recolour). |
 

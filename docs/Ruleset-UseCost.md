@@ -39,6 +39,8 @@ scalar shorthand `tu<Action>:` that writes only the block's `time` field.
 | `costUnprime` | `tuUnprime` | `flatUnprime` | Unprime a grenade | default `25` (time) |
 | `costMindControl` | `tuMindControl` | — | Psi mind control | `costUse` |
 | `costPanic` | `tuPanic` | — | Psi panic | `costUse` |
+| `costClairvoyance` **[DX]** | `tuClairvoyance` **[DX]** | — | Clairvoyant sweep | `costUse` |
+| `costMindBlast` **[DX]** | `tuMindBlast` **[DX]** | — | Mind blast | `costUse` |
 
 Notes on the fallbacks (from `RuleItem::getCost*` / `getFlat*`):
 
@@ -46,9 +48,11 @@ Notes on the fallbacks (from `RuleItem::getCost*` / `getFlat*`):
   simply has no auto-shot in the action menu; the same is true of **[DX]** burst (`tuBurst`).
 - Snap/auto/**burst** inherit *per resource* from `costAimed` — a weapon that only defines
   `costAimed: {energy: 5}` gives all three modes the same energy cost.
-- `costMind`/`costPanic` inherit from `costUse`; `costUse` is forced to zero for a psi-amp that has
-  no `psiAttackName`, and `costPrime` is zero when `primeActionName` is empty.
-- Flat blocks are three-level: `flatSnap` → `flatAimed` → `flatUse`.
+- The psi actions (`costMindControl`/`costPanic`/**[DX]** `costClairvoyance`/`costMindBlast`)
+  inherit from `costUse`; `costUse` is forced to zero for a psi-amp that has no `psiAttackName`,
+  and `costPrime` is zero when `primeActionName` is empty.
+- Flat blocks for the fire modes are three-level: `flatSnap`/`flatAuto`/`flatBurst` →
+  `flatAimed` → `flatUse`; `flatAimed` and `flatMelee` are two-level (→ `flatUse`).
 - The legacy `flatRate: true` key is shorthand for `flatUse: { time: true }`.
 
 ## Sub-resource keys

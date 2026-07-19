@@ -31,7 +31,7 @@ globe:
 | Key | Type | Default | Meaning |
 |---|---|---|---|
 | `data` | string path | — | Load the landmass polygons from an X-COM `WORLD.DAT` file (replaces all previously loaded polygons). |
-| `polygons` | list of lists | — | Explicit polygon set (replaces all previous): each entry is `[textureId, lon1, lat1, lon2, lat2, lon3, lat3(, lon4, lat4)]` in degrees — 3 or 4 vertices. |
+| `polygons` | list of lists | — | Explicit polygon set (replaces all previous): each entry is `[textureId, lon1, lat1, lon2, lat2, lon3, lat3, …]` in degrees — usually 3 or 4 vertices (the YAML form accepts any count; the 3–4 limit only applies to `WORLD.DAT` files). |
 | `polylines` | list of lists | — | Decorative line strips (replaces all previous): each entry is `[lon1, lat1, lon2, lat2, …]` in degrees. |
 
 `data` and `polygons` are alternatives; whichever appears in the entry replaces the polygon list.

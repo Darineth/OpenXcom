@@ -72,7 +72,7 @@ Every root below is documented; the **Doc** column links to its reference page.
 | `arcScripts:` | `type` | `RuleArcScript` | Story arc sequencing | ● [Ruleset-ArcScripts.md](Ruleset-ArcScripts.md) |
 | `eventScripts:` | `type` | `RuleEventScript` | Geoscape event generation | ● [Ruleset-EventScripts.md](Ruleset-EventScripts.md) |
 | `events:` | `name` | `RuleEvent` | Individual geoscape events | ● [Ruleset-Events.md](Ruleset-Events.md) |
-| `adhocScripts:` | `type` | `RuleAdhocScript` | Ad-hoc mission generation hooks | ● [Ruleset-AdhocScripts.md](Ruleset-AdhocScripts.md) |
+| `adhocScripts:` | `type` | `RuleMissionScript` | Ad-hoc mission generation hooks | ● [Ruleset-AdhocScripts.md](Ruleset-AdhocScripts.md) |
 
 ## Basescape & economy
 
@@ -130,13 +130,16 @@ their own page.
 | Root | What it tunes | Doc |
 |---|---|---|
 | `damageTypes:` | Edits the built-in damage types' `RuleDamageType` fields globally (early pre-pass) | ● [Ruleset-DamageTypes.md](Ruleset-DamageTypes.md) |
-| `health:` | Proportional wound recovery + Field Surgery gate | ● [Ruleset-DX-Globals.md](Ruleset-DX-Globals.md) |
+| `health:` * | Proportional wound recovery + Field Surgery gate | ● [Ruleset-DX-Globals.md](Ruleset-DX-Globals.md) |
 | `moveCostDefaults:` | Mod-wide default armor move costs (what `moveCost:`-less armors fall back to) | ● [Ruleset-DX-Globals.md](Ruleset-DX-Globals.md) |
 | `evasionDefaults:` | Sprint/sneak defensive-evasion reshaping defaults | ● [Ruleset-DX-Globals.md](Ruleset-DX-Globals.md) |
 | `sneakDefaults:` | Sneak-mode gates (`maxLight` — no creeping while glowing) | ● [Ruleset-DX-Globals.md](Ruleset-DX-Globals.md) |
 | `overwatchDefaults:` | Mod-wide overwatch tuning that weapons fall back to | ● [Ruleset-DX-Globals.md](Ruleset-DX-Globals.md) |
 | `bleedoutDefaults:` | Bleedout thresholds/buffer wounds/mission lockout | ● [Ruleset-DX-Globals.md](Ruleset-DX-Globals.md) |
 | `soldierArmorBaseColors:` | The palette color list the per-role armor recolor picks from | ● [Ruleset-Roles.md](Ruleset-Roles.md) |
+
+\* `health:` itself is a stock OXCE node (`woundThreshold`, `replenishAfterMission`); DX extends it
+with the proportional-recovery / Field Surgery keys.
 
 ## Shared building blocks
 

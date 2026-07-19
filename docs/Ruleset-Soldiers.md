@@ -69,7 +69,7 @@ Entries **merge** across mods/files by `type`, support `refNode:` inheritance an
 | `costSalarySquaddie` / `costSalarySergeant` / `costSalaryCaptain` / `costSalaryColonel` / `costSalaryCommander` | int | 0 | Added to `costSalary` at that rank; defining any of them makes salary rank-dependent. |
 | `transferTime` | int hours | 0 | Delivery time after hiring. |
 | `value` | int | 20 | Score value (used in the "soldier lost" score penalty). |
-| `group` | int | 0 | Soldier-type group id (used by UI grouping/filters). |
+| `group` | int | 0 | Soldier-type group id — matched against a craft's `allowedSoldierGroups` crew restriction ([crafts](Ruleset-Crafts.md)). |
 | `listOrder` | int | auto | Sort position in the hire/list screens. |
 
 ## Stats & growth

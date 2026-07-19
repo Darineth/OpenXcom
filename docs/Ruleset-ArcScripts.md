@@ -69,9 +69,8 @@ re-checks `maxArcs` first.
 | `counterMin` | int | 0¹ | If > 0, the counter(s) named above must be at least this high. |
 | `counterMax` | int | −1¹ | If not −1, the counter(s) named above must not exceed this; both configured counters are checked. |
 
-¹ `RuleArcScript`'s constructor does **not** initialize `_counterMin`/`_counterMax` (unlike
-[`eventScripts:`](Ruleset-EventScripts.md), which defaults them to 0 / −1). Always set both
-explicitly when you use `missionVarName`/`missionMarkerName` gating.
+¹ Upstream OXCE never initialized `_counterMin`/`_counterMax`; **DX initializes them to 0 / −1**
+(matching [`eventScripts:`](Ruleset-EventScripts.md)) — see the note at the bottom of this page.
 
 ## See also
 

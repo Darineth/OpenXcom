@@ -62,7 +62,8 @@ From [`StatString::calcStatString`](../src/Mod/StatString.cpp):
   ("Sniper", "Psi") that should replace, not join, the letter soup.
 - **Psi hiding:** psi conditions are only evaluated once the soldier's psi stats are known — either
   the soldier has `psiSkill > 0`, or the `psiStrengthEval` option (Options → "Reveal psi stats") is
-  on. Before that, psi-based entries never match, so psi-weak recruits are not silently revealed.
+  on **and** the mod's psi-unlock research is completed. Before that, psi-based entries never
+  match, so psi-weak recruits are not silently revealed.
 - A condition on a stat name the engine does not know about never matches (this is the mechanism the
   `psiTraining` pseudo-stat rides on).
 

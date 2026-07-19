@@ -81,7 +81,8 @@ set it on individual rules (or read/write it from scripts at runtime). The outer
 Rule-level tags are set with a `tags:` sub-node **inside the rule entry**; runtime tags start at 0 and
 are read/written from scripts (`obj.getTag` / `obj.setTag`) and serialized with the save.
 
-Tag names are global across types: reusing one name for two different script types is a load error.
+Tag names are global across types: reusing one name for two different script types is logged as an
+error and the duplicate is skipped (not fatal).
 
 ### Global scripts (`extended: scripts:`)
 
@@ -95,7 +96,7 @@ object that reaches the hook. Each entry is:
 | `update` | string | Modify an existing one. |
 | `ignore` | string | Keep a placeholder/no-op under this name. |
 | `delete` | string | Remove a previously registered global script. |
-| `offset` | number (non-zero) | **Required.** Sort order — global scripts run in ascending offset; negative offsets run before the object's own scripts. `0` is rejected. |
+| `offset` | number (non-zero) | **Required.** Sort order — global scripts run in ascending offset; negative offsets run before the object's own scripts. Fractions (e.g. `1.5`) are legal; `0` is logged as an error and the entry skipped. |
 | `code` | string (block) | The Y-Script body. |
 
 ```yaml
@@ -216,7 +217,7 @@ value, the weapon and ammo, and the skill in use. See
   typo will refuse to start the game (which is the point: it can't be silently ignored).
 - A key ending in `#` under `extended: scripts:` is skipped — the convention for commenting out a
   block without deleting it.
-- `offset: 0` on a global script is rejected; use any non-zero value.
+- `offset: 0` on a global script is logged as an error and the entry skipped; use any non-zero value.
 - Runtime tags (`BattleUnit`, `GeoscapeSoldier`, …) are **saved**, so removing a tag declaration
   from a mod after a campaign has started drops those values on load.
 - Scripts are performance-sensitive: `recolorUnitSprite` and `visibilityUnit` in particular run

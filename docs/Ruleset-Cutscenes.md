@@ -6,7 +6,8 @@ Back to the [ruleset index](Ruleset.md).
 [`RuleVideo::load`](../src/Mod/RuleVideo.cpp)
 
 A cutscene is either a list of **video files** (FLI/FLC/DOS movies) or a **slideshow** of still images
-with captions — or both, played back to back. Cutscenes are triggered by name from
+with captions. If both are defined, exactly **one** plays — the player's "preferred video" option
+picks FMV or slideshow. Cutscenes are triggered by name from
 [`research:`](Ruleset-Research.md), [`alienDeployments:`](Ruleset-AlienDeployments.md) and
 [`events:`](Ruleset-Events.md) via their `cutscene:` fields, and by the engine for the intro.
 
@@ -43,7 +44,7 @@ compatibility (they set the corresponding flag automatically).
 | `useUfoAudioSequence` | bool | false | Use the hardcoded vanilla UFO-intro audio/timing sequence; in practice only correct for the original intro movie. |
 | `winGame` | bool | `type == "winGame"` | Playing this cutscene **wins the campaign** (the game ends in victory after it). |
 | `loseGame` | bool | `type == "loseGame"` | Playing this cutscene **loses the campaign**. |
-| `slideshow` | map | — | A still-image slideshow, played after the videos — see below. |
+| `slideshow` | map | — | A still-image slideshow, the alternative to `videos:` (never both) — see below. |
 
 ## `slideshow:`
 

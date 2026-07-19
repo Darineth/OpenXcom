@@ -38,7 +38,7 @@ Entries **merge** across mods/files by `id`, support `refNode:` inheritance and 
 | `type` | int 0–4 | 0 | Section kind: 0 slot grid, 1 hand, 2 ground, **[DX]** 3 utility, **[DX]** 4 equip (see below). |
 | `slots` | list of `[x, y]` | — | The grid cells of a type-0 section, in 16×16-px slot-cell coordinates relative to `x`/`y`. |
 | `width` / `height` **[DX]** | int cells | 0 → 2×2 | Bounding-box size of a utility/equip section (overrides the built-in 2×2 default); ignored for other types. |
-| `costs` | map section-id → TU | — | TU to move an item **from this section into** the named one; unlisted pair = 8 (`DEFAULT_MOVE_COST`), **[DX]** an explicit `-1` forbids that move in combat. |
+| `costs` | map section-id → TU | — | TU to move an item **from this section into** the named one; unlisted pair = 8 (`DEFAULT_MOVE_COST`), **[DX]** any negative value (conventionally `-1`) forbids that move in combat. |
 | `hand` **[DX]** | `right` / `left` / `none` | see below | Declares the section a real hand of that side (fires, reacts, auto-equips); any other value is a load error. |
 | `battleType` **[DX]** | int | 0 (any) | Slot-side item filter: only items of this [battle type](Ruleset-Items.md) may occupy the section (0 = unrestricted). |
 | `allowCombatSwap` **[DX]** | bool | true | When false, items can't be moved into or out of the section once combat is underway (pre-battle equip unaffected). |
@@ -72,7 +72,7 @@ All geometry is in **slot cells** of 16×16 pixels (`SLOT_W`/`SLOT_H`).
 `A.costs[B]` TU (moving within the same section is free). Pairs both ways must be authored if both
 directions should have real prices — the stock sections cross-list every pair. A pair with no
 entry falls back to 8 TU (this keeps partially-specified custom-layout sections working), and
-**[DX]** an explicit `-1` makes that move illegal while in combat (`STR_INVALID_TRANSFER`);
+**[DX]** any negative value makes that move illegal while in combat (`STR_INVALID_TRANSFER`);
 pre-battle equipping ignores costs entirely.
 
 ## [DX] Typed-slot rules

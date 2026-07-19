@@ -27,7 +27,9 @@ ufopaedia:
 ```
 
 Entries **merge** by `id`. `type_id` is only read when the article is *created*: the first ruleset to
-define an `id` fixes its layout, and later files that reuse the same `id` just overwrite fields.
+define an `id` fixes its layout, and later files that reuse the same `id` just overwrite fields
+(exception: the TFTD-family layouts, 10–17, re-read `type_id` on every merge and can switch between
+each other).
 An entry without `type_id` and without a pre-existing `id` is **skipped with a load error**.
 `delete:` removes an inherited article.
 
@@ -70,7 +72,7 @@ stats table the screen draws. Despite the name they work in UFO mods too; they a
 | `type_id` | int | — | The layout, from the table above. Required when the article is first defined. |
 | `section` | string | — | Which UFOpaedia section button lists the article; `STR_NOT_AVAILABLE` hides it from the index (still reachable from links). |
 | `requires` | list of research | — | Article is only visible once **all** these [research](Ruleset-Research.md) topics are done. |
-| `disabledBy` | list of research | — | Article becomes hidden once **any** of these topics is researched (supersedes/retires an article). |
+| `disabledBy` | list of research | — | Article becomes hidden once **all** of these topics are researched (supersedes/retires an article). |
 | `title` | string | `id` | Title string key of page 1. |
 | `text` | string | — | Body-text string key of page 1. |
 | `ammoSlot` | int | 0 | Which ammo slot page 1 shows stats for (weapon articles with several ammo slots). |

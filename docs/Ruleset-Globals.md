@@ -42,9 +42,9 @@ lighting:
 
 | Key | Type | Default | Meaning |
 |---|---|---|---|
-| `startingTime` | map | 12:00, Sat 1 Jan 1999 | The campaign's start clock. Sub-keys: `second`, `minute`, `hour`, `weekday` (1 = Sunday … 7 = Saturday), `day`, `month`, `year`. |
+| `startingTime` | map | 12:00, Fri 1 Jan 1999 | The campaign's start clock. Sub-keys: `second`, `minute`, `hour`, `weekday` (1 = Sunday … 7 = Saturday), `day`, `month`, `year`. |
 | `startingDifficulty` | int 0–4 | 0 | Which difficulty is pre-selected on the New Game screen (0 = Beginner … 4 = Superhuman). |
-| `initialFunding` | int (thousands) | 0 | Starting funds, in the game's `$1000` funding unit. |
+| `initialFunding` | int (thousands) | 0 | Target total in the game's `$1000` unit: per-country monthly funding is scaled up so the total matches (never reducing a country below its rolled value), and starting cash is set to that total. |
 
 The base you start with is [`startingBase:`](Ruleset-StartingBase.md).
 
@@ -53,7 +53,8 @@ The base you start with is [`startingBase:`](Ruleset-StartingBase.md).
 ## Random name pools
 
 Names are assembled by picking one entry from each list. Each key is a **list of `STR_*` keys**
-(resolved through the language files), and lists are replaced, not appended, by a later mod.
+(resolved through the language files). A later mod's plain list **replaces** the inherited one;
+the `!add` / `!remove` YAML tags append to / remove from it instead.
 
 | Key | Type | Default | Meaning |
 |---|---|---|---|
@@ -173,9 +174,11 @@ Both are **maps of option name → value** (values are the option's string form,
 | `fixedUserOptions` | map string → string | — | Options the mod **forces**: applied on load and locked (the player cannot change them while the mod is active). |
 | `recommendedUserOptions` | map string → string | — | Options the mod **suggests**: applied once, the first time the mod is activated; the player can change them afterwards. |
 
-A short blocklist of options is exempt and silently dropped from these maps (`oxceLinks`,
-`oxceUpdateCheck`, `maximizeInfoScreens`, `oxceModValidationLevel`, and a few others) — they are
-user-preference/UI options the engine refuses to let a mod dictate.
+A short blocklist of options is exempt and silently dropped: `fixedUserOptions` drops `oxceLinks`,
+`oxceUpdateCheck`, `maximizeInfoScreens`, `oxceModValidationLevel`, `oxceAutoNightVisionThreshold`
+and `oxceAlternateCraftEquipmentManagement`, while `recommendedUserOptions` drops only
+`maximizeInfoScreens` and `oxceModValidationLevel` — user-preference/UI options the engine refuses
+to let a mod dictate.
 
 ---
 

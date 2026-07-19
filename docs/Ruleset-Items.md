@@ -137,11 +137,11 @@ A weapon offers a fire mode **only if that mode's TU cost is set** (`tuSnap`/`co
 | Sub-key | Type | Default | Meaning |
 |---|---|---|---|
 | `name` | string | `STR_AIMED_SHOT` / `STR_SNAP_SHOT` / `STR_AUTO_SHOT` / `STR_BURST_SHOT` **[DX]** | Action-menu label for this mode. |
-| `shortName` | string | — | Compact label (used by the DX action-menu/ammo readouts). |
+| `shortName` **[DX]** | string | — | Compact label (used by the DX action-menu/ammo readouts). |
 | `shots` | int | 1 (auto 3, burst 2) | Projectiles fired by one action. |
 | `spendPerShot` | int | 1 | Ammo rounds consumed per projectile. |
 | `followProjectiles` | bool | true | Camera follows the projectiles of this mode. |
-| `ammoSlot` | int | 0 (melee: `-1` unless `battleType: 3`) | Which ammo slot this mode draws from; `-1` = the weapon itself is the ammo. |
+| `ammoSlot` | int | 0 (melee block: `-1` when the entry declares a non-melee `battleType`; stays 0 for `battleType: 3` or when the entry doesn't declare `battleType` itself) | Which ammo slot this mode draws from; `-1` = the weapon itself is the ammo. |
 | `arcing` | bool | false | Force an arcing trajectory for this mode only. |
 | `ammoZombieUnitChanceOverride` / `ammoSpawnUnitChanceOverride` / `ammoSpawnItemChanceOverride` | int | — | Per-mode overrides of the ammo's spawn/zombify chances. |
 
@@ -216,7 +216,7 @@ Melee cost/accuracy live in the fire-mode fields above (`accuracyMelee`, `costMe
 |---|---|---|---|
 | `fuseType` | int | auto | `-3` none, `-2` instant, `-1` player-set timer, `0`–`64` fixed countdown. Defaults from `battleType` (grenade = set, proximity = instant). |
 | `fuseTriggerEvents:` | map | — | When a primed item detonates: sub-keys `defaultBehavior` (true), `throwTrigger`, `throwExplode`, `proximityTrigger`, `proximityExplode` (all false). |
-| `explodeInventory` | int | −1 → global | Primed explosive detonating in the inventory: 0 no, 1 yes except in hands, 2 always. |
+| `explodeInventory` | int | −1 → global | Primed explosive detonating in the inventory: 0 no, 1 yes except in hands, 2 always. (Deprecated alias: `isExplodingInHands` — `true` maps to 2, `false` to 0.) |
 | `primeActionName` / `unprimeActionName` | string | `STR_PRIME_GRENADE` / — | Action-menu labels (empty `primeActionName` disables priming). |
 | `primeActionMessage` / `unprimeActionMessage` | string | `STR_GRENADE_IS_ACTIVATED` / `STR_GRENADE_IS_DEACTIVATED` | Confirmation messages. |
 | `primeSound` / `unprimeSound` | sound(s) | — | Prime/unprime sounds. |
@@ -259,7 +259,7 @@ Applies to `battleType: 9` (psi-amp) and `8` (mind probe).
 |---|---|---|---|
 | `accuracyMindControl` / `accuracyPanic` / `accuracyUse` | int % | 0 / 20 / 0 | Base success chances (`accuracyUse` drives a custom `psiAttackName` action). The `BA_MINDBLAST` equivalent is **[DX]** `mindBlast: accuracy:` below. |
 | `psiAttackName` | string | — | Action-menu label for a custom psi attack (its absence zeroes `costUse`). |
-| `targetMatrix` | int bitmask | 7 (psi-amp: 6) | Allowed targets: 1 same faction, 2 hostile relation, 4 neutral relation. |
+| `targetMatrix` | int bitmask | 7 (psi-amp: 6) | Allowed targets: 1 same faction, 2 hostile relation, 4 neutral relation. (Deprecated alias: `psiTargetMatrix`.) |
 | `convertToCivilian` | bool | false | Mind control converts the victim to the neutral faction instead of the player's. |
 | `LOSRequired` | bool | false | Psi attack requires line of sight. |
 | `psiRequired` | bool | auto | Wielder needs psiSkill > 0 (auto-true for psi-amps). |
@@ -286,7 +286,7 @@ out, or panics. *(feature: [DX-Features.md](../DX-Features.md); design:
 | `channeled` | bool | false | Opt in. False/absent = stock one-turn mind control, unchanged. |
 | `maxThralls` | int | 1 | How many units one controller may hold at once (upkeep stacks per thrall). |
 | `requiresWeapon` | bool | true | The link breaks if the controller isn't holding the amp at his turn start. |
-| `thrallRecoversTimeUnits` | bool | true | Whether the victim gets the full TU bar stock always grants it on capture. |
+| `thrallRecoversTimeUnits` | bool | true | Whether the victim gets a full TU bar on capture (stock mind control always grants it). |
 | `backlashDamageType` | int ResistType | −1 | The type the backlash power is dealt as (−1 = the amp's own). It decides **both** what the recoil does (the type's `To*` fields split the power into health/stun/morale/wounds/energy/TU) and what can resist it — point it at a type nothing resists for an unblockable backlash. |
 | `upkeep:` | map | all 0 | What the controller pays each turn, per thrall — see below. |
 | `backlashOnThrallDeath:` / `backlashOnFailure:` | map | 0 | `power: [min,max]` — the recoil dealt to the controller when a thrall dies / an attempt fails. A plain power, split by `backlashDamageType` like any other damage source. |

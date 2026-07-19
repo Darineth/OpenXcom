@@ -4,7 +4,7 @@ Back to the [ruleset index](Ruleset.md).
 
 **Engine class:** — (raw sound tables on `Mod`) · **List key:** `name` · **Loader:**
 [`Mod::loadFile`](../src/Mod/Mod.cpp) (parsed inline; consumed by
-[`BattleUnit::updateUnitStats`](../src/Savegame/BattleUnit.cpp))
+[`BattleUnit::prepareUnitResponseSounds`](../src/Savegame/BattleUnit.cpp))
 
 *Unit response sounds* are the voice barks a battlescape unit makes when you select it, order it to
 move, pick a weapon, or click it repeatedly. `unitResponseSounds:` attaches a voice bank to an
@@ -57,7 +57,7 @@ These are separate **top-level ruleset keys** (siblings of `unitResponseSounds:`
 | Key | Type | Default | Meaning |
 |---|---|---|---|
 | `enableUnitResponseSounds` | bool | false | Master switch — with it off, **no** unit response sounds play at all and this whole root is inert. |
-| `unitResponseSoundsFrequency` | list of 4 ints | engine | Percentage chance per event that a bark actually plays, in the order select / start-moving / select-weapon / annoyed. |
+| `unitResponseSoundsFrequency` | list of 4 ints | `[100, 100, 100, 20]` | Percentage chance per event that a bark actually plays, in the order select / start-moving / select-weapon / annoyed. |
 
 ## See also
 

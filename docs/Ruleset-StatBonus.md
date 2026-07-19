@@ -13,7 +13,7 @@ thing rather than being a constant.
 
 | Host | Field(s) |
 |---|---|
-| [`items:`](Ruleset-Items.md) | `damageBonus`, `meleeBonus`, `accuracyMultiplier`, `meleeMultiplier`, `throwMultiplier`, `closeQuartersMultiplier`, `powerRangeReduction`… |
+| [`items:`](Ruleset-Items.md) | `damageBonus`, `meleeBonus`, `accuracyMultiplier`, `meleeMultiplier`, `throwMultiplier`, `closeQuartersMultiplier` |
 | [`armors:`](Ruleset-Armors.md) | `psiDefence`, `meleeDodge`, and the `recovery:` sub-keys (`time`, `energy`, `morale`, `health`, `stun`, `mana`) |
 | [`soldiers:`](Ruleset-Soldiers.md) / [`soldierBonuses:`](Ruleset-SoldierBonuses.md) | soldier-level recovery variants |
 
@@ -42,12 +42,14 @@ value, up to 4: `stat: [a, b, c, d]` means `a·v + b·v² + c·v³ + d·v⁴`. A
 the first coefficient.
 
 Defining the node **replaces** the engine default for that formula entirely (the defaults are
-listed per host field in its own doc — e.g. `psiDefence` defaults to `psiStrength: 1.0`).
+listed per host field in its own doc — e.g. `psiDefence` defaults to `psiStrength: 1.0` +
+`psiSkill: 0.2`).
 
 ### Advanced: script form
 
-Instead of a map, the value may be a **string**: the name of a Y-Script
-(`bonusStatsScripts`) that computes the bonus. See [Ruleset-Scripting.md](Ruleset-Scripting.md).
+Instead of a map, the value may be a **string of inline Y-Script source code** (compiled by the
+`bonusStatsScripts` parser) that computes the bonus — not the name of a script defined elsewhere.
+See [Ruleset-Scripting.md](Ruleset-Scripting.md).
 
 ## Available terms
 
@@ -79,7 +81,7 @@ Every base/combined term also has a `…Scaled` form divided by 100 (products by
 | Term | Value |
 |---|---|
 | `healthCurrent`, `manaCurrent`, `tuCurrent`, `energyCurrent`, `moraleCurrent`, `stunCurrent` | The unit's **current** (not max) value |
-| `healthNormalized`, `manaNormalized`, `tuNormalized`, `energyNormalized`, `moraleNormalized`, `stunNormalized` | Current ÷ max (0.0–1.0) |
+| `healthNormalized`, `manaNormalized`, `tuNormalized`, `energyNormalized`, `moraleNormalized`, `stunNormalized` | Current ÷ max (0.0–1.0). Exception: `stunNormalized` is stun ÷ **current health**, so it can exceed 1.0. |
 | `fatalWounds` | Total fatal wounds |
 | `rank`, `rankUnified` | Soldier rank index (unified spans soldier types) |
 | `energyRegen` | The unit's basic per-turn energy regeneration |

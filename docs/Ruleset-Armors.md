@@ -37,10 +37,11 @@ Entries **merge** across mods/files by `type`, support `refNode:` inheritance an
 | `ufopediaType` | string | `type` | UFOpaedia article to open for this armor. |
 | `refNode` | map | — | Inherit all fields from another (anonymous) node first. |
 | `storeItem` | string | — | Item consumed/tracked in stores to equip this armor. `STR_NONE` = free (no item). |
-| `corpseBattle` | list of items | — | Corpse item(s) left on the battlefield, one per tile of the unit (`size*size` entries for 2×2). Required for soldiers. |
+| `corpseBattle` | list of items | — | Corpse item(s) left on the battlefield, one per tile of the unit (`size*size` entries for 2×2). **Required** — every armor must end up with battle and geo corpses or loading fails. |
 | `corpseGeo` | string item | first `corpseBattle` | Corpse item recovered at debriefing. |
+| `corpseItem` | string item | — | Legacy single-corpse shorthand: sets both `corpseBattle` (as a 1-entry list) and `corpseGeo`. Mutually exclusive with `corpseBattle`. |
 | `selfDestructItem` | string item | — | Explosive detonated on death (e.g. Cyberdisc). |
-| `builtInWeapons` | list / weaponSet | — | Items force-added to the unit's inventory at spawn (fixed weapons; see [`weaponSets:`](Ruleset-WeaponSets.md)). |
+| `builtInWeapons` | list of items | — | Items force-added to the unit's inventory at spawn (fixed weapons). Plain item-name list — [`weaponSets:`](Ruleset-WeaponSets.md) only apply to [`units:`](Ruleset-Units.md), not armors. |
 | `specialWeapon` | string item | — | Innate special weapon (e.g. Zombie claws, psi organ). |
 | `requires` | list of research | — | Research needed before soldiers may wear it ([research](Ruleset-Research.md)). |
 | `requiresAward` / `requiresBonus` | lists | — | Commendation / soldier-bonus gates on wearing it. |
@@ -59,7 +60,7 @@ Entries **merge** across mods/files by `type`, support `refNode:` inheritance an
 | `leftArmorDiff` | int | 0 | Delta applied to the left side (asymmetric armor: left = `sideArmor + leftArmorDiff`). |
 | `rearArmor` | int | 0 | Rear armor. |
 | `underArmor` | int | 0 | Under armor (explosions beneath, falls). |
-| `damageModifier` | list of 10 floats | all 1.0 | Damage multiplier per damage type, in [ResistType order](Ruleset-DamageTypes.md) (0 = none, 1 = AP, 2 = IN, 3 = HE, 4 = laser, 5 = plasma, 6 = stun, 7 = melee, 8 = acid, 9 = smoke). `0.0` = immune. |
+| `damageModifier` | list of up to 20 floats | all 1.0 | Damage multiplier per damage type, in [ResistType order](Ruleset-DamageTypes.md) (0 = none, 1 = AP, 2 = IN, 3 = HE, 4 = laser, 5 = plasma, 6 = stun, 7 = melee, 8 = acid, 9 = smoke, 10–19 = the OXCE custom types `DT_10`…`DT_19`). `0.0` = immune. |
 | `overKill` | float | 0.5 | How much damage past death (× max HP) turns the corpse to goo (corpse destruction threshold). |
 | `fearImmune` | bool | false¹ | Immune to morale-loss panic sources. |
 | `bleedImmune` | bool | false¹ | Cannot receive fatal wounds. |
@@ -77,18 +78,18 @@ threat) before the explicit keys apply.
 
 | Key | Type | Default | Meaning |
 |---|---|---|---|
-| `movementType` | int | 0 walk | 0 = walk, 1 = fly, 2 = slide (`MT_*`). |
+| `movementType` | int | 0 walk | 0 = walk, 1 = fly, 2 = slide, 3 = float, 4 = sink (`MT_*`; float/sink are the TFTD underwater modes). |
 | `moveCost` | map of pairs | see below | Move-cost multipliers, each a `[time%, energy%]` pair. Sub-keys: `basePercent`, `baseFlyPercent`, `baseClimbPercent`, `baseNormalPercent`, `walkPercent`, `runPercent`, `strafePercent`, `sneakPercent` **[DX]**, `flyWalkPercent`, `flyRunPercent`, `flyStrafePercent`, `flyUpPercent`, `flyDownPercent`, `climbUpPercent`, `climbDownPercent`, `gravLiftPercent`. |
 | `turnCost` | int | 1 | TU per 45° turn. |
 | `turnBeforeFirstStep` | bool | false | Unit must fully face its path before stepping. |
 | `allowsRunning` | bool | auto | May sprint. Default: engine rule (soldiers yes). |
 | `allowsStrafing` | bool | auto | May strafe. |
-| `allowsSneaking` | bool | auto | May sneak (Alt-move). DX shows "Cannot sneak in this armor!" when false. |
+| `allowsSneaking` **[DX]** | bool | auto | May sneak (Alt-move). DX shows "Cannot sneak in this armor!" when false. |
 | `allowsKneeling` | bool | auto | May kneel. |
 | `allowsMoving` | bool | true | May move at all (turrets: false). |
 | `standHeight` / `kneelHeight` / `floatHeight` | int | from unit | Hit-box/LOS heights in voxels (−1 = inherit from the unit/soldier definition). |
 | `size` | int | 1 | Footprint side length: 1 (1×1) or 2 (2×2). |
-| `loftempsSet` (or single `loftemps`) | list of ints | `[3]`-ish | LOFT template ids stacked bottom-to-top — the unit's 3-D collision silhouette. |
+| `loftempsSet` (or single `loftemps`) | list of ints | — | LOFT template ids stacked bottom-to-top — the unit's 3-D collision silhouette. Effectively required: the count must equal `size`² or loading reports an error. |
 | `meleeOriginVoxelVerticalOffset` | int | 0 | Tweak to where melee attacks originate vertically. |
 
 Armors that omit `moveCost` keys fall back to the **[DX]** mod-wide
@@ -109,7 +110,7 @@ straight from [`BattleUnit::getMaxViewDistance`](../src/Savegame/BattleUnit.cpp)
 | `camouflageAtDark` | int | 0 | Same, when the wearer's tile is dark. |
 | `antiCamouflageAtDay` / `antiCamouflageAtDark` | int | 0 | Counter-camo on the **observer**: added back to the camo-reduced range, but never above the observer's own base range. |
 | `cloak` **[DX]** | map | off | Makes the camouflage **dynamic** — see below. |
-| `heatVision` | int 0–100 | 0 | % of smoke the wearer sees through (100 = smoke is invisible to it). Alias: loads `visibilityThroughSmoke`. |
+| `heatVision` | int 0–100 | 0 | % of smoke the wearer sees through (100 = smoke is invisible to it). (Stored internally as `visibilityThroughSmoke` — the YAML key is only `heatVision`.) |
 | `visibilityThroughFire` | int | 100 | Same idea for fire density on the line of sight. |
 | `psiVision` | int tiles | 0 | Sense **all** live units within N tiles, through walls, ignoring light/smoke. |
 | `psiCamouflage` | int | 0 | Defense against psi-vision: positive = cap on the distance psi-vision works against this wearer, negative = subtracted from it. |
@@ -165,7 +166,7 @@ design doc [plans/Feature-StealthArmor.md](../plans/Feature-StealthArmor.md).
 |---|---|---|---|
 | `stats` | [UnitStats](Ruleset-UnitStats.md) map | all 0 | Flat stat bonuses granted while worn (`tu: 10`, `firing: -5`, …). |
 | `statModifiers` **[DX]** | UnitStats map | all 0 | **Percentage** stat modifiers while worn (`firing: 10` = +10%). |
-| `psiDefence` | [stat bonus](Ruleset-StatBonus.md) | psiStrength ×1 | Formula for resisting psi attacks. |
+| `psiDefence` | [stat bonus](Ruleset-StatBonus.md) | psiStrength ×1 + psiSkill ×0.2 | Formula for resisting psi attacks. |
 | `meleeDodge` | [stat bonus](Ruleset-StatBonus.md) | 0 | Formula for the chance to dodge melee. |
 | `meleeDodgeBackPenalty` | float | 0 | Fraction of the dodge lost when attacked from behind. |
 | `recovery` | map of stat bonuses | engine defaults | Per-turn regeneration formulas, sub-keys `time`, `energy`, `morale`, `health`, `stun`, `mana` — each a [stat bonus](Ruleset-StatBonus.md). |

@@ -44,8 +44,8 @@ Entries **merge** across mods/files by `type`, support `refNode:` inheritance an
 | `criteria` | map name → list of ints | — | The award conditions: one **threshold per decoration level** for each named criterion (see below). All listed criteria must be met; once the soldier is past the last level, the medal stops being awarded. |
 | `killCriteria` | nested list | — | Extra per-kill conditions used by the `killsWithCriteria*` criteria (see below). |
 | `soldierBonusTypes` | list of bonus names | — | [Soldier bonus](Ruleset-SoldierBonuses.md) per decoration level (index-clamped: levels beyond the list keep the last entry). |
-| `missionMarkerFilter` | list of strings | — | Restrict `totalMissions` counting to missions with these UFO/site marker types. |
-| `missionTypeFilter` | list of strings | — | Restrict `totalMissions` counting to these mission types. |
+| `missionMarkerFilter` | list of strings | — | Restrict `totalMissions` counting to missions with these UFO/site marker types (ignored if `missionTypeFilter` is also set). |
+| `missionTypeFilter` | list of strings | — | Restrict `totalMissions` counting to these mission types. Note: a *filtered* `totalMissions` counts only **successful** missions; unfiltered counts all. |
 | `requires` | list of research | — | [Research](Ruleset-Research.md) that must be done before the medal can be awarded at all. |
 | `units` | list of soldier types | all | Restricts the medal to these [soldier types](Ruleset-Soldiers.md). |
 

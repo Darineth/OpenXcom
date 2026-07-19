@@ -91,13 +91,16 @@ Read [`Mod::newSave`](../src/Mod/Mod.cpp) for the full sequence; the parts a mod
    [`Mod::getCustomBaseFacilities`](../src/Mod/Mod.cpp), which walks the same `facilities:` list and
    hands the player everything **except the access lift and upgrade-only facilities** to place by
    hand. So the list still defines *what* you get, just not *where*.
-2. **Craft weapons are stripped** from any craft whose rules give it no soldier/vehicle capacity —
-   the launcher + clips are refunded into base stores instead.
+2. **Craft weapons are stripped** from a craft only when its *effective* soldier or vehicle
+   capacity (rule stats plus installed weapon-module bonuses) is **negative** — i.e. a weapon
+   module's stat penalty drove it below zero; the launcher + clips are refunded into base stores.
+   A plain `soldiers: 0` interceptor keeps its weapons.
 3. **`randomSoldiers` soldiers are generated, then auto-assigned to craft**: pilots fill
    interceptors up to their `pilots:` requirement first, everyone else goes to the first transport
    with room. 2×2 ("large") soldiers stay in the base.
-4. If the mod defines the `STR_MEDAL_ORIGINAL8_NAME` [commendation](Ruleset-Commendations.md), every
-   starting soldier is awarded it (marked "old", so it doesn't pop a notification).
+4. If the mod defines the `STR_MEDAL_ORIGINAL8_NAME` [commendation](Ruleset-Commendations.md), the
+   soldiers generated from `randomSoldiers` are awarded it (marked "old", so it doesn't pop a
+   notification) — soldiers listed explicitly under `soldiers:` are not.
 5. Craft and soldier **ids are re-registered** with the savegame, so `id:` values in the template
    only need to be unique within it.
 

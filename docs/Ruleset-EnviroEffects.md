@@ -41,8 +41,8 @@ Entries **merge** across mods/files by `type`, support `refNode:` inheritance an
 | `paletteTransformations` | map `palette: palette` | — | Overwrite one palette's contents with another's for the duration of the battle (recolors the whole battlescape); see [`customPalettes:`](Ruleset-CustomPalettes.md). |
 | `mapBackgroundColor` | int | 15 | Palette index the battlescape draws behind/around the map (and behind the turn banner). |
 | `ignoreAutoNightVisionUserSetting` | bool | false | Suppress the player's automatic night-vision option on this battlefield. |
-| `inventoryShockIndicator` | string | `BigShockIndicator` | Sprite shown on the inventory paperdoll for units suffering the environmental condition. |
-| `mapShockIndicator` | string | `FloorShockIndicator` | Sprite drawn on the map under such units. |
+| `inventoryShockIndicator` | string | — → `BigShockIndicator` | Sprite shown on the inventory paperdoll for units suffering the environmental condition (empty = the engine's built-in `BigShockIndicator`). |
+| `mapShockIndicator` | string | — → `FloorShockIndicator` | Sprite drawn on the map under such units (empty = the engine's built-in `FloorShockIndicator`). |
 
 ## `environmentalConditions:`
 

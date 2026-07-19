@@ -6,9 +6,10 @@ Back to the [ruleset index](Ruleset.md).
 [`ArmorMoveCostDefaults` / `ArmorEvasionDefaults` / `ArmorSneakDefaults` / `ArmorBleedoutDefaults`](../src/Mod/Armor.h) ·
 [`OverwatchDefaults`](../src/Mod/RuleItem.h) ([`::load`](../src/Mod/RuleItem.cpp))
 
-Everything on this page is **[DX]** — added by OpenXcom DX, absent in stock OXCE/OXCE-Plus. These
-are all **singletons**: one map each, merged field-by-field across mods, reset to the built-in
-defaults on every mod reload.
+Everything on this page is **[DX]** — added by OpenXcom DX, absent in stock OXCE/OXCE-Plus (the
+one exception: `health:` is a stock OXCE node whose two upstream keys are marked "(OXCE)" below;
+DX adds the rest). These are all **singletons**: one map each, merged field-by-field across mods,
+reset to the built-in defaults on every mod reload.
 
 Four of the six are *defaults* nodes: they set the mod-wide fallback that a per-armor / per-item
 field overrides. Tuning them lets a mod reshape a mechanic game-wide without touching every rule.

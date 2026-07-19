@@ -154,12 +154,12 @@ The engine constructs each slot before any ruleset loads
 |---|---|
 | `DT_NONE` (0) | `RandomType: 5` (never damages). |
 | `DT_AP` (1) | `IgnoreOverKill: true`. |
-| `DT_IN` (2) | `RandomType: 4`, `FixRadius: -1`, `FireBlastCalc`, `IgnoreDirection`, `IgnoreSelfDestruct`, `ArmorEffectiveness: 0`, `RadiusEffectiveness: 0.03`, `FireThreshold: 0`, `ToArmor/ToWound/ToItem/ToTile/ToStun: 0`, `TileDamageMethod: 2`. |
-| `DT_HE` (3) | `RandomType: 9`, `FixRadius: -1`, `IgnoreSelfDestruct`, `RadiusEffectiveness: 0.05`, `ToItem: 1.0`, `TileDamageMethod: 2`. |
+| `DT_IN` (2) | `RandomType: 4`, `FixRadius: -1`, `FireBlastCalc`, `IgnoreOverKill`, `IgnoreDirection`, `IgnoreSelfDestruct`, `ArmorEffectiveness: 0`, `RadiusEffectiveness: 0.03`, `FireThreshold: 0`, `ToArmor/ToWound/ToItem/ToTile/ToStun: 0`, `TileDamageMethod: 2`. |
+| `DT_HE` (3) | `RandomType: 9`, `FixRadius: -1`, `IgnoreOverKill`, `IgnoreSelfDestruct`, `RadiusEffectiveness: 0.05`, `ToItem: 1.0`, `TileDamageMethod: 2`. |
 | `DT_LASER` (4), `DT_PLASMA` (5), `DT_ACID` (8) | `IgnoreOverKill: true` (otherwise plain AP behavior). |
-| `DT_STUN` (6) | `FixRadius: -1`, `IgnorePainImmunity`, `IgnoreSelfDestruct`, `RadiusEffectiveness: 0.05`, `ToHealth/ToArmor/ToWound/ToItem/ToTile: 0`, `ToStun: 1.0`, `RandomStun: false`, `TileDamageMethod: 2`. |
+| `DT_STUN` (6) | `FixRadius: -1`, `IgnoreOverKill`, `IgnorePainImmunity`, `IgnoreSelfDestruct`, `RadiusEffectiveness: 0.05`, `ToHealth/ToArmor/ToWound/ToItem/ToTile: 0`, `ToStun: 1.0`, `RandomStun: false`, `TileDamageMethod: 2`. |
 | `DT_MELEE` (7) | `IgnoreOverKill`, `IgnoreSelfDestruct`. |
-| `DT_SMOKE` (9) | `RandomType: 5`, `FixRadius: -1`, `IgnoreDirection`, `ArmorEffectiveness: 0`, `RadiusEffectiveness: 0.05`, `SmokeThreshold: 0`, `ToHealth/ToArmor/ToWound/ToItem/ToTile: 0`, `ToStun: 1.0`, `TileDamageMethod: 2`. |
+| `DT_SMOKE` (9) | `RandomType: 5`, `FixRadius: -1`, `IgnoreOverKill`, `IgnoreDirection`, `ArmorEffectiveness: 0`, `RadiusEffectiveness: 0.05`, `SmokeThreshold: 0`, `ToHealth/ToArmor/ToWound/ToItem/ToTile: 0`, `ToStun: 1.0`, `TileDamageMethod: 2`. |
 | `DT_10` … `DT_19` | Constructor defaults + `IgnoreOverKill: true`. |
 
 ## Using it per item
@@ -235,8 +235,9 @@ en-US:
 
 > **`RandomType` traps, two of them:**
 >
-> Leaving it unset gives a spare slot `DRT_DEFAULT` → `DRT_STANDARD`, which re-rolls power across
-> `DAMAGE_RANGE` (0–200%). If the source already rolls its own spread, that is two dice stacked.
+> Leaving it unset leaves a spare slot at its default, `DRT_STANDARD` (8), which re-rolls power
+> across `DAMAGE_RANGE` (0–200%). If the source already rolls its own spread, that is two dice
+> stacked.
 > `DRT_FLAT` (3) uses the power as given. Do **not** reach for `DRT_NONE` (5) expecting "no roll" —
 > it returns **zero damage**.
 >

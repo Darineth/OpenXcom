@@ -46,7 +46,7 @@ Entries **merge** across mods/files by `type`, support `refNode:` inheritance an
 | `startDelay` | int minutes | 0 | Overrides the mission's first-wave spawn delay from the [`alienMissions:`](Ruleset-AlienMissions.md) definition. |
 | `randomDelay` | int minutes | 0 | Random extra delay added on top of `startDelay` (`startDelay + rand(0..randomDelay)`). |
 | `label` | int | 0 | Non-zero id other commands can reference in their `conditionals`; must be unique among the commands eligible in the same month, or the engine throws. |
-| `conditionals` | list of ints | — | Only run if the referenced labels already ran this month with the expected result: `+N` = command with label N succeeded, `−N` = it failed or never ran (a `0` entry makes the command never run). |
+| `conditionals` | list of ints | — | Only run if the referenced labels have the expected result: `+N` = command with label N succeeded, `−N` = it failed. A label that was never eligible to run this month satisfies **both** signs (a `0` entry makes the command never run). |
 | `adhocMissionScriptTags` | list of strings | — | Only meaningful in [`adhocScripts:`](Ruleset-AdhocScripts.md); ignored for monthly mission scripts. |
 
 ## Eligibility gates
@@ -73,9 +73,8 @@ All of these must pass before `executionOdds` is even rolled.
 | `counterMin` | int | 0¹ | If > 0, the counter(s) named above must be at least this high. |
 | `counterMax` | int | −1¹ | If not −1, the counter(s) named above must not exceed this; both configured counters are checked. |
 
-¹ `RuleMissionScript`'s constructor does **not** initialize `_counterMin`/`_counterMax` (unlike
-[`eventScripts:`](Ruleset-EventScripts.md), which defaults them to 0 / −1). Always set both
-explicitly when you use `missionVarName`/`missionMarkerName` gating.
+¹ Upstream OXCE never initialized `_counterMin`/`_counterMax`; **DX initializes them to 0 / −1**
+(matching [`eventScripts:`](Ruleset-EventScripts.md)) — see the note at the bottom of this page.
 
 ## What gets generated
 
