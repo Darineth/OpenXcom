@@ -43,7 +43,7 @@ Two supported paths:
   `.vscode/tasks.json` ("Build (Release)" / "Build (Debug)"), which shells out to MSBuild
   directly. **Always use the `run_task` tool to invoke these tasks — do not run MSBuild
   manually in a terminal.** The task IDs are `"shell: Build (Release)"` and
-  `"shell: Build (Debug)"` in workspace folder `d:\Code\Projects\OpenXcom-DX`.
+  `"shell: Build (Debug)"`, in the repository root workspace folder.
   Output lands in `bin/Win32/Release/OpenXcom.exe` (or `...\Debug\...`), with the SDL DLLs from
   `deps/` auto-copied next to it. A harmless `LNK4099: PDB 'SDLmain.pdb' not found` warning is
   expected.

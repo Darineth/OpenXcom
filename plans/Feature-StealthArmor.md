@@ -4,7 +4,7 @@
 Suit** (a buyable Personal Armor reskin) carrying the dynamic cloak, plus the flying suit as a
 static-camouflage reference (always-on camo, always ghosted, never breaks).
 **Roadmap:** Phase 8 (Lighting & Psionics).
-**Legacy reference:** `Legacy-DX-Features.md` §15; legacy source at `D:\Code\Projects\OpenXcomDX-Legacy`.
+**Legacy reference:** `Legacy-DX-Features.md` §15; the legacy DX fork's source.
 
 ## Motivation
 

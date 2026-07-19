@@ -2,7 +2,7 @@
 
 **Status:** ✅ Implemented (Jul 2026). Test config in `bin/standard/dx-test/dx-test.rul`.
 **Roadmap:** Phase 8 (Lighting & Psionics). Prereq (fog-of-war, Phase 1) is in.
-**Legacy reference:** legacy source at `D:\Code\Projects\OpenXcomDX-Legacy`.
+**Legacy reference:** the legacy DX fork's source.
 **Hard requirement:** **mod opt-in.** No ruleset node ⇒ the action does not exist and nothing changes.
 
 ## Motivation

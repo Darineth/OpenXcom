@@ -2,7 +2,7 @@
 
 **Status:** ✅ Implemented (Jul 2026). Test config in `bin/standard/dx-test/dx-test.rul` (DT_STUN blast).
 **Roadmap:** Phase 8 (Lighting & Psionics). Last of the psi *powers* before the shared Psi-Amp Ammo layer.
-**Legacy reference:** `PsiAttackBState.cpp` in the legacy fork at `D:\Code\Projects\OpenXcomDX-Legacy`.
+**Legacy reference:** `PsiAttackBState.cpp` in the legacy DX fork.
 **Hard requirement:** **mod opt-in.** No ruleset node ⇒ the action does not exist and nothing changes.
 
 ## Motivation

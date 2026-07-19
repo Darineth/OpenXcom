@@ -3,7 +3,7 @@
 **Status:** ✅ Implemented (Jul 2026). Test config in `bin/standard/dx-test/dx-test.rul` reproduces the
 legacy fork's model (which turns out to be one line: `timeRecoveryPercent: 90`).
 **Roadmap:** Phase 8 (Lighting & Psionics).
-**Legacy reference:** `Legacy-DX-Features.md` §psionics; legacy source at `D:\Code\Projects\OpenXcomDX-Legacy`.
+**Legacy reference:** `Legacy-DX-Features.md` §psionics; the legacy DX fork's source.
 **Hard requirement:** **mod opt-in.** With no ruleset opt-in, mind control behaves exactly as stock
 OXCE does today — byte for byte.
 
