@@ -604,6 +604,31 @@ implementation (see CLAUDE.md "Planning Features").*
   for items/weapons that have no authored `ufopaedia` article, so the player can still inspect their
   stats (accuracy, damage, TU costs, weight, etc.) instead of the entry being unopenable. *(design: TBD)*
 
+- [x] **Psi success chance on hover** — show the hit probability for a psi action while targeting. Psi
+  was the only attack with no accuracy feedback at all: the action menu shows TU only, and the sole
+  existing readout was an Alt-held *margin range* on the cursor tile that deliberately omits the target's
+  `psiDefence`.
+  - ✅ **Done.** Cursor readout (`72% @ 8m`), color-graded like the other targeting readouts, computed
+    exactly from the default roll: `P = clamp(margin + 55, 0, 56) / 56`. Research-gated (option **C**) —
+    exact against own units, civilians and researched hostiles; against an unresearched hostile it assumes
+    the baseline defence and prefixes `~`, so a hover can't be used to read off an alien's psi stats.
+    Counter-control aware (shows the odds vs the *controller*). Excludes `BA_CLAIRVOYANCE`, which shares
+    the psi cursor but is not a contest, and never draws over a unit the player can't see. Supersedes the
+    Alt-held min-max indicator. Option **Psi success chance on cursor**
+    (`psiChanceIndicatorEnabled`, default on). Known limit: a mod replacing the `tryPsiAttackItem` script
+    makes the figure inexact and the engine can't detect that.
+    *(design: [plans/Feature-PsiHoverChance.md](plans/Feature-PsiHoverChance.md))*
+
+- [x] **Fix: mind blast ignores the amp's psi accuracy** — `BattleUnit::getPsiAccuracy` had cases for
+  `BA_MINDCONTROL` / `BA_PANIC` / `BA_USE` but none for `BA_MINDBLAST`, so a blast got only the
+  `accuracyMultiplier` and the flat per-action accuracy term was silently 0 — no ruleset key influenced it.
+  A DX bug (DX added the action without extending the function), not an upstream one.
+  - ✅ **Done.** New **`accuracy`** key on the `mindBlast:` node, read by a `BA_MINDBLAST` branch in
+    `getPsiAccuracy`. Defaults to **0** (matching `accuracyMindControl`/`accuracyUse`), so the default
+    reproduces the old behavior rather than silently retuning existing mods — a mod enabling `mindBlast:`
+    should now set `accuracy:`. Documented in `docs/Ruleset-Items.md` **[DX]**; `dx-test.rul` sets 20.
+    *(design: [plans/Feature-PsiHoverChance.md](plans/Feature-PsiHoverChance.md) — "Known gap")*
+
 - [x] **Battlescape wound indicator on the HP bar** — white tick marks (one per fatal wound) on the
   selected unit's health bar, so wounded/bleeding units are visible at a glance. Delivered as part of
   **Bleedout & Indicators** (Phase 7) via `Bar::setMarks`. *(design: [plans/Feature-Bleedout.md](plans/Feature-Bleedout.md))*

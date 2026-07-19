@@ -2667,6 +2667,13 @@ int BattleUnit::getPsiAccuracy(BattleActionAttack::ReadOnly attack)
 	{
 		psiAcc = item->getRules()->getAccuracyUse();
 	}
+	// DX: a mind blast resolves through the same psi contest as the actions above, so it needs its own
+	// flat accuracy term too. Without this case it fell through with psiAcc = 0 and was left with nothing
+	// but the accuracyMultiplier - no ruleset key influenced a blast's accuracy at all.
+	else if (actionType == BA_MINDBLAST)
+	{
+		psiAcc = item->getRules()->getMindBlast().accuracy;
+	}
 
 	psiAcc += item->getRules()->getAccuracyMultiplier(attack);
 

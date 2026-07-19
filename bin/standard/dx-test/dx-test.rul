@@ -433,6 +433,7 @@ items:
     mindBlast:
       enabled: true
       damageType: 6         # DT_STUN, so it's a non-lethal knockout for testing
+      accuracy: 20          # flat psi accuracy, like accuracyMindControl/accuracyPanic (default 0)
       basePower: 10
       powerPerMargin: 0.8   # + 0.8 * contest margin
       randomRange: 40       # +/- 40% roll

@@ -159,6 +159,7 @@ OPT bool battleWeightBasedReloadCost;
 OPT bool grenadeIndicatorEnabled;
 OPT bool unitStatusIndicatorEnabled;
 OPT bool motionDetectorOverlayEnabled;
+OPT bool psiChanceIndicatorEnabled;
 OPT bool fogOfWarEnabled;
 OPT bool oxceDisableAlienInventory;
 OPT bool oxceDisableHitLog;

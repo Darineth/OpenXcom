@@ -124,6 +124,7 @@ items:
     mindBlast:
       enabled: true         # opt in; without this the action does not exist
       damageType: -1        # ResistType the blast deals; -1 = the amp's own damage type
+      accuracy: 20          # flat psi accuracy (the BA_MINDBLAST counterpart of accuracyMindControl)
       basePower: 10         # flat damage on any successful blast
       powerPerMargin: 0.8   # + this * (psi contest margin) - a decisive win hits far harder
       randomRange: 40       # damage rolls in [ (100-r)%, (100+r)% ] of the computed power (0 = exact)
@@ -154,9 +155,46 @@ items:
   can go wrong" risk, optional and tunable. A successful blast is clean (legacy's narrow-win self-damage
   is dropped).
 - **Targeting** is limited by the amp's range like the other psi actions; cost is `tuMindBlast` /
-  `costMindBlast`, falling back to `costUse`.
+  `costMindBlast`, falling back to `costUse`. Accuracy comes from `mindBlast: accuracy:` plus the amp's
+  `accuracyMultiplier` psi term — the blast's own counterpart of `accuracyMindControl`/`accuracyPanic`.
+  (Until that key was added, `BattleUnit::getPsiAccuracy` had no `BA_MINDBLAST` case, so a blast got the
+  multiplier alone and **no ruleset key influenced its accuracy at all**. A mod enabling `mindBlast:`
+  should set `accuracy:` — leaving it at 0 reproduces the old behavior.)
 
 *(design: [plans/Feature-MindBlast.md](plans/Feature-MindBlast.md))*
+
+## Psi Success Chance on Cursor
+
+While aiming a psi action, the cursor shows the **chance it will succeed** against the unit under it —
+e.g. `72% @ 8m` — color-graded red/amber/green like the other targeting readouts. Psi was previously the
+only attack in the game with no accuracy feedback at all: the action menu shows its TU cost and nothing
+else, and the sole existing readout was an Alt-held *margin range* (`12-67%`, not a probability) that is
+undiscoverable and ignores the target's psi defence.
+
+The figure is exact, not a heuristic. The psi contest is `attack + roll − defence − dropoff > 0` with the
+roll uniform over `[0, 55]`, so exactly `margin + 55` of the 56 equally likely rolls win.
+
+- **Research-gated, so a hover is not a free interrogation.** Against your own units, civilians, and
+  hostiles whose type you have researched, the readout folds in the target's real `psiDefence` and is
+  exact. Against an **unresearched** hostile it assumes the baseline defence and is prefixed with a
+  **`~`** to mark it an estimate — you cannot read an alien's psi defence off the percentage. Researching
+  a species therefore sharpens your psi targeting, reusing the gate already behind unit naming and the
+  combat log.
+- **Counter-control aware** — aiming Mind Control at a unit already under someone else's control shows the
+  odds against its **controller**, which is who you are actually contesting.
+- Shown only for actions that really are a psi contest (mind control, panic, mind blast, and the custom
+  `BA_USE` attack). **Clairvoyance is excluded** — it targets a tile and is a flat psi-score check, so a
+  contest percentage there would be meaningless.
+- Never drawn over a unit you cannot see, since the readout appearing at all would betray its position.
+- Supersedes the Alt-held min-max indicator for psi-amps; that one returns if this is switched off, so
+  there are never two psi numbers disagreeing.
+
+- Toggle: advanced option **Psi success chance on cursor** (`psiChanceIndicatorEnabled`, default on),
+  under Battlescape. Also requires the general crosshair-info option to be on.
+- Known limit: a mod that replaces the `tryPsiAttackItem` script with a different roll makes the
+  percentage inexact — the engine has no way to detect a non-default script body.
+
+*(design: [plans/Feature-PsiHoverChance.md](plans/Feature-PsiHoverChance.md))*
 
 ## Clairvoyance (opt-in per psi-amp)
 

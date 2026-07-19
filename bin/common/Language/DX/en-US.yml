@@ -89,6 +89,8 @@ en-US:
   STR_GRENADE_INDICATOR: "Primed grenade indicator"
   STR_UNIT_STATUS_INDICATOR: "Unit status indicators"
   STR_MOTION_DETECTOR_OVERLAY: "Motion detector readings on map"
+  STR_PSI_CHANCE_INDICATOR: "Psi success chance on cursor"
+  STR_PSI_CHANCE_INDICATOR_DESC: "While aiming a psi action, show the chance it succeeds against the unit under the cursor. A leading ~ means the figure is an estimate: the target's species is not yet researched, so its psi defence is unknown and a baseline value is assumed."
 #=================== DX Fog of War ===================
 #Options.cpp
   STR_FOG_OF_WAR: "Fog of war (dim unseen tiles)"

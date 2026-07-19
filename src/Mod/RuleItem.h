@@ -497,6 +497,7 @@ struct RuleMindBlast
 {
 	bool enabled = false;       // opt in; without this the action is never offered
 	int damageType = -1;        // ResistType the blast deals; -1 = the amp's own damage type
+	int accuracy = 0;           // flat psi accuracy term, the BA_MINDBLAST counterpart of accuracyMindControl
 	int basePower = 0;          // flat damage on any successful blast
 	float powerPerMargin = 0.0f;// + this * (psi contest margin) damage
 	int randomRange = 0;        // damage rolls in [ (100-r)%, (100+r)% ] of the computed power (0 = exact)
@@ -509,6 +510,7 @@ struct RuleMindBlast
 		if (!reader) return;
 		reader.tryRead("enabled", enabled);
 		reader.tryRead("damageType", damageType);
+		reader.tryRead("accuracy", accuracy);
 		reader.tryRead("basePower", basePower);
 		reader.tryRead("powerPerMargin", powerPerMargin);
 		reader.tryRead("randomRange", randomRange);

@@ -2066,6 +2066,79 @@ void Map::drawTerrain(Surface *surface)
 								}
 
 								} // end cone-model vs native accuracy readout
+								// DX: only the actions that actually resolve through psiAttackCalculate get a chance
+								// readout. BA_CLAIRVOYANCE shares the psi cursor but is NOT a contest - it is a flat
+								// psiScore vs minPsiScore check against no target at all - so a percentage there would
+								// be pure fiction.
+								else if (_cursorType == CT_PSI && Options::psiChanceIndicatorEnabled
+									&& weapon->getBattleType() == BT_PSIAMP && unit && !unit->isOut()
+									// Never over a unit the player cannot see: the readout appearing at all would
+									// betray that something is standing there.
+									&& (unit->getVisible() || _save->getDebugMode())
+									&& (action->type == BA_MINDCONTROL || action->type == BA_PANIC
+										|| action->type == BA_MINDBLAST || action->type == BA_USE))
+								{
+									// DX: psi success chance on hover. Psi used to be the only attack with no accuracy
+									// feedback at all - the action menu shows TU only, and the sole readout was the Alt-held
+									// margin range below (which this supersedes; see the guard there).
+									//
+									// The contest is `attack + roll - defence - dropoff > 0`, with the roll a uniform integer
+									// over [0, 55] (the default `tryPsiAttackItem` script body). So of the 56 equally likely
+									// rolls exactly `margin + 55` win - an exact probability, not a heuristic.
+									const int attackStrength = BattleUnit::getPsiAccuracy(attack);
+
+									// Reveal the target's real psi defence only for units the player actually knows: his own
+									// (and civilians), or a hostile whose type has been researched. Against an unresearched
+									// hostile fall back to the baseline 30 - what the stock indicator has always assumed - and
+									// mark the figure as an estimate. A hover must not be a free interrogation: the player
+									// cannot read an alien's psiDefence off the percentage.
+									bool fullInfo = unit->getOriginalFaction() != FACTION_HOSTILE;
+									if (!fullInfo)
+									{
+										const SavedGame *geo = _game->getSavedGame();
+										fullInfo = geo && geo->isResearched(unit->getType());
+									}
+
+									int defenseStrength = 30;
+									if (fullInfo)
+									{
+										defenseStrength += unit->getArmor()->getPsiDefence(unit);
+										// DX counter-control: prising a unit out of an existing mind control is a contest against
+										// its CONTROLLER, so that is whose defence the readout must use.
+										if (action->type == BA_MINDCONTROL && unit->isMindControlled())
+										{
+											if (const BattleUnit *controller = _save->getMindController(unit))
+											{
+												defenseStrength = 30 + controller->getArmor()->getPsiDefence(controller);
+											}
+										}
+									}
+
+									// Distance falloff is measured in voxel space, exactly as the contest measures it.
+									const float dis = Position::distance(action->actor->getPosition().toVoxel(), Position(itX, itY, itZ).toVoxel());
+									const int margin = attackStrength - defenseStrength - (int)weapon->getPsiAccuracyRangeReduction(dis);
+
+									// Winning rolls out of the 56 possible.
+									int wins = margin + 55;
+									if (wins < 0) wins = 0;
+									if (wins > 56) wins = 56;
+									int chance = weapon->isOutOfRange(distanceSq) ? 0 : wins * 100 / 56;
+
+									if (chance >= 65)
+										_txtAccuracy->setColor(Palette::blockOffset(Pathfinding::green - 1) - 1);
+									else if (chance >= 35)
+										_txtAccuracy->setColor(Palette::blockOffset(Pathfinding::yellow - 1) - 1);
+									else
+										_txtAccuracy->setColor(Palette::blockOffset(Pathfinding::red - 1) - 1);
+
+									// A leading "~" marks a figure computed against the baseline defence rather than the
+									// target's real one.
+									if (!fullInfo)
+									{
+										ss << "~";
+									}
+									ss << chance << "%" << " @ " << distance << "m";
+								}
 
 									//TODO: merge this code with `InventoryState::calculateCurrentDamageTooltip` as 90% is same or should be same
 									// display additional damage and psi-effectiveness info
@@ -2124,7 +2197,11 @@ void Map::drawTerrain(Surface *surface)
 									// step 3: calculate and draw
 									if (rule && _cacheActiveWeaponUfopediaArticleUnlocked == 1)
 									{
-										if (rule->getBattleType() == BT_PSIAMP)
+										// DX: superseded by the psi chance readout above, which shows an actual
+										// probability rather than a margin range. Only fall back to this stock
+										// min-max indicator when that one is switched off - two psi numbers that
+										// disagree would be worse than the one that used to be hidden.
+										if (rule->getBattleType() == BT_PSIAMP && !Options::psiChanceIndicatorEnabled)
 										{
 											float attackStrength = BattleUnit::getPsiAccuracy(attack);
 											float defenseStrength = 30.0f; // indicator ignores: +victim->getArmor()->getPsiDefence(victim);

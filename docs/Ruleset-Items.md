@@ -257,7 +257,7 @@ Applies to `battleType: 9` (psi-amp) and `8` (mind probe).
 
 | Key | Type | Default | Meaning |
 |---|---|---|---|
-| `accuracyMindControl` / `accuracyPanic` / `accuracyUse` | int % | 0 / 20 / 0 | Base success chances (`accuracyUse` drives a custom `psiAttackName` action). |
+| `accuracyMindControl` / `accuracyPanic` / `accuracyUse` | int % | 0 / 20 / 0 | Base success chances (`accuracyUse` drives a custom `psiAttackName` action). The `BA_MINDBLAST` equivalent is **[DX]** `mindBlast: accuracy:` below. |
 | `psiAttackName` | string | — | Action-menu label for a custom psi attack (its absence zeroes `costUse`). |
 | `targetMatrix` | int bitmask | 7 (psi-amp: 6) | Allowed targets: 1 same faction, 2 hostile relation, 4 neutral relation. |
 | `convertToCivilian` | bool | false | Mind control converts the victim to the neutral faction instead of the player's. |
@@ -329,6 +329,7 @@ damage scaled by the contest **margin**; on a miss it recoils on the caster. Cos
 |---|---|---|---|
 | `enabled` | bool | false | Opt in. Without it the action is never offered. |
 | `damageType` | int ResistType | −1 | The type the blast deals (−1 = the amp's own). Point it at a type nothing resists for an armor-ignoring blast. |
+| `accuracy` | int % | 0 | **[DX]** Flat psi accuracy for the blast — the `BA_MINDBLAST` counterpart of `accuracyMindControl` / `accuracyPanic`, added to the amp's `accuracyMultiplier` psi term. Before this key existed the blast had no flat accuracy at all, so **set it**: leaving it at 0 makes a blast behave like an `accuracyMindControl: 0` amp. |
 | `basePower` | int | 0 | Flat damage on any successful blast. |
 | `powerPerMargin` | float | 0.0 | Added damage per point of psi-contest margin (0 = flat; a decisive win hits harder). |
 | `randomRange` | int % | 0 | Damage rolls in `[(100−r)%, (100+r)%]` of the computed power (0 = exact). |
