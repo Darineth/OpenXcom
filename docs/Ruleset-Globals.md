@@ -10,7 +10,8 @@ lists. Also: [`RuleConverter::load`](../src/Mod/RuleConverter.cpp),
 This page collects the **small global tuning nodes**: the ones that are a handful of keys each and
 don't warrant their own page. Bigger singletons live elsewhere —
 [`startingBase:`](Ruleset-StartingBase.md), [`constants:`](Ruleset-Constants.md),
-[`extended:`](Ruleset-Scripting.md), the [DX globals](Ruleset-DX-Globals.md).
+[`extended:`](Ruleset-Scripting.md), the [`ai:` node](Ruleset-AI.md), the
+[DX globals](Ruleset-DX-Globals.md).
 
 Singletons **merge field-by-field across mods**: a later mod setting one key leaves the rest of the
 node alone (the exception is list-valued keys, which are replaced wholesale).
@@ -47,6 +48,49 @@ lighting:
 | `initialFunding` | int (thousands) | 0 | Target total in the game's `$1000` unit: per-country monthly funding is scaled up so the total matches (never reducing a country below its rolled value), and starting cash is set to that total. |
 
 The base you start with is [`startingBase:`](Ruleset-StartingBase.md).
+
+---
+
+## Campaign rules & research gates
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `psiUnlockResearch` | research name | — | [Research](Ruleset-Research.md) that unlocks psi training (empty = the classic Psi Lab requirement alone). |
+| `newBaseUnlockResearch` | research name | — | Research required before new X-COM bases can be built. |
+| `fakeUnderwaterBaseUnlockResearch` | research name | — | Research required before bases can be built on `fakeUnderwater` globe textures. |
+| `destroyedFacility` | facility name | — | [Facility](Ruleset-Facilities.md) that replaces facilities destroyed during base defense (instead of empty ground). |
+| `alienFuel` | `[item, quantity]` | — | The item recovered from UFO power sources and how much per source (`xcom1` sets `[STR_ELERIUM_115, 50]`, `xcom2` `[STR_ZRBITE, 50]`). |
+| `fontName` | filename | `Font.dat` (from the standard mods) | The font data file the mod loads. |
+
+---
+
+## `mana:` — the mana resource
+
+A singleton sub-map enabling and tuning the OXCE **mana** stat (a mod-defined resource — psionic
+energy, fatigue, …). The [DX `health:` node](Ruleset-DX-Globals.md#health) has the same
+`woundThreshold`/`replenishAfterMission` pair for health.
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `mana: enabled` | bool | false | Master switch for the whole mana feature. |
+| `mana: battleUI` | bool | false | Show the mana bar in the battlescape unit stats. |
+| `mana: unlockResearch` | research name | — | Research that reveals/activates mana handling. |
+| `mana: trainingPrimary` | bool | false | Mana improves in training like a primary skill (e.g. firing). |
+| `mana: trainingSecondary` | bool | false | Mana improves in training like a secondary skill (e.g. strength). |
+| `mana: woundThreshold` | int | 200 | How much **missing** mana acts like fatal wounds and blocks deployment on a craft. |
+| `mana: replenishAfterMission` | bool | true | Fully refill mana after each mission. |
+
+---
+
+## `gameOver:` & defeat
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `gameOver: loseMoney` | cutscene | `loseGame` | [Cutscene](Ruleset-Cutscenes.md) played when losing by economy (two months in debt). |
+| `gameOver: loseRating` | cutscene | `loseGame` | Cutscene played when losing by two months of terrible ratings. |
+| `gameOver: loseDefeat` | cutscene | `loseGame` | Cutscene played when losing the last base. |
+| `defeatScore` | int | 0 | Shifts the monthly defeat threshold: a month scoring at or below `defeatScore + 100 × difficultyCoefficient` earns a warning, and a second such month loses the game. |
+| `defeatFunds` | int $ | 0 | Month-end funds at or below this earn the "balance the books" warning; a second month in a row loses the game. |
 
 ---
 
@@ -136,14 +180,80 @@ The sneak light gate lives in [`sneakDefaults:`](Ruleset-DX-Globals.md#sneakdefa
 
 ---
 
-## Personnel hiring gates
+## Personnel & economy
 
 | Key | Type | Default | Meaning |
 |---|---|---|---|
+| `costHireScientist` | int $ | 0 | One-time hiring fee for a scientist (0 = use `costScientist`). |
+| `costHireEngineer` | int $ | 0 | One-time hiring fee for an engineer. |
+| `costScientist` | int $ | 0 | Monthly salary of a scientist. |
+| `costEngineer` | int $ | 0 | Monthly salary of an engineer. |
+| `timePersonnel` | int hours | 0 | Transfer/delivery time for newly hired personnel. |
+| `hireByCountryOdds` | int % | 0 | Chance a new recruit's nationality is rolled from funding **countries** (weighted by funding). |
+| `hireByRegionOdds` | int % | 0 | Chance it is rolled from [regions](Ruleset-Regions.md) instead (checked after countries). |
+| `transferCosts: globalCostMult` | int | 1 | Multiplier applied to **all** transfer costs. |
+| `transferCosts: globalCostDiv` | int | 1 | Divisor applied to all transfer costs (with the multiplier: `cost × mult / div`). |
 | `hireScientistsRequiresBaseFunc` | list of base functions | — | Base must provide these [facility functions](Ruleset-Facilities.md) before scientists can be hired at it. |
 | `hireEngineersRequiresBaseFunc` | list of base functions | — | Same, for engineers. |
 | `hireScientistsUnlockResearch` | research name | — | [Research](Ruleset-Research.md) that must be done before scientists can be hired anywhere. |
 | `hireEngineersUnlockResearch` | research name | — | Same, for engineers. |
+
+### Promotions & flags
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `soldiersPerSergeant` | int | 5 | Soldiers needed per Sergeant promotion slot. |
+| `soldiersPerCaptain` | int | 11 | Soldiers needed per Captain slot. |
+| `soldiersPerColonel` | int | 23 | Soldiers needed per Colonel slot. |
+| `soldiersPerCommander` | int | 30 | Soldiers needed for the (single) Commander slot. |
+| `flagByKills` | list of ints | — | Kill-count thresholds; when set, a soldier's rank flag sprite is picked by kills crossing each threshold instead of by rank. |
+
+---
+
+## Geoscape & alien strategy
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `chanceToStopRetaliation` | int % | 0 | Chance that destroying an attacking force stops the retaliation mission for good. |
+| `chanceToDetectAlienBaseEachMonth` | int % | 20 | Monthly chance X-COM operatives reveal an undiscovered alien base. |
+| `lessAliensDuringBaseDefense` | bool | false | A UFO damaged on the way in deploys fewer aliens in the resulting base defense. |
+| `allowCountriesToCancelAlienPact` | bool | false | Countries rejoin X-COM funding after their infiltration base is destroyed. |
+| `buildInfiltrationBaseCloseToTheCountry` | bool | false | Infiltration bases spawn near the infiltrated country instead of anywhere in the region. |
+| `infiltrateRandomCountryInTheRegion` | bool | false | Infiltration picks a random country of the region rather than ruleset order. |
+| `allowAlienBasesOnWrongTextures` | bool | true | As a last resort, alien bases may be placed on globe textures with no suitable terrain. |
+| `shortRadarRange` | int | 0 → auto | The largest radar range still counted as "short" for the base info screen (0 = derived from the facilities). |
+| `buildTimeReductionScaling` | int % | 100 | Scaling of the facility build-time reduction when adjacent facilities speed up construction. |
+| `baseDefenseMapFromLocation` | int | 0 | 1 = generate the base-defense battle terrain from the base's globe texture instead of the facility rules. |
+| `alienItemLevels` | list of lists | — | The alien equipment-level table: one row per campaign month (last row repeats), each a weighted list of `itemLevel` values (0–2 in the standard mods) rolled per spawned alien. |
+| `alienFuel` | — | — | See [Campaign rules](#campaign-rules--research-gates). |
+
+---
+
+## Battlescape tuning
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `maxViewDistance` | int tiles | 20 | Engine-wide max view distance (what armor `visibilityAtDay: 0` falls back to; see [armors](Ruleset-Armors.md#vision--stealth)). |
+| `maxDarknessToSeeUnits` | int shade | 9 | Tile shade at or below which units are visible at night range. |
+| `maxLookVariant` | int | 0 | Highest `lookVariant` used when generating soldiers. |
+| `tooMuchSmokeThreshold` | int | 10 | Smoke density above which a tile blocks vision entirely. |
+| `customTrainingFactor` | int % | 100 | Speed of stat gains in the martial-arts training facility. |
+| `kneelBonusGlobal` | int % | 115 | Default accuracy bonus while kneeling (items can override). |
+| `oneHandedPenaltyGlobal` | int % | 80 | Default accuracy multiplier for firing a two-handed weapon one-handed. |
+| `enableCloseQuartersCombat` | int | 0 | 1 = enable the close-quarters-combat (CQC) melee-interrupt mechanic. |
+| `closeQuartersAccuracyGlobal` | int % | 100 | Default CQC success chance. |
+| `closeQuartersTuCostGlobal` | int TU | 12 | Default TU cost of a CQC attempt. |
+| `closeQuartersEnergyCostGlobal` | int | 8 | Default energy cost of a CQC attempt. |
+| `closeQuartersSneakUpGlobal` | int % | 0 | Chance to avoid CQC when attacking from behind (0 = off). |
+| `noLOSAccuracyPenaltyGlobal` | int % | −1 | Default accuracy multiplier when firing without line of sight (−1 = no penalty; items can override). |
+| `explodeInventoryGlobal` | int | 0 | Default for items' `explodeInventory` (see [items](Ruleset-Items.md)): 0 no, 1 except in hands, 2 always. |
+| `surrenderMode` | int | 0 | 0 = no surrender; 1 = remaining enemies surrender when panicking **now**; 2 = also if they panicked earlier; 3 = if empty-handed and they panicked earlier. Requires the units' `canSurrender`/hands check. |
+| `bughuntMinTurn` | int | 999 | First turn "bug hunt" mode (reveal stragglers) can kick in (999 = effectively off; [deployments](Ruleset-AlienDeployments.md) can override). |
+| `bughuntMaxEnemies` | int | 2 | Bug hunt requires at most this many live enemies. |
+| `bughuntRank` | int | 0 | Enemies of this rank or higher ("VIPs") prevent bug hunt mode. |
+| `bughuntLowMorale` | int | 40 | Enemies below this morale count toward bug hunt eligibility. |
+| `bughuntTimeUnitsLeft` | int % | 60 | Enemies with more than this % TU left at turn end block bug hunt. |
+| `tuRecoveryWakeUpNewTurn` | int % | 100 | TU (percent of max) granted to a unit that wakes from stun at the start of a turn. |
 
 ---
 
@@ -153,14 +263,62 @@ The sneak light gate lives in [`sneakDefaults:`](Ruleset-DX-Globals.md#sneakdefa
 |---|---|---|---|
 | `ufoTractorBeamSizeModifiers` | list of 5 ints % | `[400, 200, 100, 50, 25]` | Tractor-beam effectiveness by **UFO size** (very small → very large): the craft-weapon's `tractorBeamPower` is scaled by this percent. |
 | `pilotBraveryThresholds` | list of 3 ints | `[90, 80, 30]` | Bravery cut-offs (on the pilots' **average** bravery) grading how aggressively a craft closes in a dogfight: ≥ 1st = double approach speed, ≥ 2nd = +50%, ≥ 3rd = normal, below = half speed ([`Craft.cpp`](../src/Savegame/Craft.cpp)). |
+| `pilotAccuracyZeroPoint` | int | 55 | Pilot firing accuracy that gives no dogfight aim bonus/penalty. |
+| `pilotAccuracyRange` | int | 40 | How strongly accuracy above/below the zero point shifts dogfight aim (percent of the distance to the zero point). |
+| `pilotReactionsZeroPoint` | int | 55 | Pilot reactions value that gives no dodge bonus/penalty. |
+| `pilotReactionsRange` | int | 60 | How strongly reactions shift the craft's dodge in a dogfight. |
+| `ufoGlancingHitThreshold` | int | 0 | UFO damage below this fraction of a hit counts as a glancing hit. |
+| `ufoBeamWidthParameter` | int | 1000 | Scales how wide a UFO's beam weapon is drawn, based on its power. |
+| `escortRange` | int | 20 | Distance within which craft escort each other (and HK escorts their charge). |
+| `drawEnemyRadarCircles` | int | 1 | Radar circles around detected hunter-killers/alien bases: 0 = never, 1 = only when hyper-detected, 2 = always. |
+| `escortsJoinFightAgainstHK` | bool | true | Escorting craft automatically join a dogfight against a hunter-killer. |
+| `hunterKillerFastRetarget` | bool | true | Hunter-killers may retarget every 5 in-game seconds on the slow timers. |
+| `crewEmergencyEvacuationSurvivalChance` | int % | 100 | Chance each crew member survives when the craft is destroyed in a dogfight (with evacuation rules active). |
+| `pilotsEmergencyEvacuationSurvivalChance` | int % | 100 | Same, for pilots. |
+| `showUfoPreviewInBaseDefense` | bool | false | Show the attacking UFO's preview in the base-defense screen. |
 
 ---
 
-## Presentation
+## UI, pedia & presentation
 
 | Key | Type | Default | Meaning |
 |---|---|---|---|
 | `hiddenMovementBackgrounds` | list of image names | — | Pool of background images for the "hidden movement" screen; one is picked at random per battle. |
+| `enableNewResearchSorting` | bool | false | Let the player sort the New Research list. |
+| `displayCustomCategories` | int | 0 | [Item categories](Ruleset-ItemCategories.md) in Buy/Sell/Transfer filters: 0 = vanilla only, 1 = custom only, 2 = both. |
+| `shareAmmoCategories` | bool | false | Weapons "inherit" the categories of their ammo (also affects [starting-condition](Ruleset-StartingConditions.md) item checks). |
+| `showDogfightDistanceInKm` | bool | false | Dogfight UI shows distance in km instead of the raw unit. |
+| `showFullNameInAlienInventory` | bool | false | Alien inventory shows the full unit name (e.g. Sectoid Leader) instead of just the race; [units](Ruleset-Units.md) can override per unit. |
+| `alienInventoryOffsetX` | int px | 80 | Horizontal offset of the alien-inventory paperdoll and hand slots. |
+| `alienInventoryOffsetBigUnit` | int px | 32 | Extra hand-slot offset for 2×2 units. |
+| `hidePediaInfoButton` | bool | false | Hide the UFOpaedia INFO button where it would appear. |
+| `extraNerdyPediaInfoType` | int | 0 | Show extra item stats (accuracy modifier, power bonus) in pedia articles: 0 = off; higher values enable the extra block. |
+| `pediaReplaceCraftFuelWithRangeType` | int | −1 | Replace the craft article's fuel stat with a range: −1 = off, otherwise selects the range type shown. |
+| `performanceBonusFactor` | float | 0.0 | Council performance bonus: monthly score × this factor is added to funding. |
+
+---
+
+## Scoring & misc rules
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `giveScoreAlsoForResearchedArtifacts` | bool | false | Recovering already-researched artifacts still scores points. |
+| `statisticalBulletConservation` | bool | false | Instead of rounding partial clips at debriefing, keep ammo statistically (a 40% clip has a 40% chance to survive). |
+| `stunningImprovesMorale` | bool | false | Stunning an enemy grants the same morale boost as a kill. |
+
+---
+
+## Global sounds
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `selectBaseSound` | sound id(s) | — | Sound (index into `BATTLE.CAT`) played when selecting a base (referenced from [Ruleset-Constants.md](Ruleset-Constants.md)). |
+| `startDogfightSound` | sound id(s) | — | Sound played when a dogfight starts. |
+| `disableUnderwaterSounds` | bool | false | TFTD: don't switch to the underwater sound set on underwater missions. |
+
+The per-unit voice banks (`enableUnitResponseSounds`, `unitResponseSoundsFrequency`,
+`unitResponseSounds:`) are documented in
+[Ruleset-UnitResponseSounds.md](Ruleset-UnitResponseSounds.md).
 
 ---
 
@@ -234,6 +392,7 @@ requiredExtendedVersion: 7.0
 
 ## See also
 
+- [Ruleset-AI.md](Ruleset-AI.md) — the `ai:` node (tactical AI tuning)
 - [Ruleset-Constants.md](Ruleset-Constants.md) — the `constants:` node
 - [Ruleset-StartingBase.md](Ruleset-StartingBase.md) — the starting base template
 - [Ruleset-DX-Globals.md](Ruleset-DX-Globals.md) — the **[DX]** singletons

@@ -119,6 +119,9 @@ their own page.
 | `missionRatings:`, `monthlyRatings:` | Score → rating label tables | ● [Ruleset-Globals.md](Ruleset-Globals.md) |
 | `difficultyCoefficient:` & friends, `aimAndArmorMultipliers:`, `statGrowthMultipliers(Abs):` | Difficulty scaling knobs | ● [Ruleset-Globals.md](Ruleset-Globals.md) |
 | `constants:` | Battlescape/geoscape constants (sounds, animation frames, timing, blast limits…) | ● [Ruleset-Constants.md](Ruleset-Constants.md) |
+| `ai:` | Tactical AI tuning (use delays, fire-mode choice, target weights) | ● [Ruleset-AI.md](Ruleset-AI.md) |
+| `mana:`, `gameOver:`, `transferCosts:` | Mana feature switches, defeat cutscenes/conditions, transfer cost scaling | ● [Ruleset-Globals.md](Ruleset-Globals.md) |
+| ~90 scalar tuning keys (`costHireScientist`, `kneelBonusGlobal`, `escortRange`, `bughunt*`, pedia/UI toggles, …) | Personnel/economy, battlescape, geoscape, dogfight and UI tuning | ● [Ruleset-Globals.md](Ruleset-Globals.md) |
 | `lighting:` | OXCE enhanced-lighting mode (`enhanced` bitmask, `maxStatic`/`maxDynamic`) | ● [Ruleset-Globals.md](Ruleset-Globals.md) |
 | `extended:` | Y-Script tags and global script config | ● [Ruleset-Scripting.md](Ruleset-Scripting.md) |
 | `converter:` | Save-compat id remapping | ● [Ruleset-Globals.md](Ruleset-Globals.md) |
