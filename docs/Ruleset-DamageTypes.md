@@ -190,6 +190,61 @@ damageTypes:
 - It is mod data, not save state — retuning changes balance for existing saves but does not break
   them.
 
+### Claiming a spare slot (`DT_10`…`DT_19`)
+
+The ten spare indices exist but are undefined — the engine builds them as plain AP-alikes. A mod
+claims one by describing it in this node. Two things about them are easy to get wrong:
+
+- **They are unresisted by default, and cannot be made resisted by default.** `Armor` initializes
+  every entry of `damageModifier[]` to `1.0`, and an armor's `damageModifier:` list only overwrites
+  as many entries as it actually *declares*. Stock armors list 10, so indices 10–19 stay at `1.0` —
+  **full damage** — on every armor in both games. An armor opts into resisting a spare slot only by
+  padding its list out to 11+ entries.
+- **Resistance and armor value are separate.** The `damageModifier` multiplier above is one gate;
+  the armor *value* subtraction is another. A type that should ignore armour entirely needs
+  `ArmorEffectiveness: 0.0` as well.
+
+Also **name it**: the engine's `STR_DAMAGE_10`…`STR_DAMAGE_19` default to the bare strings `"10"`…
+`"19"`, which is what a Ufopaedia article or Stats for Nerds will show until the mod overrides the
+key in its own language file.
+
+Worked example — an armour-ignoring "psychic" type that knocks out rather than kills:
+
+```yaml
+damageTypes:
+  - ResistType: 10             # DT_10
+    ArmorEffectiveness: 0.0    # armor VALUE never subtracts
+    RandomType: 3              # DRT_FLAT: use the power as given, no extra roll
+    ToHealth: 0.5              # hurts...
+    ToStun: 1.0                # ...but stuns twice as fast, so it knocks out before it kills
+    RandomStun: false          # spare slots default to RandomStun: true
+    ToMorale: 0.5
+    ToWound: 0.0               # nothing physical was cut
+    ToArmor: 0.0               # and no armor wear
+    ToItem: 0.0
+    ToTile: 0.0
+    IgnoreDirection: true      # a thought has no facing: no side/rear multiplier
+    IgnorePainImmunity: true
+```
+
+```yaml
+# in the mod's Language/en-US.yml
+en-US:
+  STR_DAMAGE_10: "PSYCHIC"
+```
+
+> **`RandomType` traps, two of them:**
+>
+> Leaving it unset gives a spare slot `DRT_DEFAULT` → `DRT_STANDARD`, which re-rolls power across
+> `DAMAGE_RANGE` (0–200%). If the source already rolls its own spread, that is two dice stacked.
+> `DRT_FLAT` (3) uses the power as given. Do **not** reach for `DRT_NONE` (5) expecting "no roll" —
+> it returns **zero damage**.
+>
+> And it does not apply everywhere. `getRandomDamage` is called only from `TileEngine::hit` and
+> `::explode`, so damage delivered straight through `hitUnit`/`BattleUnit::damage` — a **mind blast**,
+> a **psi backlash**, environmental damage — never sees it, whatever `RandomType` says. Set it for the
+> paths that do go through a projectile or explosion; don't count on it to tame the ones that don't.
+
 Design docs: [plans/Feature-EditableDamageTypes.md](../plans/Feature-EditableDamageTypes.md) ·
 [plans/Feature-ArmorDegradation.md](../plans/Feature-ArmorDegradation.md).
 

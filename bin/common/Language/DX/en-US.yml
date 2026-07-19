@@ -13,6 +13,9 @@ en-US:
   STR_COMBATLOG_KILLED_BY_FEMALE: "{0} was killed by {1}"
   STR_COMBATLOG_OVERWATCH_SET_MALE: "{0} is on overwatch"
   STR_COMBATLOG_OVERWATCH_SET_FEMALE: "{0} is on overwatch"
+  # Tag prepended to EVERY verbose-only line, so engine diagnostics read apart from combat events.
+  # Shorten this (e.g. "[V] ") if the longer diagnostic lines run off the panel at your resolution.
+  STR_COMBATLOG_VERBOSE_PREFIX: "[Verbose] "
   # Verbose-only overwatch reaction diagnostics (shown when the hidden combatLogVerbose option is on).
   STR_COMBATLOG_OVERWATCH_EVAL: "{0} overwatch vs {1}: dist {2}, cone {3}, seen {4}, score {5} vs evade {6}"
   STR_COMBATLOG_OVERWATCH_RESULT: "{0} overwatch on {1}: {2}"
@@ -22,7 +25,15 @@ en-US:
   STR_COMBATLOG_OW_NO_LOF: "no line of fire/sight"
   STR_COMBATLOG_OW_LOW_ACC: "accuracy below reaction threshold"
   STR_COMBATLOG_ARMOR_DAMAGE: "{0}'s {1} armor takes {2} damage"
-  STR_COMBATLOG_DAMAGE_CALC: "{0}'s {1}: {2} damage vs {3} armor, {4} through ({5} to health)"
+  # {0} unit, {1} armor side, {2} incoming damage, {3} damage type name, {4} armor subtracted,
+  # {5} damage that got through, {6} the stats it actually landed on.
+  STR_COMBATLOG_DAMAGE_CALC: "{0}'s {1}: {2} {3} vs {4} armor, {5} through -> {6}"
+  # The {6} list above: only the components that actually landed are named.
+  STR_COMBATLOG_EFFECT_HEALTH: "{0} health"
+  STR_COMBATLOG_EFFECT_STUN: "{0} stun"
+  STR_COMBATLOG_EFFECT_MORALE: "{0} morale"
+  STR_COMBATLOG_EFFECT_WOUNDS: "{0} wounds"
+  STR_COMBATLOG_EFFECT_NONE: "nothing"
   STR_COMBATLOG_ARMOR_SIDE_FRONT: "front"
   STR_COMBATLOG_ARMOR_SIDE_LEFT: "left"
   STR_COMBATLOG_ARMOR_SIDE_RIGHT: "right"

@@ -3788,6 +3788,21 @@ void SavedBattleGame::appendToCombatLog(const std::string &text, CombatLogOutcom
 }
 
 /**
+ * DX: appends a verbose-only diagnostic line, tagged with a prefix so it is obviously an engine
+ * readout rather than a combat event. The verbose lines report internals (armor maths, overwatch
+ * scoring, psi rolls) and read very differently from "James hit the Sectoid" - without a marker they
+ * blend into the same stream and it is not clear which lines are diagnostics.
+ *
+ * Every caller is already gated on Options::combatLogVerbose; this only adds the tag.
+ * @param text Already-localized line.
+ * @param outcome Outcome tone for coloring.
+ */
+void SavedBattleGame::appendToCombatLogVerbose(const std::string &text, CombatLogOutcome outcome)
+{
+	_combatLog->add((std::string)_lang->getString("STR_COMBATLOG_VERBOSE_PREFIX") + text, outcome);
+}
+
+/**
  * Gets the floating combat log.
  * @return combat log
  */
@@ -4182,24 +4197,33 @@ void SavedBattleGame::logArmorDamageEvent(const BattleUnit *unit, int amount, Un
 	}
 
 	std::string sideName = _lang->getString(sideKeys[side]);
-	_combatLog->add(_lang->getString("STR_COMBATLOG_ARMOR_DAMAGE")
+	appendToCombatLogVerbose(_lang->getString("STR_COMBATLOG_ARMOR_DAMAGE")
 		.arg(getCombatLogName(unit)).arg(sideName).arg(amount), combatLogVictimOutcome(unit));
 }
 
 /**
- * Logs the armor/damage calculation for a single hit, reading "<unit>'s <side>: <incoming> damage
- * vs <armor> armor, <penetrating> through (<health> to health)". This is verbose-only diagnostic
- * detail (gated by Options::combatLogVerbose at the call site) meant to make the armor maths
- * legible, so it always reports the exact numbers regardless of research. Tone follows the victim:
- * damage to our own unit is bad, to an enemy good.
+ * Logs the armor/damage calculation for a single hit, reading "<unit>'s <side>: <incoming> <TYPE> vs
+ * <armor> armor, <penetrating> through -> <effects>". This is verbose-only diagnostic detail (gated by
+ * Options::combatLogVerbose at the call site) meant to make the damage maths legible, so it always
+ * reports exact numbers regardless of research. Tone follows the victim: damage to our own unit is bad,
+ * to an enemy good.
+ *
+ * It names the DAMAGE TYPE and lists the stats the surviving damage actually landed on, because the
+ * two together are what make a line interpretable. Reporting only health was actively misleading: a
+ * stun or morale attack showed "0 to health" and read as if the hit had done nothing at all, when it
+ * had simply landed somewhere the line didn't mention.
  * @param unit The unit that was hit.
  * @param side Which armor side was struck.
+ * @param resistType The damage type dealt (named via the shared Ufopaedia mapping).
  * @param incoming Damage reaching the armor (after resistance/scripts, before armor subtraction).
  * @param armor Effective armor value subtracted on that side (armor * ArmorEffectiveness, rounded).
  * @param penetrating Damage left after armor (clamped to 0).
- * @param health Health damage finally dealt by this hit.
+ * @param health Health damage dealt.
+ * @param stun Stun dealt.
+ * @param morale Morale dealt.
+ * @param wounds Fatal wounds inflicted.
  */
-void SavedBattleGame::logDamageCalcEvent(const BattleUnit *unit, UnitSide side, int incoming, int armor, int penetrating, int health)
+void SavedBattleGame::logDamageCalcEvent(const BattleUnit *unit, UnitSide side, ItemDamageType resistType, int incoming, int armor, int penetrating, int health, int stun, int morale, int wounds)
 {
 	if (!unit)
 	{
@@ -4218,9 +4242,29 @@ void SavedBattleGame::logDamageCalcEvent(const BattleUnit *unit, UnitSide side, 
 		return;
 	}
 
+	// Only the components that actually landed, so a line stays short and says what it means. A hit
+	// that penetrated but did nothing (fully resisted, or a type with every To* at zero) reads
+	// "-> nothing", which is information rather than an absent clause.
+	std::string effects;
+	auto append = [&](const char *key, int value)
+	{
+		if (value <= 0) return;
+		if (!effects.empty()) effects += ", ";
+		effects += (std::string)_lang->getString(key).arg(value);
+	};
+	append("STR_COMBATLOG_EFFECT_HEALTH", health);
+	append("STR_COMBATLOG_EFFECT_STUN", stun);
+	append("STR_COMBATLOG_EFFECT_MORALE", morale);
+	append("STR_COMBATLOG_EFFECT_WOUNDS", wounds);
+	if (effects.empty())
+	{
+		effects = _lang->getString("STR_COMBATLOG_EFFECT_NONE");
+	}
+
 	std::string sideName = _lang->getString(sideKeys[side]);
-	_combatLog->add(_lang->getString("STR_COMBATLOG_DAMAGE_CALC")
-		.arg(getCombatLogName(unit)).arg(sideName).arg(incoming).arg(armor).arg(penetrating).arg(health),
+	std::string typeName = _lang->getString(RuleDamageType::getResistTypeLanguageKey(resistType));
+	appendToCombatLogVerbose(_lang->getString("STR_COMBATLOG_DAMAGE_CALC")
+		.arg(getCombatLogName(unit)).arg(sideName).arg(incoming).arg(typeName).arg(armor).arg(penetrating).arg(effects),
 		combatLogVictimOutcome(unit));
 }
 
@@ -4290,7 +4334,7 @@ void SavedBattleGame::logOverwatchEvalEvent(const BattleUnit *watcher, const Bat
 	}
 	std::string yes = _lang->getString("STR_COMBATLOG_OW_YES");
 	std::string no = _lang->getString("STR_COMBATLOG_OW_NO");
-	_combatLog->add(_lang->getString("STR_COMBATLOG_OVERWATCH_EVAL")
+	appendToCombatLogVerbose(_lang->getString("STR_COMBATLOG_OVERWATCH_EVAL")
 		.arg(getCombatLogName(watcher)).arg(getCombatLogName(mover)).arg(distance)
 		.arg(inCone ? yes : no).arg(seen ? yes : no).arg(score).arg(evade), OUTCOME_NEUTRAL);
 }
@@ -4311,7 +4355,7 @@ void SavedBattleGame::logOverwatchOutcomeEvent(const BattleUnit *watcher, const 
 		return;
 	}
 	std::string reason = _lang->getString(resultKey);
-	_combatLog->add(_lang->getString("STR_COMBATLOG_OVERWATCH_RESULT")
+	appendToCombatLogVerbose(_lang->getString("STR_COMBATLOG_OVERWATCH_RESULT")
 		.arg(getCombatLogName(watcher)).arg(getCombatLogName(mover)).arg(reason), OUTCOME_NEUTRAL);
 }
 
@@ -4330,7 +4374,7 @@ void SavedBattleGame::logMindControlUpkeepEvent(const BattleUnit *controller, in
 	{
 		return;
 	}
-	_combatLog->add(_lang->getString("STR_COMBATLOG_MC_UPKEEP")
+	appendToCombatLogVerbose(_lang->getString("STR_COMBATLOG_MC_UPKEEP")
 		.arg(getCombatLogName(controller)).arg(thralls).arg(regenWithheldPct), combatLogActorOutcome(controller));
 }
 
@@ -4449,7 +4493,7 @@ void SavedBattleGame::logPsiRollEvent(const BattleUnit *attacker, const BattleUn
 		return;
 	}
 	std::string actionName = _lang->getString(combatLogPsiActionKey(type));
-	_combatLog->add(_lang->getString("STR_COMBATLOG_PSI_ROLL")
+	appendToCombatLogVerbose(_lang->getString("STR_COMBATLOG_PSI_ROLL")
 		.arg(getCombatLogName(attacker)).arg(getCombatLogName(victim)).arg(actionName)
 		.arg(attackStrength).arg(defenseStrength).arg(distance).arg(margin), OUTCOME_NEUTRAL);
 }
@@ -4510,13 +4554,14 @@ void SavedBattleGame::logMindBlastEvent(const BattleUnit *attacker, const Battle
 
 /**
  * DX: logs psychic backlash recoiling on a caster whose psi action failed, reading "<caster> suffers
- * psychic backlash (3 damage, 5 stun, 10 morale)" - only the components the mod actually configured are
- * named. Tone follows the caster as a victim: our operative hurting himself is bad news, an alien doing
- * so is good.
+ * psychic backlash (3 damage, 5 stun, 10 morale)". The backlash is a single power dealt as a damage
+ * type, so which of these actually land is the type's business - the caller measures the real deltas
+ * and only the non-zero ones are named. Tone follows the caster as a victim: our operative hurting
+ * himself is bad news, an alien doing so is good.
  * @param caster The unit that took the recoil.
- * @param health Health damage dealt.
- * @param stun Stun dealt.
- * @param morale Morale lost.
+ * @param health Health actually lost.
+ * @param stun Stun actually gained.
+ * @param morale Morale actually lost.
  */
 void SavedBattleGame::logPsiBacklashEvent(const BattleUnit *caster, int health, int stun, int morale)
 {

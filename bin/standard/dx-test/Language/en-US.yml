@@ -1,0 +1,8 @@
+en-US:
+#=================== DX Test Content ===================
+# Names the modded damage type this mod claims in the free DT_10 slot
+# (see the `damageTypes:` node in dx-test.rul). Without this override the
+# engine's own STR_DAMAGE_10 reads as the bare string "10" wherever a
+# damage type is displayed - Ufopaedia weapon articles and Stats for Nerds.
+# A mod that claims a spare slot should always name it here.
+  STR_DAMAGE_10: "PSYCHIC"

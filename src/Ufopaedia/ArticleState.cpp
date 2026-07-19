@@ -25,6 +25,7 @@
 #include "../Interface/TextButton.h"
 #include "../Mod/ArticleDefinition.h"
 #include "../Mod/Armor.h"
+#include "../Mod/RuleDamageType.h"
 #include "../Interface/TextList.h"
 #include "../Mod/Mod.h"
 #include "../Savegame/SavedGame.h"
@@ -212,74 +213,9 @@ void ArticleState::addArmorStealthStats(TextList *list, int &row, const Armor *a
 
 	std::string ArticleState::getDamageTypeText(ItemDamageType dt) const
 	{
-		std::string type;
-		switch (dt)
-		{
-		case DT_NONE:
-			type = "STR_DAMAGE_NONE";
-			break;
-		case DT_AP:
-			type = "STR_DAMAGE_ARMOR_PIERCING";
-			break;
-		case DT_IN:
-			type = "STR_DAMAGE_INCENDIARY";
-			break;
-		case DT_HE:
-			type = "STR_DAMAGE_HIGH_EXPLOSIVE";
-			break;
-		case DT_LASER:
-			type = "STR_DAMAGE_LASER_BEAM";
-			break;
-		case DT_PLASMA:
-			type = "STR_DAMAGE_PLASMA_BEAM";
-			break;
-		case DT_STUN:
-			type = "STR_DAMAGE_STUN";
-			break;
-		case DT_MELEE:
-			type = "STR_DAMAGE_MELEE";
-			break;
-		case DT_ACID:
-			type = "STR_DAMAGE_ACID";
-			break;
-		case DT_SMOKE:
-			type = "STR_DAMAGE_SMOKE";
-			break;
-		case DT_10:
-			type = "STR_DAMAGE_10";
-			break;
-		case DT_11:
-			type = "STR_DAMAGE_11";
-			break;
-		case DT_12:
-			type = "STR_DAMAGE_12";
-			break;
-		case DT_13:
-			type = "STR_DAMAGE_13";
-			break;
-		case DT_14:
-			type = "STR_DAMAGE_14";
-			break;
-		case DT_15:
-			type = "STR_DAMAGE_15";
-			break;
-		case DT_16:
-			type = "STR_DAMAGE_16";
-			break;
-		case DT_17:
-			type = "STR_DAMAGE_17";
-			break;
-		case DT_18:
-			type = "STR_DAMAGE_18";
-			break;
-		case DT_19:
-			type = "STR_DAMAGE_19";
-			break;
-		default:
-			type = "STR_UNKNOWN";
-			break;
-		}
-		return type;
+		// The mapping lives on RuleDamageType so the combat log and the Ufopaedia name a damage type
+		// the same way - notably a mod-defined spare slot, which is renamed in exactly one place.
+		return RuleDamageType::getResistTypeLanguageKey(dt);
 	}
 
 	/**

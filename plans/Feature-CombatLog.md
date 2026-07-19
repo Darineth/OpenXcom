@@ -62,7 +62,7 @@ All planned emit points are active:
 | 8 | Panic / berserk | `BattlescapeGame::handlePanickingUnit` + `SavedBattleGame::logPanicEvent` | GOOD/BAD via unit | ✅ Active |
 | 9 | Out-of-ammo (weapon emptied by the shot) | `ProjectileFlyBState::createNewProjectile` + `SavedBattleGame::logOutOfAmmoEvent` | WARNING | ✅ Active |
 | 10 | Armor takes damage (verbose only) | `BattleUnit::damage` + `SavedBattleGame::logArmorDamageEvent` | GOOD/BAD via victim | ✅ Active (gated on `combatLogVerbose`) |
-| 11 | Damage calculation breakdown (verbose only) | `BattleUnit::damage` + `SavedBattleGame::logDamageCalcEvent` | GOOD/BAD via victim | ✅ Active (gated on `combatLogVerbose`) |
+| 11 | Damage calculation breakdown (verbose only) | `BattleUnit::damage` + `SavedBattleGame::logDamageCalcEvent` | GOOD/BAD via victim | ✅ Active (gated on `combatLogVerbose`); names the damage type and the stats hit |
 | 12 | Psi cast (panic / MC / mind blast) | `PsiAttackBState::init` + `SavedBattleGame::logPsiCastEvent` | actor-based | ✅ Active |
 | 13 | Psi contest outcome (took hold / resisted) | `TileEngine::psiAttack` + `::mindBlast` + `SavedBattleGame::logPsiResultEvent` | GOOD/BAD via victim, inverted on a resist | ✅ Active |
 | 14 | Mind blast damage | `TileEngine::hitUnit` (BA_MINDBLAST branch) + `SavedBattleGame::logMindBlastEvent` | GOOD/BAD via victim | ✅ Active |
@@ -164,3 +164,39 @@ The current `getCombatLogName()` already handles basic knowledge-aware naming ("
 `mindBlast` now calls `hitUnit`, which needed two small extensions:
 - **Side/bodypart overrides.** `hitUnit` gained optional `sideOverride`/`bodypartOverride` params forwarded to `damage()` (which already accepted them). A blast passes `SIDE_FRONT, BODYPART_HEAD` — it has no physical trajectory to derive a facing from, and `relative` of `(0,0,0)` would otherwise be read as an under-the-feet hit.
 - **An experience opt-out** — since removed. `awardExperience` had **no `BT_PSIAMP` case**, so a psi-amp in the default training mode fell through to its "FIREARMS and other" branch and would train **firing**. That was first worked around with an `awardExp` flag on `hitUnit`, then fixed at the source: `awardExperience` now returns no award for a psi-amp, leaving the psi paths' own psi-skill award as the only one (see [DX-OXCE-Fixes.md](../DX-OXCE-Fixes.md)). The flag was removed rather than left as a dead parameter.
+
+## Verbose lines: tagging and the damage-calc readout (Jul 2026)
+
+Two problems with the verbose stream, both reported from play.
+
+**1. Verbose lines were indistinguishable from combat events.** They report engine internals (armor
+maths, overwatch scoring, psi rolls) but sat in the same stream, in the same styling, as
+"James hit the Sectoid" — so it was not clear which lines were diagnostics.
+
+All six verbose loggers now go through `SavedBattleGame::appendToCombatLogVerbose`, which prepends
+`STR_COMBATLOG_VERBOSE_PREFIX` (`"[Verbose] "`). Routing it through one helper rather than prefixing at
+each call site means a new verbose logger gets the tag by construction. The prefix is a language key, so
+it can be shortened to `"[V] "` if the longer lines run off the panel.
+
+The tagged loggers are exactly: `logArmorDamageEvent`, `logDamageCalcEvent`, `logOverwatchEvalEvent`,
+`logOverwatchOutcomeEvent`, `logMindControlUpkeepEvent`, `logPsiRollEvent`.
+
+**2. The damage-calc line only ever reported health, and never named the damage type.** It read
+`"<unit>'s <side>: 12 damage vs 50 armor, 0 through (0 to health)"`. For anything that does not damage
+health — stun, morale, a psi backlash — that "0 to health" read as *the hit did nothing*, when it had
+simply landed somewhere the line did not mention. And with a mod-defined damage type in play there was
+no way to tell which type a given line was even about.
+
+It now reads `"<unit>'s <side>: <incoming> <TYPE> vs <armor> armor, <through> through -> <effects>"`,
+where `<effects>` lists only the components that landed (`"3 health, 6 stun, 5 morale"`), or `"nothing"`.
+
+The effects are reported as *applied*, not as computed: stun is suppressed for a pain-immune target,
+wounds for a non-woundable one, and morale is scaled by bravery — the call site mirrors each of those
+conditions rather than dumping the raw script output, so the line cannot claim an effect the unit never
+took.
+
+Type naming was extracted rather than duplicated: `ArticleState::getDamageTypeText` held a 20-case
+switch mapping `ItemDamageType` → `STR_DAMAGE_*`. That moved to
+`RuleDamageType::getResistTypeLanguageKey` (a table) and `ArticleState` now delegates to it, so the
+Ufopaedia and the combat log name a type identically — which matters most for a mod-claimed spare slot,
+whose name then lives in exactly one place.

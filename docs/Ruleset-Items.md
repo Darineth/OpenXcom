@@ -287,9 +287,9 @@ out, or panics. *(feature: [DX-Features.md](../DX-Features.md); design:
 | `maxThralls` | int | 1 | How many units one controller may hold at once (upkeep stacks per thrall). |
 | `requiresWeapon` | bool | true | The link breaks if the controller isn't holding the amp at his turn start. |
 | `thrallRecoversTimeUnits` | bool | true | Whether the victim gets the full TU bar stock always grants it on capture. |
-| `backlashDamageType` | int ResistType | −1 | The type the backlash damage lands as (−1 = the amp's own). Point it at a type nothing resists for an unblockable backlash. |
+| `backlashDamageType` | int ResistType | −1 | The type the backlash power is dealt as (−1 = the amp's own). It decides **both** what the recoil does (the type's `To*` fields split the power into health/stun/morale/wounds/energy/TU) and what can resist it — point it at a type nothing resists for an unblockable backlash. |
 | `upkeep:` | map | all 0 | What the controller pays each turn, per thrall — see below. |
-| `backlashOnThrallDeath:` / `backlashOnFailure:` | map | all 0 | `damage: [min,max]`, `stun: [min,max]`, `morale: int` inflicted on the controller when a thrall dies / an attempt fails. |
+| `backlashOnThrallDeath:` / `backlashOnFailure:` | map | 0 | `power: [min,max]` — the recoil dealt to the controller when a thrall dies / an attempt fails. A plain power, split by `backlashDamageType` like any other damage source. |
 | `resist: perTurn` | bool | false | The thrall re-rolls the psi contest each turn and may break free. |
 | `resist: modifier` | int | 0 | Added to the thrall's defence on that re-roll. |
 
@@ -318,6 +318,12 @@ on the attempt (hit or miss); a dry or unloaded amp refuses the action. Covers p
 | `clairvoyance` | int | 0 | Rounds a clairvoyant sweep draws. |
 | `mindBlast` | int | 0 | Rounds a mind blast draws. |
 
+The node refers to its actions **by key**, so a cost set for an action the amp doesn't offer would
+otherwise load clean and silently never be spent. That is checked at load: a warning is logged if the
+node appears on a non-psi-amp, or if it sets rounds for `clairvoyance`/`mindBlast` while that node isn't
+`enabled`, or for `mindControl`/`panic`/`use` while the matching `cost*`/`tu*` is 0. Note a **mistyped
+key** cannot be caught this way — it is simply not read, so the cost silently stays 0.
+
 ### **[DX]** `mindBlast:` — direct psychic damage
 
 A `BA_MINDBLAST` attack on a target unit, resolved through the same psi contest as panic/mind control
@@ -333,8 +339,8 @@ damage scaled by the contest **margin**; on a miss it recoils on the caster. Cos
 | `basePower` | int | 0 | Flat damage on any successful blast. |
 | `powerPerMargin` | float | 0.0 | Added damage per point of psi-contest margin (0 = flat; a decisive win hits harder). |
 | `randomRange` | int % | 0 | Damage rolls in `[(100−r)%, (100+r)%]` of the computed power (0 = exact). |
-| `backlashOnFailure:` | map | all 0 | `damage: [min,max]`, `stun: [min,max]`, `morale: int` inflicted on the caster on a miss. |
-| `backlashDamageType` | int ResistType | −1 | The type the backlash deals (−1 = the amp's own). |
+| `backlashOnFailure:` | map | 0 | `power: [min,max]` — the recoil dealt to the caster on a miss, split by `backlashDamageType`. |
+| `backlashDamageType` | int ResistType | −1 | The type the backlash power is dealt as (−1 = the amp's own); its `To*` fields decide what the recoil costs the caster. |
 
 ### **[DX]** `clairvoyance:` — psychic area reveal
 

@@ -1918,7 +1918,16 @@ int BattleUnit::damage(Position relative, int damage, const RuleDamageType *type
 		// DX: verbose combat-log diagnostics for the armor/damage calculation.
 		if (Options::combatLogVerbose)
 		{
-			save->logDamageCalcEvent(this, side, rawDamage, effectiveArmorUsed, std::max(0, damage), std::get<toHealth>(args.data));
+			// Report what actually LANDED, not just what the type computed: stun is skipped for a
+			// pain-immune target and wounds for a non-woundable one, and morale is scaled by bravery.
+			// Mirroring those conditions here keeps the readout honest - it is meant for diagnosing a
+			// hit, so it must not claim effects the unit never took.
+			const bool stunApplies = !_armor->getPainImmune() || type->IgnorePainImmunity;
+			save->logDamageCalcEvent(this, side, type->ResistType, rawDamage, effectiveArmorUsed, std::max(0, damage),
+				std::get<toHealth>(args.data),
+				stunApplies ? std::get<toStun>(args.data) : 0,
+				reduceByBravery(std::get<toMorale>(args.data)),
+				isWoundable() ? std::get<toWound>(args.data) : 0);
 			if (armorLost > 0)
 			{
 				save->logArmorDamageEvent(this, armorLost, side);

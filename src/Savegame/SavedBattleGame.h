@@ -22,6 +22,7 @@
 #include <list>
 #include "../Engine/Yaml.h"
 #include "Tile.h"
+#include "../Mod/RuleDamageType.h" // ItemDamageType - an unscoped enum, so it cannot be forward-declared
 #include "../Mod/AlienDeployment.h"
 #include "../Mod/RuleCraft.h"
 
@@ -694,6 +695,8 @@ public:
 	const HitLog *getHitLog() const;
 	/// Appends an already-localized line to the floating combat log.
 	void appendToCombatLog(const std::string &text, CombatLogOutcome outcome);
+	/// DX: appends a verbose-only diagnostic line, tagged so it reads apart from real combat events.
+	void appendToCombatLogVerbose(const std::string &text, CombatLogOutcome outcome);
 	/// Gets the floating combat log.
 	CombatLog *getCombatLog() const;
 	/// Gets a unit's display name for the combat log (knowledge/visibility aware).
@@ -722,8 +725,9 @@ public:
 	void logHitEvent(const BattleUnit *attacker, const BattleUnit *victim, int damage, int wounds);
 	/// Logs armor on a unit's side absorbing damage (verbose only).
 	void logArmorDamageEvent(const BattleUnit *unit, int amount, UnitSide side);
-	/// Logs the per-hit armor/damage calculation breakdown (verbose only).
-	void logDamageCalcEvent(const BattleUnit *unit, UnitSide side, int incoming, int armor, int penetrating, int health);
+	/// Logs the per-hit armor/damage calculation breakdown (verbose only): which damage type, what it
+	/// met, and which stats the surviving damage actually landed on.
+	void logDamageCalcEvent(const BattleUnit *unit, UnitSide side, ItemDamageType resistType, int incoming, int armor, int penetrating, int health, int stun, int morale, int wounds);
 	/// Logs a unit panicking or going berserk ("<unit> panics" / "goes berserk").
 	void logPanicEvent(const BattleUnit *unit, UnitStatus status);
 	/// Logs a weapon running dry on the shot just fired ("<unit>'s <weapon> is out of ammo").

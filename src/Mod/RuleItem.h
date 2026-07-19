@@ -372,18 +372,24 @@ struct RuleMindControlUpkeep
  */
 struct RulePsiBacklash
 {
-	RuleRandomRange damage;   // damage dealt to the controller (see RuleMindControl::backlashDamageType)
-	RuleRandomRange stun;
-	int morale = 0;           // morale lost
+	// Raw power of the recoil. What that power becomes - health, stun, morale, wounds, energy, TU - is
+	// the job of the damage type it is dealt as (see RuleMindControl::backlashDamageType), exactly as
+	// for a bullet or a grenade.
+	//
+	// This deliberately does NOT enumerate health/stun/morale separately. It used to, and that made
+	// backlash the only damage source in the engine with its own bespoke vocabulary: three components,
+	// applied three different ways (damage through the configured type, stun through a hardcoded
+	// DT_STUN that armor silently ate, morale applied directly), so `backlashDamageType` governed only
+	// a third of the backlash. One power plus one type makes the split visible in the `damageTypes:`
+	// node where a reader would look for it, and unlocks the To* fields the old form could not reach.
+	RuleRandomRange power;
 
-	bool any() const { return damage.any() || stun.any() || morale != 0; }
+	bool any() const { return power.any(); }
 
 	void load(const YAML::YamlNodeReader& reader)
 	{
 		if (!reader) return;
-		damage.load(reader["damage"]);
-		stun.load(reader["stun"]);
-		reader.tryRead("morale", morale);
+		power.load(reader["power"]);
 	}
 };
 

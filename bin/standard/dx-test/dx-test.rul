@@ -149,6 +149,57 @@ damageTypes:
     ToArmorOverPen: 1.0
     ToArmorOverPenThreshold: 2.0
 
+  # ===================================================================
+  #  A MODDED PSYCHIC DAMAGE TYPE (slot 10)
+  #
+  #  The enum has ten free slots, DT_10..DT_19 (ids 10-19). They exist
+  #  but are undefined - the engine builds them as plain AP-alikes - so
+  #  a mod claims one by describing it here. This is how you get the
+  #  legacy fork's armor-ignoring "psychic" damage WITHOUT the engine
+  #  hard-coding what psychic means.
+  #
+  #  Why it needs no armor edits: Armor::_damageModifier defaults every
+  #  index to 1.0 and each armor's `damageModifier:` list only
+  #  overwrites as many entries as it actually declares. Stock armors
+  #  list 10, so slots 10-19 stay at 1.0 - full damage - on every armor
+  #  in both games. NOTHING RESISTS THIS unless an armor opts in by
+  #  padding its list out to 11+ entries. (That asymmetry is worth
+  #  knowing: a spare slot cannot be made resisted-by-default.)
+  #
+  #  Two separate things stop damage, and this type disables both:
+  #    * the resistance MULTIPLIER  -> 1.0 by default (see above)
+  #    * the armor VALUE subtraction -> ArmorEffectiveness: 0.0 here
+  #
+  #  Non-lethal by design: it deals stun at twice the rate of health, so
+  #  a target reliably drops unconscious well before it dies (knockout
+  #  needs stun >= health, death needs health <= 0). Thematically right
+  #  - you break a mind, you do not shred a body - and it keeps test
+  #  aliens alive to blast again. For a LETHAL psychic type instead, set
+  #  ToHealth: 1.0 and drop ToStun.
+  # ===================================================================
+  - ResistType: 10               # DT_10 - named "PSYCHIC" in Language/en-US.yml
+    ArmorEffectiveness: 0.0      # armor VALUE never subtracts: plate does not stop a thought
+    RandomType: 3                # DRT_FLAT = use the power as given, no extra roll.
+                                 # Only bites on the BA_USE psi attack, which routes through
+                                 # explode()/hit(). Mind blast and backlash call hitUnit()/damage()
+                                 # directly and never reach getRandomDamage, so RandomType does not
+                                 # affect them at all - mindBlast's randomRange is their only spread.
+                                 # Set here so all three paths behave alike rather than the BA_USE
+                                 # one silently re-rolling power over 0-200% (the DRT_STANDARD
+                                 # default for a spare slot).
+                                 # NOTE: DRT_NONE (5) is NOT "no roll", it returns ZERO damage.
+    ToHealth: 0.5                # hurts...
+    ToStun: 1.0                  # ...but stuns twice as fast, so it knocks out first
+    RandomStun: false            # exact stun (spare slots default to RandomStun: true)
+    ToMorale: 0.5                # a psychic assault shakes you as well as hurting you
+    ToWound: 0.0                 # no bleeding - nothing physical was cut
+    ToArmor: 0.0                 # and no armor wear: it never touched the armor
+    ToItem: 0.0
+    ToTile: 0.0                  # harms minds, not walls
+    IgnoreDirection: true        # a thought has no facing, so no side/rear multiplier
+    IgnorePainImmunity: true     # as DT_STUN does - this is not pain
+                                 # (IgnoreOverKill is already true for spare slots by default)
+
 items:
 
 # =====================================================================
@@ -357,8 +408,9 @@ items:
 #    * While channeling, your psi soldier recovers almost no TU each turn - that
 #      is the price. He can still act, he just has very little to act with.
 #    * Drop/unload the psi-amp -> the link breaks at your next turn start.
-#    * Kill your own thrall -> backlash: 20-40 damage + 20 stun to the controller.
-#    * A failed MC attempt now stuns the caster a little (stock does nothing).
+#    * Kill your own thrall -> backlash to the controller: 5-10 damage, 50-100 stun
+#      and 25 morale, dealt as PSYCHIC so his armor does not blunt any of it.
+#    * A failed MC attempt now hurts the caster a little (stock does nothing).
 #    * Knock the controller out -> the thrall reverts immediately.
 #    * Save/load mid-channel -> the link survives.
 # =====================================================================
@@ -388,6 +440,12 @@ items:
     battleClipSize: 20     # stored 1 at a time, packed into 12-round mags at battle start
 
   - type: STR_PSI_AMP
+    # Everything this amp does is dealt as the modded PSYCHIC type (slot 10, defined in the
+    # damageTypes: node near the top of this file). Setting it here as the item's OWN type matters
+    # beyond tidiness: every psi field that takes a damage type treats -1 as "the amp's own", and the
+    # stock psi-amp sets no damageType at all - which means DT_NONE, and DT_NONE rolls ZERO. Leaving
+    # those fields unset on a stock amp therefore produces a backlash that silently does nothing.
+    damageType: 10
     compatibleAmmo:
       - STR_PSI_ORB
     psiAmmo:
@@ -420,26 +478,40 @@ items:
     #  DX: mind blast - a direct psychic attack on a unit. It uses the same
     #  psi contest as panic/mind control, and deals damage scaled by the
     #  MARGIN of that contest: a lopsided win hurts far more than a squeaker.
-    #  A miss recoils on the caster. Here the blast is DT_STUN (6) so it
-    #  knocks targets out non-lethally and you can see it work without
-    #  killing your test aliens.
+    #  A miss recoils on the caster.
+    #
+    #  The blast is dealt as the modded PSYCHIC type (slot 10, defined in
+    #  the damageTypes: node near the top of this file) rather than plain
+    #  DT_STUN, so it also demonstrates the free-slot technique: no armor
+    #  resists it and armor VALUE does not subtract from it. It still
+    #  knocks out rather than kills, so test aliens survive to be blasted
+    #  again.
     #
     #  What to check:
-    #    * Blast a low-psi alien: big stun damage. Blast a strong-willed one:
+    #    * Blast a low-psi alien: big damage. Blast a strong-willed one:
     #      little or nothing, and on an outright miss the caster takes 5-15 stun.
+    #    * ARMOR DOESN'T HELP: blast a heavily-armored target and compare
+    #      with a bullet. The combat log's damage-calc line (combatLogVerbose)
+    #      shows 0 armor subtracted.
+    #    * The log reports the HEALTH lost, which is half the power - the
+    #      other half lands as stun and isn't in that line. Watch the unit
+    #      drop unconscious before its HP runs out.
     #    * Stays in targeting mode - blast again while you have TU.
     # =====================================================================
     tuMindBlast: 25
     mindBlast:
       enabled: true
-      damageType: 6         # DT_STUN, so it's a non-lethal knockout for testing
+      damageType: 10        # the modded PSYCHIC type (see damageTypes: above)
       accuracy: 20          # flat psi accuracy, like accuracyMindControl/accuracyPanic (default 0)
       basePower: 10
-      powerPerMargin: 0.8   # + 0.8 * contest margin
-      randomRange: 40       # +/- 40% roll
+      powerPerMargin: 0.2   # + 0.2 * contest margin
+      randomRange: 50       # +/- 50% roll
+      backlashDamageType: 10  # PSYCHIC, same as the blast itself - the recoil is the same stuff
       backlashOnFailure:
-        stun: [5, 15]
-        morale: 5
+        # Just a power. The PSYCHIC type above splits it into health / stun / morale, so the mix lives
+        # in one place instead of being restated at every backlash - and it is unblockable, because
+        # that type is: your own armor cannot stop your own mind recoiling.
+        power: [5, 15]
 
     tuClairvoyance: 30
     clairvoyance:
@@ -466,24 +538,27 @@ items:
         timeRecoveryPercent: 100
         energy: 15
 
-      # The damage type the backlash DAMAGE is dealt as (a ResistType index). Unset = the amp's own type.
+      # The damage type the backlash power is dealt as (a ResistType index). Unset = the amp's own
+      # type, which here is also 10 - but it is set explicitly so the intent survives someone
+      # retuning the item.
       #
-      # Here: 2 = DT_IN (incendiary) - the psychic feedback burns the controller, so a suit with fire
-      # resistance shrugs some of it off and a flammable one suffers, and the controller can catch fire.
-      # That is the point of the field: what "psychic feedback" is, and what resists it, is a MOD's
-      # decision. For an UNBLOCKABLE backlash instead, define a damage type nothing resists - the enum
-      # has free slots (10-19) and no stock armor declares a damageModifier for them - via the global
-      # `damageTypes:` node (e.g. ArmorEffectiveness: 0.0), and point this at it. DX ships no such type.
-      backlashDamageType: 2
+      # This one field decides BOTH halves of what a backlash is:
+      #   * WHAT IT DOES - the type's To* fields split the power. PSYCHIC is ToHealth 0.5 /
+      #     ToStun 1.0 / ToMorale 0.5, so power [5,15] costs the caster ~2-7 health, 5-15 stun and
+      #     some morale. Want backlash that drains TU or energy instead? Set ToTime / ToEnergy on the
+      #     type. The backlash itself has no opinion; it is just a number.
+      #   * WHAT CAN STOP IT - nothing, here: no armor declares a damageModifier for slot 10 and the
+      #     type's ArmorEffectiveness is 0, so your own soldier's armor offers him no protection from
+      #     his own psi going wrong. Point this at a normal type instead (2 = DT_IN, say) and the
+      #     recoil becomes something armor resists - a fire-resistant suit would shrug part of it off,
+      #     and the controller could even catch fire.
+      backlashDamageType: 10
 
       backlashOnThrallDeath:   # your puppet dies while you hold it - it hurts
-        damage: [5, 10]
-        stun: [50, 100]
-        morale: 25
+        power: [50, 100]       # much heavier than a failed attempt; same PSYCHIC mix, more of it
 
       backlashOnFailure:       # a failed attempt costs you something (stock: nothing at all)
-        stun: [5, 15]
-        morale: 5
+        power: [5, 15]         # same as the mind blast's failure backlash, so both paths read alike
 
       resist:
         perTurn: false         # the thrall does not get to struggle; the cost is the tension

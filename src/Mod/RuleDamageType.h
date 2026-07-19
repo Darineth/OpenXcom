@@ -155,6 +155,10 @@ struct RuleDamageType
 	/// Loads item data from YAML.
 	void load(const YAML::YamlNodeReader& reader);
 
+	/// Gets the language key naming a damage type ("STR_DAMAGE_LASER_BEAM", "STR_DAMAGE_10", ...).
+	/// Shared by the Ufopaedia and DX's combat log so a mod that renames a spare slot renames it once.
+	static const char *getResistTypeLanguageKey(ItemDamageType dt);
+
 	/// Get final damage value to health based on damage.
 	int getHealthFinalDamage(int damage) const;
 	/// Get final damage value to mana based on damage.

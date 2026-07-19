@@ -45,8 +45,8 @@ health:
   fieldSurgeryDaysMax:  25
 ```
 
-Every node above has a working, commented example in
-[`bin/standard/dx-test/dx-test.rul`](../bin/standard/dx-test/dx-test.rul).
+Each node above is documented with its own example inline; see the linked per-root reference pages
+for the full field tables.
 
 ---
 

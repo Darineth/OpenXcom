@@ -64,9 +64,7 @@ items:
       powerPerMargin: 0.5       # + this * (psi contest margin) damage - so a decisive win hits harder
       randomRange: 50           # damage rolls in [ (100-r)%, (100+r)% ] of the computed power (RNG spread)
       backlashOnFailure:        # what the CASTER suffers on a miss (stock/legacy: caster took feedback)
-        damage: [0, 0]
-        stun: [0, 0]
-        morale: 0
+        power: [0, 0]           # a plain power; backlashDamageType splits it into health/stun/morale/...
       backlashDamageType: -1    # ResistType the caster backlash deals; -1 = the amp's own
 ```
 
@@ -122,3 +120,9 @@ features (mind-control backlash and mind-blast failure), so they are renamed to 
    psychic struggle that costs both sides. Dropped here as fiddly (three tiers, more constants). If we
    want it back it's a `backlashOnNarrowWin` + a `narrowMargin` threshold — but "make blasts expensive"
    covers most of the same design space without the extra surface.
+
+## Follow-up (Jul 2026): backlash shape changed
+
+`RulePsiBacklash` was collapsed from `damage:`/`stun:`/`morale:` to a single `power:`, split by the
+configured damage type. The mind blast's `backlashOnFailure` uses the new form; see
+[Feature-ChanneledMindControl.md](Feature-ChanneledMindControl.md) for the rationale and the costs.

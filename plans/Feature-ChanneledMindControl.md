@@ -116,13 +116,9 @@ items:
       # --- Can't pay? The link breaks and the thrall reverts exactly as it does in stock.
 
       backlashOnThrallDeath:   # when a thrall dies while controlled
-        damage: [0, 0]         # random psychic damage to the controller
-        stun: [0, 0]
-        morale: 0
+        power: [0, 0]          # recoil dealt to the controller, split by backlashDamageType
       backlashOnFailure:       # when the MC attempt FAILS (stock does nothing here, so this is additive)
-        damage: [0, 0]
-        stun: [0, 0]
-        morale: 0
+        power: [0, 0]
 
       # --- Whether the thrall gets to struggle. Off = control is stable while the upkeep is paid.
       resist:
@@ -224,3 +220,60 @@ unit that can wrest back a captured comrade is the whole point of the mechanic e
    normally — he is limited by the *resources* the upkeep is eating, not by a special-cased menu. (Legacy
    collapsed the psi-amp menu to a single "Cancel" entry; DX does not.) The Cancel entry is simply added
    alongside the others.
+
+## Redesign (Jul 2026): backlash is a power + a damage type
+
+`RulePsiBacklash` originally enumerated its own components — `damage: [min,max]`, `stun: [min,max]`,
+`morale: int` — and `applyPsiBacklash` applied them **three different ways**:
+
+| Field | Applied via | Armor? |
+|---|---|---|
+| `damage:` | the configured `backlashDamageType` | mod's choice |
+| `stun:` | a hardcoded `getDamageType(DT_STUN)` | **always mitigated** |
+| `morale:` | `moraleChange()` directly | never mitigated |
+
+That produced a live bug: DT_STUN's built-in defaults never set `ArmorEffectiveness`, so it kept the
+constructor's `1.0`, and armor value subtracts before the stat split. A `stun: [5,15]` backlash against a
+soldier in 50-point armor rolled at most 15 against 50 and delivered a reliable **zero** — a configured
+field that had never once fired on an armored caster. It also meant `backlashDamageType` governed only a
+third of the backlash, so an explicitly *unblockable* psychic backlash was still two-thirds blocked.
+
+Caught from a combat-log screenshot showing two damage-calc lines for one backlash:
+`6 damage vs 0 armor, 6 through` (the `damage:` half, correct) followed by
+`12 damage vs 50 armor, 0 through` (the `stun:` half, entirely absorbed).
+
+**First attempt — rejected.** Copy DT_STUN and override `ArmorEffectiveness` from the backlash type, so
+the stun half kept DT_STUN's stat mapping but inherited the armor behavior. It worked, but nothing in the
+ruleset explained the result: a modder reading `backlashDamageType: 10` beside `stun: [5,15]` had no way
+to know the stun's armor interaction was silently inherited from a field named *damage* type. Patching one
+third of an inconsistency, invisibly.
+
+**Shipped — collapse to a power.** `RulePsiBacklash` is now a single `RuleRandomRange power`, dealt as one
+`damage()` call with the configured type:
+
+```yaml
+backlashDamageType: 10
+backlashOnFailure:     { power: [5, 15] }
+backlashOnThrallDeath: { power: [50, 100] }
+```
+
+Backlash was the only damage source in the engine with a bespoke component vocabulary; everything else is
+a power plus a `RuleDamageType`. Collapsing to that shape deletes the three-paths wart rather than
+patching it, puts the health/stun/morale split in the `damageTypes:` node where a reader would look for
+it, and makes the type's other `To*` fields reachable — `ToTime`, `ToEnergy`, `ToMana`, `ToWound` were all
+previously inexpressible, so "psychic feedback that drains TU" is now config rather than a feature request.
+
+**Costs accepted:**
+
+- **Breaking ruleset change.** `damage:`/`stun:`/`morale:` are gone. Adoption was effectively zero
+  (`dx-test` only) and that cost only grows, so this was the cheapest possible moment.
+- **Ratios are now fixed per damage type, not per backlash.** `backlashOnThrallDeath` used to run ~1:10
+  damage-to-stun while `backlashOnFailure` ran ~1:2; both now inherit their type's ratio and differ only
+  in magnitude. A mod needing two genuinely different mixes claims a second spare slot — which is what the
+  ten slots are for.
+- **Morale now scales with bravery.** `moraleChange(-backlash.morale)` was direct; routed through
+  `damage()` it passes through `reduceByBravery`. Judged more correct (a brave soldier should shrug off
+  psychic feedback) but it is a behavior change, not just a refactor.
+
+`logPsiBacklashEvent` now reports **measured** deltas (health/stun/morale before vs after) rather than the
+configured values, since the type decides the split and scripts can adjust it further.

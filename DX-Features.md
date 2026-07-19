@@ -128,9 +128,8 @@ items:
       basePower: 10         # flat damage on any successful blast
       powerPerMargin: 0.8   # + this * (psi contest margin) - a decisive win hits far harder
       randomRange: 40       # damage rolls in [ (100-r)%, (100+r)% ] of the computed power (0 = exact)
-      backlashOnFailure:    # what the CASTER suffers on a miss (all default 0 = off)
-        stun: [5, 15]
-        morale: 5
+      backlashOnFailure:    # what the CASTER suffers on a miss (0 = off)
+        power: [5, 15]      # split into health/stun/morale/... by backlashDamageType
       backlashDamageType: -1 # ResistType that backlash deals; -1 = the amp's own
 ```
 
@@ -144,7 +143,9 @@ items:
 - **The damage type is the mod's choice** (`damageType`, −1 = the amp's own). Point it at a free
   `DT_10..DT_19` slot with `ArmorEffectiveness: 0.0` (via the global `damageTypes:` node) for legacy's
   armor-ignoring psychic damage — but DX doesn't hard-code that, so a mod where armor *does* blunt a
-  blast simply leaves it. Dealt through `TileEngine::hitUnit` — the same entry point as bullets, melee
+  blast simply leaves it. See
+  [docs/Ruleset-DamageTypes.md](docs/Ruleset-DamageTypes.md#claiming-a-spare-slot-dt_10dt_19) for how
+  to claim a spare slot and the gotchas that come with it. Dealt through `TileEngine::hitUnit` — the same entry point as bullets, melee
   and explosions — so armor modifiers, the damage script hooks, the casualty path, kill attribution
   (a blast that kills, or that leaves the victim to bleed out, credits the caster) and both logs all
   apply. It always lands on the **head**, front side: a blast has no trajectory to derive a facing from.
@@ -240,7 +241,7 @@ indefinitely, and the moment the controller can't pay the upkeep, drops the amp,
 or panics, it reverts.
 
 **Opt-in:** no `mindControl:` node (or `channeled: false`) ⇒ **stock behavior, byte for byte**. Nothing in
-`bin/standard/` enables it; it ships in `dx-test` only.
+the stock UFO/TFTD rulesets enables it.
 
 ```yaml
 items:
@@ -265,14 +266,11 @@ items:
         manaRecoveryPercent: 0
         moraleRecoveryPercent: 0
 
-      backlashDamageType: ~    # the ResistType the backlash damage is dealt as (unset = the amp's own)
+      backlashDamageType: ~    # the ResistType the backlash power is dealt as (unset = the amp's own)
       backlashOnThrallDeath:   # a thrall dies while you hold it
-        damage: [20, 40]
-        stun: [20, 20]
-        morale: 15
+        power: [50, 100]
       backlashOnFailure:       # a failed attempt (stock does nothing at all here, so this is additive)
-        stun: [5, 15]
-        morale: 5
+        power: [5, 15]
 
       resist:
         perTurn: false         # true = the thrall re-rolls the psi contest each turn and may break free
@@ -288,12 +286,19 @@ items:
   rules, so a controller can never channel himself unconscious.
 - **A controller keeps all his abilities.** He can still panic, mind-blast, shoot — he is limited by the
   *resources* the upkeep is eating, not by a special-cased menu.
-- **Whether backlash can be blocked is also the mod's call.** `backlashDamageType` sets the ResistType the
-  backlash damage is dealt as (unset = the amp's own type, i.e. as blockable as anything else that amp
-  does). For an *unblockable* backlash, define a damage type nothing resists — the enum has free slots and
-  no stock armor declares a `damageModifier` for them — via the global `damageTypes:` node, and point this
-  at it. **DX ships no "psychic" damage type**: what psychic feedback *is*, and what resists it, is content,
-  not engine.
+- **What a backlash *is* is entirely the mod's call.** A backlash is just a **power** (`power: [min,max]`);
+  `backlashDamageType` decides what that power becomes and what can stop it — the same arrangement as a
+  bullet or a grenade, rather than a bespoke vocabulary. The type's `To*` fields split it into health,
+  stun, morale, wounds, energy or TU, so "feedback that drains time units" is `ToTime` on the type and
+  needs no engine support. For an *unblockable* backlash, define a damage type nothing resists — the enum
+  has free slots and no stock armor declares a `damageModifier` for them — via the global `damageTypes:`
+  node with `ArmorEffectiveness: 0.0`, and point this at it. **DX ships no "psychic" damage type**: what
+  psychic feedback *is*, and what resists it, is content, not engine.
+
+  *(This replaced an earlier `damage:`/`stun:`/`morale:` form whose three components were applied three
+  different ways — only the first honored `backlashDamageType`, the stun went through a hardcoded
+  `DT_STUN` that armor silently absorbed, and morale bypassed everything. One power and one type removes
+  that inconsistency at the root. Note morale now scales with bravery, as all morale damage does.)*
 - **Counter-control** — psi-targeting a unit that someone else is already holding is a **contest against the
   controller**, not against the puppet: it's his grip you have to break. Win and you **take** the thrall — or
   **free** it, if it's originally one of yours. **The AI uses it** to wrest back captured comrades (stock

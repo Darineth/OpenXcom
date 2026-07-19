@@ -5480,12 +5480,15 @@ bool TileEngine::clairvoyance(BattleUnit *actor, Position target, const RuleItem
  * dying while held. All costs default to 0, so this does nothing unless the amp's `mindControl:` node
  * asks for it.
  *
- * The damage is dealt with the AMP'S OWN damage type, so a mod decides what "psychic feedback" means
- * (and what resists it) rather than DX hard-coding a type. It is routed through BattleUnit::damage, so a
- * backlash that kills or knocks the controller out is handled by the normal casualty path.
+ * The recoil is a POWER dealt as a damage type, like every other damage source in the engine - it does
+ * not enumerate health/stun/morale itself. The type (the amp's own, or an explicit `backlashDamageType`)
+ * decides what the power becomes and what can resist it, so a mod defines what "psychic feedback" means
+ * rather than DX hard-coding it. Routed through BattleUnit::damage, so a backlash that kills or knocks
+ * the controller out is handled by the normal casualty path.
  * @param controller The unit to punish (may be null).
  * @param amp The psi-amp whose rules apply.
- * @param backlash The configured costs.
+ * @param backlash The configured recoil power.
+ * @param damageTypeId ResistType to deal it as, or -1 for the amp's own.
  */
 void TileEngine::applyPsiBacklash(BattleUnit *controller, const RuleItem *amp, const RulePsiBacklash &backlash, int damageTypeId)
 {
@@ -5494,37 +5497,31 @@ void TileEngine::applyPsiBacklash(BattleUnit *controller, const RuleItem *amp, c
 		return;
 	}
 
-	// Track what the recoil actually cost so it can be reported as one combat-log line at the end.
+	// Track what the recoil actually cost so it can be reported as one combat-log line at the end. These
+	// are measured rather than assumed: the damage type decides the split, and scripts can adjust it.
 	const int healthBefore = controller->getHealth();
 	const int stunBefore = controller->getStunlevel();
+	const int moraleBefore = controller->getMorale();
 
-	if (backlash.damage.any())
-	{
-		// The backlash's damage type is the mod's call: the caller's `damageTypeId` if it set one (>= 0),
-		// else the amp's own type. That is how a mod decides whether backlash can be blocked at all -
-		// nothing resists a ResistType no armor declares a damageModifier for, and the enum has free slots
-		// for exactly this. DX ships no "psychic" type of its own; defining one is a mod's business.
-		const RuleDamageType *type = (damageTypeId >= 0 && damageTypeId < DAMAGE_TYPES)
-			? _save->getMod()->getDamageType((ItemDamageType)damageTypeId)
-			: amp->getDamageType();
+	// The backlash's damage type is the mod's call: the caller's `damageTypeId` if it set one (>= 0),
+	// else the amp's own type. That is how a mod decides both what the recoil DOES - health, stun,
+	// morale, wounds, energy, TU, via the type's To* fields - and whether anything can block it:
+	// nothing resists a ResistType no armor declares a damageModifier for, and the enum has free slots
+	// for exactly this. DX ships no "psychic" type of its own; defining one is a mod's business.
+	const RuleDamageType *type = (damageTypeId >= 0 && damageTypeId < DAMAGE_TYPES)
+		? _save->getMod()->getDamageType((ItemDamageType)damageTypeId)
+		: amp->getDamageType();
 
-		const int power = RNG::generate(backlash.damage.min, backlash.damage.max);
-		controller->damage(Position(0, 0, 0), power, type, _save, BattleActionAttack{}, SIDE_FRONT, BODYPART_HEAD);
-	}
-	if (backlash.stun.any())
-	{
-		// Routed through damage() with DT_STUN rather than poking _stunlevel: that way the armor's
-		// DT_STUN modifier applies, the damage script hooks fire, and a mod can retune it via the global
-		// `damageTypes:` node - the same path the engine already uses to stun a unit standing in smoke.
-		const int power = RNG::generate(backlash.stun.min, backlash.stun.max);
-		controller->damage(Position(0, 0, 0), power, _save->getMod()->getDamageType(DT_STUN), _save, BattleActionAttack{}, SIDE_FRONT, BODYPART_HEAD);
-	}
-	if (backlash.morale)
-	{
-		controller->moraleChange(-backlash.morale);
-	}
+	// One roll, one type, one hit - the same shape as every other damage source in the engine, so the
+	// armor maths, the resistance modifier and the damage script hooks all behave as they do for a
+	// bullet. Aimed at the head, front side: recoil has no trajectory to derive a facing from.
+	const int power = RNG::generate(backlash.power.min, backlash.power.max);
+	controller->damage(Position(0, 0, 0), power, type, _save, BattleActionAttack{}, SIDE_FRONT, BODYPART_HEAD);
 
-	_save->logPsiBacklashEvent(controller, healthBefore - controller->getHealth(), controller->getStunlevel() - stunBefore, backlash.morale);
+	_save->logPsiBacklashEvent(controller,
+		healthBefore - controller->getHealth(),
+		controller->getStunlevel() - stunBefore,
+		moraleBefore - controller->getMorale());
 }
 
 /**

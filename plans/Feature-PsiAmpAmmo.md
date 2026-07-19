@@ -86,3 +86,40 @@ cheap. Missing key = 0 = free, so `psiAmmo:` with only `mindControl:` set charge
 1. **Refund an orb on a wasted cast?** (e.g. clairvoyance with no valid target, or a blocked action.) The
    gate runs before commit, so a *blocked* action spends nothing; the question is only whether a
    *resolved but ineffective* cast (a resisted MC) refunds. Proposed: no — the orb was expended. Confirm.
+
+## Follow-up (Jul 2026): load-time validation of `psiAmmo:`
+
+**Question raised:** should the per-cast round costs move onto each ability's own config node
+(`mindBlast: { rounds: 2 }`) instead of a standalone `psiAmmo:` node that refers to abilities by key?
+
+**Kept as-is**, for two reasons:
+
+1. **Two of the five actions have no node.** `mindBlast:`, `clairvoyance:` and `mindControl:` have
+   config nodes; **panic** and **use** are configured purely by flat item fields (`accuracyPanic`,
+   `costPanic`, `psiAttackName`). Moving rounds inward would mean inventing single-field nodes for those
+   two purely to hold a number.
+2. **Costs already live outside the ability nodes by convention.** `tuMindBlast`/`costMindBlast` sits
+   beside `psiAmmo:`, not inside `mindBlast:` — behavior in the node, costs out of it. Moving rounds in
+   would split the *costs* across two shapes rather than unify them.
+
+The principled unification would run the other way: make rounds a per-action cost alongside TU
+(`costMindBlast: { time: 25, rounds: 2 }`), which works for all five since they all have cost fields and
+would delete `psiAmmo:` entirely. Rejected as too invasive — `RuleItemUseCost` is a templated base shared
+with every firearm and melee action (with `operator+=` and script bindings), where a `rounds` field is
+meaningless: ammo consumption there is `compatibleAmmo` + `shots`. It would surface as nonsense on
+`costSnap:`, `costThrow:`, `costPrime:` and the rest.
+
+**What was fixed instead** — the one real hazard of the indirection. `psiAmmo:` names actions by string
+key with nothing validating them, so a cost for an action the amp doesn't offer loaded clean and then
+silently never fired. `RuleItem::afterLoad` now warns via `Mod::checkForSoftError` when:
+
+- the node appears on a non-`BT_PSIAMP` item;
+- `clairvoyance`/`mindBlast` rounds are set while that node is not `enabled`;
+- `mindControl`/`panic`/`use` rounds are set while the matching `cost*` resolves to `Time == 0`.
+
+The offered-action tests mirror `ActionMenuState`'s psi-amp branch exactly, so that list and this one
+have to move together.
+
+**Not caught:** a *mistyped* key (`mindcontrol`, `mind_blast`). `tryRead` just doesn't fire, leaving the
+cost at 0 with nothing to detect — the value never reaches the struct. Catching that needs strict
+unknown-key rejection on the node, which is a broader loader change than this warrants.

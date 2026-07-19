@@ -777,6 +777,52 @@ void RuleItem::afterLoad(const Mod* mod)
 		}
 	}
 
+	// DX: `psiAmmo:` names its actions by key, and nothing else validates them. A rounds cost for an
+	// action this amp does not actually offer - or a mistyped key, which `tryRead` simply ignores -
+	// loads clean and then silently never fires, which is the one real hazard of keeping the ammo
+	// costs in a node separate from the abilities they refer to. Report it at load instead.
+	//
+	// The "is it offered" tests mirror ActionMenuState's psi-amp branch exactly; if that gains an
+	// action, this list has to gain one too.
+	if (_psiAmmo.any())
+	{
+		if (_battleType != BT_PSIAMP)
+		{
+			mod->checkForSoftError(
+				true, _type,
+				"psiAmmo: is only spent by psi-amps (battleType: 9), so it does nothing on this item.",
+				LOG_WARNING);
+		}
+		else
+		{
+			const std::pair<int, bool> psiAmmoChecks[] = {
+				{ _psiAmmo.mindControl,  getCostMind().Time > 0 },
+				{ _psiAmmo.panic,        getCostPanic().Time > 0 },
+				{ _psiAmmo.use,          getCostUse().Time > 0 },
+				{ _psiAmmo.clairvoyance, _clairvoyance.enabled },
+				{ _psiAmmo.mindBlast,    _mindBlast.enabled },
+			};
+			static const char *const psiAmmoNames[] = {
+				"mindControl", "panic", "use", "clairvoyance", "mindBlast",
+			};
+			static const char *const psiAmmoReasons[] = {
+				"costMindControl/tuMindControl is 0",
+				"costPanic/tuPanic is 0",
+				"costUse/tuUse is 0",
+				"clairvoyance: is not enabled",
+				"mindBlast: is not enabled",
+			};
+			for (size_t i = 0; i < std::size(psiAmmoChecks); ++i)
+			{
+				mod->checkForSoftError(
+					psiAmmoChecks[i].first > 0 && !psiAmmoChecks[i].second, _type,
+					std::string("psiAmmo: ") + psiAmmoNames[i] + " sets a round cost, but this amp does not offer that action ("
+						+ psiAmmoReasons[i] + "), so the cost will never be spent.",
+					LOG_WARNING);
+			}
+		}
+	}
+
 	// these are good defaults for vanilla
 	if (_loadOrder <= 0)
 	{

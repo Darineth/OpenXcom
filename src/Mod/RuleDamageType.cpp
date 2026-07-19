@@ -154,6 +154,48 @@ bool RuleDamageType::isDirect() const
  * Load rule from YAML.
  * @param node Node with data.
  */
+/**
+ * Gets the language key naming a damage type. Indexed by ResistType, so the spare slots resolve to
+ * "STR_DAMAGE_10".."STR_DAMAGE_19" - which the engine's own language file defines as the bare numbers
+ * "10".."19", and which a mod claiming a slot is expected to override with a real name.
+ * @param dt The damage type.
+ * @return Language key, or "STR_UNKNOWN" if the index is out of range.
+ */
+const char *RuleDamageType::getResistTypeLanguageKey(ItemDamageType dt)
+{
+	static const char *const keys[DAMAGE_TYPES] = {
+		"STR_DAMAGE_NONE",
+		"STR_DAMAGE_ARMOR_PIERCING",
+		"STR_DAMAGE_INCENDIARY",
+		"STR_DAMAGE_HIGH_EXPLOSIVE",
+		"STR_DAMAGE_LASER_BEAM",
+		"STR_DAMAGE_PLASMA_BEAM",
+		"STR_DAMAGE_STUN",
+		"STR_DAMAGE_MELEE",
+		"STR_DAMAGE_ACID",
+		"STR_DAMAGE_SMOKE",
+		"STR_DAMAGE_10",
+		"STR_DAMAGE_11",
+		"STR_DAMAGE_12",
+		"STR_DAMAGE_13",
+		"STR_DAMAGE_14",
+		"STR_DAMAGE_15",
+		"STR_DAMAGE_16",
+		"STR_DAMAGE_17",
+		"STR_DAMAGE_18",
+		"STR_DAMAGE_19",
+	};
+	if (dt < 0 || dt >= DAMAGE_TYPES)
+	{
+		return "STR_UNKNOWN";
+	}
+	return keys[dt];
+}
+
+/**
+ * Load rule from YAML.
+ * @param node Node with data.
+ */
 void RuleDamageType::load(const YAML::YamlNodeReader& node)
 {
 	const auto& reader = node.useIndex();
