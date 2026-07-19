@@ -453,7 +453,10 @@ items:
       mindBlast: 2
       clairvoyance: 2
       panic: 1
-      use: 1
+      # No `use:` entry. Vanilla's psi-amp sets tuUse: 25, but OXCE only offers the generic
+      # BA_USE psi attack when the amp also sets `psiAttackName:` (ActionMenuState needs a label
+      # for the menu entry), and this amp doesn't - so a round cost here would never be spent.
+      # Add `psiAttackName:` if you want that action back, and give it a round cost then.
     # =====================================================================
     #  DX: clairvoyance - a psychic sweep of an area around a TARGET TILE.
     #

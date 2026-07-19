@@ -807,10 +807,17 @@ void RuleItem::afterLoad(const Mod* mod)
 			static const char *const psiAmmoNames[] = {
 				"mindControl", "panic", "use", "clairvoyance", "mindBlast",
 			};
-			static const char *const psiAmmoReasons[] = {
+			// The 'use' reason is conditional on purpose: getCostUse() deliberately reports zero
+			// for a psi-amp with no psiAttackName, because ActionMenuState needs a label to offer
+			// the action at all. Reporting "tuUse is 0" in that case names the wrong key and sends
+			// the modder hunting through costs that are in fact set correctly.
+			const std::string useReason = _psiAttackName.empty()
+				? std::string("psiAttackName: is not set, so the action has no menu entry even though tuUse/costUse may be set")
+				: std::string("costUse/tuUse is 0");
+			const std::string psiAmmoReasons[] = {
 				"costMindControl/tuMindControl is 0",
 				"costPanic/tuPanic is 0",
-				"costUse/tuUse is 0",
+				useReason,
 				"clairvoyance: is not enabled",
 				"mindBlast: is not enabled",
 			};

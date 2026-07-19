@@ -314,15 +314,17 @@ on the attempt (hit or miss); a dry or unloaded amp refuses the action. Covers p
 |---|---|---|---|
 | `mindControl` | int | 0 | Rounds a mind control draws from the clip. |
 | `panic` | int | 0 | Rounds a panic draws. |
-| `use` | int | 0 | Rounds the `BA_USE` psi-damage attack draws. |
+| `use` | int | 0 | Rounds the `BA_USE` psi-damage attack draws. Note an amp only *offers* `BA_USE` when it sets **`psiAttackName:`** — the action menu needs a label for the entry — so `tuUse`/`costUse` alone is not enough, and vanilla's psi-amp (which sets `tuUse: 25` but no name) does not offer it. |
 | `clairvoyance` | int | 0 | Rounds a clairvoyant sweep draws. |
 | `mindBlast` | int | 0 | Rounds a mind blast draws. |
 
 The node refers to its actions **by key**, so a cost set for an action the amp doesn't offer would
 otherwise load clean and silently never be spent. That is checked at load: a warning is logged if the
 node appears on a non-psi-amp, or if it sets rounds for `clairvoyance`/`mindBlast` while that node isn't
-`enabled`, or for `mindControl`/`panic`/`use` while the matching `cost*`/`tu*` is 0. Note a **mistyped
-key** cannot be caught this way — it is simply not read, so the cost silently stays 0.
+`enabled`, or for `mindControl`/`panic`/`use` while the amp doesn't offer that action. For `use` the
+warning names `psiAttackName:` when that is the missing piece, rather than the `tu*`/`cost*` keys — those
+are often set correctly and are not the reason the action is absent. Note a **mistyped key** cannot be
+caught this way — it is simply not read, so the cost silently stays 0.
 
 ### **[DX]** `mindBlast:` — direct psychic damage
 
