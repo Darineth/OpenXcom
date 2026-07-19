@@ -37,18 +37,25 @@ namespace OpenXcom
 	 */
 	void ArticleCommonState::nextArticle()
 	{
-		if (current_index >= articleList.size() - 1)
+		// [DX] Was recursive, one frame per skipped article, and unbounded if every article was
+		// skipped. Both are far easier to hit now that generated articles are marked skipped
+		// (they cluster at the end of the index, so stepping past them meant recursing once per
+		// entry). A bounded loop can neither overflow the stack nor spin forever.
+		for (size_t steps = articleList.size(); steps > 0; --steps)
 		{
-			// goto first
-			current_index = 0;
-		}
-		else
-		{
-			current_index++;
-		}
-		if (isCurrentArticleHidden())
-		{
-			nextArticle();
+			if (current_index >= articleList.size() - 1)
+			{
+				// goto first
+				current_index = 0;
+			}
+			else
+			{
+				current_index++;
+			}
+			if (!isCurrentArticleHidden())
+			{
+				return;
+			}
 		}
 	}
 
@@ -80,18 +87,22 @@ namespace OpenXcom
 	 */
 	void ArticleCommonState::prevArticle()
 	{
-		if (current_index == 0 || current_index > articleList.size() - 1)
+		// [DX] bounded loop instead of recursion - see nextArticle().
+		for (size_t steps = articleList.size(); steps > 0; --steps)
 		{
-			// goto last
-			current_index = articleList.size() - 1;
-		}
-		else
-		{
-			current_index--;
-		}
-		if (isCurrentArticleHidden())
-		{
-			prevArticle();
+			if (current_index == 0 || current_index > articleList.size() - 1)
+			{
+				// goto last
+				current_index = articleList.size() - 1;
+			}
+			else
+			{
+				current_index--;
+			}
+			if (!isCurrentArticleHidden())
+			{
+				return;
+			}
 		}
 	}
 

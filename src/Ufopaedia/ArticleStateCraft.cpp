@@ -56,7 +56,13 @@ namespace OpenXcom
 		add(_txtTitle);
 
 		// Set up objects
-		_game->getMod()->getSurface(defs->image_id)->blitNShade(_bg, 0, 0);
+		// [DX] an empty image_id resolves to a null surface (Mod::getRule returns 0 for empty
+		// names rather than throwing), so guard the blit. A non-empty but missing sprite still
+		// throws from getSurface, keeping typos loud.
+		if (Surface* bgImage = _game->getMod()->getSurface(defs->image_id))
+		{
+			bgImage->blitNShade(_bg, 0, 0);
+		}
 		_btnOk->setColor(Palette::blockOffset(15)-1);
 		_btnPrev->setColor(Palette::blockOffset(15)-1);
 		_btnNext->setColor(Palette::blockOffset(15)-1);

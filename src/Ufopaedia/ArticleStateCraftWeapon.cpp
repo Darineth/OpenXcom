@@ -78,7 +78,11 @@ namespace OpenXcom
 		add(_txtTitle);
 
 		// Set up objects
-		_game->getMod()->getSurface(defs->image_id)->blitNShade(_bg, 0, 0);
+		// [DX] see ArticleStateCraft: guard the empty-image_id null, keep the throw for typos.
+		if (Surface* bgImage = _game->getMod()->getSurface(defs->image_id))
+		{
+			bgImage->blitNShade(_bg, 0, 0);
+		}
 		_btnOk->setColor(_buttonColor);
 		_btnPrev->setColor(_buttonColor);
 		_btnNext->setColor(_buttonColor);

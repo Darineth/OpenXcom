@@ -208,6 +208,114 @@ games are unaffected.
 
 ---
 
+## ✅ UFOpaedia articles crashed on an empty `image_id` instead of erroring
+
+### What was wrong
+
+`ArticleStateCraft`, `ArticleStateCraftWeapon` and `ArticleStateUnit` each blitted their background
+without checking the lookup result:
+
+```cpp
+_game->getMod()->getSurface(defs->image_id)->blitNShade(_bg, 0, 0);
+```
+
+`Mod::getSurface` forwards to `Mod::getRule`, which **returns `0` for an empty name** rather than
+throwing (the `error` parameter only governs the *not found* case). So an article of one of these
+three types with no `image_id` at all dereferenced a null pointer and took the process down, with no
+log line and no error dialog pointing at the offending article.
+
+The sibling types don't share the bug: `ArticleStateVehicle` guards the empty case and falls back to
+`BACK10.SCR`, `ArticleStateArmor` explicitly tests `image_id.empty()`, and the item/facility/UFO
+articles hardcode their background and never read the field.
+
+### Why it mattered (and why nobody noticed)
+
+Every stock article of these types sets `image_id`, so the stock games never hit it. A mod that
+omitted the key — easy to do, since it's optional on most other article types — got a hard crash on
+opening the article rather than a message telling it what was missing.
+
+### What DX changed
+
+The three blits now null-check the surface they got back:
+
+```cpp
+if (Surface* bgImage = _game->getMod()->getSurface(defs->image_id))
+{
+    bgImage->blitNShade(_bg, 0, 0);
+}
+```
+
+Deliberately **not** switched to `getSurface(name, false)`: that would also swallow the *not found*
+case, turning a typo'd sprite name into a silently blank article. Keeping the default `error = true`
+means a misspelled `image_id` still throws a clear "Sprite X not found", and only the genuinely
+empty case is tolerated.
+
+### Effect on mods
+
+A previously-crashing article now opens with no background image drawn — everything else on the page
+renders normally. Mods that set `image_id` correctly are unaffected. Typo'd sprite names still raise
+the same exception they always did.
+
+This also underpins **[DX] fallback pedia articles** (see [DX-Features.md](DX-Features.md)), which
+can synthesize articles for rules with no authored entry.
+
+---
+
+## ✅ UFOpaedia prev/next recursed once per skipped article, unbounded
+
+### What was wrong
+
+`ArticleCommonState::nextArticle()` / `prevArticle()` stepped one index, then **called themselves
+again** if the article they landed on was marked hidden:
+
+```cpp
+current_index++;            // (or wrap to 0)
+if (isCurrentArticleHidden())
+{
+    nextArticle();
+}
+```
+
+Two problems. Recursion depth grows with the number of *consecutive* hidden articles, so a long run
+of them meant a stack frame each. And if **every** article was hidden there was no base case at all
+— infinite recursion into a stack overflow.
+
+### Why it mattered (and why nobody noticed)
+
+Upstream, the only way to mark an article hidden is the player toggling entries one at a time in
+the pedia list, so a run long enough to matter — let alone hiding literally everything — was not
+realistically reachable. The `Ufopaedia::next`/`prev` wrappers also bail out when the *current*
+article is hidden, which masks the all-hidden case in practice.
+
+DX makes both cases easy to hit: unlisted generated articles are marked with the same flag, and
+they cluster at the end of the index (they are assigned list order last), so stepping past them
+recursed once per entry — potentially thousands on a large mod.
+
+### What DX changed
+
+Both functions became bounded loops, capped at one pass over the list:
+
+```cpp
+for (size_t steps = articleList.size(); steps > 0; --steps)
+{
+    // ... step one index, wrapping ...
+    if (!isCurrentArticleHidden())
+    {
+        return;
+    }
+}
+```
+
+Same traversal and same landing spot, but it can neither overflow the stack nor spin forever; if
+every article is hidden it simply stops after a full pass.
+
+### Effect on mods
+
+None visible. Navigation lands on exactly the same article it did before in every case that
+previously terminated; the cases that changed are the ones that used to crash.
+
+---
+
 *If you fix an upstream bug, add an entry here in the same shape — what the code did, why it is
 wrong, what changed, and what a mod would notice — and cross-link it from the relevant
 [ruleset doc](docs/Ruleset.md).*

@@ -600,9 +600,41 @@ implementation (see CLAUDE.md "Planning Features").*
     layouts) in its `.cfg` — factored `SavedGame::saveTemplates`, wired into `NewBattleState` save/load —
     so templates created in New Battle survive a restart (previously discarded).
 
-- [ ] **Ufopaedia fallback stats page for unconfigured items** — auto-generate a viewable stats page
+- [x] **Ufopaedia fallback stats page for unconfigured items** — auto-generate a viewable stats page
   for items/weapons that have no authored `ufopaedia` article, so the player can still inspect their
-  stats (accuracy, damage, TU costs, weight, etc.) instead of the entry being unopenable. *(design: TBD)*
+  stats (accuracy, damage, TU costs, weight, etc.) instead of the entry being unopenable.
+  - ✅ **Done.** Scope extended well past items: **armor, craft, craft weapons, base facilities,
+    soldier types, alien unit types and UFOs** all get stand-in articles. Synthesized in
+    `Mod::generateMissingUfopaediaArticles()` just before `sortLists()`, which means all ~45
+    existing middle-click call sites work with **no changes to any of them** — the lookup simply
+    succeeds now. Research gating comes free (the generated article carries the rule's own
+    requirements; craft weapons inherit their launcher item's). Article style (UFO vs TFTD) is
+    chosen from whichever the mod predominantly authored. Two ruleset keys:
+    **`generateMissingPediaArticles`** (default **on**) and **`listGeneratedPediaArticles`**
+    (default **off** — middle-click works everywhere, but no mod's authored pedia index changes).
+    Verified against stock xcom1 + dx-test: 37 articles generated, both flags confirmed parsing.
+  - **Research gating did NOT "come free" as planned, and closing that took two passes.** `Unit`
+    and `RuleUfo` carry no requirements field at all, so their articles generated with empty
+    requirements - and `isResearched({})` is true, exposing every alien's stats from day one (33 of
+    them on stock xcom1). Units and UFOs were first cut from scope; that was an overcorrection.
+    The gate turns out to live on the *article*, following a derivable convention (article
+    `STR_SMALL_SCOUT` requires research `STR_SMALL_SCOUT`), so DX now looks up a research topic
+    named after the rule and inherits exactly the gate a modder would have written. Units and UFOs
+    are back, correctly gated; for that enemy-side content a derivable gate is **mandatory**, so
+    ungatable rules (`MALE_CIVILIAN`, `STR_ZOMBIE`) generate nothing. Player-facing types may still
+    be ungated, which for them just means "available from the start".
+  - Also filtered on value grounds: unrecoverable fixed weapons (a unit's innate attack, never held
+    by the player; recoverable HWP weapons are kept) and `BT_CORPSE` items (vanilla covers those
+    with autopsy articles).
+  - Also fixed: the prev/next buttons walk `articleList` directly, so filtering only the index let
+    navigation wander into unlisted generated articles. Unlisted ones are now marked in
+    `articleStatusList` (the engine's existing skip mechanism), which kept middle-click working.
+  - Discovered along the way, both hardened as upstream fixes in `DX-OXCE-Fixes.md`:
+    `ArticleStateCraft`/`CraftWeapon`/`Unit` **null-deref crashed** on an empty `image_id`
+    (`Mod::getRule` returns 0 for empty names rather than throwing), and
+    `ArticleCommonState::nextArticle`/`prevArticle` **recursed once per skipped article** with no
+    base case when all were hidden — now bounded loops.
+  *(design: [plans/Feature-UfopaediaFallbackArticles.md](plans/Feature-UfopaediaFallbackArticles.md))*
 
 - [x] **Psi success chance on hover** — show the hit probability for a psi action while targeting. Psi
   was the only attack with no accuracy feedback at all: the action menu shows TU only, and the sole

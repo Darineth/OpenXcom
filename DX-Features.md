@@ -960,6 +960,73 @@ and keyboard controls. Scrolling moves one column at a time (not page-by-page), 
 starts fully scrolled left when a unit is selected. Multi-slot items that extend past the left
 edge of the viewport are rendered with their visible portion showing.
 
+## UFOpaedia Fallback Articles for Unconfigured Rules
+
+Middle-clicking an item, armor, craft weapon or base facility opens its UFOpaedia article, which
+carries the stats block (accuracy, damage, TU costs, weight, armor values, capacities). In vanilla
+that only works when the modder authored a `ufopaedia:` entry for the rule — otherwise the click
+**silently does nothing**, so large parts of a mod's arsenal are simply not inspectable.
+
+DX synthesizes a stand-in article at mod-load time for any rule that has none, covering **items**
+(including HWP/vehicle items), **armors**, **craft**, **craft weapons**, **base facilities**,
+**soldier types**, **alien unit types** and **UFOs**. The generated article carries no prose — the
+stats block is the point — but is otherwise a normal article, so it renders through the same
+`ArticleState` screens and works from every existing middle-click entry point without those call
+sites changing at all.
+
+Behavior details:
+
+- **Research gating, including a derived gate.** A generated article first takes the underlying
+  rule's own research requirements, so an unresearched alien weapon stays uninspectable exactly as
+  an authored article would. Craft weapons, which carry no requirements of their own, inherit their
+  launcher item's.
+
+  Several rule types carry no requirements at all, though — `Unit` and `RuleUfo` have no such field,
+  and many items simply don't set one — and an article with empty requirements is readable from day
+  one, since `isResearched({})` is true. For those, DX derives the gate from the convention every
+  vanilla article follows: **an article requires a research topic named after its own subject**
+  (article `STR_SMALL_SCOUT` requires research `STR_SMALL_SCOUT`; `STR_SECTOID` requires
+  `STR_SECTOID`). So if a research topic exists with the rule's name, that is taken as the topic
+  meant to reveal it, and the generated article inherits exactly the gate a modder would have
+  written by hand — alien units end up behind their live-alien interrogation topic, UFOs behind
+  their UFO research.
+- **Enemy content is never generated ungated.** For alien units and UFOs — pure enemy content with
+  no middle-click entry point — a derivable gate is *required*: no research topic, no article. That
+  is why stock civilians (`MALE_CIVILIAN`, `FEMALE_CIVILIAN`) and `STR_ZOMBIE` get no generated
+  page. Player-facing types (items, armor, craft, facilities, soldiers) are allowed to be ungated,
+  because for them that legitimately means "available from the start".
+- **Generated articles are skipped by the prev/next buttons** when they aren't listed, so pedia
+  navigation can't wander into entries the mod kept out of its index. Middle-clicking one still
+  opens it directly; prev/next are simply inert on it, as they are on any hidden article.
+- **Article style follows the mod.** TFTD-style articles draw their palette and background from
+  `interfaces.rul` while UFO-style ones use the article's own fields; DX picks whichever style the
+  mod's authored articles predominantly use, and skips generating a TFTD style whose
+  `article*TFTD` interface the mod hasn't defined.
+- **Authored content is never shadowed.** Generation is skipped whenever an article already exists
+  under the id the rule's middle-click handler asks for (`ufopediaType`, falling back to the type
+  name). Where a rule redirects `ufopediaType` at a *different* id and the article screen resolves
+  its rule strictly from that id (armor, craft weapons, facilities), DX skips generation rather
+  than produce an article that would throw on open.
+- **Junk rules are filtered out.** Skipped: items with no big sprite (placeholders), armors with no
+  resolvable paperdoll sprite, vehicle items without a `vehicleUnit`, **fixed weapons the player can
+  never recover** (a Celatid's spit, a Sectopod's cannon — a unit's innate attack rather than
+  equipment, never held or owned, and carrying no research topic to gate it either), and **corpses**
+  (nothing to inspect but weight and sell price; vanilla already covers them with autopsy articles).
+  Player HWP weapons are fixed too but *are* recoverable, so they are kept.
+
+Ruleset keys (see [docs/Ruleset-Globals.md](docs/Ruleset-Globals.md)):
+
+| Key | Default | Effect |
+|---|---|---|
+| `generateMissingPediaArticles` | `true` | Generate the stand-in articles at all, making middle-click work for rules with no authored entry. |
+| `listGeneratedPediaArticles` | `false` | Also show generated articles in the browsable UFOpaedia index. Off by default so a mod's curated table of contents is unchanged; generated articles stay openable via middle-click either way. |
+
+When listing is off, generated articles also don't register their section, so the pedia never grows
+an empty category.
+
+This feature relies on a related upstream crash fix — three article screens dereferenced a null
+surface on an empty `image_id`; see [DX-OXCE-Fixes.md](DX-OXCE-Fixes.md).
+
 ## Soldier Info Layout Rework
 
 The Soldier Info screen now follows the Legacy DX-style two-row action layout (excluding Level/EXP):

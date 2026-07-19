@@ -99,6 +99,23 @@ namespace OpenXcom
 	}
 
 	/**
+	 * [DX] Initializes this article as an auto-generated fallback for a rule that has no
+	 * authored ufopaedia entry. Mirrors what load() does for the fields that matter, so the
+	 * article renders like any other; the body text is deliberately left empty, since the
+	 * point of a generated article is the stats block, not prose.
+	 * @param articleId The id of the rule this article stands in for.
+	 * @param title The name key used as the article's title.
+	 * @param listOrder The list weight for this article.
+	 */
+	void ArticleDefinition::makeGenerated(const std::string& articleId, const std::string& title, int listOrder)
+	{
+		id = articleId;
+		_pages[0].title = title.empty() ? articleId : title;
+		_listOrder = listOrder;
+		_generated = true;
+	}
+
+	/**
 	 * Gets the list weight of the article.
 	 * @return The list weight of the article.
 	 */

@@ -860,6 +860,34 @@ ufopaedia:
       - STR_FIELD_SURGERY_UNIT
     text: STR_FIELD_SURGERY_UNIT_UFOPEDIA
 
+# =====================================================================
+#  DX: fallback pedia articles for rules with no authored entry.
+#
+#  `generateMissingPediaArticles` is ON by default engine-wide, so
+#  middle-clicking an item/armor/craft/facility that has no `ufopaedia:`
+#  entry already opens a generated stats page. What it does NOT do by
+#  default is list those pages in the browsable pedia index, so that a
+#  mod's authored table of contents stays exactly as written.
+#
+#  Turning listing on here makes the generated pages browsable, which is
+#  the only practical way to eyeball them all without hunting for each
+#  item in an inventory. Most of xcom1's arsenal has authored articles;
+#  the generated ones are the leftovers (ammo, corpses, alien weapons,
+#  UFOs, unit types) plus everything this test mod adds.
+#
+#  What to check:
+#    * WEAPONS AND EQUIPMENT / BASE FACILITIES / UFOS etc. gain entries
+#      that were never authored - each opens to a stats block with no
+#      prose, which is the point.
+#    * Middle-click still works for these with the flag OFF (comment the
+#      line out and restart) - only their presence in the index changes.
+#    * An unresearched alien weapon still refuses to open: generated
+#      articles inherit the rule's own research requirements.
+#    * Authored articles are unchanged and never shadowed by a generated
+#      one - STR_FIELD_SURGERY_UNIT above still reads as written.
+# =====================================================================
+listGeneratedPediaArticles: true
+
 extraStrings:
   - type: en-US
     strings:

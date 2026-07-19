@@ -81,6 +81,7 @@
 #include "RuleManufactureShortcut.h"
 #include "ExtraStrings.h"
 #include "RuleInterface.h"
+#include "Unit.h"
 #include "RuleArcScript.h"
 #include "RuleEventScript.h"
 #include "RuleEvent.h"
@@ -462,7 +463,7 @@ Mod::Mod() :
 	_pilotAccuracyZeroPoint(55), _pilotAccuracyRange(40), _pilotReactionsZeroPoint(55), _pilotReactionsRange(60),
 	_performanceBonusFactor(0.0), _enableNewResearchSorting(false), _displayCustomCategories(0), _shareAmmoCategories(false), _showDogfightDistanceInKm(false), _showFullNameInAlienInventory(false),
 	_alienInventoryOffsetX(80), _alienInventoryOffsetBigUnit(32),
-	_hidePediaInfoButton(false), _extraNerdyPediaInfoType(0),
+	_hidePediaInfoButton(false), _generateMissingPediaArticles(true), _listGeneratedPediaArticles(false), _extraNerdyPediaInfoType(0),
 	_giveScoreAlsoForResearchedArtifacts(false), _statisticalBulletConservation(false), _stunningImprovesMorale(false),
 	_tuRecoveryWakeUpNewTurn(100), _shortRadarRange(0), _buildTimeReductionScaling(100),
 	_defeatScore(0), _defeatFunds(0), _difficultyDemigod(false), _startingTime(6, 1, 1, 1999, 12, 0, 0), _startingDifficulty(0),
@@ -2556,6 +2557,7 @@ void Mod::loadAll()
 
 	Log(LOG_INFO) << "Loading ended.";
 
+	generateMissingUfopaediaArticles(); // [DX] must precede sortLists(), which indexes articles
 	sortLists();
 	modResources();
 }
@@ -3473,6 +3475,8 @@ void Mod::loadFile(const FileMap::FileRecord &filerec, ModScript &parsers)
 	reader.tryRead("alienInventoryOffsetX", _alienInventoryOffsetX);
 	reader.tryRead("alienInventoryOffsetBigUnit", _alienInventoryOffsetBigUnit);
 	reader.tryRead("hidePediaInfoButton", _hidePediaInfoButton);
+	reader.tryRead("generateMissingPediaArticles", _generateMissingPediaArticles);
+	reader.tryRead("listGeneratedPediaArticles", _listGeneratedPediaArticles);
 	reader.tryRead("extraNerdyPediaInfoType", _extraNerdyPediaInfoType);
 	reader.tryRead("giveScoreAlsoForResearchedArtifacts", _giveScoreAlsoForResearchedArtifacts);
 	reader.tryRead("statisticalBulletConservation", _statisticalBulletConservation);
@@ -5252,6 +5256,380 @@ void sortIndex(std::vector<std::string>& index, std::map<std::string, RuleType*>
 }
 
 /**
+ * [DX] Synthesizes stand-in ufopaedia articles for rules the modder never wrote an article for.
+ *
+ * Middle-clicking an item/armor/craft/facility opens its pedia article, which carries the stats
+ * block - but only if an article exists. When it doesn't, the click silently does nothing, so
+ * large parts of a mod's arsenal end up uninspectable. Generating the article here (rather than
+ * patching Ufopaedia::openArticle) means the ~45 existing middle-click call sites all start
+ * working with no changes to any of them.
+ *
+ * Gating is the subtle part: a generated article takes the rule's own research requirements where
+ * it has them, and where it has none (Unit and RuleUfo have no such field at all) falls back to
+ * the convention every vanilla article follows - requiring a research topic named after its own
+ * subject. Enemy-side content is only generated when such a gate can be derived, so nothing that
+ * cannot be gated is ever exposed. See derivedGate() below.
+ *
+ * Must run before sortLists(), which is what registers article sections and sorts the index.
+ */
+void Mod::generateMissingUfopaediaArticles()
+{
+	if (!_generateMissingPediaArticles)
+	{
+		return;
+	}
+
+	// Match whatever article style the mod already uses: TFTD-style articles draw their palette
+	// and background from interfaces.rul, UFO-style ones from the article's own fields, and
+	// mixing the two looks wrong. Decide by majority of what the modder authored.
+	int tftdArticles = 0, ufoArticles = 0;
+	for (auto& rulePair : _ufopaediaArticles)
+	{
+		if (rulePair.second->getType() >= UFOPAEDIA_TYPE_TFTD && rulePair.second->getType() <= UFOPAEDIA_TYPE_TFTD_USO)
+			++tftdArticles;
+		else
+			++ufoArticles;
+	}
+	const bool tftdStyle = tftdArticles > ufoArticles;
+
+	// A generated article stands in for the id the rule's middle-click handler actually asks for,
+	// which is getUfopediaType() (note the one-'a' spelling) - not necessarily the rule's type.
+	auto needsArticle = [&](const std::string& articleId)
+	{
+		return !articleId.empty() && _ufopaediaArticles.find(articleId) == _ufopaediaArticles.end();
+	};
+
+	int generatedCount = 0;
+	auto registerArticle = [&](ArticleDefinition* article, const std::string& articleId,
+		const std::string& title, const std::string& section, std::vector<std::string> requires_)
+	{
+		++generatedCount;
+		Log(LOG_DEBUG) << "  generated pedia article: " << articleId << " [section " << section
+			<< ", requires " << requires_.size() << "]";
+		_ufopaediaListOrder += 100;
+		article->makeGenerated(articleId, title, _ufopaediaListOrder);
+		article->section = section;
+		article->_requires = std::move(requires_);
+		_ufopaediaArticles[articleId] = article;
+		_ufopaediaIndex.push_back(articleId);
+	};
+
+	// ArticleDefinition::_requires is a vector of names, but the migrated rule types hand back
+	// RuleResearch pointers, so normalize.
+	auto researchNames = [](const std::vector<const RuleResearch*>& research)
+	{
+		std::vector<std::string> names;
+		names.reserve(research.size());
+		for (auto* r : research)
+		{
+			if (r) names.push_back(r->getName());
+		}
+		return names;
+	};
+
+	// Several rule types carry no research requirement of their own - Unit and RuleUfo have no
+	// such field at all, and plenty of items (corpses, alien artifacts) simply don't set one. An
+	// article generated from those would have an empty _requires, and isResearched({}) is true, so
+	// it would be readable from the first day of a new game.
+	//
+	// But the gate does exist; it just lives on the *article* rather than the rule. Vanilla's
+	// authored articles all follow one convention: the article requires a research topic named
+	// after its own subject (article STR_SMALL_SCOUT -> requires: STR_SMALL_SCOUT, article
+	// STR_SECTOID -> requires: STR_SECTOID). That is derivable - if a research topic exists with
+	// the rule's name, it is the topic that was meant to reveal it - so a generated article can
+	// inherit exactly the gate the modder would have written by hand.
+	auto derivedGate = [&](const std::string& ruleName)
+	{
+		std::vector<std::string> gate;
+		if (getResearch(ruleName, false) != nullptr)
+		{
+			gate.push_back(ruleName);
+		}
+		return gate;
+	};
+
+	// Prefer the rule's own requirements; fall back to the naming convention.
+	auto gateFor = [&](std::vector<std::string> own, const std::string& ruleName)
+	{
+		return own.empty() ? derivedGate(ruleName) : own;
+	};
+
+	// TFTD-style articles blit the interface's background unguarded, so refuse to generate a
+	// style whose interface the mod hasn't defined rather than crash on open.
+	auto tftdInterfaceReady = [&](const std::string& interfaceName)
+	{
+		// No SavedGame exists at mod-load time; passing null just yields the base background,
+		// which is all we need to know the interface is usable.
+		RuleInterface* itf = getInterface(interfaceName, false);
+		return itf != nullptr && !itf->getBackgroundImage(this, nullptr).empty();
+	};
+
+	// UFO-style Craft/CraftWeapon/Unit/Soldier articles need a full-screen background; BACK10.SCR
+	// is the neutral one already used by the text and vehicle articles.
+	const std::string genericBackground = "BACK10.SCR";
+
+	auto makeTftd = [&](UfopaediaTypeId style)
+	{
+		auto* article = new ArticleDefinitionTFTD();
+		article->setTftdType(style);
+		article->text_width = 157; // only the YAML path defaults this
+		return article;
+	};
+
+	// --- Items (and the vehicle variant for tank/HWP items) ---------------------------------
+	for (auto& rulePair : _items)
+	{
+		RuleItem* item = rulePair.second;
+		const std::string& articleId = item->getUfopediaType();
+		if (!needsArticle(articleId))
+			continue;
+		// Skip rules with nothing to show - placeholders and internal-only items.
+		if (item->getBigSprite() < 0)
+			continue;
+		// A fixed weapon the player can never recover is a unit's innate attack (a Celatid's spit,
+		// a Sectopod's cannon), not equipment - it exists only to hang off the unit, is never held
+		// or owned, and publishing its stats says what the alien can do to you before you have met
+		// one. Player HWP weapons are also fixed but ARE recoverable, so they stay.
+		if (item->isFixed() && !item->isRecoverable())
+			continue;
+		// Corpses carry nothing worth inspecting (weight and sell price), and an article per alien
+		// corpse enumerates the game's alien roster from day one. Vanilla puts this information in
+		// autopsy articles, gated behind the autopsy research - which is where it belongs.
+		if (item->getBattleType() == BT_CORPSE)
+			continue;
+
+		const bool isVehicle = item->getVehicleUnit() != nullptr;
+		const std::string section = isVehicle ? "STR_HEAVY_WEAPONS_PLATFORMS" : "STR_WEAPONS_AND_EQUIPMENT";
+
+		// The item styles resolve their rule from 'weapon' first and only fall back to the
+		// article id, so setting it keeps the article valid even when ufopediaType points the
+		// article at a name that isn't the item's own type.
+		ArticleDefinition* article = nullptr;
+		if (tftdStyle)
+		{
+			// ArticleStateTFTDVehicle exists but the plain item style is the safer stand-in.
+			if (!tftdInterfaceReady("articleItemTFTD"))
+				continue;
+			auto* tftd = makeTftd(UFOPAEDIA_TYPE_TFTD_ITEM);
+			tftd->weapon = item->getType();
+			article = tftd;
+		}
+		else if (isVehicle)
+		{
+			// ArticleStateVehicle resolves by id and treats 'weapon' as display text only, so it
+			// can only stand in for an id that really is this item.
+			if (articleId != item->getType())
+				continue;
+			// image_id left empty on purpose: ArticleStateVehicle already falls back to BACK10.SCR.
+			article = new ArticleDefinitionVehicle();
+		}
+		else
+		{
+			auto* ufoStyle = new ArticleDefinitionItem(); // background is hardcoded
+			ufoStyle->weapon = item->getType();
+			article = ufoStyle;
+		}
+		registerArticle(article, articleId, item->getName(), section,
+			gateFor(researchNames(item->getRequirements()), item->getType()));
+	}
+
+	// --- Armors ------------------------------------------------------------------------------
+	for (auto& rulePair : _armors)
+	{
+		Armor* armor = rulePair.second;
+		const std::string& articleId = armor->getUfopediaType();
+		if (!needsArticle(articleId))
+			continue;
+		// The armor styles resolve their rule from the article id alone (no 'weapon' fallback),
+		// so a redirected ufopediaType would throw on open. The modder pointed elsewhere on
+		// purpose; leave that article for them to author.
+		if (articleId != armor->getType())
+			continue;
+		// ArticleStateArmor throws when it can't resolve a paperdoll sprite for the armor.
+		if (armor->getSpriteInventory().empty() && !armor->hasLayersDefinition())
+			continue;
+
+		std::vector<std::string> requires_;
+		if (const RuleResearch* research = armor->getRequiredResearch())
+		{
+			requires_.push_back(research->getName());
+		}
+
+		ArticleDefinition* article = nullptr;
+		if (tftdStyle)
+		{
+			if (!tftdInterfaceReady("articleArmorTFTD"))
+				continue;
+			article = makeTftd(UFOPAEDIA_TYPE_TFTD_ARMOR);
+		}
+		else
+		{
+			article = new ArticleDefinitionArmor(); // empty image_id is handled; sprite is the background
+		}
+		registerArticle(article, articleId, armor->getType(), "STR_WEAPONS_AND_EQUIPMENT",
+			gateFor(std::move(requires_), armor->getType()));
+	}
+
+	// --- Craft -------------------------------------------------------------------------------
+	for (auto& rulePair : _crafts)
+	{
+		RuleCraft* craft = rulePair.second;
+		const std::string& articleId = craft->getType();
+		if (!needsArticle(articleId))
+			continue;
+
+		ArticleDefinition* article = nullptr;
+		if (tftdStyle)
+		{
+			if (!tftdInterfaceReady("articleCraftTFTD"))
+				continue;
+			article = makeTftd(UFOPAEDIA_TYPE_TFTD_CRAFT);
+		}
+		else
+		{
+			auto* ufoStyle = new ArticleDefinitionCraft();
+			ufoStyle->image_id = genericBackground;
+			ufoStyle->rect_stats.set(160, 5, 160, 60);   // mirrors the stock craft articles
+			ufoStyle->rect_text.set(5, 40, 140, 100);
+			article = ufoStyle;
+		}
+		registerArticle(article, articleId, craft->getType(), "STR_XCOM_CRAFT_ARMAMENT",
+			gateFor(craft->getRequirements(), craft->getType()));
+	}
+
+	// --- Craft weapons -----------------------------------------------------------------------
+	for (auto& rulePair : _craftWeapons)
+	{
+		RuleCraftWeapon* craftWeapon = rulePair.second;
+		const std::string& articleId = craftWeapon->getUfopediaType();
+		if (!needsArticle(articleId))
+			continue;
+		// Resolves by article id alone - see the armor loop.
+		if (articleId != craftWeapon->getType())
+			continue;
+
+		// Craft weapons carry no requirements of their own; inherit the launcher item's.
+		std::vector<std::string> requires_;
+		if (const RuleItem* launcher = craftWeapon->getLauncherItem())
+		{
+			requires_ = researchNames(launcher->getRequirements());
+		}
+
+		ArticleDefinition* article = nullptr;
+		if (tftdStyle)
+		{
+			if (!tftdInterfaceReady("articleCraftWeaponTFTD"))
+				continue;
+			article = makeTftd(UFOPAEDIA_TYPE_TFTD_CRAFT_WEAPON);
+		}
+		else
+		{
+			auto* ufoStyle = new ArticleDefinitionCraftWeapon();
+			ufoStyle->image_id = genericBackground;
+			article = ufoStyle;
+		}
+		registerArticle(article, articleId, craftWeapon->getType(), "STR_XCOM_CRAFT_ARMAMENT",
+			gateFor(std::move(requires_), craftWeapon->getType()));
+	}
+
+	// --- Base facilities ---------------------------------------------------------------------
+	for (auto& rulePair : _facilities)
+	{
+		RuleBaseFacility* facility = rulePair.second;
+		const std::string& articleId = facility->getUfopediaType();
+		if (!needsArticle(articleId))
+			continue;
+		// Resolves by article id alone - see the armor loop.
+		if (articleId != facility->getType())
+			continue;
+
+		ArticleDefinition* article = nullptr;
+		if (tftdStyle)
+		{
+			if (!tftdInterfaceReady("articleBaseFacilityTFTD"))
+				continue;
+			article = makeTftd(UFOPAEDIA_TYPE_TFTD_BASE_FACILITY);
+		}
+		else
+		{
+			article = new ArticleDefinitionBaseFacility(); // background is hardcoded
+		}
+		registerArticle(article, articleId, facility->getType(), "STR_BASE_FACILITIES",
+			gateFor(facility->getRequirements(), facility->getType()));
+	}
+
+	// --- UFOs --------------------------------------------------------------------------------
+	// Enemy content with no requirements field of its own, so unlike the player-facing types
+	// above it is generated ONLY when a gate can be derived. An ungated UFO article would be
+	// readable on day one, which is exactly the disclosure the vanilla articles avoid.
+	for (auto& rulePair : _ufos)
+	{
+		RuleUfo* ufo = rulePair.second;
+		const std::string& articleId = ufo->getType();
+		if (!needsArticle(articleId))
+			continue;
+		auto gate = derivedGate(ufo->getType());
+		if (gate.empty())
+			continue;
+
+		ArticleDefinition* article = nullptr;
+		if (tftdStyle)
+		{
+			if (!tftdInterfaceReady("articleUsoTFTD"))
+				continue;
+			article = makeTftd(UFOPAEDIA_TYPE_TFTD_USO);
+		}
+		else
+		{
+			article = new ArticleDefinitionUfo(); // background is hardcoded
+		}
+		registerArticle(article, articleId, ufo->getType(), "STR_UFOS", std::move(gate));
+	}
+
+	// --- Units (alien/civilian types) --------------------------------------------------------
+	// Same rule as UFOs: no gate, no article. In stock the gate is the live-alien interrogation
+	// topic named after the unit (STR_SECTOID_SOLDIER and friends).
+	// Unit articles have no TFTD counterpart, so these are always UFO-style.
+	for (auto& rulePair : _units)
+	{
+		Unit* unit = rulePair.second;
+		const std::string& articleId = unit->getType();
+		if (!needsArticle(articleId))
+			continue;
+		auto gate = derivedGate(unit->getType());
+		if (gate.empty())
+			continue;
+
+		auto* article = new ArticleDefinitionUnit();
+		article->image_id = genericBackground;
+		article->rect_text.set(5, 30, 310, 18);
+		article->rect_stats.set(5, 54, 200, 58);
+		article->rect_armor.set(5, 118, 200, 52);
+		registerArticle(article, articleId, unit->getType(), "STR_ALIEN_LIFE_FORMS", std::move(gate));
+	}
+
+	// --- Soldier types -----------------------------------------------------------------------
+	for (auto& rulePair : _soldiers)
+	{
+		RuleSoldier* soldier = rulePair.second;
+		const std::string& articleId = soldier->getType();
+		if (!needsArticle(articleId))
+			continue;
+
+		auto* article = new ArticleDefinitionSoldier();
+		article->image_id = genericBackground;
+		article->rect_text.set(5, 30, 310, 18);
+		article->rect_stats.set(5, 54, 200, 110);
+		registerArticle(article, articleId, soldier->getType(), "STR_WEAPONS_AND_EQUIPMENT",
+			gateFor(soldier->getRequirements(), soldier->getType()));
+	}
+
+	Log(LOG_INFO) << "Generated " << generatedCount << " fallback ufopaedia article(s) ("
+		<< (tftdStyle ? "TFTD" : "UFO") << " style), listed in index: "
+		<< (_listGeneratedPediaArticles ? "yes" : "no");
+}
+
+/**
  * Sorts all our lists according to their weight.
  */
 void Mod::sortLists()
@@ -5259,6 +5637,12 @@ void Mod::sortLists()
 	for (auto& rulePair : _ufopaediaArticles)
 	{
 		auto* rule = rulePair.second;
+		// [DX] a generated article that won't be listed must not register its section either,
+		// or the pedia grows empty categories.
+		if (rule->isGenerated() && !_listGeneratedPediaArticles)
+		{
+			continue;
+		}
 		if (rule->section != UFOPAEDIA_NOT_AVAILABLE)
 		{
 			if (_ufopaediaSections.find(rule->section) == _ufopaediaSections.end())

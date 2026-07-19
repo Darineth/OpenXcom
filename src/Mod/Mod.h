@@ -290,6 +290,7 @@ private:
 	bool _shareAmmoCategories, _showDogfightDistanceInKm, _showFullNameInAlienInventory;
 	int _alienInventoryOffsetX, _alienInventoryOffsetBigUnit;
 	bool _hidePediaInfoButton;
+	bool _generateMissingPediaArticles, _listGeneratedPediaArticles;
 	int _extraNerdyPediaInfoType;
 	bool _giveScoreAlsoForResearchedArtifacts, _statisticalBulletConservation, _stunningImprovesMorale;
 	int _tuRecoveryWakeUpNewTurn;
@@ -414,6 +415,8 @@ private:
 	void modResources();
 	/// Sorts all our lists according to their weight.
 	void sortLists();
+	/// [DX] Synthesizes stand-in pedia articles for rules the modder left without one.
+	void generateMissingUfopaediaArticles();
 public:
 	static int DOOR_OPEN;
 	static int SLIDING_DOOR_OPEN;
@@ -1036,6 +1039,10 @@ public:
 	int getAlienInventoryOffsetBigUnit() const { return _alienInventoryOffsetBigUnit; }
 	/// Show the INFO button (where applicable) or not?
 	bool getShowPediaInfoButton() const { return !_hidePediaInfoButton; }
+	/// [DX] Auto-generate stand-in pedia articles for rules with no authored entry?
+	bool getGenerateMissingPediaArticles() const { return _generateMissingPediaArticles; }
+	/// [DX] Should auto-generated pedia articles also appear in the browsable pedia index?
+	bool getListGeneratedPediaArticles() const { return _listGeneratedPediaArticles; }
 	/// Display extra item info (accuracy modifier and power bonus) in the main pedia article?
 	int getExtraNerdyPediaInfoType() const { return _extraNerdyPediaInfoType; }
 	/// In debriefing, give score also for already researched alien artifacts?

@@ -273,9 +273,13 @@ namespace OpenXcom
 	void Ufopaedia::list(SavedGame *save, Mod *mod, const std::string &section, ArticleDefinitionList &data)
 	{
 		auto state = createCommonArticleState(save, mod);
+		// [DX] Auto-generated articles stay openable via middle-click regardless, but only
+		// appear in the browsable index when the mod opts in - otherwise every item and armor
+		// would flood a pedia table of contents the modder curated deliberately.
+		const bool listGenerated = mod->getListGeneratedPediaArticles();
 		for (auto* a : state->articleList)
 		{
-			if (a->section == section)
+			if (a->section == section && (listGenerated || !a->isGenerated()))
 			{
 				data.push_back(a);
 			}
@@ -365,13 +369,22 @@ namespace OpenXcom
 	std::shared_ptr<ArticleCommonState> Ufopaedia::createCommonArticleState(SavedGame *save, Mod *mod)
 	{
 		auto shared = std::make_shared<ArticleCommonState>();
+		// [DX] Generated articles must stay in articleList even when they aren't listed, or
+		// openArticle() couldn't find them and middle-click would stop working - but they must
+		// not be reachable by the prev/next buttons either, or navigation would wander into
+		// exactly the entries the mod chose to keep out of its index. Marking them in
+		// articleStatusList reuses the engine's existing skip-this-one mechanism for both.
+		const bool listGenerated = mod->getListGeneratedPediaArticles();
 		for (const auto& articleName : mod->getUfopaediaList())
 		{
 			ArticleDefinition *article = mod->getUfopaediaArticle(articleName);
 			if (isArticleAvailable(save, article) && article->section != UFOPAEDIA_NOT_AVAILABLE && !isCommendationArticleInvisible(save, article))
 			{
+				const bool skipInNavigation =
+					save->getUfopediaRuleStatus(articleName) == ArticleDefinition::PEDIA_STATUS_HIDDEN
+					|| (article->isGenerated() && !listGenerated);
 				shared->articleList.push_back(article);
-				shared->articleStatusList.push_back(save->getUfopediaRuleStatus(articleName) == ArticleDefinition::PEDIA_STATUS_HIDDEN);
+				shared->articleStatusList.push_back(skipInNavigation);
 			}
 		}
 		return shared;

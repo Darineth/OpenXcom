@@ -82,6 +82,10 @@ namespace OpenXcom
 		virtual void load(const YAML::YamlNodeReader& reader, int listOrder);
 		/// Gets the article's list weight.
 		int getListOrder() const;
+		/// [DX] Initializes this article as an auto-generated fallback for a rule with no authored entry.
+		void makeGenerated(const std::string& articleId, const std::string& title, int listOrder);
+		/// [DX] Was this article auto-generated rather than authored by the modder?
+		bool isGenerated() const { return _generated; }
 
 		std::string id;
 		std::string section;
@@ -148,6 +152,7 @@ namespace OpenXcom
 		std::vector<ArticlePage> _pages;
 	private:
 		int _listOrder;
+		bool _generated = false;
 	};
 
 	class ArticleDefinitionRect
@@ -281,6 +286,8 @@ namespace OpenXcom
 		ArticleDefinitionTFTD();
 		/// Loads the article from YAML.
 		void load(const YAML::YamlNodeReader& reader, int listOrder) override;
+		/// [DX] Selects which TFTD article style this article renders as (normally read from type_id).
+		void setTftdType(UfopaediaTypeId type) { _type_id = type; }
 
 		std::string image_id;
 		int text_width;
