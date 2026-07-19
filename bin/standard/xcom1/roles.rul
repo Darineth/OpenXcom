@@ -234,53 +234,61 @@ roles:
 #  here, not in code (TFTD needs its own set). The value's block replaces
 #  the armor's accent block; its low nibble selects the recolor mode:
 #  1 = lighten, 15 = darken (dark half of the ramp), else plain offset.
-#  Order here is the picker's display order; mods can retune by name.
+#
+#  Order here is the picker's display order, and it is sorted BY HUE, not
+#  by name: neutrals first (white -> gray -> black -> metallic), then the
+#  spectrum red -> pink -> orange -> beige/brown -> yellow -> green ->
+#  blue -> purple, each family running light -> base -> dark. The hue of
+#  an entry is the hue of the 16-colour palette BLOCK it points at (see
+#  the trailing comments), which is not always what the name suggests -
+#  e.g. STR_COLOR_BLUE_GREEN (48) is block 3, a plain green ramp.
+#  Mods can retune by name; reordering here reorders the picker.
 # =====================================================================
 soldierArmorBaseColors:
   - name: STR_COLOR_WHITE
-    color: 1
+    color: 1            # block 0 greyscale, lighten
   - name: STR_COLOR_GRAY
-    color: 0
+    color: 0            # block 0 greyscale
   - name: STR_COLOR_BLACK
-    color: 15
-  - name: STR_COLOR_LIGHT_RED
-    color: 33
-  - name: STR_COLOR_RED
-    color: 32
-  - name: STR_COLOR_DARK_RED
-    color: 47
-  - name: STR_COLOR_ORANGE
-    color: 17
-  - name: STR_COLOR_YELLOW
-    color: 145
-  - name: STR_COLOR_LIGHT_GREEN
-    color: 65
-  - name: STR_COLOR_GREEN
-    color: 64
-  - name: STR_COLOR_DARK_GREEN
-    color: 79
-  - name: STR_COLOR_BLUE_GREEN
-    color: 48
-  - name: STR_COLOR_LIGHT_BLUE
-    color: 129
-  - name: STR_COLOR_BLUE
-    color: 208
-  - name: STR_COLOR_NAVY
-    color: 223
-  - name: STR_COLOR_LIGHT_PURPLE
-    color: 193
-  - name: STR_COLOR_PURPLE
-    color: 192
-  - name: STR_COLOR_DARK_PURPLE
-    color: 207
+    color: 15           # block 0 greyscale, darken
   - name: STR_COLOR_METALLIC
-    color: 224
+    color: 224          # block 14 lavender/blue-grey - a cool neutral
+  - name: STR_COLOR_LIGHT_RED
+    color: 33           # block 2 salmon/red, lighten
+  - name: STR_COLOR_RED
+    color: 32           # block 2 salmon/red
+  - name: STR_COLOR_DARK_RED
+    color: 47           # block 2 salmon/red, darken
   - name: STR_COLOR_PINK
-    color: 177
+    color: 177          # block 11 pink/rose, lighten
+  - name: STR_COLOR_ORANGE
+    color: 17           # block 1 amber/orange, lighten
   - name: STR_COLOR_BEIGE
-    color: 80
+    color: 80           # block 5 warm grey/taupe
   - name: STR_COLOR_BROWN
-    color: 160
+    color: 160          # block 10 tan/brown
+  - name: STR_COLOR_YELLOW
+    color: 145          # block 9 pale yellow, lighten
+  - name: STR_COLOR_LIGHT_GREEN
+    color: 65           # block 4 yellow-green, lighten
+  - name: STR_COLOR_GREEN
+    color: 64           # block 4 yellow-green
+  - name: STR_COLOR_DARK_GREEN
+    color: 79           # block 4 yellow-green, darken
+  - name: STR_COLOR_BLUE_GREEN
+    color: 48           # block 3 green (despite the name)
+  - name: STR_COLOR_LIGHT_BLUE
+    color: 129          # block 8 sky blue, lighten
+  - name: STR_COLOR_BLUE
+    color: 208          # block 13 bright sky blue
+  - name: STR_COLOR_NAVY
+    color: 223          # block 13 bright sky blue, darken
+  - name: STR_COLOR_LIGHT_PURPLE
+    color: 193          # block 12 lavender/purple, lighten
+  - name: STR_COLOR_PURPLE
+    color: 192          # block 12 lavender/purple
+  - name: STR_COLOR_DARK_PURPLE
+    color: 207          # block 12 lavender/purple, darken
 
 # =====================================================================
 #  Armor accent blocks for role armor colours.

@@ -132,6 +132,14 @@ roleIcons:
     sprite: RoleIconBolt
     mapSprite: RoleIconBoltMap
 
+  - name: SLASHED_EYE
+    sprite: RoleIconSlashedEye
+    mapSprite: RoleIconSlashedEyeMap
+
+  - name: SHELL
+    sprite: RoleIconShell
+    mapSprite: RoleIconShellMap
+
 # =====================================================================
 #  Soldier armor colours - TFTD tactical-palette values.
 #  TFTD's tactical palette has a different block layout than UFO's, so
@@ -141,54 +149,52 @@ roleIcons:
 #  mode: 1 = lighten, 15 = darken, else plain offset. TFTD has no purple
 #  ramp, so the purple names are omitted here. FIRST-GUESS VALUES - tune
 #  in play (deep-water palette variants tint all ramps bluer).
+#
+#  Order here is the picker's display order, and it is sorted BY HUE, not
+#  by name: neutrals first, then red -> pink -> orange -> beige/brown ->
+#  gold/yellow -> green -> blue, each family light -> base -> dark. The hue
+#  of an entry is the hue of the palette BLOCK it points at (see the
+#  trailing comments), which is not always what the name suggests.
 # =====================================================================
-  - name: SLASHED_EYE
-    sprite: RoleIconSlashedEye
-    mapSprite: RoleIconSlashedEyeMap
-
-  - name: SHELL
-    sprite: RoleIconShell
-    mapSprite: RoleIconShellMap
-
 soldierArmorBaseColors:
   - name: STR_COLOR_WHITE
-    color: 49            # block 3 greyscale, lighten
+    color: 49           # block 3 greyscale, lighten
   - name: STR_COLOR_GRAY
-    color: 48            # block 3 greyscale
+    color: 48           # block 3 greyscale
   - name: STR_COLOR_BLACK
-    color: 63            # block 3 greyscale, darken
+    color: 63           # block 3 greyscale, darken
   - name: STR_COLOR_LIGHT_RED
-    color: 177           # block 11 orange-red, lighten
+    color: 177          # block 11 orange-red, lighten
   - name: STR_COLOR_RED
-    color: 176           # block 11 orange-red
+    color: 176          # block 11 orange-red
   - name: STR_COLOR_DARK_RED
-    color: 191           # block 11 orange-red, darken
-  - name: STR_COLOR_ORANGE
-    color: 161           # block 10 orange/amber, lighten
-  - name: STR_COLOR_GOLD
-    color: 128           # block 8 gold->green
-  - name: STR_COLOR_YELLOW
-    color: 17            # block 1 yellow->green, lighten
-  - name: STR_COLOR_LIGHT_GREEN
-    color: 81            # block 5 lime, lighten
-  - name: STR_COLOR_GREEN
-    color: 80            # block 5 lime
-  - name: STR_COLOR_DARK_GREEN
-    color: 95            # block 5 lime, darken
-  - name: STR_COLOR_BLUE_GREEN
-    color: 96            # block 6 aqua/teal
-  - name: STR_COLOR_LIGHT_BLUE
-    color: 241           # block 15 cyan, lighten
-  - name: STR_COLOR_BLUE
-    color: 192           # block 12 blue-grey
-  - name: STR_COLOR_NAVY
-    color: 207           # block 12 blue-grey, darken
+    color: 191          # block 11 orange-red, darken
   - name: STR_COLOR_PINK
-    color: 225           # block 14 pink/rose, lighten
+    color: 225          # block 14 pink/rose, lighten
+  - name: STR_COLOR_ORANGE
+    color: 161          # block 10 orange/amber, lighten
   - name: STR_COLOR_BEIGE
-    color: 32            # block 2 cream/khaki
+    color: 32           # block 2 cream/khaki
   - name: STR_COLOR_BROWN
-    color: 64            # block 4 brown
+    color: 64           # block 4 brown
+  - name: STR_COLOR_GOLD
+    color: 128          # block 8 gold->green
+  - name: STR_COLOR_YELLOW
+    color: 17           # block 1 yellow->green, lighten
+  - name: STR_COLOR_LIGHT_GREEN
+    color: 81           # block 5 lime, lighten
+  - name: STR_COLOR_GREEN
+    color: 80           # block 5 lime
+  - name: STR_COLOR_DARK_GREEN
+    color: 95           # block 5 lime, darken
+  - name: STR_COLOR_BLUE_GREEN
+    color: 96           # block 6 aqua/teal
+  - name: STR_COLOR_LIGHT_BLUE
+    color: 241          # block 15 cyan, lighten
+  - name: STR_COLOR_BLUE
+    color: 192          # block 12 blue-grey
+  - name: STR_COLOR_NAVY
+    color: 207          # block 12 blue-grey, darken
 
 # =====================================================================
 #  Armor accent blocks - measured from the actual TFTD sprite sheets

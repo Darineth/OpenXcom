@@ -1,6 +1,5 @@
 # TODO
 
-* Sort Icon List
 * Should psi backlash potentially be able to take the target's stats into account?
 * Configure a modded psi damage type in the dx ruleset
 * Focus camera on dying units over projectiles
@@ -13,6 +12,9 @@
 - Overwatch+dual fire?
 - Overwatch range vs. weapon's (attacktype)Range?  What does that field do in DX anyway?
 - Multiple reaction fires in the log during a multi-shot attack maybe?
+
+# Needs review
+- Psi chance displays/calculations - especially Mind Blast
 
 # TFTD
 

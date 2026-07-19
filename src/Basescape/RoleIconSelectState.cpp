@@ -18,10 +18,13 @@
  */
 #include "RoleIconSelectState.h"
 #include <cctype>
+#include <algorithm>
+#include <utility>
 #include "../Engine/Game.h"
 #include "../Engine/Options.h"
 #include "../Engine/Action.h"
 #include "../Engine/LocalizedText.h"
+#include "../Engine/Unicode.h"
 #include "../Interface/Window.h"
 #include "../Interface/Text.h"
 #include "../Interface/TextButton.h"
@@ -97,10 +100,24 @@ RoleIconSelectState::RoleIconSelectState(Role *role) : _role(role)
 	_lstIcons->setMargin(8);
 	_lstIcons->onMouseClick((ActionHandler)&RoleIconSelectState::lstIconsClick);
 
+	// DX: the mod's registry order is ruleset load order, which is arbitrary to the player and gets
+	// worse the more mods stack icons. Sort by the label actually shown, not by the underlying id, so
+	// the list reads alphabetically on screen. naturalCompare keeps any trailing numbers in a sensible
+	// order ("Rifleman 2" before "Rifleman 10") and matches how the other pickers sort.
+	// Only the display order changes; the mod's own index is untouched.
+	std::vector<std::pair<std::string, std::string>> icons; // <display label, registry id>
 	for (const auto& iconName : _game->getMod()->getRoleIconsList())
 	{
-		_lstIcons->addRow(1, prettifyIconName(iconName).c_str());
-		_iconNames.push_back(iconName);
+		icons.emplace_back(prettifyIconName(iconName), iconName);
+	}
+	std::sort(icons.begin(), icons.end(),
+		[](const std::pair<std::string, std::string>& a, const std::pair<std::string, std::string>& b)
+		{ return Unicode::naturalCompare(a.first, b.first); });
+
+	for (const auto& icon : icons)
+	{
+		_lstIcons->addRow(1, icon.first.c_str());
+		_iconNames.push_back(icon.second); // stays parallel with the rows, which lstIconsClick indexes
 	}
 }
 
