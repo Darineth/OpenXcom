@@ -161,6 +161,7 @@ OPT bool unitStatusIndicatorEnabled;
 OPT bool motionDetectorOverlayEnabled;
 OPT bool psiChanceIndicatorEnabled;
 OPT bool fogOfWarEnabled;
+OPT bool battleFocusDyingUnits;
 OPT bool oxceDisableAlienInventory;
 OPT bool oxceDisableHitLog;
 OPT bool oxceDisableInventoryTuCost;

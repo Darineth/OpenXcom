@@ -1,7 +1,5 @@
 # TODO
 
-* Focus camera on dying units over projectiles
-* I really want the automatic UFOPedia thing done.  This will help make it way easier to get access to item info ingame.
 
 # Documentation
 - Write a full ruleset document.  Explain fields, structures, options. **DONE, but might need a review pass?**

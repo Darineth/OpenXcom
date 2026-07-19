@@ -140,7 +140,7 @@ Map::Map(Game *game, int width, int height, int x, int y, int visibleMapHeight) 
 	_anyIndicator(false), _isAltPressed(false), _isCtrlPressed(false),
 	_selectorX(0), _selectorY(0), _mouseX(0), _mouseY(0), _cursorType(CT_NORMAL), _cursorSize(1), _animFrame(0),
 	_followProjectile(true), _projectileInFOV(false), _explosionInFOV(false), _launch(false), _visibleMapHeight(visibleMapHeight),
-	_unitDying(false), _smoothingEngaged(false), _flashScreen(false), _bgColor(15), _projectileSet(0),
+	_unitDying(false), _deathFocus(false), _smoothingEngaged(false), _flashScreen(false), _bgColor(15), _projectileSet(0),
 	_targetingProjectile(0), _previewTarget(-1, -1, -1), _previewActionType(-1), _previewActor(0), _previewAlt(false),
 	_showObstacles(false), _showInfoOnCursor(false), _owLosCacheOrigin(-1, -1, -1)
 {
@@ -1153,9 +1153,9 @@ void Map::drawTerrain(Surface *surface)
 		// if the projectile is outside the viewport - center it back on it
 		_camera->convertVoxelToScreen(avgProjectileVoxel, &bulletPositionScreen);
 
-		// Only actively chase the bullets when nothing is exploding, so the camera
-		// doesn't fight the explosion's own framing.
-		if (_explosions.empty() && _projectileInFOV && _followProjectile)
+		// Only actively chase the bullets when nothing is exploding and nobody is dying on camera,
+		// so the camera doesn't fight the explosion's or the death's own framing.
+		if (_explosions.empty() && !_deathFocus && _projectileInFOV && _followProjectile)
 		{
 			Position newCam = _camera->getMapOffset();
 			if (newCam.z != bulletHighZ) //switch level

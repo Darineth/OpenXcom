@@ -21,6 +21,7 @@
 #include "TileEngine.h"
 #include "BattlescapeState.h"
 #include "Map.h"
+#include "Camera.h"
 #include "../Engine/Game.h"
 #include "../Savegame/BattleItem.h"
 #include "../Savegame/BattleUnit.h"
@@ -136,7 +137,45 @@ void UnitDieBState::init()
 		{
 			_parent->popState();
 		}
+		return;
 	}
+
+	focusCamera();
+}
+
+/**
+ * Brings a death the player would otherwise miss into view.
+ * Only moves the camera when the dying unit is visible but off screen, and claims the camera
+ * from any in-flight projectile for the duration of the death animation.
+ */
+void UnitDieBState::focusCamera()
+{
+	if (!Options::battleFocusDyingUnits)
+		return;
+
+	// nothing to look at before the battle proper, or if the unit already left the map
+	if (_parent->getSave()->isBeforeGame() || !_parent->getSave()->getBattleState() || !_unit->getTile())
+		return;
+
+	// don't pan to deaths the player can't see - that would give away unspotted positions
+	if (!_unit->getVisible() && !_parent->getSave()->getDebugMode())
+		return;
+
+	Camera *camera = _parent->getMap()->getCamera();
+	const int size = _unit->getArmor()->getSize() - 1;
+	if (camera->isOnScreen(_unit->getPosition(), false, size, false))
+		return;
+
+	camera->centerOnPosition(_unit->getPosition());
+	_parent->getMap()->setDeathFocus(true);
+}
+
+/**
+ * Releases the camera claim taken by focusCamera().
+ */
+void UnitDieBState::deinit()
+{
+	_parent->getMap()->setDeathFocus(false);
 }
 
 /**

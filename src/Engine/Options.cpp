@@ -662,6 +662,7 @@ void createAdvancedOptionsDX()
 	_info.push_back(OptionInfo(OPTION_DX, "motionDetectorOverlayEnabled", &motionDetectorOverlayEnabled, true, "STR_MOTION_DETECTOR_OVERLAY", "STR_BATTLESCAPE"));
 	_info.push_back(OptionInfo(OPTION_DX, "psiChanceIndicatorEnabled", &psiChanceIndicatorEnabled, true, "STR_PSI_CHANCE_INDICATOR", "STR_BATTLESCAPE"));
 	_info.push_back(OptionInfo(OPTION_DX, "fogOfWarEnabled", &fogOfWarEnabled, true, "STR_FOG_OF_WAR", "STR_BATTLESCAPE"));
+	_info.push_back(OptionInfo(OPTION_DX, "battleFocusDyingUnits", &battleFocusDyingUnits, true, "STR_FOCUS_DYING_UNITS", "STR_BATTLESCAPE"));
 	_info.push_back(OptionInfo(OPTION_DX, "activityDisplayEnabled", &activityDisplayEnabled, true, "STR_ACTIVITY_DISPLAY", "STR_GEOSCAPE"));
 }
 

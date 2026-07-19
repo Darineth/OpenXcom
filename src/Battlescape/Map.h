@@ -127,7 +127,10 @@ private:
 	Camera *_camera;
 	int _visibleMapHeight;
 	std::vector<Position> _waypoints;
-	bool _unitDying, _smoothCamera, _smoothingEngaged, _flashScreen;
+	// DX: _deathFocus means a dying unit has claimed the camera; it outranks projectile following
+	// until that unit's UnitDieBState pops. Kept separate from _unitDying, which only gates map
+	// drawing during hidden movement (and is player-faction-only).
+	bool _unitDying, _deathFocus, _smoothCamera, _smoothingEngaged, _flashScreen;
 	int _bgColor;
 	bool _previewSettingArrows, _previewSettingTu, _previewSettingEnergy;
 	Text *_txtAccuracy;
@@ -223,6 +226,10 @@ public:
 	void setFollowProjectile(bool followProjectile) { _followProjectile = followProjectile; }
 	/// Gets follow projectile flag.
 	bool getFollowProjectile() const { return _followProjectile; }
+	/// Sets the dying-unit camera focus flag.
+	void setDeathFocus(bool deathFocus) { _deathFocus = deathFocus; }
+	/// Gets the dying-unit camera focus flag.
+	bool getDeathFocus() const { return _deathFocus; }
 	/// Gets alt pressed flag.
 	bool isAltPressed() const { return _isAltPressed; }
 	/// Gets ctrl pressed flag.

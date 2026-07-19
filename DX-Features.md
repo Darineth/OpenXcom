@@ -925,6 +925,23 @@ Implemented as a renderer change keyed off the engine's existing per-tile player
 `TileEngine::calculateTilesInFOV` that kept that count from returning to zero (so tiles never
 re-fogged). Toggle: **Fog of war (dim unseen tiles)** (`fogOfWarEnabled`, default on).
 
+## Dying-Unit Camera Focus
+
+The tactical camera in base OpenXcom/OXCE never frames deaths — the death pirouette and fall play
+wherever the camera happens to be, so a kill on a unit outside the viewport is simply never seen,
+and while a projectile is still in flight the camera keeps chasing the bullet.
+
+DX gives deaths the camera: when a unit **the player can see** dies **off screen**, the camera
+centers on it, and for the duration of the death animation that claim outranks projectile
+following (the same way explosions already do). A unit that is already on screen is left alone, so
+normal in-view firefights get no camera jerk. Deaths the player cannot see never move the camera,
+so unspotted enemy positions are not given away. *(design:
+[plans/dying-unit-camera-focus.md](plans/dying-unit-camera-focus.md))*
+
+Implemented in `UnitDieBState::init` (using the engine's existing `Camera::isOnScreen` test) plus a
+new `Map::_deathFocus` flag in the projectile-follow condition in `Map::drawTerrain`. Toggle:
+**Focus camera on dying units** (`battleFocusDyingUnits`, default on).
+
 ## Maximize Info Screens (all screens)
 
 OXCE's **Maximize Info Screens** option (`maximizeInfoScreens`) drops a screen to 320×200 so its

@@ -105,6 +105,10 @@ en-US:
 #=================== DX Fog of War ===================
 #Options.cpp
   STR_FOG_OF_WAR: "Fog of war (dim unseen tiles)"
+#=================== DX Dying Unit Camera Focus ===================
+#Options.cpp
+  STR_FOCUS_DYING_UNITS: "Focus camera on dying units"
+  STR_FOCUS_DYING_UNITS_DESC: "When a unit you can see dies off screen, centre the camera on it so you don't miss the kill. Takes priority over the camera following projectiles. Units already on screen are left alone."
 #=================== DX Action Menu Revamp ===================
 #OptionsAdvancedState.cpp / OptionsControlsState.cpp - DX options tab
   STR_ENGINE_DX: "DX"

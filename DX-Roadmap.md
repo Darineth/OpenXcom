@@ -665,6 +665,14 @@ implementation (see CLAUDE.md "Planning Features").*
   selected unit's health bar, so wounded/bleeding units are visible at a glance. Delivered as part of
   **Bleedout & Indicators** (Phase 7) via `Bar::setMarks`. *(design: [plans/Feature-Bleedout.md](plans/Feature-Bleedout.md))*
 
+- [x] **Dying-unit camera focus** — the tactical camera never framed deaths, so a kill on an
+  off-screen unit was invisible to the player, and an in-flight projectile outranked it. A dying
+  unit that is visible but off screen now pulls the camera, and claims it from projectile
+  following for the duration of the death animation. Units already on screen are left alone (no
+  camera jerk in normal fights). Toggle: **Focus camera on dying units**
+  (`battleFocusDyingUnits`, default on).
+  *(design: [plans/dying-unit-camera-focus.md](plans/dying-unit-camera-focus.md))*
+
 # Maybe / Someday
 
 *Deprioritized ideas — interesting but not clearly worth building yet. Revisit if a concrete use

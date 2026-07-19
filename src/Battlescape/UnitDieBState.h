@@ -38,6 +38,8 @@ private:
 	bool _noSound;
 	int _extraFrame;
 	bool _overKill;
+	/// Centers the camera on the dying unit if the player would otherwise miss the death.
+	void focusCamera();
 public:
 	/// Creates a new UnitDieBState class
 	UnitDieBState(BattlescapeGame *parent, BattleUnit *unit, const RuleDamageType *damageType, bool noSound);
@@ -45,6 +47,8 @@ public:
 	~UnitDieBState();
 	/// Initializes the state.
 	void init() override;
+	/// Cleans up after the state is popped.
+	void deinit() override;
 	/// Handles a cancels request.
 	void cancel() override;
 	/// Runs state functionality every cycle.
