@@ -134,6 +134,8 @@ en-US:
 #=================== DX Burst Fire ===================
 #RuleItem.cpp - burst shot mode name
   STR_BURST_SHOT: "Burst Shot"
+#BattlescapeGame.cpp - TU-reserve warning, matching the stock snap/auto/aimed messages
+  STR_TIME_UNITS_RESERVED_FOR_BURST_SHOT: "Time Units reserved for Burst Shot"
 #DebriefingState.cpp
   STR_RECOVERY: "Recovery"
   STR_STATUS_SHORT: "ST"

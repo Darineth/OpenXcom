@@ -1178,6 +1178,41 @@ in via `tuAuto`; weapons without it behave exactly as before.
   `keyBattleActionItem6` (the DX-added 6th key; `keyBattleActionItem5` is taken by Throw on
   throwable firearms); the menu shows its shot count and flags an ammo warning when the loaded
   clip holds fewer rounds than the burst needs.
+- **Burst-only weapons are fully supported.** Because burst was added on top of the stock engine,
+  several inherited code paths enumerated only snap/auto/aimed and silently skipped it — invisible
+  on a normal weapon, but crippling for a weapon whose *only* fire mode is burst. All of them now
+  handle burst:
+  - the **ammo check** (a burst-only weapon used to report as having no usable ammo at all);
+  - **reaction fire** — falls back to burst when the weapon has no snapshot configured (previously
+    a burst-only weapon could never react);
+  - the **TU-reserve fallback ladder**, now Auto → Burst → Snap → Aimed, plus a burst case in the
+    reserve-failure warning (`STR_TIME_UNITS_RESERVED_FOR_BURST_SHOT`) and in the AI's stock
+    percentage reserve (37%);
+  - **berserk fire** — a berserking unit falls through auto → burst → snap → aimed;
+  - the AI's **"was hit by" tracking**, so being burst-fired at now makes the AI notice;
+  - **spray targeting** (`sprayWaypoints`), previously auto-only.
+- **Aggression bonus.** In the extended fire-mode scoring, burst receives the aggression bonus that
+  auto gets, **scaled by shot count** (`burstShots / autoShots`) — a 3-round burst beside an
+  8-round auto gets ~⅜ of it. A weapon with no auto mode gets the full bonus, since burst is then
+  its spray mode.
+
+### AI TU reserve (`ai: normalTUReserve` / `combatTUReserve`)
+
+Two opt-in fixes to inherited AI reserve behavior, **both default `false`** so stock play is
+unchanged. See [docs/Ruleset-AI.md](docs/Ruleset-AI.md#tu-reserve) for the keys and
+[DX-OXCE-Fixes.md](DX-OXCE-Fixes.md) for the full analysis.
+
+- `normalTUReserve` — the AI reserves the **actual TU cost** of its intended shot, using the same
+  logic (and Auto → Burst → Snap → Aimed → kneel fallback) as the player, instead of a flat
+  percentage of its *maximum* TU that ignores the weapon entirely.
+- `combatTUReserve` — the AI also reserves while in **combat and ambush**, not only while
+  patrolling. Stock AI reserves nothing in combat, walks itself to ~0 TU, and consequently can
+  neither shoot nor reaction fire; this is the root cause of aliens seeming never to react.
+  In combat the reserve applies only when the AI is repositioning, since reserving on top of a
+  shot it is about to take would deadlock it.
+
+Enabling both makes aliens meaningfully more dangerous — they hold a shot after moving and
+reaction-fire far more often — so treat it as a balance change, not just a bug fix.
 
 ## Live Trajectory Preview
 

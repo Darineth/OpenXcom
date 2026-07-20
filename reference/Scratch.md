@@ -2,7 +2,7 @@
 
 
 # Documentation
-- Write a full ruleset document.  Explain fields, structures, options. **DONE, but might need a review pass?**
+
 
 # Questions
 - Overwatch+dual fire?

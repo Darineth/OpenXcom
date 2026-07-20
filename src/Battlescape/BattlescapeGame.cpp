@@ -1556,29 +1556,43 @@ bool BattlescapeGame::checkReservedTU(BattleUnit *bu, int tu, int energy, bool j
 		return tu <= bu->getTimeUnits();
 	}
 
-	if (_save->getSide() == FACTION_HOSTILE && !_debugPlay) // aliens reserve TUs as a percentage rather than just enough for a single action.
+	if (_save->getSide() == FACTION_HOSTILE && !_debugPlay)
 	{
 		AIModule *ai = bu->getAIModule();
 		if (ai)
 		{
 			cost.type = ai->getReserveMode();
 		}
-		cost.updateTU();
-		cost.Energy += energy;
-		cost.Time = tu; //override original
-		switch (cost.type)
+		// DX: with `ai: normalTUReserve` the AI falls through to the same actual-shot-cost logic
+		// the player uses (including the auto->burst->snap->aimed fallback below). Without it,
+		// stock behaviour applies: reserve a flat percentage of the unit's *maximum* TU, which
+		// ignores the weapon entirely and strands TU on weapons with no matching shot mode.
+		if (!getMod()->getAINormalTUReserve())
 		{
-		case BA_SNAPSHOT: cost.Time += (bu->getBaseStats()->tu / 3); break; // 33%
-		case BA_AUTOSHOT: cost.Time += ((bu->getBaseStats()->tu / 5)*2); break; // 40%
-		case BA_AIMEDSHOT: cost.Time += (bu->getBaseStats()->tu / 2); break; // 50%
-		default: break;
+			cost.updateTU();
+			cost.Energy += energy;
+			cost.Time = tu; //override original
+			switch (cost.type)
+			{
+			case BA_SNAPSHOT: cost.Time += (bu->getBaseStats()->tu / 3); break; // 33%
+			case BA_BURSTSHOT: cost.Time += ((bu->getBaseStats()->tu * 3) / 8); break; // 37%
+			case BA_AUTOSHOT: cost.Time += ((bu->getBaseStats()->tu / 5)*2); break; // 40%
+			case BA_AIMEDSHOT: cost.Time += (bu->getBaseStats()->tu / 2); break; // 50%
+			default: break;
+			}
+			return cost.Time <= 0 || cost.haveTU();
 		}
-		return cost.Time <= 0 || cost.haveTU();
 	}
 
 	cost.updateTU();
-	// if the weapon has no autoshot, reserve TUs for snapshot
+	// if the weapon has no autoshot, reserve TUs for burst
 	if (cost.Time == 0 && cost.type == BA_AUTOSHOT)
+	{
+		cost.type = BA_BURSTSHOT;
+		cost.updateTU();
+	}
+	// if the weapon has no burst shot, reserve TUs for snapshot
+	if (cost.Time == 0 && cost.type == BA_BURSTSHOT)
 	{
 		cost.type = BA_SNAPSHOT;
 		cost.updateTU();
@@ -1631,6 +1645,7 @@ bool BattlescapeGame::checkReservedTU(BattleUnit *bu, int tu, int energy, bool j
 				switch (_save->getTUReserved())
 				{
 				case BA_SNAPSHOT: _parentState->warning("STR_TIME_UNITS_RESERVED_FOR_SNAP_SHOT"); break;
+				case BA_BURSTSHOT: _parentState->warning("STR_TIME_UNITS_RESERVED_FOR_BURST_SHOT"); break;
 				case BA_AUTOSHOT: _parentState->warning("STR_TIME_UNITS_RESERVED_FOR_AUTO_SHOT"); break;
 				case BA_AIMEDSHOT: _parentState->warning("STR_TIME_UNITS_RESERVED_FOR_AIMED_SHOT"); break;
 				default: ;
@@ -1811,7 +1826,7 @@ bool BattlescapeGame::cancelCurrentAction(bool bForce)
 				}
 				return true;
 			}
-			else if (_currentAction.type == BA_AUTOSHOT && _currentAction.sprayTargeting && !_currentAction.waypoints.empty())
+			else if ((_currentAction.type == BA_AUTOSHOT || _currentAction.type == BA_BURSTSHOT) && _currentAction.sprayTargeting && !_currentAction.waypoints.empty())
 			{
 				_currentAction.waypoints.pop_back();
 				if (!getMap()->getWaypoints()->empty())
@@ -1973,7 +1988,8 @@ void BattlescapeGame::primaryAction(Position pos)
 				getMap()->getWaypoints()->push_back(pos);
 			}
 		}
-		else if (_currentAction.type == BA_AUTOSHOT &&
+		// DX: burst is a DX-added mode; upstream gated spray targeting on auto alone, which predates it.
+		else if ((_currentAction.type == BA_AUTOSHOT || _currentAction.type == BA_BURSTSHOT) &&
 			_currentAction.weapon->getRules()->getSprayWaypoints() > 0 &&
 			_save->isCtrlPressed(true) &&
 			_save->isShiftPressed(true) &&

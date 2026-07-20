@@ -443,6 +443,7 @@ Mod::Mod() :
 	_aiUseDelayBlaster(3), _aiUseDelayFirearm(0), _aiUseDelayGrenade(3), _aiUseDelayProxy(999), _aiUseDelayMelee(0), _aiUseDelayPsionic(0), _aiUseDelayMedikit(999),
 	_aiFireChoiceIntelCoeff(5), _aiFireChoiceAggroCoeff(5), _aiExtendedFireModeChoice(false), _aiRespectMaxRange(false), _aiDestroyBaseFacilities(false),
 	_aiPickUpWeaponsMoreActively(false), _aiPickUpWeaponsMoreActivelyCiv(false),
+	_aiNormalTUReserve(false), _aiCombatTUReserve(false),
 	_aiReactionFireThreshold(0), _aiReactionFireThresholdCiv(0),
 	_maxLookVariant(0), _tooMuchSmokeThreshold(10), _customTrainingFactor(100),
 	_chanceToStopRetaliation(0), _chanceToDetectAlienBaseEachMonth(20), _lessAliensDuringBaseDefense(false),
@@ -3372,6 +3373,8 @@ void Mod::loadFile(const FileMap::FileRecord &filerec, ModScript &parsers)
 		nodeAI.tryRead("destroyBaseFacilities", _aiDestroyBaseFacilities);
 		nodeAI.tryRead("pickUpWeaponsMoreActively", _aiPickUpWeaponsMoreActively);
 		nodeAI.tryRead("pickUpWeaponsMoreActivelyCiv", _aiPickUpWeaponsMoreActivelyCiv);
+		nodeAI.tryRead("normalTUReserve", _aiNormalTUReserve);
+		nodeAI.tryRead("combatTUReserve", _aiCombatTUReserve);
 		nodeAI.tryRead("reactionFireThreshold", _aiReactionFireThreshold);
 		nodeAI.tryRead("reactionFireThresholdCiv", _aiReactionFireThresholdCiv);
 

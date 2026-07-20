@@ -241,6 +241,7 @@ private:
 	int _aiFireChoiceIntelCoeff, _aiFireChoiceAggroCoeff;
 	bool _aiExtendedFireModeChoice, _aiRespectMaxRange, _aiDestroyBaseFacilities;
 	bool _aiPickUpWeaponsMoreActively, _aiPickUpWeaponsMoreActivelyCiv;
+	bool _aiNormalTUReserve, _aiCombatTUReserve;
 	int _aiReactionFireThreshold, _aiReactionFireThresholdCiv;
 	AIAttackWeight _aiTargetWeightThreatThreshold = AIAttackWeight{ 50 };
 	AIAttackWeight _aiTargetWeightAsHostile = AIAttackWeight{ 100 };
@@ -875,6 +876,10 @@ public:
 	bool getAIPickUpWeaponsMoreActively() const { return _aiPickUpWeaponsMoreActively; }
 	/// Gets whether or not the civilian AI should pick up weapons more actively.
 	bool getAIPickUpWeaponsMoreActivelyCiv() const { return _aiPickUpWeaponsMoreActivelyCiv; }
+	/// Gets whether the AI reserves the actual cost of its intended shot (DX) instead of a flat percentage of max TU.
+	bool getAINormalTUReserve() const { return _aiNormalTUReserve; }
+	/// Gets whether the AI also reserves TUs while in combat/ambush modes (DX), not only while patrolling.
+	bool getAICombatTUReserve() const { return _aiCombatTUReserve; }
 	/// Gets the reaction fire threshold (default = 0).
 	int getReactionFireThreshold(UnitFaction faction) const;
 	/// Gets weight value that AI use to determine if target is dangerous.

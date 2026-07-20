@@ -148,6 +148,8 @@ public:
 
 	/// Checks the alien's TU reservation setting.
 	BattleActionType getReserveMode();
+	/// Picks which shot mode this unit should reserve TUs for, based on aggression and what the weapon actually supports.
+	BattleActionType pickReserveMode(BattleItem *weapon) const;
 	/// Assuming we have both a ranged and a melee weapon, we have to select one.
 	void selectMeleeOrRanged();
 	/// Gets the current targetted unit.

@@ -453,10 +453,38 @@ therefore reframed as targeted deltas:
 
 ## Phase 9: AI
 
-- [ ] **Per-weapon AI targeting** — engagement range bands (`aiRangeClose`/`Mid`/`Long`/`Max`)
-  + per-band target priorities (`aiAttackPriority*`). *(needs firing system)*
-- [ ] **AI fixes** — normal TU-reserve logic (drop custom percentages), reaction-fire fixes,
-  counter-mind-control behavior.
+- [x] **Per-weapon AI targeting** — ✅ **Closed as superseded (audit Jul 2026).** Despite the name,
+  legacy's `aiAttackPriority*` lists are **fire-mode names** (`auto`/`aimed`/`snap`), not target
+  priorities: it bucketed distance into close(4)/mid(12)/long(20)/max and took the *first affordable*
+  mode in the list — no accuracy, no shot count, no TU efficiency. DX already ships something strictly
+  better in `AIModule::extendedFireModeChoice` + `scoreFiringMode`, which scores every affordable mode
+  as `accuracy × shots × tuTotal/tuCost` with real per-mode range windows (`aimRange`/`snapRange`/
+  `autoRange`/`burstRange`) + `dropoff`, jittered by intelligence/aggression. The roadmap's
+  *"(needs firing system)"* note was right about the blocker but the conclusion inverts — **Phase 5
+  landing is what made this obsolete, not what unblocked it.** A per-weapon bias into `scoreFiringMode`
+  remains the cheap answer if a mod ever needs to force a mode at range; left unbuilt.
+  Note the genuinely-absent thing the name suggests — per-band *target* ranking — is captured as a
+  possible future feature (`selectNearestTarget` is still a pure min-distance loop).
+  *(audit: [plans/Feature-AIFixes.md](plans/Feature-AIFixes.md) §4)*
+- [x] **AI fixes** — ✅ **Done.** *(design: [plans/Feature-AIFixes.md](plans/Feature-AIFixes.md))*
+  - [x] **TU reserve** — hostiles reserved a flat % of *base max* TU and early-returned past the
+    auto→snap→aimed→kneel fallback, so a snapshot-less weapon reserved for a shot it could never fire.
+    Now opt-in via `ai: normalTUReserve` (default off): hostiles fall through to the shared
+    actual-shot-cost player path. Aggression→mode selection moved into `AIModule::pickReserveMode()`,
+    which degrades to a mode the weapon actually has (Auto→Burst→Snap→Aimed) and reserves melee hits.
+  - [x] **Reaction fire** — the "one in a million" bug was a *symptom*: `_reserve` was only ever set in
+    `AI_PATROL`, so combat-mode AI walked itself to ~0 TU and then failed `determineReactionType`'s
+    `haveTU()`. Fixed via `ai: combatTUReserve` (default off) — reserve in `AI_COMBAT`/`AI_AMBUSH` too,
+    in combat only when repositioning. **No edit to the reaction path**, which was correct all along.
+    (The suspected "melee preferred at any range" residual was investigated and **retracted** —
+    `validMeleeRange` already gates it to adjacent targets.)
+  - [x] **Burst-mode gap sweep** — burst is a DX addition, so inherited snap/auto/aimed enumerations
+    skipped it; a **burst-only** weapon was invisible to the ammo check, reaction fire, the reserve
+    ladder, berserk fire, the AI's "was hit by" tracking, and spray targeting. All fixed; a burst-only
+    test weapon lives in `dx-test`. Spray targeting is an upstream fix (`DX-OXCE-Fixes.md`).
+  - [x] **Counter-mind-control** — ✅ **already shipped** with Channeled Mind Control. `AIModule::psiAction`
+    targets `isMindControlled()` units regardless of original faction (`:2782-2786`, +80 attack weight
+    at `:2824-2829`) and the engine contests the *controller's* psi defence (`TileEngine.cpp:5096-5102`).
 
 ## Phase 10: Strategic Large Systems
 
@@ -503,7 +531,7 @@ and changes core progression curves.*
 | Aim-cone (P5) | accuracy mods, burst, targeting feedback, AI ranges |
 | `battleClipSize` (P6) | psi-amp ammo |
 | Light equipment (P8, direct TileEngine feature — Effects framework dropped) | Sneak light-gating |
-| Firing system (P5) | per-weapon AI targeting (P9) |
+| Firing system (P5) | ~~per-weapon AI targeting (P9)~~ — P5's `extendedFireModeChoice` scoring *superseded* it rather than unblocking it |
 
 ---
 

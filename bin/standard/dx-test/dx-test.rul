@@ -94,6 +94,30 @@ bleedoutDefaults:
 #  defined here, so the gate stays dormant until a ruleset adds it (or you
 #  debug-research it) - proportional recovery still works meanwhile.
 # =====================================================================
+# =====================================================================
+#  DX: AI TU-reserve fixes (Phase 9).
+#
+#  Stock behaviour, which these two turn off, has two bugs:
+#    1. Hostiles reserve a flat percentage of their MAXIMUM TU (33/40/50%
+#       for snap/auto/aimed) instead of the actual cost of the shot they
+#       intend to take - so a weapon with no matching fire mode strands a
+#       third of the unit's TU on a shot it can never fire.
+#    2. The AI only reserves anything while PATROLLING. In combat it
+#       reserves nothing, walks itself down to ~0 TU, and then can neither
+#       shoot nor reaction fire. This is the "aliens never react" bug.
+#
+#  What to check:
+#    * Aliens advancing on your squad stop with enough TU left to shoot,
+#      instead of shuffling into the open and standing there empty.
+#    * Aliens actually REACTION FIRE at soldiers moving across their view
+#      mid-turn - near-impossible before, because of bug 2.
+#    * An alien given the burst-only heavy laser below still reserves
+#      correctly (it has no snapshot to fall back on).
+# =====================================================================
+ai:
+  normalTUReserve: true   # reserve the real shot cost, not a % of max TU
+  combatTUReserve: true   # also reserve while fighting, not just patrolling
+
 health:
   proportionalRecovery: true   # enable the fraction-of-health-lost model
   recoveryDaysMin:      20      # days out at 100% HP loss (lower bound)
@@ -278,6 +302,38 @@ items:
     overwatchModifier: 120   # +20% - a set, watching sniper is quick to squeeze
   - type: STR_ROCKET_LAUNCHER
     baseAccuracy: 70        # aimed launcher: near reference precision
+
+# =====================================================================
+#  DX: BURST-ONLY weapon - the regression test for the burst fire mode.
+#  Burst is a DX addition, so every stock code path that enumerates
+#  snap/auto/aimed originally skipped it. A weapon with ONLY a burst mode
+#  (snap and auto zeroed out) is the sharpest way to catch those gaps:
+#  anything that hardcodes "fall back to snapshot" fails outright on it.
+#
+#  What to check (each was a separate bug before Phase 9):
+#    * It reports having ammo at all (the inventory/AI ammo check used to
+#      test aimed||auto||snap only, so this weapon read as unloaded).
+#    * An alien holding it RESERVES TUs for the burst and doesn't walk
+#      itself down to 0 (needs ai: normalTUReserve + combatTUReserve).
+#    * An alien holding it can REACTION FIRE (reaction used to offer only
+#      BA_HIT then BA_SNAPSHOT, so a burst-only gun never reacted).
+#    * A BERSERKING unit holding it actually shoots (berserk fell back
+#      auto -> snap -> aimed, none of which exist here).
+#    * Being shot by it makes the AI notice (the "was hit by" tracking
+#      ignored burst, so the victim never turned to look).
+#    * Ctrl+Shift spray targeting works with it (was gated on auto only).
+# =====================================================================
+  - type: STR_HEAVY_LASER
+    baseAccuracy: 60
+    accuracySnap: 0         # no snap shot at all...
+    tuSnap: 0
+    accuracyAuto: 0         # ...and no auto: burst is the ONLY fire mode
+    tuAuto: 0
+    accuracyAimed: 0
+    tuAimed: 0
+    accuracyBurst: 50
+    tuBurst: 40
+    burstShots: 3
 
 # ---------------------------------------------------------------------
 #  DX: test shotgun (new item; borrows the rifle's graphics and size).

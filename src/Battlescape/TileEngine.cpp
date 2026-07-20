@@ -3089,15 +3089,24 @@ TileEngine::ReactionScore TileEngine::determineReactionType(BattleUnit *unit, Ba
 				return reaction;
 			}
 		}
-		if (_save->canUseWeapon(weapon, unit, false, BA_SNAPSHOT))
+		// DX: burst is a DX-added mode, so the stock snapshot-only check left a burst-only weapon
+		// (burst configured, no snap) unable to reaction fire at all. Fall back to burst when the
+		// weapon has no snap shot configured.
+		BattleActionType reactionShot = BA_SNAPSHOT;
+		if (BattleActionCost(BA_SNAPSHOT, unit, weapon).Time == 0 &&
+			BattleActionCost(BA_BURSTSHOT, unit, weapon).Time > 0)
 		{
-			// has a gun capable of snap shot with ammo
+			reactionShot = BA_BURSTSHOT;
+		}
+		if (_save->canUseWeapon(weapon, unit, false, reactionShot))
+		{
+			// has a gun capable of snap (or burst) shot with ammo
 			if (weapon->getRules()->getBattleType() == BT_FIREARM &&
 				!weapon->getRules()->isOutOfRange(unit->distance3dToUnitSq(target)) &&
-				weapon->getAmmoForAction(BA_SNAPSHOT) &&
-				BattleActionCost(BA_SNAPSHOT, unit, weapon).haveTU())
+				weapon->getAmmoForAction(reactionShot) &&
+				BattleActionCost(reactionShot, unit, weapon).haveTU())
 			{
-				setReaction(reaction, BA_SNAPSHOT, weapon);
+				setReaction(reaction, reactionShot, weapon);
 				return reaction;
 			}
 		}

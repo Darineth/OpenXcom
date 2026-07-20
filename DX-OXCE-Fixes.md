@@ -316,6 +316,104 @@ previously terminated; the cases that changed are the ones that used to crash.
 
 ---
 
+## ✅ AI TU reserve — flat percentage of max TU, and never reserved outside patrol
+
+**Where:** [`BattlescapeGame::checkReservedTU`](src/Battlescape/BattlescapeGame.cpp) ·
+[`AIModule::think`](src/Battlescape/AIModule.cpp)
+**Found:** Jul 2026, auditing Phase 9 of [DX-Roadmap.md](DX-Roadmap.md).
+**Opt-in:** `ai: normalTUReserve` / `ai: combatTUReserve`, both default `false` (see
+[docs/Ruleset-AI.md](docs/Ruleset-AI.md#tu-reserve)).
+
+### What was wrong
+
+Two independent defects that compound into one very visible symptom.
+
+**1. The reserve is a percentage of the wrong number.** `checkReservedTU` has a hostile-only
+early-return that reserves a flat fraction of `getBaseStats()->tu` — the unit's *maximum* TU:
+
+```cpp
+case BA_SNAPSHOT:  cost.Time += (bu->getBaseStats()->tu / 3);      break; // 33%
+case BA_AUTOSHOT:  cost.Time += ((bu->getBaseStats()->tu / 5)*2);  break; // 40%
+case BA_AIMEDSHOT: cost.Time += (bu->getBaseStats()->tu / 2);      break; // 50%
+```
+
+It never consults the weapon, so a cheap pistol reserves as much as a heavy cannon, and a wounded
+or encumbered unit reserves the same absolute amount as a fresh one. It also `return`s before the
+player's fallback chain (autoshot → snapshot → aimed → kneel → none), so a weapon with a
+**non-standard shot config** — a launcher or a burst-only weapon with no snapshot — still reserves
+33% of max TU for a shot it can never fire. The preceding `cost.updateTU()` is discarded outright
+by `cost.Time = tu`.
+
+**2. The AI only reserves while patrolling.** `AIModule::think` resets `_reserve = BA_NONE` and
+then sets it in exactly one branch, `AI_PATROL`. `AI_COMBAT`, `AI_AMBUSH` and `AI_ESCAPE` all leave
+it `BA_NONE`.
+
+### Why it mattered (and why nobody noticed)
+
+Defect 2 is the cause of the long-standing "aliens never reaction fire" complaint, and the
+connection is not obvious because **the reaction code itself is correct**.
+`TileEngine::determineReactionType` checks the real shot cost via `BattleActionCost(...).haveTU()`
+and applies no reserve logic at all — which is right. But a unit in `AI_COMBAT` reserves nothing,
+so `UnitWalkBState`'s per-step gate lets it walk to ~0 TU; by the time a soldier moves into its
+view, `haveTU()` fails and it silently never reacts. The bug is upstream of the reaction path, so
+inspecting the reaction path finds nothing wrong.
+
+Defect 1 hides because vanilla weapons all have a snapshot, so the fallback chain being skipped is
+invisible until a mod ships a weapon without one.
+
+### What DX changed
+
+Both fixes are **opt-in and default to off**, so stock behavior is preserved on upgrade.
+
+With `normalTUReserve`, the hostile branch keeps only the `getReserveMode()` lookup and falls
+through to the same actual-shot-cost path the player uses. With `combatTUReserve`, `_reserve` is
+also set in `AI_COMBAT` and `AI_AMBUSH`. In combat it is applied **only when the AI is
+repositioning** (pending action is a move) — reserving on top of a shot the unit is already about
+to take would deadlock it.
+
+The aggression → shot-mode mapping moved into a new `AIModule::pickReserveMode()`, which also
+**degrades the chosen mode to one the weapon actually has** (Auto → Burst → Snap → Aimed, matching
+`RuleItem::getDualFireMode`). Reserving for an unconfigured mode costs 0 TU, i.e. reserves nothing —
+which is how a burst-only weapon previously ended up with no reserve at all. Melee weapons now
+reserve their hit, so a charging unit doesn't arrive with no TU to swing.
+
+### Effect on mods
+
+None unless opted in. With the options on, aliens hold back enough TU to shoot after moving and
+reaction-fire far more often — a real difficulty increase, so it is worth rebalancing against.
+`BA_BURSTSHOT` also gained a case in the retained stock percentage switch (37%, between snap's 33%
+and auto's 40%), so a mod that leaves `normalTUReserve` off but uses burst weapons no longer
+reserves 0.
+
+---
+
+## ✅ Spray targeting was gated on auto shots only
+
+**Where:** [`BattlescapeGame::handleAction` / waypoint handling](src/Battlescape/BattlescapeGame.cpp)
+**Found:** Jul 2026, during the Phase 9 burst-mode gap sweep.
+
+### What was wrong
+
+`sprayWaypoints` lets a multi-round volley be walked along a line of waypoints. Both the gate that
+*starts* spray targeting and the one that *cancels* a waypoint tested `_currentAction.type ==
+BA_AUTOSHOT` exclusively, so a **burst** could never use spray targeting.
+
+### What DX changed
+
+Both gates now accept `BA_AUTOSHOT` or `BA_BURSTSHOT`. Everything downstream already keys on the
+`sprayTargeting` flag rather than the action type, so no other change was needed.
+
+This is upstream code that simply predates DX's burst mode — the omission is an oversight, not a
+design decision, since burst is a multi-round volley in exactly the way spray targeting exists to
+serve.
+
+### Effect on mods
+
+A weapon with `sprayWaypoints` set can now spray with its burst mode as well as its auto mode.
+Nothing that worked before changes.
+
+---
+
 *If you fix an upstream bug, add an entry here in the same shape — what the code did, why it is
 wrong, what changed, and what a mod would notice — and cross-link it from the relevant
 [ruleset doc](docs/Ruleset.md).*

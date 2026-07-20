@@ -74,6 +74,15 @@ void UnitPanicBState::think()
 				ba.updateTU();
 				bool canShoot = ba.haveTU() && _parent->getSave()->canUseWeapon(ba.weapon, ba.actor, _berserking, ba.type);
 
+				// DX: fall back through burst before snap, so a burst-only weapon can still be
+				// fired by a berserking unit.
+				if (!canShoot)
+				{
+					ba.type = BA_BURSTSHOT;
+					ba.updateTU();
+					canShoot = ba.haveTU() && _parent->getSave()->canUseWeapon(ba.weapon, ba.actor, _berserking, ba.type);
+				}
+
 				if (!canShoot)
 				{
 					ba.type = BA_SNAPSHOT;

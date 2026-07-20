@@ -46,6 +46,21 @@ by the `ai:` values if both are present: `turnAIUseGrenade` (→ `useDelayGrenad
 | `fireChoiceAggroCoeff` | int | 5 | How much the unit's **aggression** stat weighs into the extended fire-mode score. |
 | `respectMaxRange` | bool | false | If true, the AI will not attempt shots beyond the weapon's `maxRange`. |
 
+## TU reserve
+
+How many TUs the AI holds back so it can still shoot (and therefore still *reaction* fire) after
+moving. Both keys default to `false`, i.e. stock OpenXcom behavior is unchanged unless a mod opts in.
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `normalTUReserve` | bool | false | **[DX]** AI reserves the **actual TU cost** of the shot it intends to take, using the same logic as the player (including the auto→burst→snap→aimed→kneel fallback). Default `false` = stock: reserve a flat percentage of the unit's *maximum* TU (33% snap / 37% burst / 40% auto / 50% aimed), which ignores the weapon and strands TU on weapons that lack the reserved mode. |
+| `combatTUReserve` | bool | false | **[DX]** AI also reserves TUs while in **combat and ambush** modes, not only while patrolling. Default `false` = stock: only patrolling units reserve, so a unit in combat walks itself down to ~0 TU and can neither shoot nor reaction fire. |
+
+Enabling both is what makes aliens reliably reaction-fire; stock aliens in combat reserve nothing
+and are usually out of TU by the time a reaction would trigger. In combat the reserve is applied
+only when the AI is **repositioning** (its pending action is a move) — reserving on top of a shot it
+is already about to take would deadlock the unit.
+
 ## Behavior toggles
 
 | Key | Type | Default | Meaning |

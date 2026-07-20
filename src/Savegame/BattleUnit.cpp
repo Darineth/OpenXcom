@@ -2016,7 +2016,7 @@ int BattleUnit::damage(Position relative, int damage, const RuleDamageType *type
 			std::get<arg_attackerTurnsLeftSpottedForSnipers>(args.data) = attack.attacker->getTurnsLeftSpottedForSnipersByFaction(getFaction());
 
 			if (getFaction() != attack.attacker->getFaction() &&
-				(attack.type == BA_AIMEDSHOT || attack.type == BA_SNAPSHOT || attack.type == BA_AUTOSHOT) &&
+				(attack.type == BA_AIMEDSHOT || attack.type == BA_SNAPSHOT || attack.type == BA_AUTOSHOT || attack.type == BA_BURSTSHOT) &&
 				attack.damage_item != nullptr &&
 				(relative == Position(0,0,0) || (attack.damage_item->getRules()->getExplosionRadius(attack) == 0)))
 			{

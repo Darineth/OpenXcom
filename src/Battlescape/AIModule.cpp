@@ -620,23 +620,7 @@ void AIModule::think(BattleAction *action)
 		break;
 	case AI_PATROL:
 		_unit->setCharging(0);
-		if (action->weapon && action->weapon->getRules()->getBattleType() == BT_FIREARM)
-		{
-			switch (_unit->getAggression())
-			{
-			case 0:
-				_reserve = BA_AIMEDSHOT;
-				break;
-			case 1:
-				_reserve = BA_AUTOSHOT;
-				break;
-			case 2:
-				_reserve = BA_SNAPSHOT;
-				break;
-			default:
-				break;
-			}
-		}
+		_reserve = pickReserveMode(action->weapon);
 		action->type = _patrolAction.type;
 		action->target = _patrolAction.target;
 		break;
@@ -645,6 +629,13 @@ void AIModule::think(BattleAction *action)
 		action->target = _attackAction.target;
 		// this may have changed to a grenade.
 		action->weapon = _attackAction.weapon;
+		// DX: stock only ever reserves while patrolling, so a unit in combat walks itself down to
+		// ~0 TU and can then neither shoot nor reaction fire. Only reserve when we're repositioning
+		// (BA_WALK) - reserving on top of a shot we're already about to take would deadlock us.
+		if (_save->getMod()->getAICombatTUReserve() && action->type == BA_WALK)
+		{
+			_reserve = pickReserveMode(action->weapon);
+		}
 		if (action->weapon && action->type == BA_THROW && action->weapon->getRules()->isGrenadeOrProxy())
 		{
 			_unit->spendCost(_unit->getActionTUs(BA_PRIME, action->weapon));
@@ -675,6 +666,11 @@ void AIModule::think(BattleAction *action)
 		break;
 	case AI_AMBUSH:
 		_unit->setCharging(0);
+		// DX: holding a shot is the entire point of an ambush.
+		if (_save->getMod()->getAICombatTUReserve())
+		{
+			_reserve = pickReserveMode(_ambushAction.weapon ? _ambushAction.weapon : action->weapon);
+		}
 		action->type = _ambushAction.type;
 		action->target = _ambushAction.target;
 		// face where we think our target will appear.
@@ -2642,9 +2638,23 @@ void AIModule::extendedFireModeChoice(BattleActionCost& costAuto, BattleActionCo
 
 		// More aggressive units get a modifier to the score for autoshots
 		// Aggression = 0 lowers the score, aggro = 1 is no modifier, aggro > 1 bumps up the score by 5% (configurable) for each increment over 1
-		if (i == BA_AUTOSHOT)
+		// DX: burst is also a spray mode, so it earns the same bonus, scaled by how much of an auto
+		// volley it represents (a 3-round burst next to an 8-round auto gets ~3/8 of it). A weapon
+		// with no auto to compare against gets the full bonus - burst *is* its spray mode.
+		if (i == BA_AUTOSHOT || i == BA_BURSTSHOT)
 		{
-			newScore = newScore * (100 + (_unit->getAggression() - 1) * _save->getMod()->getAIFireChoiceAggroCoeff()) / 100;
+			int aggroModifier = (_unit->getAggression() - 1) * _save->getMod()->getAIFireChoiceAggroCoeff();
+			if (i == BA_BURSTSHOT && testAction.weapon)
+			{
+				const RuleItem *weaponRules = testAction.weapon->getRules();
+				const int burstShots = weaponRules->getConfigBurst()->shots;
+				const int autoShots = weaponRules->getConfigAuto()->shots;
+				if (autoShots > 0 && burstShots < autoShots)
+				{
+					aggroModifier = aggroModifier * burstShots / autoShots;
+				}
+			}
+			newScore = newScore * (100 + aggroModifier) / 100;
 		}
 
 		if (newScore > score)
@@ -3056,6 +3066,64 @@ bool AIModule::validTarget(BattleUnit *target, bool assessDanger, bool includeCi
 BattleActionType AIModule::getReserveMode()
 {
 	return _reserve;
+}
+
+/**
+ * Picks which shot mode this unit should reserve TUs for.
+ * Aggressive units reserve a cheap shot they can take often; cautious units hold out for an aimed
+ * one. The chosen mode is then degraded to something the weapon actually supports, following the
+ * same Auto -> Burst -> Snap -> Aimed preference order as RuleItem::getDualFireMode(): reserving
+ * for a mode the weapon has no configuration for costs 0 TU, which silently reserves nothing.
+ * @param weapon The weapon we intend to shoot with.
+ * @return The shot mode to reserve for, or BA_NONE if the weapon can't shoot at all.
+ */
+BattleActionType AIModule::pickReserveMode(BattleItem *weapon) const
+{
+	if (!weapon)
+	{
+		return BA_NONE;
+	}
+
+	const RuleItem *rules = weapon->getRules();
+	if (rules->getBattleType() != BT_FIREARM && rules->getBattleType() != BT_MELEE)
+	{
+		return BA_NONE;
+	}
+
+	if (rules->getBattleType() == BT_MELEE)
+	{
+		// a charging unit that arrives with no TU left to swing is the same bug as a gunner
+		// walking itself dry, so reserve the hit.
+		return BattleActionCost(BA_HIT, _unit, weapon).Time > 0 ? BA_HIT : BA_NONE;
+	}
+
+	BattleActionType wanted = BA_NONE;
+	switch (_unit->getAggression())
+	{
+	case 0: wanted = BA_AIMEDSHOT; break;
+	case 1: wanted = BA_AUTOSHOT; break;
+	case 2: wanted = BA_SNAPSHOT; break;
+	default: break;
+	}
+	if (wanted == BA_NONE)
+	{
+		return BA_NONE;
+	}
+
+	// degrade to a mode this weapon actually has, in the standard preference order
+	static const BattleActionType order[] = { BA_AUTOSHOT, BA_BURSTSHOT, BA_SNAPSHOT, BA_AIMEDSHOT };
+	if (BattleActionCost(wanted, _unit, weapon).Time > 0)
+	{
+		return wanted;
+	}
+	for (auto mode : order)
+	{
+		if (BattleActionCost(mode, _unit, weapon).Time > 0)
+		{
+			return mode;
+		}
+	}
+	return BA_NONE;
 }
 
 /**
