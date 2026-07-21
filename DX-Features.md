@@ -925,22 +925,47 @@ Implemented as a renderer change keyed off the engine's existing per-tile player
 `TileEngine::calculateTilesInFOV` that kept that count from returning to zero (so tiles never
 re-fogged). Toggle: **Fog of war (dim unseen tiles)** (`fogOfWarEnabled`, default on).
 
-## Dying-Unit Camera Focus
+## Camera Direction
 
-The tactical camera in base OpenXcom/OXCE never frames deaths — the death pirouette and fall play
-wherever the camera happens to be, so a kill on a unit outside the viewport is simply never seen,
-and while a projectile is still in flight the camera keeps chasing the bullet.
+Base OpenXcom/OXCE has no notion of *what the camera is trying to show* — each feature bolted on its
+own `centerOnPosition` call and its own flag to suppress somebody else's, so the biggest beats in a
+firefight happen off camera. The worst case: **a reaction shot never frames the reacting unit** — an
+alien reaction-firing from off screen produces no camera motion at all (the engine only *saves* the
+camera offset to restore it afterwards), so the player sees nothing and then the view snaps back.
 
-DX gives deaths the camera: when a unit **the player can see** dies **off screen**, the camera
-centers on it, and for the duration of the death animation that claim outranks projectile
-following (the same way explosions already do). A unit that is already on screen is left alone, so
-normal in-view firefights get no camera jerk. Deaths the player cannot see never move the camera,
-so unspotted enemy positions are not given away. *(design:
-[plans/dying-unit-camera-focus.md](plans/dying-unit-camera-focus.md))*
+DX treats every attack as a **sequence of beats** — the shooter, the bullet, the impact, and the
+death if it kills — and generalises the ad-hoc rules into a single **claim ladder**
+(`DEATH > EXPLOSION > IMPACT > ACTOR > PROJECTILE`) that only arbitrates when two actions overlap.
+Three invariants are enforced in one shared helper (`Map::focusCamera`):
 
-Implemented in `UnitDieBState::init` (using the engine's existing `Camera::isOnScreen` test) plus a
-new `Map::_deathFocus` flag in the projectile-follow condition in `Map::drawTerrain`. Toggle:
-**Focus camera on dying units** (`battleFocusDyingUnits`, default on).
+- **Visible** — never move to something the player can't see, so unspotted positions are never
+  revealed (this also fixes stock leaks: explosions used to pan to unexplored territory, panicking
+  aliens gave away their position, and an unseen alien changing floors yanked the player's view level).
+- **Framed** — never move if the subject is already on screen, so an in-view firefight gets **zero**
+  camera jerk.
+- one claimant at a time.
+
+What now gets framed (when off screen and visible), that previously didn't:
+
+- **The attacker as it fires** — including **reaction and overwatch shots** and any alien-turn fire.
+  For the player's own shots the shooter is already framed, so this is a no-op. Reuses the per-fire-
+  mode `followProjectiles:` opt-out (and the Alt key), so a weapon too twitchy to follow skips it too.
+- **The unit that gets hit** by a melee or psi attack — which also covers **mind control and panic
+  landing** on a visible target (both are psi hits). Bullets are already carried to the impact by
+  projectile following.
+- **Units that panic, go berserk, or collapse unconscious** (stun), alongside the existing deaths.
+
+Toggle: **Direct camera on key events** (`battleCameraDirection`, default on). The separate
+**Focus camera on dying units** (`battleFocusDyingUnits`, default on) still gates the death beat.
+*(design: [plans/Feature-BattleCamera.md](plans/Feature-BattleCamera.md))*
+
+### Dying-unit focus (folded into the ladder)
+
+The original DX dying-unit feature — when a unit the player can see dies off screen, center on it and
+claim the camera from projectile following for the death animation — is now the `DEATH` rung of the
+ladder, extended to cover unconscious collapse. Implemented in `UnitDieBState` via the shared
+`focusCamera` helper plus the `Map::_deathFocus` flag that backs the `DEATH` claim.
+*(original design: [plans/dying-unit-camera-focus.md](plans/dying-unit-camera-focus.md))*
 
 ## Maximize Info Screens (all screens)
 

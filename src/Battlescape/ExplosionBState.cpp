@@ -295,9 +295,14 @@ void ExplosionBState::init()
 			}
 			// explosion sound
 			_parent->playSound(sound);
+			// EXPLOSION claim: frame the blast, but only if it's something the player can see (fixes
+			// the stock behavior of panning to explosions in unexplored territory). Chained explosions
+			// (_explosionCounter > 0) keep following the chain.
 			if (_parent->getMap()->getFollowProjectile() || _explosionCounter > 0)
 			{
-				_parent->getMap()->getCamera()->centerOnPosition(_center.toTile(), false);
+				Position blastTile = _center.toTile();
+				_parent->getMap()->focusCamera(CameraClaim::EXPLOSION, blastTile,
+					_parent->getMap()->isTileInCameraFOV(blastTile), 0, false);
 			}
 		}
 		else
@@ -402,9 +407,23 @@ void ExplosionBState::init()
 			_parent->getMap()->getCamera()->setViewLevel(_center.z / 24);
 		}
 
-		if (_targetPsiOrHit && _parent->getSave()->getSide() == FACTION_HOSTILE && _targetPsiOrHit->getFaction() == FACTION_PLAYER)
+		// IMPACT claim: frame the unit that was hit by a melee or psi attack (bullets are already
+		// carried to the impact by projectile chasing). This generalizes the stock behavior, which
+		// only framed the specific case of a hostile hitting one of the player's units.
+		// Covers mind-control / panic landing on a visible target (a BT_PSIAMP hit). With the camera-
+		// direction option off, keep exactly the stock hostile-hits-player behavior.
+		if (_targetPsiOrHit)
 		{
-			_parent->getMap()->getCamera()->centerOnPosition(_center.toTile(), false);
+			const int size = _targetPsiOrHit->getArmor()->getSize() - 1;
+			if (Options::battleCameraDirection)
+			{
+				_parent->getMap()->focusCamera(CameraClaim::IMPACT, _center.toTile(),
+					_targetPsiOrHit->getVisible(), size, false);
+			}
+			else if (_parent->getSave()->getSide() == FACTION_HOSTILE && _targetPsiOrHit->getFaction() == FACTION_PLAYER)
+			{
+				_parent->getMap()->getCamera()->centerOnPosition(_center.toTile(), false);
+			}
 		}
 		// bullet hit sound
 		_parent->playSound(sound, _center.toTile());

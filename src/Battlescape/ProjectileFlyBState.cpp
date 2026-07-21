@@ -128,7 +128,10 @@ bool ProjectileFlyBState::advanceFiring()
 		if (_shotCooldown <= 0)
 		{
 			createNewProjectile();
-			if (_action.cameraPosition.z != -1)
+			// A reaction shot is involuntary, so don't snap the camera back to where it was before the
+			// reaction between rounds - that pre-reaction offset is wherever the interrupted action had
+			// dragged the camera. Let the shot's own beats keep the frame; the next event will move it.
+			if (_action.cameraPosition.z != -1 && !(Options::battleCameraDirection && _action.reaction))
 			{
 				_parent->getMap()->getCamera()->setMapOffset(_action.cameraPosition);
 				_parent->getMap()->invalidate();
@@ -424,10 +427,21 @@ void ProjectileFlyBState::init()
 	if (createNewProjectile())
 	{
 		auto* conf = weapon->getActionConf(_action.type);
-		if (_parent->getMap()->isAltPressed() || (conf && !conf->followProjectiles))
+		bool followProjectiles = !(_parent->getMap()->isAltPressed() || (conf && !conf->followProjectiles));
+		if (!followProjectiles)
 		{
 			// temporarily turn off camera following projectiles to prevent annoying flashing effects (e.g. on minigun-like weapons)
 			_parent->getMap()->setFollowProjectile(false);
+		}
+		// ACTOR beat: frame the shooter as the shot begins, so an off-screen attacker (a reaction or
+		// overwatch shot, or any alien-turn fire) is seen before the bullet flies. For the player's own
+		// shots the shooter is already framed, so the invariants make this a no-op. Reuse the same
+		// followProjectiles/Alt opt-out as bullet chasing - a weapon too twitchy to follow skips this too.
+		if (Options::battleCameraDirection && followProjectiles && _action.actor)
+		{
+			const int size = _action.actor->getArmor()->getSize() - 1;
+			_parent->getMap()->focusCamera(CameraClaim::ACTOR, _action.actor->getPosition(),
+				_action.actor->getVisible(), size, false);
 		}
 		if (_range == 0) _action.spendTU();
 		_parent->getMap()->setCursorType(CT_NONE);
@@ -941,7 +955,10 @@ void ProjectileFlyBState::think()
 	// No more shots queued: finish up once every projectile has left the field.
 	if (!_parent->getMap()->hasProjectiles())
 	{
-		if (_action.cameraPosition.z != -1 && _action.waypoints.size() <= 1)
+		// As above: an involuntary reaction shot leaves the camera where its beats ended rather than
+		// snapping back to the pre-reaction offset (a deliberate player shot still returns to the shooter).
+		if (_action.cameraPosition.z != -1 && _action.waypoints.size() <= 1
+			&& !(Options::battleCameraDirection && _action.reaction))
 		{
 			_parent->getMap()->getCamera()->setMapOffset(_action.cameraPosition);
 			_parent->getMap()->invalidate();

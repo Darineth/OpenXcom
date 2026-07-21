@@ -108,7 +108,11 @@ en-US:
 #=================== DX Dying Unit Camera Focus ===================
 #Options.cpp
   STR_FOCUS_DYING_UNITS: "Focus camera on dying units"
-  STR_FOCUS_DYING_UNITS_DESC: "When a unit you can see dies off screen, centre the camera on it so you don't miss the kill. Takes priority over the camera following projectiles. Units already on screen are left alone."
+  STR_FOCUS_DYING_UNITS_DESC: "When a unit you can see dies off screen, center the camera on it so you don't miss the kill. Takes priority over the camera following projectiles. Units already on screen are left alone."
+#=================== DX Camera Direction ===================
+#Options.cpp
+  STR_CAMERA_DIRECTION: "Direct camera on key events"
+  STR_CAMERA_DIRECTION_DESC: "Frame the action you'd otherwise miss: an off-screen attacker as it fires (including reaction and overwatch shots), the unit that gets hit, and units that panic, are mind-controlled, or collapse. Only moves for things you can see, and never when the subject is already on screen."
 #=================== DX Action Menu Revamp ===================
 #OptionsAdvancedState.cpp / OptionsControlsState.cpp - DX options tab
   STR_ENGINE_DX: "DX"

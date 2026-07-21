@@ -167,7 +167,6 @@ Map::Map(Game *game, int width, int height, int x, int y, int visibleMapHeight) 
 	_borderBarColor = itf->border;
 
 	PathPreview previewSetting = Options::battleNewPreviewPath;
-	_smoothCamera = Options::battleSmoothCamera;
 	if (Options::traceAI)
 	{
 		// turn everything on because we want to see the markers.
@@ -1153,9 +1152,9 @@ void Map::drawTerrain(Surface *surface)
 		// if the projectile is outside the viewport - center it back on it
 		_camera->convertVoxelToScreen(avgProjectileVoxel, &bulletPositionScreen);
 
-		// Only actively chase the bullets when nothing is exploding and nobody is dying on camera,
-		// so the camera doesn't fight the explosion's or the death's own framing.
-		if (_explosions.empty() && !_deathFocus && _projectileInFOV && _followProjectile)
+		// Bullet-chasing is the lowest camera claim: only follow when nothing higher (an explosion or a
+		// death) is currently framing itself, so the camera doesn't fight their beats.
+		if (getCameraClaim() <= CameraClaim::PROJECTILE && _projectileInFOV && _followProjectile)
 		{
 			Position newCam = _camera->getMapOffset();
 			if (newCam.z != bulletHighZ) //switch level
@@ -1167,7 +1166,7 @@ void Map::drawTerrain(Surface *surface)
 					_camera->convertVoxelToScreen(avgProjectileVoxel, &bulletPositionScreen);
 				}
 			}
-			if (_smoothCamera)
+			if (Options::battleSmoothCamera) // read live so the option can change mid-battle
 			{
 				if (_launch)
 				{
@@ -3681,6 +3680,54 @@ std::list<Explosion*> *Map::getExplosions()
 Camera *Map::getCamera()
 {
 	return _camera;
+}
+
+/**
+ * DX: the highest camera claim currently held. Only the persistent claims have a tracked lifetime:
+ * a dying unit (_deathFocus) and an in-progress explosion (a non-empty explosion list) hold the
+ * camera and outrank the momentary ACTOR/IMPACT/PROJECTILE beats.
+ * @return the current claim.
+ */
+CameraClaim Map::getCameraClaim() const
+{
+	if (_deathFocus) return CameraClaim::DEATH;
+	if (!_explosions.empty()) return CameraClaim::EXPLOSION;
+	return CameraClaim::IDLE;
+}
+
+/**
+ * DX: is a tile within the player's field of view for camera-direction purposes? Mirrors the
+ * projectile-in-FOV rule: the player's own turn shows everything, otherwise the tile must be spotted.
+ * @param tilePos tile to test.
+ * @return true if the camera may move to show this tile.
+ */
+bool Map::isTileInCameraFOV(Position tilePos) const
+{
+	if (_save->getSide() == FACTION_PLAYER || _save->getDebugMode()) return true;
+	const Tile *tile = _save->getTile(tilePos);
+	return tile && tile->getVisible();
+}
+
+/**
+ * DX: center the camera for a claim, enforcing the three invariants:
+ *  - Claim: never override a higher active claim.
+ *  - Visible: never move to something the player can't see (caller supplies `canSee`).
+ *  - Framed: never move if the subject is already on screen (using the HUD-aware on-screen test).
+ * @param who the claim requesting the move.
+ * @param tilePos tile to center on.
+ * @param canSee whether the player can see the target.
+ * @param unitSize the subject's armor size - 1 (0 for a 1x1 unit or a bare tile).
+ * @return true if the camera actually moved.
+ */
+bool Map::focusCamera(CameraClaim who, Position tilePos, bool canSee, int unitSize, bool redraw)
+{
+	if (who < getCameraClaim()) return false;                 // a higher claim holds the camera
+	if (!canSee && !_save->getDebugMode()) return false;      // don't reveal what the player can't see
+	// The HUD-aware branch (unitWalking=true) treats tiles behind the icon panel as off screen,
+	// unlike the plain rect test, so an already-framed subject really is framed.
+	if (_camera->isOnScreen(tilePos, true, unitSize, false)) return false;
+	_camera->centerOnPosition(tilePos, redraw);
+	return true;
 }
 
 /**

@@ -414,6 +414,74 @@ Nothing that worked before changes.
 
 ---
 
+## ✅ Camera moved to things the player could not see (position leaks)
+
+**Where:** [`ExplosionBState::init`](src/Battlescape/ExplosionBState.cpp) ·
+[`BattlescapeGame::checkForPanic`](src/Battlescape/BattlescapeGame.cpp) ·
+[`UnitWalkBState::think`](src/Battlescape/UnitWalkBState.cpp)
+**Found:** Jul 2026, auditing camera behavior for [plans/Feature-BattleCamera.md](plans/Feature-BattleCamera.md).
+**Gated by:** `battleCameraDirection` (default on); with it off, the stock behavior is preserved.
+
+### What was wrong
+
+The tactical camera's automatic moves guarded visibility inconsistently — three different policies,
+two of them wrong, all able to reveal an unspotted position by panning to it:
+
+- **Explosions** centered unconditionally. A big explosion (or a chained one) in unexplored territory
+  pulled the camera to it, even though `_explosionInFOV` was computed and available.
+- **Panic** centered on a panicking/berserking unit whenever the infobox showed — and with the
+  default `noAlienPanicMessages` off, the infobox shows for **invisible** aliens, so the camera panned
+  to an unseen alien's exact tile. The guard was effectively backwards.
+- **View level** followed *every* unit's floor change in `UnitWalkBState`, with no visibility check
+  (only the horizontal follow beside it was guarded). An unseen alien taking a lift or stairs yanked
+  the player's view level to that floor.
+
+Deaths, by contrast, guarded correctly (`if (!getVisible() && !debug) return;`) — that was the model
+the others should have followed.
+
+### What DX changed
+
+All automatic camera moves now route through one helper, `Map::focusCamera`, which enforces a single
+visibility rule: the player's own turn shows everything, otherwise the target tile/unit must be
+spotted (mirroring the existing `_projectileInFOV` rule), debug excepted. Explosions, impacts, panic
+and the actor beat all use it; the view-level follow gained the same `own-unit || visible || debug`
+guard.
+
+### Effect on mods / players
+
+With `battleCameraDirection` on (default), the camera no longer reveals unspotted positions via
+explosions, panic messages, or floor changes. With it off, the stock (leaky) behavior is unchanged.
+
+---
+
+## ✅ Minor camera warts: HUD-occluded on-screen test, and a stale smooth-camera cache
+
+**Where:** [`Camera::isOnScreen`](src/Battlescape/Camera.cpp) · [`Map`](src/Battlescape/Map.cpp)
+**Found:** Jul 2026, same audit.
+
+### What was wrong
+
+1. `Camera::isOnScreen(pos, /*unitWalking=*/false, ...)` — the branch used by "should I re-center?"
+   callers — tested against `_screenHeight`, so a tile hidden **behind the HUD icon panel** counted as
+   on screen. Camera-framing decisions based on it (e.g. the dying-unit focus) could therefore decide a
+   subject was visible when it was actually occluded, and skip a move that should have happened. The
+   sibling `unitWalking=true` branch already handled the icon panel (and its side gutters) correctly.
+2. `Map::_smoothCamera` cached `Options::battleSmoothCamera` **once at construction**, so toggling the
+   option mid-battle had no effect until the next mission.
+
+### What DX changed
+
+1. Camera-framing callers now use the HUD-aware `unitWalking=true` branch; the broken `false` branch is
+   simply no longer used for framing (it is left as-is for any non-camera callers).
+2. The cache was removed; `Options::battleSmoothCamera` is read live at the point of use.
+
+### Effect on mods / players
+
+Off-screen framing decisions now account for the HUD, and the smooth-camera toggle takes effect
+immediately. No ruleset surface involved.
+
+---
+
 *If you fix an upstream bug, add an entry here in the same shape — what the code did, why it is
 wrong, what changed, and what a mod would notice — and cross-link it from the relevant
 [ruleset doc](docs/Ruleset.md).*

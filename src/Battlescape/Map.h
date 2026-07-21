@@ -47,6 +47,14 @@ enum CursorType { CT_NONE, CT_NORMAL, CT_AIM, CT_PSI, CT_WAYPOINT, CT_THROW };
 enum TilePart : int;
 
 /**
+ * DX camera-direction claim ladder. When two battle events overlap and both want the camera, the
+ * higher claim wins; a lower claim cannot move the camera while a higher one is held. Only the
+ * persistent claims (EXPLOSION, DEATH) are tracked with a lifetime; ACTOR/IMPACT/PROJECTILE are
+ * momentary "focus if allowed" beats. See plans/Feature-BattleCamera.md.
+ */
+enum class CameraClaim { IDLE = 0, PROJECTILE, ACTOR, IMPACT, EXPLOSION, DEATH };
+
+/**
  * Helper class that returns all important data about the unit movement
  */
 struct UnitWalkingOffset
@@ -130,7 +138,7 @@ private:
 	// DX: _deathFocus means a dying unit has claimed the camera; it outranks projectile following
 	// until that unit's UnitDieBState pops. Kept separate from _unitDying, which only gates map
 	// drawing during hidden movement (and is player-faction-only).
-	bool _unitDying, _deathFocus, _smoothCamera, _smoothingEngaged, _flashScreen;
+	bool _unitDying, _deathFocus, _smoothingEngaged, _flashScreen;
 	int _bgColor;
 	bool _previewSettingArrows, _previewSettingTu, _previewSettingEnergy;
 	Text *_txtAccuracy;
@@ -226,10 +234,18 @@ public:
 	void setFollowProjectile(bool followProjectile) { _followProjectile = followProjectile; }
 	/// Gets follow projectile flag.
 	bool getFollowProjectile() const { return _followProjectile; }
-	/// Sets the dying-unit camera focus flag.
+	/// Sets the dying-unit camera focus flag (the persistent DEATH claim).
 	void setDeathFocus(bool deathFocus) { _deathFocus = deathFocus; }
 	/// Gets the dying-unit camera focus flag.
 	bool getDeathFocus() const { return _deathFocus; }
+	/// DX: the highest camera claim currently held (only the persistent EXPLOSION/DEATH claims are tracked).
+	CameraClaim getCameraClaim() const;
+	/// DX: center the camera for a claim, enforcing the invariants — never override a higher active claim,
+	/// never move to something the player can't see, never move if the subject is already framed.
+	/// Returns true if the camera actually moved. `canSee` is the caller-supplied visibility of the target.
+	bool focusCamera(CameraClaim who, Position tilePos, bool canSee, int unitSize = 0, bool redraw = true);
+	/// DX: is a tile within the player's field of view for camera purposes (own turn, spotted tile, or debug)?
+	bool isTileInCameraFOV(Position tilePos) const;
 	/// Gets alt pressed flag.
 	bool isAltPressed() const { return _isAltPressed; }
 	/// Gets ctrl pressed flag.

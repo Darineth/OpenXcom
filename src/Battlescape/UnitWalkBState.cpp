@@ -191,8 +191,11 @@ void UnitWalkBState::think()
 
 			if (!_parent->getMap()->getCamera()->isOnScreen(_unit->getPosition(), true, size, false) && _unit->getFaction() != FACTION_PLAYER && _unit->getVisible())
 				_parent->getMap()->getCamera()->centerOnPosition(_unit->getPosition());
-			// if the unit changed level, camera changes level with
-			_parent->getMap()->getCamera()->setViewLevel(_unit->getPosition().z);
+			// if the unit changed level, camera changes level with it - but only for units the player
+			// should be watching. Following an unseen enemy's level change would reveal that it just used
+			// stairs/a lift somewhere in the dark.
+			if (_unit->getFaction() == FACTION_PLAYER || _unit->getVisible() || _parent->getSave()->getDebugMode())
+				_parent->getMap()->getCamera()->setViewLevel(_unit->getPosition().z);
 		}
 
 		// is the step finished?

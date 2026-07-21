@@ -144,9 +144,9 @@ void UnitDieBState::init()
 }
 
 /**
- * Brings a death the player would otherwise miss into view.
- * Only moves the camera when the dying unit is visible but off screen, and claims the camera
- * from any in-flight projectile for the duration of the death animation.
+ * Brings a death (or a unit collapsing unconscious) the player would otherwise miss into view.
+ * Only moves the camera when the unit is visible but off screen, and claims the camera from any
+ * in-flight projectile for the duration of the animation via the DEATH claim.
  */
 void UnitDieBState::focusCamera()
 {
@@ -157,17 +157,14 @@ void UnitDieBState::focusCamera()
 	if (_parent->getSave()->isBeforeGame() || !_parent->getSave()->getBattleState() || !_unit->getTile())
 		return;
 
-	// don't pan to deaths the player can't see - that would give away unspotted positions
-	if (!_unit->getVisible() && !_parent->getSave()->getDebugMode())
-		return;
-
-	Camera *camera = _parent->getMap()->getCamera();
+	// The shared helper enforces the invariants: visible-only (don't give away unspotted positions),
+	// already-framed -> no move, and it won't override a higher claim. If it moves, hold the DEATH
+	// claim so projectile chasing can't steal the camera during the animation.
 	const int size = _unit->getArmor()->getSize() - 1;
-	if (camera->isOnScreen(_unit->getPosition(), false, size, false))
-		return;
-
-	camera->centerOnPosition(_unit->getPosition());
-	_parent->getMap()->setDeathFocus(true);
+	if (_parent->getMap()->focusCamera(CameraClaim::DEATH, _unit->getPosition(), _unit->getVisible(), size))
+	{
+		_parent->getMap()->setDeathFocus(true);
+	}
 }
 
 /**

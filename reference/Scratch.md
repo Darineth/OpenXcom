@@ -1,5 +1,6 @@
 # TODO
-
+- Camera should center on unit taking a shot
+- Laser rifle shots ALT preview not working?
 
 # Documentation
 

@@ -162,6 +162,7 @@ OPT bool motionDetectorOverlayEnabled;
 OPT bool psiChanceIndicatorEnabled;
 OPT bool fogOfWarEnabled;
 OPT bool battleFocusDyingUnits;
+OPT bool battleCameraDirection;
 OPT bool oxceDisableAlienInventory;
 OPT bool oxceDisableHitLog;
 OPT bool oxceDisableInventoryTuCost;

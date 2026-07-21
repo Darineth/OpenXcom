@@ -699,7 +699,23 @@ implementation (see CLAUDE.md "Planning Features").*
   following for the duration of the death animation. Units already on screen are left alone (no
   camera jerk in normal fights). Toggle: **Focus camera on dying units**
   (`battleFocusDyingUnits`, default on).
-  *(design: [plans/dying-unit-camera-focus.md](plans/dying-unit-camera-focus.md))*
+  *(design: [plans/dying-unit-camera-focus.md](plans/dying-unit-camera-focus.md) — superseded by the
+  camera-direction design below, which folds this in as the `DEATH` claim)*
+
+- [x] **Battlescape camera direction** — ✅ **Done.** treat every attack as a **sequence of beats** —
+  `ACTOR` → `PROJECTILE` → `IMPACT` → `DEATH` — and generalize the one-off camera rules into a
+  **claim ladder** (`DEATH > EXPLOSION > IMPACT > ACTOR > PROJECTILE`) that arbitrates only when two
+  actions *overlap*. Three enforced invariants: never move to what the player can't see, never move if
+  the subject is already framed, one claimant at a time. Headline gap: **a reaction shot never frames
+  the reacting unit** — an alien reaction-firing from off screen produces zero camera motion
+  (`TileEngine::tryReaction` only *saves* the offset for restore), and DX overwatch is equally blind.
+  A reaction now plays like any other shot: frame the shooter, follow the bullets, land on the target.
+  Also frames mind-control/panic success, stun/collapse and tripped proximity grenades, and fixes the
+  inconsistent visibility guards found in the audit (explosions and `setViewLevel` don't guard at all;
+  panic guards backwards; `isOnScreen` counts tiles behind the HUD as visible).
+  Option `battleCameraDirection` (default on); per-weapon opt-out reuses `followProjectiles:`. Folds in
+  the earlier dying-unit focus as the `DEATH` rung (now also framing stun/collapse).
+  *(design: [plans/Feature-BattleCamera.md](plans/Feature-BattleCamera.md))*
 
 # Maybe / Someday
 

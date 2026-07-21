@@ -201,7 +201,9 @@ void MeleeAttackBState::think()
 	}
 	else
 	{
-		if (_action.cameraPosition.z != -1)
+		// A reaction (melee) attack is involuntary - leave the camera where its beats ended instead of
+		// snapping back to the pre-reaction offset. A deliberate melee still returns to the attacker.
+		if (_action.cameraPosition.z != -1 && !(Options::battleCameraDirection && _action.reaction))
 		{
 			_parent->getMap()->getCamera()->setMapOffset(_action.cameraPosition);
 			_parent->getMap()->invalidate();

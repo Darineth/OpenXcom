@@ -1565,7 +1565,7 @@ bool BattlescapeGame::checkReservedTU(BattleUnit *bu, int tu, int energy, bool j
 		}
 		// DX: with `ai: normalTUReserve` the AI falls through to the same actual-shot-cost logic
 		// the player uses (including the auto->burst->snap->aimed fallback below). Without it,
-		// stock behaviour applies: reserve a flat percentage of the unit's *maximum* TU, which
+		// stock behavior applies: reserve a flat percentage of the unit's *maximum* TU, which
 		// ignores the weapon entirely and strands TU on weapons with no matching shot mode.
 		if (!getMod()->getAINormalTUReserve())
 		{
@@ -1736,7 +1736,18 @@ bool BattlescapeGame::handlePanickingUnit(BattleUnit *unit)
 	Game *game = _parentState->getGame();
 	if (unit->getVisible() || !Options::noAlienPanicMessages)
 	{
-		getMap()->getCamera()->centerOnPosition(unit->getPosition());
+		// IMPACT claim: frame the unit as it breaks, but only if the player can see it. The infobox may
+		// still show for an unseen alien (classic behavior with noAlienPanicMessages off), but panning
+		// the camera to it would reveal its position - the stock code did exactly that.
+		if (Options::battleCameraDirection)
+		{
+			const int size = unit->getArmor()->getSize() - 1;
+			getMap()->focusCamera(CameraClaim::IMPACT, unit->getPosition(), unit->getVisible(), size);
+		}
+		else
+		{
+			getMap()->getCamera()->centerOnPosition(unit->getPosition());
+		}
 		if (status == STATUS_PANICKING)
 		{
 			game->pushState(new InfoboxState(game->getLanguage()->getString("STR_HAS_PANICKED", unit->getGender()).arg(unit->getName(game->getLanguage()))));
