@@ -63,6 +63,8 @@ void UnitWalkBState::init()
 	_unit = _action.actor;
 	// DX: report the move (drops overwatch; breaks a dynamic cloak unless the unit is sneaking).
 	_parent->unitActed(_unit, unitActionFromMove(_action.getMoveType()));
+	// DX: each run builds sprint-momentum evasion from a standing start (see Feature-SprintEvasionRework).
+	_unit->resetTilesMovedThisMove();
 	_numUnitsSpotted = _unit->getUnitsSpottedThisTurn().size();
 	setNormalWalkSpeed();
 	_pf = _parent->getPathfinding();
@@ -201,6 +203,11 @@ void UnitWalkBState::think()
 		// is the step finished?
 		if (_unit->getStatus() == STATUS_STANDING)
 		{
+			// DX: count this completed tile toward sprint-momentum evasion. This block sits inside the
+			// STATUS_WALKING branch and only runs when keepWalking just finished a step, so it fires
+			// exactly once per tile (not on the initial pre-move standing, and not per animation frame),
+			// and before this tile's reaction check below - so momentum reflects tiles entered so far.
+			_unit->addTileMovedThisMove();
 			// update the TU display
 			_parent->getSave()->getBattleState()->updateSoldierInfo();
 			// if the unit burns floor tiles, burn floor tiles as long as we're not falling

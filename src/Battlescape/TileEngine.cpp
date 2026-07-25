@@ -2972,14 +2972,24 @@ TileEngine::ReactionScore *TileEngine::getReactor(std::vector<TileEngine::Reacti
 			best = &(*i);
 		}
 	}
-	if (best &&(unit->getEvasionScore(moverMove) <= best->reactionScore)) // DX: mover's (move-adjusted) defensive evasion vs reactor's offensive score
+	bool fired = false;
+	if (best)
 	{
-		if (best->unit->getOriginalFaction() == FACTION_PLAYER)
+		double moverEvasion = unit->getEvasionScore(moverMove); // DX: mover's move-adjusted defensive evasion
+		fired = moverEvasion <= best->reactionScore;            // ...vs the reactor's offensive score
+		if (fired && best->unit->getOriginalFaction() == FACTION_PLAYER)
 		{
 			best->unit->addReactionExp();
 		}
+		// DX verbose diagnostic: explain the contest for the top reactor - the mover's move mode and
+		// (for sprint) momentum, its evasion, the reactor's reaction score, and the fired/evaded result.
+		if (Options::combatLogVerbose)
+		{
+			_save->logReactionEvalEvent(best->unit, unit, moverMove, unit->getTilesMovedThisMove(),
+				(int)std::lround(moverEvasion), (int)std::lround(best->reactionScore), fired);
+		}
 	}
-	else
+	if (!fired)
 	{
 		best = 0;
 	}

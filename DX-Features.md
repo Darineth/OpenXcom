@@ -1561,6 +1561,32 @@ times*. Mod-configurable **globally and per-armor**.
 - Non-move reactions (shooting, turning) report `BAM_NORMAL` ⇒ plain score; `{100,100}` everywhere ⇒
   reaction fire byte-for-byte unchanged (reproduces `reactions × TU/maxTU`).
 
+### Sprint momentum evasion
+
+An alternative, opt-in evasion model for a movement mode (designed for **sprint**), where evasion is
+built from **momentum** — the number of tiles moved so far in the current run — rather than the
+reactions stat as a flat cut. Set `evasionPercentPerTile > 0` on a mode's config and it switches from
+the stat/TU formula to a momentum ramp: `getEvasionScore() × min(tilesMoved, maxMomentumTiles) ×
+evasionPercentPerTile/100` — each tile adds that percent of the unit's own evasion score.
+
+The point is a **ramp**: a sprinter is very exposed on the first steps out of cover (0 momentum → 0
+evasion, any reactor fires) and a blur once at full speed (past 100% of their normal evasion, few
+reactors qualify) — "keep running and you get safer; the danger is the first tiles." It still scales
+with the reaction score (skill matters), just gated by momentum rather than applied flat; it resets to
+zero at the start of each move, and pairs with the existing *sprint commits to its full path* rule. A
+transient tiles-moved counter on `BattleUnit` (reset per move and per turn, not serialized) drives it.
+*(design: [plans/Feature-SprintEvasionRework.md](plans/Feature-SprintEvasionRework.md) — idea C; ideas
+A/B/D catalogued there, not built.)*
+
+- **Config:** `evasionPercentPerTile` / `maxMomentumTiles` on `evasionDefaults: { sprint: {...} }` or a
+  per-armor `evasionSprint:`. `evasionPercentPerTile: 0` (default) ⇒ the stat/TU formula, so existing
+  evasion configs and stock behavior are unchanged. `dx-test` uses
+  `{ evasionPercentPerTile: 20, maxMomentumTiles: 6 }` (0% → 120% of the unit's evasion over six tiles).
+- **Verbose diagnostic:** with the hidden `combatLogVerbose` option on, each reaction contest logs the
+  mover's move mode (+ sprint momentum tiles), its evasion, the reactor's reaction score, and the
+  fired/evaded result — e.g. *"Sectoid reaction vs Ramirez [sprint 4t]: evasion 58 vs reactions 66 ->
+  fired"* — for watching the ramp and tuning the numbers.
+
 ## Overwatch (set-and-hold reaction fire, cone-based)
 
 A deliberate held-fire state a unit enters on its own turn to react during the enemy turn — DX's take

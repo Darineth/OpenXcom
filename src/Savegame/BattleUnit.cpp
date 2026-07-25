@@ -90,7 +90,7 @@ BattleUnit::BattleUnit(const Mod *mod, Soldier *soldier, int depth, const RuleSt
 	_verticalDirection(0), _status(STATUS_STANDING), _wantsToSurrender(false), _isSurrendering(false), _walkPhase(0), _fallPhase(0), _kneeled(false), _floating(false),
 	_dontReselect(false), _aiMedikitUsed(false), _fire(0), _currentAIState(0), _visible(false),
 	_exp{ }, _expTmp{ },
-	_motionPoints(0), _scannedTurn(-1), _customMarker(0), _kills(0), _hitByFire(false), _hitByAnything(false), _alreadyExploded(false), _deathRegistered(false), _stunRegistered(false), _bleedingOut(false), _incapacitated(false), _fireMaxHit(0), _smokeMaxHit(0),
+	_motionPoints(0), _scannedTurn(-1), _customMarker(0), _kills(0), _hitByFire(false), _hitByAnything(false), _alreadyExploded(false), _deathRegistered(false), _stunRegistered(false), _tilesMovedThisMove(0), _bleedingOut(false), _incapacitated(false), _fireMaxHit(0), _smokeMaxHit(0),
 	_moraleRestored(0), _notificationShown(0), _charging(0),
 	_statistics(), _murdererId(0), _mindControllerID(0), _fatalShotSide(SIDE_FRONT), _fatalShotBodyPart(BODYPART_HEAD), _armor(0),
 	_geoscapeSoldier(soldier), _unitRules(0), _rankInt(0), _turretType(-1), _hidingForTurn(false), _floorAbove(false), _respawn(false), _alreadyRespawned(false),
@@ -446,7 +446,7 @@ BattleUnit::BattleUnit(const Mod *mod, const Unit *unit, UnitFaction faction, in
 	_toDirectionTurret(0), _verticalDirection(0), _status(STATUS_STANDING), _wantsToSurrender(false), _isSurrendering(false), _walkPhase(0),
 	_fallPhase(0), _kneeled(false), _floating(false), _dontReselect(false), _aiMedikitUsed(false), _fire(0), _currentAIState(0),
 	_visible(false), _exp{ }, _expTmp{ },
-	_motionPoints(0), _scannedTurn(-1), _customMarker(0), _kills(0), _hitByFire(false), _hitByAnything(false), _alreadyExploded(false), _deathRegistered(false), _stunRegistered(false), _bleedingOut(false), _incapacitated(false), _fireMaxHit(0), _smokeMaxHit(0),
+	_motionPoints(0), _scannedTurn(-1), _customMarker(0), _kills(0), _hitByFire(false), _hitByAnything(false), _alreadyExploded(false), _deathRegistered(false), _stunRegistered(false), _tilesMovedThisMove(0), _bleedingOut(false), _incapacitated(false), _fireMaxHit(0), _smokeMaxHit(0),
 	_moraleRestored(0), _notificationShown(0), _charging(0),
 	_statistics(), _murdererId(0), _mindControllerID(0), _fatalShotSide(SIDE_FRONT),
 	_fatalShotBodyPart(BODYPART_HEAD), _armor(armor), _geoscapeSoldier(0),  _unitRules(unit),
@@ -2921,6 +2921,21 @@ double BattleUnit::getEvasionScore(BattleActionMove bam) const
 		return getEvasionScore();
 	}
 
+	// DX momentum model: evasion is a ramp built from tiles moved so far this run - each tile adds a
+	// percent of the unit's base evasion score, so it starts at 0 (exposed on the first steps out of
+	// cover) and grows to a blur once at speed. Scales with the reaction score (skill still matters),
+	// just gated by momentum instead of the flat statPercent cut. See Feature-SprintEvasionRework (C).
+	if (cfg->evasionPercentPerTile > 0)
+	{
+		int tiles = _tilesMovedThisMove;
+		if (cfg->maxMomentumTiles > 0 && tiles > cfg->maxMomentumTiles)
+		{
+			tiles = cfg->maxMomentumTiles;
+		}
+		double momentumFactor = (double)tiles * (double)cfg->evasionPercentPerTile / 100.0;
+		return getEvasionScore() * momentumFactor;
+	}
+
 	// reactions × statPercent, with the TU/maxTU penalty softened by (100 - tuPenaltyPercent):
 	//   tuFactor = 1 - (1 - currentTU/maxTU) × tuPenaltyPercent/100
 	double tuRatio = (double)getTimeUnits() / (double)getBaseStats()->tu;
@@ -3130,6 +3145,7 @@ void BattleUnit::prepareNewTurn(bool fullProcess)
 	_dontReselect = false;
 	_aiMedikitUsed = false;
 	_motionPoints = 0;
+	_tilesMovedThisMove = 0; // DX: sprint-momentum counter never carries across turns
 
 	// DX: overwatch persists across turns, but the reserved (free) first shot only covers the first
 	// enemy turn - it expires at the owner's next turn, after which shots simply spend TU and the mode

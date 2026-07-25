@@ -38,9 +38,14 @@ lighting:
 #  Armors override per-unit via evasionSprint / evasionSneak.
 # =====================================================================
 evasionDefaults:
-  # sprint: half the reactions stat, but only half the TU/maxTU penalty (fast movers stay a bit
-  # evasive even when low on TU); net effect - more exposed at full TU, less punished when depleted.
-  sprint: { statPercent: 60,  tuPenaltyPercent: 50 }
+  # sprint: MOMENTUM model (DX, Feature-SprintEvasionRework idea C). Evasion ramps with tiles moved in
+  # the current run: each tile adds 20% of the unit's evasion score, so it's 0 at a standing start
+  # (very exposed on the first steps out of cover) and grows to 120% of normal by 6 tiles (a blur, hard
+  # to react-fire against). Still scales with the reaction score, just gated by momentum instead of a
+  # flat cut. What to check: a short dart into an enemy's view draws reaction fire; a long run already
+  # at speed crossing the same tile draws much less. The danger is the first tiles.
+  # (evasionPercentPerTile > 0 switches this mode from the statPercent/tuPenaltyPercent formula to momentum.)
+  sprint: { evasionPercentPerTile: 20, maxMomentumTiles: 6 }
   # sneak: full reactions stat at ALL times (no TU penalty) - always alert, hard to react-fire against.
   sneak:  { statPercent: 90, tuPenaltyPercent: 0 }
 
@@ -824,9 +829,11 @@ armors:
     inventoryLayout: STR_DX_LAYOUT_RIG
     evasion: 200        # DX reaction-split test: 2x base defensive evasion (harder to react-fire against);
                         # its own reaction fire is unaffected (offence untouched)
-    # per-armor override of the global sprint config: a nimble suit that keeps more of its reactions
-    # and takes less TU penalty while sprinting than the mod-wide default {50, 50}.
-    evasionSprint: { statPercent: 75, tuPenaltyPercent: 25 }
+    # per-armor override of the global sprint config: a nimble suit that builds sprint MOMENTUM faster
+    # than the mod-wide default (150% of evasion per tile vs 100), so it reaches "blur" in fewer tiles.
+    # (Unset momentum/stat fields still fall back to the global per field - since the global sprint is
+    # momentum, setting only evasionPercentPerTile here keeps this a momentum override too.)
+    evasionSprint: { evasionPercentPerTile: 100, maxMomentumTiles: 2 }
   - type: STR_POWER_SUIT_UC
     inventoryLayout: STR_DX_LAYOUT_POWER
     # DX sneak-gate test: powered armor is too bulky/noisy to creep. Alt-move in a power suit

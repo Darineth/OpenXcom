@@ -152,9 +152,27 @@ Two sub-maps, `sprint:` and `sneak:`, each with the same two keys. Armors overri
 | `sprint: tuPenaltyPercent` | int % | 100 | How strongly low TU cuts a sprinting unit's evasion (100 = vanilla, 0 = none). |
 | `sneak: statPercent` | int % | 100 | Percent of the reactions stat a sneaking unit keeps for evasion. |
 | `sneak: tuPenaltyPercent` | int % | 100 | How strongly low TU cuts a sneaking unit's evasion. |
+| `evasionPercentPerTile` **[DX]** | int % | 0 | **Momentum model.** If `> 0`, this mode ignores the stat/TU formula above and instead ramps evasion with tiles moved in the current run: `evasionScore × min(tilesMoved, maxMomentumTiles) × evasionPercentPerTile/100` — each tile adds this percent of the unit's evasion score. Exposed on the first steps out of cover, hard to react-fire against once at full speed. |
+| `maxMomentumTiles` **[DX]** | int | 0 | Cap on counted momentum tiles (`0` = uncapped). Only meaningful with `evasionPercentPerTile > 0`. |
 
 Defaults `{100, 100}` for both ⇒ evasion is exactly the plain reaction score, i.e. the feature is
 inert until a mod configures it.
+
+**Momentum evasion (idea C, sprint):** setting `evasionPercentPerTile` switches a mode from the
+stat/TU formula to a tiles-moved ramp — each tile adds that percent of the unit's evasion score, so it
+still scales with the reaction score but is gated by momentum. It resets to zero at the start of each
+move, so a fresh dash starts fully exposed (0%) and a long run already at speed is a blur. Typical
+sprint config: `{ evasionPercentPerTile: 20, maxMomentumTiles: 6 }` (0% → 120% of the unit's evasion
+over the first six tiles). See
+[plans/Feature-SprintEvasionRework.md](../plans/Feature-SprintEvasionRework.md).
+
+**Per-field fallback and precedence.** An armor's `evasionSprint:` / `evasionSneak:` overrides these
+defaults **per field** — any field the armor omits inherits the global value (all four fields:
+`statPercent`, `tuPenaltyPercent`, `evasionPercentPerTile`, `maxMomentumTiles`). Because the momentum
+model **takes precedence** whenever the resolved `evasionPercentPerTile > 0`, an armor that sets only
+the stat fields while the global default is momentum will still run in momentum mode (its stat fields
+are ignored). To force a mode back to the stat/TU formula against a momentum global, set
+`evasionPercentPerTile: 0` on the armor explicitly.
 
 ---
 

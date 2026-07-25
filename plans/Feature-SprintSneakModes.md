@@ -58,6 +58,20 @@ DX delta is therefore: **surface Run** (visible sprint) now, and give **Sneak re
   this, and explicit evasion belongs with **Reaction Scoring Split** (`getEvasionScore`). Revisit
   after that lands. ("high hit chance" for a *sprinting* unit is also semantically unclear — clarify
   then.)
+  - **Update (Jul 2026):** resolved by **Movement Mode Evasion** for *both* modes, and both roadmap
+    items are now ticked complete. "High hit chance" (sprint) = a sprinting unit's evasion is lowered,
+    so it is easier to hit. "High alertness / maintains evasion" (sneak) = sneaking keeps the mover's
+    evasion at full stat with no TU penalty, *above* the normal `reactions × currentTU/maxTU` score, so
+    a creeper stays hard to reaction-fire against even when low on TU. **"Alertness" was never a
+    spotting/detection mechanic** — that was a mis-scoping; the whole intent is the reaction/evasion
+    behavior, which shipped. (The AI-only `sneakyAI` visible-tile avoidance is unrelated.)
+    - **Follow-up (done):** the plain sprint evasion cut was reworked into a **momentum** model —
+      evasion built from tiles moved this run, so a sprinter is exposed on the first steps and a blur at
+      speed. See [Feature-SprintEvasionRework.md](Feature-SprintEvasionRework.md) (idea C).
+    - **Open (logged, not built):** momentum-themed *movement* follow-ups — a **minimum sprint
+      distance**, and **momentum carry** (taking reaction fire lets a sprinter run 1–2 more tiles,
+      possibly momentum-scaled, before it can stop, instead of halting on the spot). See
+      [Feature-SprintEvasionRework.md](Feature-SprintEvasionRework.md) §"Future / open options" (F1, F2).
 
 ## Touch points
 

@@ -142,6 +142,12 @@ struct EvasionModeConfig
 {
 	int statPercent = 100;
 	int tuPenaltyPercent = 100;
+	// DX momentum evasion: when evasionPercentPerTile > 0, this mode's evasion is a momentum ramp -
+	// each tile moved in the current run adds this percent of the unit's evasion score
+	// (min(tiles, maxMomentumTiles) * evasionPercentPerTile% of the base score), instead of the
+	// statPercent/tuPenaltyPercent formula. 0 = disabled.
+	int evasionPercentPerTile = 0;
+	int maxMomentumTiles = 0; // cap on counted momentum tiles (0 = uncapped)
 
 	void load(const YAML::YamlNodeReader& reader)
 	{
@@ -149,6 +155,8 @@ struct EvasionModeConfig
 			return;
 		reader.tryRead("statPercent", statPercent);
 		reader.tryRead("tuPenaltyPercent", tuPenaltyPercent);
+		reader.tryRead("evasionPercentPerTile", evasionPercentPerTile);
+		reader.tryRead("maxMomentumTiles", maxMomentumTiles);
 	}
 };
 
@@ -365,8 +373,9 @@ private:
 	int _allowBleedOut = -1;
 	// DX: how sprint/sneak reshape the mover's evasion. -1 in a field = "use the mod-wide default"
 	// (resolved per field in afterLoad).
-	EvasionModeConfig _evasionSprint{ -1, -1 };
-	EvasionModeConfig _evasionSneak{ -1, -1 };
+	// -1 = "unset" sentinel per field, resolved from Armor::evasionDefaults in afterLoad (all four fields).
+	EvasionModeConfig _evasionSprint{ -1, -1, -1, -1 };
+	EvasionModeConfig _evasionSneak{ -1, -1, -1, -1 };
 	RuleStatBonus _psiDefence, _meleeDodge;
 	RuleStatBonus _timeRecovery, _energyRecovery, _moraleRecovery, _healthRecovery, _stunRecovery, _manaRecovery;
 	ModScript::BattleUnitScripts::Container _battleUnitScripts;

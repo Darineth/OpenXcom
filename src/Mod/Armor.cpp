@@ -319,8 +319,12 @@ void Armor::afterLoad(const Mod* mod)
 	// DX: resolve any unset sprint/sneak evasion fields from the mod-wide defaults (per field).
 	if (_evasionSprint.statPercent < 0) _evasionSprint.statPercent = evasionDefaults.sprint.statPercent;
 	if (_evasionSprint.tuPenaltyPercent < 0) _evasionSprint.tuPenaltyPercent = evasionDefaults.sprint.tuPenaltyPercent;
+	if (_evasionSprint.evasionPercentPerTile < 0) _evasionSprint.evasionPercentPerTile = evasionDefaults.sprint.evasionPercentPerTile;
+	if (_evasionSprint.maxMomentumTiles < 0) _evasionSprint.maxMomentumTiles = evasionDefaults.sprint.maxMomentumTiles;
 	if (_evasionSneak.statPercent < 0) _evasionSneak.statPercent = evasionDefaults.sneak.statPercent;
 	if (_evasionSneak.tuPenaltyPercent < 0) _evasionSneak.tuPenaltyPercent = evasionDefaults.sneak.tuPenaltyPercent;
+	if (_evasionSneak.evasionPercentPerTile < 0) _evasionSneak.evasionPercentPerTile = evasionDefaults.sneak.evasionPercentPerTile;
+	if (_evasionSneak.maxMomentumTiles < 0) _evasionSneak.maxMomentumTiles = evasionDefaults.sneak.maxMomentumTiles;
 
 	mod->verifySoundOffset(_type, _moveSound, "BATTLE.CAT");
 	mod->verifySoundOffset(_type, _deathSoundMale, "BATTLE.CAT");

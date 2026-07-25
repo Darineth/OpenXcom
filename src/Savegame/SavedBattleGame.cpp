@@ -4340,6 +4340,39 @@ void SavedBattleGame::logOverwatchEvalEvent(const BattleUnit *watcher, const Bat
 }
 
 /**
+ * DX: logs the reaction-fire contest against the winning reactor, reading e.g.
+ * "<reactor> reaction vs <mover> [sprint 4t]: evasion 58 vs reactions 66 -> fired". Verbose-only
+ * diagnostic (gated by Options::combatLogVerbose at the call site). Shows how the mover's movement
+ * mode and (for sprint) momentum shaped its evasion, and whether that beat the reactor.
+ * @param reactor The unit that would take the reaction shot (highest reaction score among spotters).
+ * @param mover The unit being reacted against.
+ * @param moverMove The mover's current movement mode.
+ * @param tilesMoved The mover's tiles-moved-this-run count (sprint momentum).
+ * @param evasion The mover's move-adjusted evasion score.
+ * @param reactorScore The reactor's offensive reaction score.
+ * @param fired True if the reactor fires; false if the mover's evasion beat it.
+ */
+void SavedBattleGame::logReactionEvalEvent(const BattleUnit *reactor, const BattleUnit *mover, BattleActionMove moverMove, int tilesMoved, int evasion, int reactorScore, bool fired)
+{
+	if (!reactor || !mover)
+	{
+		return;
+	}
+	std::string mode;
+	switch (moverMove)
+	{
+	case BAM_SNEAK: mode = _lang->getString("STR_COMBATLOG_MOVE_SNEAK"); break;
+	case BAM_RUN:   mode = _lang->getString("STR_COMBATLOG_MOVE_SPRINT").arg(tilesMoved); break;
+	case BAM_STRAFE: mode = _lang->getString("STR_COMBATLOG_MOVE_STRAFE"); break;
+	default:        mode = _lang->getString("STR_COMBATLOG_MOVE_WALK"); break;
+	}
+	std::string outcome = fired ? _lang->getString("STR_COMBATLOG_REACTION_FIRED") : _lang->getString("STR_COMBATLOG_REACTION_EVADED");
+	appendToCombatLogVerbose(_lang->getString("STR_COMBATLOG_REACTION_EVAL")
+		.arg(getCombatLogName(reactor)).arg(getCombatLogName(mover)).arg(mode)
+		.arg(evasion).arg(reactorScore).arg(outcome), OUTCOME_NEUTRAL);
+}
+
+/**
  * Logs the terminal outcome of an overwatch check, reading "<watcher> overwatch on <mover>: <reason>".
  * Verbose-only diagnostic (gated by Options::combatLogVerbose at the call site). resultKey is a language
  * key resolving to the reason (eligible to fire / no line of fire or sight / accuracy below threshold).

@@ -51,6 +51,7 @@ class HitLog;
 enum HitLogEntryType : int;
 class CombatLog;
 enum CombatLogOutcome : int;
+enum BattleActionMove : char;
 enum UnitSide : Uint8;
 struct BattlescapeTally;
 
@@ -734,6 +735,9 @@ public:
 	void logOutOfAmmoEvent(const BattleUnit *unit, const BattleItem *weapon);
 	/// Logs an overwatch reaction-fire evaluation summary (verbose only): distance, in-cone, seen-by-team, score vs evade.
 	void logOverwatchEvalEvent(const BattleUnit *watcher, const BattleUnit *mover, int distance, bool inCone, bool seen, int score, int evade);
+	/// DX: logs the reaction-fire contest for the best reactor (verbose only): the mover's move mode
+	/// (+ sprint momentum) and evasion vs the reactor's reaction score, and whether it fired or the mover evaded.
+	void logReactionEvalEvent(const BattleUnit *reactor, const BattleUnit *mover, BattleActionMove moverMove, int tilesMoved, int evasion, int reactorScore, bool fired);
 	/// Logs the terminal outcome of an overwatch check (verbose only): resultKey resolves to a localized reason.
 	void logOverwatchOutcomeEvent(const BattleUnit *watcher, const BattleUnit *mover, const std::string &resultKey);
 	/// DX: logs a channeled-mind-control upkeep tick (who paid, how much regen was withheld). Verbose.

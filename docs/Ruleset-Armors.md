@@ -69,7 +69,7 @@ Entries **merge** across mods/files by `type`, support `refNode:` inheritance an
 | `ignoresMeleeThreat` / `createsMeleeThreat` | bool | false / true¹ | CQB threat participation. |
 | `canBleedOut` **[DX]** | bool | auto | Tri-state bleedout eligibility: absent = the mod-wide/legacy rule decides; `true`/`false` force it. See [DX-Features](../DX-Features.md). |
 | `evasion` **[DX]** | int % | 100 | Defensive reaction-fire evasion scale — `> 100` = harder to react-fire against. Offense (own reactions) untouched. |
-| `evasionSprint` / `evasionSneak` **[DX]** | map | from `evasionDefaults:` | Per-armor override of how sprint/sneak reshape evasion: `{ statPercent, tuPenaltyPercent }`. |
+| `evasionSprint` / `evasionSneak` **[DX]** | map | from `evasionDefaults:` | Per-armor override of how sprint/sneak reshape evasion: `{ statPercent, tuPenaltyPercent }`, or the momentum model `{ evasionPercentPerTile, maxMomentumTiles }`. See [`evasionDefaults:`](Ruleset-DX-Globals.md#evasiondefaults). |
 
 ¹ Setting `size: 2` flips these to the big-unit defaults (fear/bleed/pain/zombi immune, no melee
 threat) before the explicit keys apply.

@@ -24,6 +24,17 @@ en-US:
   STR_COMBATLOG_OW_ELIGIBLE: "eligible to fire"
   STR_COMBATLOG_OW_NO_LOF: "no line of fire/sight"
   STR_COMBATLOG_OW_LOW_ACC: "accuracy below reaction threshold"
+  # Verbose-only reaction-fire contest diagnostic (hidden combatLogVerbose option): the mover's move mode
+  # (+ sprint momentum) and evasion vs the top reactor's reaction score, and whether it fired or was evaded.
+  # {0} reactor, {1} mover, {2} move-mode label, {3} mover evasion score, {4} reactor score, {5} outcome.
+  STR_COMBATLOG_REACTION_EVAL: "{0} reaction vs {1} [{2}]: evasion {3} vs reactions {4} -> {5}"
+  STR_COMBATLOG_MOVE_WALK: "walk"
+  STR_COMBATLOG_MOVE_SNEAK: "sneak"
+  # {0} = tiles moved so far this run (sprint momentum).
+  STR_COMBATLOG_MOVE_SPRINT: "sprint {0}t"
+  STR_COMBATLOG_MOVE_STRAFE: "strafe"
+  STR_COMBATLOG_REACTION_FIRED: "fired"
+  STR_COMBATLOG_REACTION_EVADED: "evaded"
   STR_COMBATLOG_ARMOR_DAMAGE: "{0}'s {1} armor takes {2} damage"
   # {0} unit, {1} armor side, {2} incoming damage, {3} damage type name, {4} armor subtracted,
   # {5} damage that got through, {6} the stats it actually landed on.

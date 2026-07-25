@@ -312,22 +312,26 @@ Everything below is DX-specific work confirmed **absent** from the base.
 
 ## Phase 7: Tactical Unit Systems
 
-- [~] **Sprint Mode** — surfaces & polishes OXCE's hidden **Run** (Ctrl) mode. See
+- [x] **Sprint Mode** — ✅ **Done.** surfaces & polishes OXCE's hidden **Run** (Ctrl) mode. See
   [plans/Feature-SprintSneakModes.md](plans/Feature-SprintSneakModes.md).
-  - [~] High TU/energy cost, high speed, high hit chance — *OXCE Run already applies the TU+energy
-    cost multipliers; speed added below; "high hit chance" deferred (belongs with Reaction Split)*
+  - [x] High TU/energy cost, high speed, high hit chance — *OXCE Run already applies the TU+energy
+    cost multipliers; speed added below; "high hit chance" resolved by **Movement Mode Evasion** — a
+    sprinting unit's defensive evasion is lowered, so it is easier to hit (the deferred Reaction
+    Scoring Split it was waiting on has since shipped).*
   - [x] Blue path-preview color when sprinting
   - [x] Accelerate unit motion when sprinting (~2× animation)
   - [x] Prevent cancelling movement while sprinting (commits to full path; no spot-stop)
-- [~] **Sneak Mode** — surfaces & polishes OXCE's hidden **Sneak** (Alt) mode. *(the
+- [x] **Sneak Mode** — ✅ **Done.** surfaces & polishes OXCE's hidden **Sneak** (Alt) mode. *(the
   "no creeping while glowing" gate shipped with Phase 8's Light Equipment —
   `sneakDefaults: { maxLight }`)*
-  - [~] Low speed, high alertness, maintains evasion — *low speed (move-cost + ~1.5× slower crawl) and
-    **evasion** are now done: sneaking raises the mover's defensive reaction-fire evasion (sprint
-    lowers it), mod-configurable globally + per-armor. See
-    [plans/Feature-MovementModeEvasion.md](plans/Feature-MovementModeEvasion.md). "High alertness"
-    (spotting/detection) remains the only open piece. (The AI-only `sneakyAI` visible-tile
-    avoidance is unrelated.)*
+  - [x] Low speed, high alertness, maintains evasion — *low speed (move-cost + ~1.5× slower crawl) done;
+    the "high alertness / maintains evasion" intent is **the evasion mechanic itself**, delivered by
+    **Movement Mode Evasion**: sneaking keeps the mover's reaction-fire evasion at full stat with no TU
+    penalty (`tuPenaltyPercent: 0`), i.e. *above* the normal `reactions × currentTU/maxTU` score, so a
+    creeping unit stays hard to reaction-fire against even when low on TU. Mod-configurable globally +
+    per-armor. See [plans/Feature-MovementModeEvasion.md](plans/Feature-MovementModeEvasion.md).
+    ("Alertness" was never a spotting/detection mechanic — a mis-scoping in an earlier note; the
+    AI-only `sneakyAI` visible-tile avoidance is a separate, unrelated thing.)*
   - [x] Purple path-preview color when sneaking
   - [x] Slower unit motion when sneaking (~1.5×)
 - [~] **Overwatch System** — `BA_OVERWATCH`, held-fire behavior + indicators. **Implemented**: DX uses
@@ -545,6 +549,20 @@ implementation (see CLAUDE.md "Planning Features").*
   mod can retune movement (e.g. slow sneaking) game-wide without editing every armor. Per-armor values
   still override; no node = stock. Spun out of Sprint/Sneak (OXCE sneak defaults to walk-equivalent).
   See [plans/Feature-MoveCostDefaults.md](plans/Feature-MoveCostDefaults.md).
+
+- [x] **Sprint momentum evasion** — ✅ **Done.** Reworks the *sprint* side of Movement-Mode Evasion from
+  a flat stat cut into a **momentum** model: a sprinting unit's reaction-fire evasion is built from tiles
+  moved so far in the current run — each tile adds `evasionPercentPerTile`% of the unit's evasion score
+  (`evasionScore × min(tiles, maxMomentumTiles) × evasionPercentPerTile/100`). A ramp — exposed on the
+  first steps out of cover, a blur once at speed; still scales with the reaction score, just gated by
+  momentum. Opt-in per mode via `evasionPercentPerTile` on `evasionDefaults`/`evasionSprint` (0 = the old
+  stat/TU formula, so backward compatible). Ideas A (aim-cone shot-degrade), B (directional), D
+  (energy-coupled) catalogued but not built. *(design: [plans/Feature-SprintEvasionRework.md](plans/Feature-SprintEvasionRework.md))*
+  - [ ] **Minimum sprint distance** *(F1)* — reject/convert a `BAM_RUN` path shorter than N tiles; a
+    one-tile "sprint" is meaningless (0 momentum → 0 evasion). *(design: [plans/Feature-SprintEvasionRework.md](plans/Feature-SprintEvasionRework.md) §Future)*
+  - [ ] **Momentum carry** *(F2)* — taking reaction fire lets a sprinter run 1–2 more tiles (possibly
+    momentum-scaled) before it can stop, instead of halting on the spot (`UnitWalkBState`'s reaction-fire
+    `cancelCurentMove`). Reuses the idea-C tiles-moved counter. *(design: [plans/Feature-SprintEvasionRework.md](plans/Feature-SprintEvasionRework.md) §Future)*
 
 - [~] **Targeting visualization (aim-cone spread & throw landing area)** — spatially draw where the
   aim-cone / throw launch-error spread actually goes. *(design: [plans/Feature-TargetingVisualization.md](plans/Feature-TargetingVisualization.md))*

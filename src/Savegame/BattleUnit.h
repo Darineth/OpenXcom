@@ -147,6 +147,7 @@ private:
 	std::vector<int> _meleeAttackedBy;
 	bool _hitByFire, _hitByAnything, _alreadyExploded, _deathRegistered;
 	bool _stunRegistered; // DX: knockout already logged/queued this volley (one-shot guard, cleared after the fall)
+	int _tilesMovedThisMove; // DX: tiles moved so far in the current run, for sprint momentum evasion (transient, not saved)
 	bool _bleedingOut; // DX: unit is bleeding out (alive at negative health, dying toward getDeathHealth)
 	bool _incapacitated; // DX: unit dropped into negative health this mission - out for the rest of it (no revive)
 	int _fireMaxHit;
@@ -494,6 +495,12 @@ public:
 	double getEvasionScore() const;
 	/// Get the evasion score modified by how the unit is currently moving (sprint lowers, sneak raises).
 	double getEvasionScore(BattleActionMove bam) const;
+	/// DX: reset the sprint-momentum tiles-moved counter (call when a move starts / the turn begins).
+	void resetTilesMovedThisMove() { _tilesMovedThisMove = 0; }
+	/// DX: record one tile of movement for sprint-momentum evasion.
+	void addTileMovedThisMove() { ++_tilesMovedThisMove; }
+	/// DX: tiles moved so far in the current run (sprint momentum).
+	int getTilesMovedThisMove() const { return _tilesMovedThisMove; }
 	/// Prepare for a new turn.
 	void prepareNewTurn(bool fullProcess = true);
 	/// Calculate change in unit stats.
