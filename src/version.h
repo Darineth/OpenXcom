@@ -22,10 +22,10 @@
 
 #define OPENXCOM_VERSION_ENGINE "Extended DX"
 #define OPENXCOM_VERSION_ENGINE_OXCE "Extended" // OXCE engine name DX stays backward-compatible with
-#define OPENXCOM_VERSION_SHORT "Extended DX 8.6.1"
-#define OPENXCOM_VERSION_LONG "8.6.1.0"
-#define OPENXCOM_VERSION_NUMBER 8,6,1,0
+#define OPENXCOM_VERSION_SHORT "Extended DX 8.6.2"
+#define OPENXCOM_VERSION_LONG "8.6.2.0"
+#define OPENXCOM_VERSION_NUMBER 8,6,2,0
 
 #ifndef OPENXCOM_VERSION_GIT
-#define OPENXCOM_VERSION_GIT " (v2026-05-02)"
+#define OPENXCOM_VERSION_GIT " (v2026-07-25)"
 #endif
