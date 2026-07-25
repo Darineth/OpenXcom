@@ -180,8 +180,8 @@ struct EngineData
  * List of engines that current version support.
  */
 const EngineData supportedEngines[] = {
-	{ OPENXCOM_VERSION_ENGINE, { OPENXCOM_VERSION_NUMBER }},
-	{ OPENXCOM_VERSION_ENGINE_OXCE, { OPENXCOM_VERSION_NUMBER }}, // DX is backward-compatible with mods requiring the OXCE "Extended" engine
+	{ OPENXCOM_VERSION_ENGINE, { OPENXCOM_VERSION_NUMBER_DX }}, // "Extended DX" -> DX's own version (DX feature-set gating)
+	{ OPENXCOM_VERSION_ENGINE_OXCE, { OPENXCOM_VERSION_NUMBER }}, // "Extended" -> OXCE base (DX stays compatible with OXCE mods)
 	{ "", { 0, 0, 0, 0 } }, // assume that every engine support mods from base game, remove if its not true.
 };
 
@@ -321,6 +321,9 @@ static auto dummy = ([]
 	assert(!findCompatibleEngine(supportedEngines, "Extended", create(OPENXCOM_VERSION_NUMBER + 1)));
 	assert(!findCompatibleEngine(supportedEngines, "XYZ", create(OPENXCOM_VERSION_NUMBER)));
 	assert(!findCompatibleEngine(supportedEngines, "XYZ", create(0, 0, 0, 0)));
+	// DX: the "Extended DX" engine gates on the DX version axis, independent of the OXCE base number.
+	assert(findCompatibleEngine(supportedEngines, "Extended DX", create(OPENXCOM_VERSION_NUMBER_DX)));
+	assert(!findCompatibleEngine(supportedEngines, "Extended DX", create(OPENXCOM_VERSION_NUMBER_DX + 1)));
 
 
 	auto check = [](const std::string& a, const std::string& b)

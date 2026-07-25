@@ -3,6 +3,28 @@
 This document tracks features added in OpenXcom DX on top of OXCE-Plus. Entries will be added
 here as features are implemented.
 
+## Dual-track versioning (`Extended DX` engine + OXCE compatibility)
+
+DX advertises itself under **two engine names** so it can version its own feature-set independently of
+the OXCE base while staying compatible with OXCE mods. `src/version.h` carries two version numbers:
+
+- `OPENXCOM_VERSION_NUMBER` = the **OXCE base** DX last synced to (e.g. 8.6.2). Drives the `"Extended"`
+  compatibility entry, the save-header version, and the update check. Bumped only on upstream merges.
+- `OPENXCOM_VERSION_NUMBER_DX` = **DX's own** version (currently 0.9.0). Drives the `"Extended DX"` entry.
+  Bumped when DX ships ruleset-visible changes a mod might gate on.
+
+The engine's `supportedEngines[]` table ([`ModInfo.cpp`](../src/Engine/ModInfo.cpp)) maps
+`Extended DX → DX version` and `Extended → OXCE base`, so:
+
+- An **OXCE mod** requiring `Extended <= <base>` loads on DX unchanged (backward compatibility).
+- A **DX-only mod** sets `requiredExtendedEngine: Extended DX` + `requiredExtendedVersion: <dx>`; it
+  loads on DX but correctly refuses to load on vanilla OXCE (which never advertises `Extended DX`).
+
+The UI (main menu, window title, loading) shows the compact `Extended DX <dx>`
+(`OPENXCOM_VERSION_SHORT`) — the main menu has almost no room for more; logs, `--version` and save
+headers show the full `Extended DX <dx> (OXCE <base>)` (`OPENXCOM_VERSION_SHORT_OXCE`). See
+[docs/Ruleset-Globals.md](docs/Ruleset-Globals.md#mod-metadata-metadatayml) for the metadata keys.
+
 ## Stealth / Cloaking Armor (dynamic cloak + ghost render)
 
 OXCE already has the *spotting math* for stealth: an armor's `camouflageAtDay` / `camouflageAtDark`

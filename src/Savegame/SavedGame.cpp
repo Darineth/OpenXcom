@@ -788,7 +788,7 @@ void SavedGame::save(const std::string &filename, Mod *mod) const
 	// Saves the brief game info used in the saves list
 
 	headerWriter.write("name", _name);
-	headerWriter.write("version", OPENXCOM_VERSION_SHORT);
+	headerWriter.write("version", OPENXCOM_VERSION_SHORT_OXCE);
 	headerWriter.write("engine", OPENXCOM_VERSION_ENGINE);
 	std::string git_sha = OPENXCOM_VERSION_GIT;
 	if (!git_sha.empty() && git_sha[0] == '.')

@@ -375,8 +375,8 @@ the Mods list in Options shows.
 | `isMaster` | bool | false | This is a **master** (total-conversion base like `xcom1`/`xcom2`), not a submod. |
 | `master` | string | `xcom1` | Which master this submod attaches to. `*` (or empty) = works with any master / standalone. Masters default to no master. |
 | `requiredMasterModVersion` | string | — | Minimum `version` of the master mod required. Ignored (with a warning) if the mod has no master. |
-| `requiredExtendedVersion` | string | — | Minimum engine version required. Setting it also implies `requiredExtendedEngine: Extended`. |
-| `requiredExtendedEngine` | string | — | Which engine the mod needs (`Extended` = OXCE). DX accepts `Extended` — it is backward compatible with OXCE mods. |
+| `requiredExtendedVersion` | string | — | Minimum engine version required (compared against the version DX advertises for the required engine name — see `requiredExtendedEngine`). Setting it alone implies `requiredExtendedEngine: Extended`. |
+| `requiredExtendedEngine` **[DX]** | string | — | Which engine the mod needs. DX advertises **two** engine names (dual-track versioning): `Extended` = the OXCE base DX last synced to (so an OXCE mod requiring `Extended <= that> ` loads on DX — DX is backward compatible with OXCE mods); `Extended DX` = DX's own feature-set version, independent of the OXCE number. A **DX-only** mod (using `[DX]` ruleset keys) should set `requiredExtendedEngine: Extended DX` with a `requiredExtendedVersion` in DX's own numbering — vanilla OXCE doesn't advertise `Extended DX`, so the mod correctly refuses to load there. |
 | `loadResources` | list of dirs | — | External resource directories to mount (e.g. `UFO`, `TFTD`). **Top-level masters only.** |
 | `resourceConfig` | filename | — | Resource-config file for the mod's VFS layer. |
 | `reservedSpace` | int 1–100 | 1 | How many sprite/sound index blocks this mod reserves (clamped to 1–100). Raise it if the mod adds a very large number of `extraSprites`/`extraSounds`. |
