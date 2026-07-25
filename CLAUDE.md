@@ -18,8 +18,9 @@ implement a new DX feature.
 
 - Language: **C++17** (enforced in CMake; build fails on older compilers).
 - Rendering/audio/input: **SDL 1.2** (`SDL`, `SDL_mixer`, `SDL_gfx`, `SDL_image`) + optional OpenGL.
-- Version is defined in `src/version.h` (`OPENXCOM_VERSION_*`). The current engine version is
-  "Extended 8.6.1". `MIN_REQUIRED_RULESET_VERSION_NUMBER` there gates which mods will load.
+- Version is defined in `src/version.h` (`OPENXCOM_VERSION_*`) — that file is the source of truth for
+  the current engine version (DX is "Extended DX", tracking the OXCE base version it last synced to).
+  `MIN_REQUIRED_RULESET_VERSION_NUMBER` there gates which mods will load.
 
 The game requires the original game's data files (UFO/TFTD resources) to actually run — they
 are not in this repo. See `README.md` for data/user/config folder locations per OS.
