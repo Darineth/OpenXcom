@@ -19,6 +19,11 @@ This is **just a starting point**.
 >
 > **Status:** Implemented but **off by default.** See
 > [Status & how to turn it on](#status--how-to-turn-it-on).
+>
+> **DX direction change:** the legacy implementation described below is strictly
+> turn-by-turn (one unit acts, everyone waits). For the DX re-implementation we want
+> to try **simultaneous resolution** instead — see
+> [Design direction: simultaneous resolution](#1a-design-direction-simultaneous-resolution).
 
 ---
 
@@ -39,6 +44,133 @@ The fantasy: instead of a slider that mostly resolves itself, you *fly* the
 engagement — close the distance to bring a short-range cannon to bear, or back off
 to snipe with long-range missiles while the UFO burns the fuel it needs to catch
 you.
+
+---
+
+## 1a. Design direction: simultaneous resolution
+
+> **This section supersedes the turn-queue model in [§4](#4-time--the-turn-queue) for
+> the DX re-implementation.** Everything after it still describes the *legacy* build,
+> which is kept as reference for the range axis, actions, attack math, and AI
+> heuristics — but the sequencing layer is the part we want to change.
+
+**The intent:** instead of a strict initiative queue where one unit acts and every
+other unit stands still waiting for its slot, all combatants should **commit to their
+actions for the coming interval and have those actions resolve together**. The player
+orders their interceptor(s); the AI orders its UFOs; then the engine plays out the
+whole interval at once — movement, firing, and damage happening in parallel rather
+than in single-file turns.
+
+### Why
+
+- **It reads as flight, not chess.** A dogfight in which one aircraft freezes while
+  another maneuvers is the least convincing part of the legacy model. Simultaneous
+  resolution keeps everything in motion and makes the animated playback of an interval
+  the *point* of the screen rather than a delay before the next menu.
+- **No initiative gaming.** Under the `turnDelay` queue, Hold (15) is the cheapest
+  action and therefore mathematically the best way to buy extra actions, which pushes
+  optimal play toward passivity. Simultaneous commitment removes "who gets to act
+  again first" as the dominant lever.
+- **Mutual outcomes become possible.** Both craft closing at once, both firing at
+  once, a trade where each side takes the other's hit — none of these can happen when
+  actions are strictly serialized.
+- **Multi-craft interceptions scale better.** With four interceptors and escorts, a
+  serialized queue means a lot of watching; a single resolved interval per decision
+  round keeps pace roughly constant regardless of unit count.
+
+### Inspirations
+
+**Battlestar Galactica: Deadlock — the primary reference.** Deadlock uses a "WEGO"
+loop: you spend as long as you like in a **planning phase** issuing orders to every
+ship (movement plots, target assignments, special abilities), then commit, and the
+game plays out a **fixed slice of time** — roughly 30 seconds — in which *every* ship
+on both sides executes what it was told, simultaneously and in real time, while you
+watch. Then it stops dead and you plan the next slice.
+
+What's worth stealing:
+
+- **Unlimited thinking time, zero execution input.** The tension comes from
+  *committing* to a plan that will play out without you, not from reacting quickly.
+  The player is a commander, not a pilot.
+- **The resolution phase is the payoff, not filler.** Because everything moves at
+  once, watching the slice resolve is genuinely informative and genuinely dramatic —
+  you find out whether your read of the enemy was right.
+- **Plans go wrong legibly.** Orders are issued against a *predicted* board, so a
+  target that burned away leaves you shooting at empty space. That mispredict is the
+  core skill test, and it's exactly what the legacy turn queue can't produce.
+- **Fixed slice length keeps pace constant** regardless of how many ships are on the
+  field — the same property we want for multi-craft interceptions with escorts.
+
+Deadlock's ships also carry real facing/thrust and munitions have travel time; DX's
+one-dimensional range axis ([§2](#2-the-combat-space)) is far simpler, so the borrow
+is the **loop**, not the flight model.
+
+**Xenonauts / Xenonauts 2 — what to avoid.** Both games run their air-combat layer as
+**real time with pause**: you steer interceptors continuously, drag maneuvers, and
+fire weapons on the fly, pausing to reassess. It has a planning flavor to it, and its
+positional/range reasoning overlaps with what DX wants —
+
+— **but the real-time, click-heavy execution is explicitly not the target.** Outcomes
+end up decided by mouse micro (rolling out of a missile lock at the right instant,
+kiting at exactly the right radius) rather than by the decision you made going in.
+That is the failure mode simultaneous resolution is meant to dodge: DX should ask the
+player to **commit and be judged on the commitment**, with no per-moment input during
+resolution. If a slice is playing out and the player can influence it, we've drifted
+toward Xenonauts and away from Deadlock.
+
+> **The one-line test:** during resolution, the player's hands should be off the
+> controls. All skill expression lives in the planning phase.
+
+### Shape to explore
+
+Rough target, to be pinned down before implementation:
+
+1. **Plan phase.** Every unit (player-ordered and AI-ordered) selects one action for
+   the interval. The player's craft each get an order; the AI picks for each UFO
+   *without* seeing the player's committed orders (or seeing only what it could
+   plausibly read — see open questions).
+2. **Resolve phase.** The engine advances the interval and applies all actions
+   together, then animates the result as a continuous beat.
+3. **Repeat** until an end condition ([§9](#9-outcomes)) fires.
+
+Open design questions this raises against the legacy rules:
+
+- **How long is a slice?** Deadlock's fixed ~30 s window is what makes its pace
+  constant. DX needs an equivalent: one action per unit per slice (simplest, closest
+  to the legacy action catalog), or a fixed time budget per slice that cheap actions
+  can fill more than once. This interacts directly with the `turnDelay` question below.
+- **What replaces `turnDelay`?** Options: a fixed-length interval where the Time cost
+  of an action instead determines *how much of the interval it occupies* (cheap actions
+  finish early and can act again within the interval; expensive ones eat it whole), or
+  a per-unit "actions accumulate over elapsed time" model where the interval simply
+  advances a clock. The Time numbers in [§6](#6-actions) are probably still the right
+  relative weights either way.
+- **Ordering within an interval.** Truly parallel resolution needs a tie-break policy:
+  does a unit that is destroyed mid-interval still get its shot off (simultaneous
+  destruction / mutual kills allowed), or does resolution order by action Time cost so
+  faster actions land first? The former is more dramatic, the latter keeps Time
+  meaningful as a stat.
+- **Movement collisions.** The legacy occupancy rules (`STR_MOVE_BLOCKED_BY_ENEMY`)
+  assume one mover at a time. With both sides moving at once, two units can now target
+  the same position or cross past each other — needs an explicit rule (pass-through,
+  push, or blocked-and-halted).
+- **Targeting a moving target.** A shot ordered at range 3 may resolve at range 5 if
+  the target ran. Does the shot fizzle as out-of-range, resolve against the range at
+  time-of-fire, or apply an accuracy penalty for the change? This is the main way
+  simultaneity should feel different from the turn-based build.
+- **AI information.** `AirCombatAI` currently decides with full knowledge of the
+  present board state on its own turn ([§10](#10-enemy-ai)). Under simultaneous
+  resolution it must commit blind alongside the player — its heuristics
+  (`getEstimatedLife`, `canEscape`, DPT-by-range) should mostly survive, but they now
+  evaluate *predicted* positions rather than known ones.
+- **UI consequences.** The initiative queue panel ([§15](#15-ui-layout)) loses its
+  meaning and should be replaced with a per-craft **committed-order readout** plus a
+  clear "resolve" beat. The player needs to see, at a glance, what each of their craft
+  is about to do before locking the interval in — and ideally be able to change an
+  order until they commit.
+
+**Not yet decided.** Nothing here is settled; this section exists to record the
+intended direction so the re-implementation does not simply port the legacy queue.
 
 ---
 
@@ -105,6 +237,11 @@ minigame is the same damage the geoscape sees afterward
 ---
 
 ## 4. Time & the turn queue
+
+> **Legacy behavior — likely to be replaced.** DX intends to resolve actions
+> simultaneously rather than through this initiative queue; see
+> [§1a](#1a-design-direction-simultaneous-resolution). The Time costs described here
+> are still expected to carry over as relative action weights.
 
 There is no "round." Instead every unit carries a **`turnDelay`** counter and the
 unit with the **lowest delay acts next** — a classic time-unit / initiative queue
