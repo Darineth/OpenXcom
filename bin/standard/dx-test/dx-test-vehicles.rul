@@ -377,9 +377,9 @@ items:
   #  `stats` add flat to the unit. TU is the point: a chassis is immobile without one. `strength`
   #  is the carry budget every turret, plate and module below spends against.
   #
-  #  The two are a real choice, not a straight upgrade:
-  #    Basic    (150 str) hauls a light turret and partial plating.
-  #    Advanced (280 str) hauls the heaviest turret AND a full plate set.
+  #  The two are a real choice, not a straight upgrade -- in BOTH strength and bay space:
+  #    Basic    (150 str, 2x2) hauls a light turret and partial plating; leaves 5 bay cells free.
+  #    Advanced (280 str, 2x3) hauls the heaviest turret AND a full plate set; leaves only 3.
   #  Weigh a build up past its engine's strength and the chassis loses TU every turn.
   # ===================================================================
   - type: STR_DX_HWP_ENGINE
@@ -388,12 +388,12 @@ items:
     costSell: 30000
     transferTime: 48
     weight: 30
-    bigSprite: 43
+    bigSprite: 62               # Resources/HwpEngine.png
     floorSprite: 0
     handSprite: 0
     battleType: 13              # BT_EQUIPMENT
     invWidth: 2
-    invHeight: 3
+    invHeight: 2                # 4 of the bay's 9 cells -> 5 left for modules
     recover: true
     vehicleItem: true                                 # chassis may install it...
     units: [ STR_DX_TANK, STR_DX_HOVERTANK ]          # ...and people can't
@@ -406,12 +406,12 @@ items:
     costSell: 80000
     transferTime: 48
     weight: 55
-    bigSprite: 43
+    bigSprite: 63               # Resources/HwpEngineAdv.png
     floorSprite: 0
     handSprite: 0
     battleType: 13
-    invWidth: 3
-    invHeight: 3
+    invWidth: 2                 # 2 wide, not 3: a BIGOBS frame is 32x48, so 2 cells is the
+    invHeight: 3                # widest an item can be DRAWN. 6 of 9 cells -> only 3 for modules
     recover: true
     vehicleItem: true
     units: [ STR_DX_TANK, STR_DX_HOVERTANK ]
@@ -430,7 +430,7 @@ items:
     costSell: 20000
     transferTime: 48
     weight: 10
-    bigSprite: 43
+    bigSprite: 64               # Resources/HwpTargeting.png
     floorSprite: 0
     handSprite: 0
     battleType: 13
@@ -454,7 +454,7 @@ items:
     costSell: 9000
     transferTime: 48
     weight: 15
-    bigSprite: 43
+    bigSprite: 65               # Resources/HwpPlate.png
     floorSprite: 0
     handSprite: 0
     battleType: 12              # BT_ARMOR_PLATE
@@ -648,6 +648,27 @@ items:
     floorSprite: 35
     invWidth: 1
     invHeight: 2
+
+# =====================================================================
+#  Placeholder inventory art
+# =====================================================================
+#  Hand-made stand-ins so engines/modules/plates aren't all the borrowed cannon icon. Indices
+#  62-65 sit just past vanilla's last BIGOBS frame (61). Drawn with the stock battlescape palette
+#  (block 0 greyscale for metal, block 1 amber for the advanced engine's core, block 13 blue for
+#  the targeting lens), index 0 transparent.
+#
+#  NOTE every BIGOBS frame is 32x48 and an existing set is never resized, so an item can be at
+#  most 2 cells wide x 3 tall on screen. Art is anchored top-left to match the item's footprint.
+#  The turret guns are untouched - they already borrow the vanilla HWP weapon icons.
+extraSprites:
+  - type: BIGOBS.PCK
+    width: 32
+    height: 48
+    files:
+      62: Resources/HwpEngine.png
+      63: Resources/HwpEngineAdv.png
+      64: Resources/HwpTargeting.png
+      65: Resources/HwpPlate.png
 
 extraStrings:
   - type: en-US
