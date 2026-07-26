@@ -492,8 +492,29 @@ therefore reframed as targeted deltas:
 
 ## Phase 10: Strategic Large Systems
 
-- [ ] **Modular Vehicles (HWPs)** — chassis/engine/armor/weapon customization + weapon
-  tree. *(needs inventory layouts, directional armor/sided slots, item stats)*
+- [x] **Modular Vehicles (HWPs)** — chassis/engine/armor/weapon customization + weapon
+  tree. ✅ **Done (engine).** *(design: [plans/Feature-ModularVehicles.md](plans/Feature-ModularVehicles.md))*
+  - *Audit result:* most of the legacy system turned out to be expressible in rulesets already —
+    OXCE's purchasable/salaried `RuleSoldier` (`costBuy`/`costSalary`/`allowPromotion`, 2×2 soldiers,
+    craft-space accounting, `spawnedSoldier` manufacture) plus DX's Phase 4 inventory layouts, typed
+    slots, item stats, directional item armor and configurable hand slots cover the strategic and
+    inventory halves outright. The load-bearing design choice is that **turret mounts are the
+    layout's hands**, so firing/reactions/dual-fire/reloading need no vehicle-specific code.
+  - Six engine deltas shipped: `soldiers: vehicle:` chassis flag (designation naming, training
+    lockout, name-pool validation), `battleType: 12/13` (`BT_ARMOR_PLATE`/`BT_EQUIPMENT`, generic installed gear),
+    `invs: armorSide:` slot-declared armor facing, `armors: turretFromWeapon:` live turret sprite,
+    geoscape stat preview from the equipment layout, and `armors: ignoresEncumbrance:`.
+    Additive — OXCE's item-based `vehicleUnit` HWPs are untouched. `bin/standard/dx-test/dx-test-vehicles.rul`
+    ports all five vanilla HWPs into the system: two chassis (tank + hover), the five turrets
+    (cannon/rocket/laser/plasma/launcher), basic + advanced engines, plates and a targeting module.
+  - [ ] *Content:* the legacy roster (4 chassis × 16 engines × ~15 turret weapons × 10 modules ×
+    4 plate tiers + the `STR_MODULAR_HWP_UPGRADES` research tree) is authorable on top of this and
+    remains a separate mod-content effort.
+  - [ ] *UI audit:* only the two training screens have been reviewed for how they treat a chassis
+    (vehicles are filtered out of both). Every other soldier-list screen — roster, craft assignment,
+    transformations, memorial, diary, rank, armor, avatar, sacking, personnel/salary counts — still
+    treats a chassis as a person and needs a hide / keep / reword decision. Checklist in
+    [plans/Feature-ModularVehicles.md](plans/Feature-ModularVehicles.md#todo-audit-the-remaining-soldier-list-screens).
   - *Future idea — piloted vehicles:* explore letting a vehicle carry a **pilot** (a crewing
     soldier) instead of being a fully autonomous unit. A pilot could tie the HWP's effectiveness to
     the soldier's stats/skills, expose it to crew casualties/bail-out, and let it gain experience —
@@ -543,6 +564,19 @@ and changes core progression curves.*
 
 *Items added outside the original plan. Each should get a design doc in `plans/` before
 implementation (see CLAUDE.md "Planning Features").*
+
+- [x] **Item user restrictions (vehicle vs. soldier gear)** — ✅ **Done.** Items declare who may equip them, and
+  the equipping UI filters on it, so a chassis' inventory stops listing rifles and medikits and a
+  rifleman's stops listing HWP engines and armor plates. Spun out of Modular Vehicles, which put
+  chassis and soldiers in one shared item pool. *(design:
+  [plans/Feature-ItemUserRestrictions.md](plans/Feature-ItemUserRestrictions.md))*
+  - Shipped as **two** keys doing different jobs: `vehicleItem` (default **false**, so every existing
+    item is auto-excluded from chassis with zero tagging — the 99% case for free) and `units:`
+    (a soldier-type whitelist mirroring the existing `Armor.units:`). Non-soldier units — aliens,
+    civilians, classic `vehicleUnit` HWPs — are exempt entirely, so no pre-existing content changes.
+    Enforced in the inventory ground list, on placement (`STR_CANNOT_EQUIP_ITEM`), in auto-equip and
+    in saved equipment layouts; the ground stays universal so anything can still be picked up and
+    carried home. Craft-equipment and base economy screens deliberately unfiltered.
 
 - [x] **Mod-configurable armor move-cost defaults (`moveCostDefaults`)** — a top-level node setting the
   default walk/run/sneak/etc. move costs armors fall back to when they don't specify `moveCost:`, so a

@@ -99,6 +99,8 @@ void Armor::load(const YAML::YamlNodeReader& node, Mod *mod, const ModScript &pa
 	reader.tryRead("spriteSheet", _spriteSheet);
 	reader.tryRead("spriteInv", _spriteInv);
 	reader.tryRead("allowInv", _hasInventory);
+	reader.tryRead("turretFromWeapon", _turretFromWeapon);
+	reader.tryRead("ignoresEncumbrance", _ignoresEncumbrance);
 	reader.tryRead("inventoryLayout", _inventoryLayoutName);
 	if (reader["corpseItem"])
 	{

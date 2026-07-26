@@ -447,7 +447,11 @@ void SoldierInfoState::init()
 	const UnitStats max = _soldier->getRules()->getStatCaps();
 
 	bool hasBonus = _soldier->prepareStatsWithBonuses(_game->getMod()); // refresh all bonuses
-	UnitStats withArmor = *_soldier->getStatsWithAllBonuses();
+	// DX: a modular vehicle chassis gets its mobility and carry capacity from an installed engine,
+	// so its stat bars have to include the equipment layout or a fitted tank reads as 0 TU/strength.
+	UnitStats withArmor = _soldier->getRules()->isVehicle()
+		? *_soldier->getStatsWithEquipment()
+		: *_soldier->getStatsWithAllBonuses();
 	_btnBonuses->setVisible(hasBonus);
 
 	SurfaceSet *texture = _game->getMod()->getSurfaceSet("BASEBITS.PCK");
@@ -901,6 +905,14 @@ void SoldierInfoState::btnRoleClick(Action *)
  */
 void SoldierInfoState::btnArmorClick(Action *)
 {
+	// DX: a vehicle chassis IS its armor -- there is nothing to swap it for, so the picker never
+	// opens. The button stays visible because it doubles as the armor-name readout (it shows the
+	// chassis type), and a silent no-op matches how this handler already treats a deployed craft.
+	if (_soldier->getRules()->isVehicle())
+	{
+		return;
+	}
+
 	if (!_soldier->getCraft() || (_soldier->getCraft() && _soldier->getCraft()->getStatus() != "STR_OUT"))
 	{
 		_game->pushState(new SoldierArmorState(_base, _soldierId, SA_GEOSCAPE));

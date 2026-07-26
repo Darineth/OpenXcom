@@ -66,6 +66,8 @@ private:
 	int _id, _nationality, _improvement, _psiStrImprovement;
 	RuleSoldier *_rules;
 	UnitStats _initialStats, _currentStats, _tmpStatsWithSoldierBonuses, _tmpStatsWithAllBonuses;
+	/// DX: all bonuses plus the stats granted by the saved equipment layout (see getStatsWithEquipment).
+	UnitStats _tmpStatsWithEquipment;
 	UnitStats _dailyDogfightExperienceCache;
 	SoldierRank _rank;
 	Craft *_craft;
@@ -301,6 +303,8 @@ public:
 	const UnitStats *getStatsWithSoldierBonusesOnly() const;
 	/// Get pointer to current stats with armor and soldier bonuses.
 	const UnitStats *getStatsWithAllBonuses() const;
+	/// DX: gets current stats with all bonuses PLUS the saved equipment layout's item stats.
+	const UnitStats *getStatsWithEquipment() const { return &_tmpStatsWithEquipment; }
 	/// Pre-calculates soldier stats with various bonuses.
 	bool prepareStatsWithBonuses(const Mod *mod);
 	/// Gets a pointer to the daily dogfight experience cache.

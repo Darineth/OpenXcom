@@ -2,6 +2,12 @@
 - Camera should center on unit taking a shot
 - BEAM LASERS (full source-to-target projectile rendering option)
 - Recalculate line of fire on crouch/stand.
+- Investigate callsign option
+- Get it to generate at least placeholder icons for various item sizes
+- Overweight vehicle stuff
+- Weight capacity vs TU stuff like we had before?
+- Dedicated equipment slots in examples
+- Multi-turret example
 
 # Documentation
 

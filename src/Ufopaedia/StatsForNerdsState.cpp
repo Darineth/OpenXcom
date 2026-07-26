@@ -1253,6 +1253,8 @@ void StatsForNerdsState::addBattleType(std::ostringstream &ss, const BattleType 
 		case BT_PSIAMP: ss << tr("BT_PSIAMP"); break;
 		case BT_FLARE: ss << tr("BT_FLARE"); break;
 		case BT_CORPSE: ss << tr("BT_CORPSE"); break;
+		case BT_ARMOR_PLATE: ss << tr("BT_ARMOR_PLATE"); break;
+		case BT_EQUIPMENT: ss << tr("BT_EQUIPMENT"); break;
 		default: ss << tr("STR_UNKNOWN"); break;
 	}
 	if (_showIds)

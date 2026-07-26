@@ -505,13 +505,18 @@ void CraftArmorState::lstSoldiersClick(Action *action)
 					}
 				}
 			}
-			else
+			else if (!s->getRules()->isVehicle())
 			{
+				// DX: a vehicle chassis IS its armor, so the picker never opens for one. Note this
+				// guards only the armor half of the handler -- the ctrl-click craft assign/unassign
+				// above must keep working, since putting a chassis on a craft is the whole point.
 				_savedScrollPosition = _lstSoldiers->getScroll();
 				_game->pushState(new SoldierArmorState(_base, _lstSoldiers->getSelectedRow(), SA_GEOSCAPE));
 			}
 		}
-		else if (_game->isRightClick(action, true))
+		// DX: right-click is the quick-swap-to-last/default-armor shortcut -- also an armor change,
+		// so it is blocked for a chassis too.
+		else if (_game->isRightClick(action, true) && !s->getRules()->isVehicle())
 		{
 			SavedGame *save;
 			save = _game->getSavedGame();

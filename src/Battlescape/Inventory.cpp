@@ -1863,7 +1863,10 @@ void Inventory::arrangeGround(int alterOffset)
 			bi->setSlotY(0);
 
 			// Only handle visible items from this point on.
-			if (bi->getRules()->getInventoryWidth())
+			// DX: gear this unit can't equip is left parked off-grid exactly like a zero-width item --
+			// still on the tile (so it deploys and is recovered normally), just not shown or reachable
+			// on this unit's screen. Select the unit it belongs to and it appears there.
+			if (bi->getRules()->getInventoryWidth() && bi->getRules()->canBeEquippedBy(_selUnit))
 			{
 				// Each item type has a list of stacks. Find / create a suitable one for this item.
 				auto iterItemList = typeItemLists.find(bi->getRules()->getType());
@@ -2032,6 +2035,22 @@ bool Inventory::checkSlotRules(const BattleItem *item, const RuleInventory *dest
 	if (!dest->canAcceptBattleType(item->getRules()))
 	{
 		warning = "STR_INVALID_ITEM_SLOT";
+		return false;
+	}
+
+	// DX: installed gear (armor plates, equipment) is worn or bolted on, never held. A hand is a
+	// weapon mount even when a layout renames it, so installed gear can never be wielded.
+	if (item->getRules()->isInstalledEquipment() && dest->getType() == INV_HAND)
+	{
+		warning = "STR_INVALID_ITEM_SLOT";
+		return false;
+	}
+
+	// DX: item user restrictions (`vehicleItem` / `units:`). The ground stays universal -- anyone may
+	// pick a dropped item up and carry it home; only equipping it is gated.
+	if (dest->getType() != INV_GROUND && !item->getRules()->canBeEquippedBy(_selUnit))
+	{
+		warning = "STR_CANNOT_EQUIP_ITEM";
 		return false;
 	}
 

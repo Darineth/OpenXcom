@@ -71,6 +71,10 @@ private:
 	int _battleType;
 	bool _allowCombatSwap;
 	bool _countStats;
+	/// Slot-declared armor facing: an item's directional armor lands on this side only.
+	/// Stored as a UnitSide ordinal, -1 = unset (the item's own per-side values apply as declared).
+	/// Kept as int so this widely-included header doesn't have to pull in Unit.h just for the enum.
+	int _armorSide;
 public:
 	static const int SLOT_W = 16;
 	static const int SLOT_H = 16;
@@ -137,6 +141,8 @@ public:
 	bool getAllowCombatSwap() const;
 	/// Gets whether items in this slot contribute their stat bonuses to the wearer.
 	bool getCountStats() const;
+	/// Gets the armor facing this slot reinforces as a UnitSide ordinal (-1 = unset).
+	int getArmorSide() const { return _armorSide; }
 	int getListOrder() const;
 };
 

@@ -1727,3 +1727,115 @@ health lost rather than the absolute amount, plus a research gate that shortens 
   `proportionalRecovery` (default **false** → stock absolute formula, byte-for-byte unchanged),
   `recoveryDaysMin`/`recoveryDaysMax` (20/30), `fieldSurgeryResearch` (`STR_FIELD_SURGERY_UNIT`), and
   `fieldSurgeryDaysMin`/`fieldSurgeryDaysMax` (15/25).
+
+## Modular Vehicles (HWPs)
+
+Turns HWPs from four monolithic products into a **chassis + loadout build system**: you buy a chassis,
+then fit an engine, bolt armor plates onto individual facings, mount one or two turret guns, and slot
+accessory modules — all against a weight budget the engine's `strength` has to cover.
+*(design: [plans/Feature-ModularVehicles.md](plans/Feature-ModularVehicles.md); working example in
+`bin/standard/dx-test/dx-test-vehicles.rul`)*
+
+**Additive and fully opt-in** — OXCE's item-based `vehicleUnit` HWPs are untouched and keep working
+exactly as before; this is a parallel path a mod chooses to use.
+
+Most of the system is composition of already-shipped features (DX's inventory layouts, typed slots,
+item stats, directional item armor and configurable hand slots, plus OXCE's purchasable/salaried
+`RuleSoldier`). A chassis is a `soldiers:` entry whose `armor:` is a `size: 2`, `allowInv: true` armor
+carrying a hardpoint [inventory layout](docs/Ruleset-InventoryLayouts.md); it is bought with `costBuy`,
+salaried with `costSalary`, has `allowPromotion: false` and identical `minStats`/`maxStats`/`statCaps`
+so its stats are fixed and never grow. **Turret mounts are the layout's hands** (`hand: right|left`),
+so firing, reaction fire, dual fire, reloading, ammo and TU costs all work with no vehicle-specific code.
+
+The engine additions this feature ships:
+
+- **`soldiers:` → `vehicle: true`** — the chassis is hardware, not a person:
+  - **Naming.** A numbered designation (`STR_VEHICLE_DESIGNATION`, e.g. *DX Tank-7*) instead of the
+    "John Doe" fallback, and no gender or look roll. Supply name pools if you'd rather have named
+    vehicles — they're used normally.
+  - **Training.** Hidden from the martial-training and psi-lab allocation screens entirely,
+    including their assign/remove-all shortcuts; releases any slot it somehow held.
+  - **Rank.** `allowPromotion` is forced off, blocking automatic *and* manual promotion and keeping
+    the chassis out of the promotion-quota headcount, so owning tanks can't earn the squad extra
+    colonels. The rank column shows the **chassis type** (`DX Tank`) rather than the blank dash a
+    rankless soldier gets, so the roster still says what each unit is.
+  - **Armor.** Selection is refused on the soldier-info, inventory and craft-armor screens (a
+    chassis *is* its armor), including the right-click quick-swap and the avatar picker on those
+    same buttons — while ctrl-click craft assignment keeps working.
+  - **Validation.** The "forgotten `soldierNames:`?" load error is suppressed.
+- **Two new item classes** — `battleType: 12` **`BT_ARMOR_PLATE`** and `battleType: 13`
+  **`BT_EQUIPMENT`** (append-only ordinals) for gear that is *installed on* a unit rather than
+  carried by it. Both behave like `BT_NONE` in battle — never wielded, fired, thrown, primed or
+  used — grant their effect passively while installed, and are barred from hand sections outright
+  (a hand is a weapon mount). They exist so typed slots can filter each item onto the right
+  hardpoint. **Neither is vehicle-specific:** a chassis' engine bay and a soldier's plate carrier
+  use the same two classes, and `supportedInventorySections` on the item remains the tool for
+  finer per-section restriction.
+- **`invs:` → `armorSide: front|left|right|rear|under`** — an armor hardpoint that reinforces one
+  facing. A plate in such a section applies only that side's value, which lets **one** plate item
+  type serve every facing instead of shipping four near-identical per-facing variants. Unset keeps
+  the existing behavior (the item's four values all apply).
+- **`armors:` → `turretFromWeapon: true`** — the unit's turret sprite is read from the `turretType`
+  of the gun in its turret mount and recomputed live as guns are swapped (right hand = turret 1,
+  left = turret 2; an unarmed chassis draws no turret). Not cosmetic: `getTurretType() != -1` also
+  gates strafing, the close-quarters-combat exemption, and turn-the-turret-not-the-hull.
+- **`armors:` → `ignoresEncumbrance: true`** — opt out of the start-of-turn TU reduction for carried
+  weight above `strength`, for mods that would rather budget the loadout purely through engine
+  capacity. Default `false` keeps the weight tax.
+- **Geoscape stat preview** — `Soldier::getStatsWithEquipment()` folds `countStats` equipment-layout
+  items into the base-screen stat display, so a fitted chassis reads its real TU and strength instead
+  of the bare `0`/`0` of an engineless hull. Kept as a separate cache from `getStatsWithAllBonuses()`
+  so the battlescape (which applies the live inventory itself) never double-counts.
+
+**Demonstrator.** `bin/standard/dx-test/dx-test-vehicles.rul` ports all five vanilla HWPs into the
+system — two chassis (tank and hover), the five turrets (cannon/rocket/laser/plasma/launcher, each
+with its own turret sprite), basic and advanced engines, armor plates and a targeting module — with
+vanilla power/accuracy/TU/sprite/ammo values. Every combination is now legal, so a Hovertank/Cannon
+or a Tank/Plasma is just a build. Two deliberate deviations make the mechanics visible: the chassis
+have **0 TU and 0 strength** (all mobility comes from the engine, so an unfitted hull can't move),
+and hull armor sits below vanilla with plates making up the difference.
+
+The wider legacy content roster (4 chassis × 16 engines × ~15 turret weapons × 10 modules × 4 plate
+tiers and the `STR_MODULAR_HWP_UPGRADES` research tree) is ruleset content, authorable on top of
+this — it is not part of the engine work.
+
+**New Battle stocking.** The New Battle screen stocks its scratch base with **4 chassis of every
+`vehicle: true` soldier type** so they can be tested without a campaign. They are left *unassigned*
+— a 2×2 chassis draws 4 points from the same craft space pool as the squad (a Skyranger has 14), so
+auto-assigning would gut the squad; pick the ones you want in the craft screen. The top-up counts
+what is already present, so it also repairs a saved New Battle config that predates the vehicle
+types. Chassis are additionally excluded from New Battle's random-soldier roll, which applies
+promotions and random stat bumps that must never touch fixed-stat hardware.
+
+**Known gap — UI audit pending.** Only the two training screens have been reviewed for how they
+present a chassis. Every other screen that lists soldiers (base roster, craft assignment,
+transformations, memorial, diary, rank, armor, avatar, sacking, personnel/salary counts) still
+treats a chassis as an ordinary person and needs a hide / keep / reword decision. See the checklist
+in [plans/Feature-ModularVehicles.md](plans/Feature-ModularVehicles.md#todo-audit-the-remaining-soldier-list-screens).
+
+
+## Item User Restrictions (`vehicleItem` / `units`)
+
+Items declare who may equip them, so the equipping UI can filter on it. Introduced alongside
+[Modular Vehicles](#modular-vehicles-hwps), which put a chassis and a rifleman in one shared item
+pool — without this, a tank's inventory lists rifles and medikits and a rifleman can stuff an HWP
+engine in his backpack. *(design: [plans/Feature-ItemUserRestrictions.md](plans/Feature-ItemUserRestrictions.md))*
+
+Two `items:` keys with different jobs:
+
+- **`vehicleItem`** (default `false`) — the coarse gate: may a vehicle chassis equip this at all?
+  Because it **defaults to deny**, every existing item in every existing mod is automatically
+  unavailable to chassis with zero tagging. That covers the overwhelmingly common case for free.
+- **`units`** (default empty) — the fine gate: if non-empty, only those `soldiers:` types may equip
+  it. Same key name, semantics and implementation as the long-standing `units:` on `armors:`.
+
+Resolution: a non-soldier unit (alien, civilian, classic `vehicleUnit` HWP) is **exempt entirely**,
+so no pre-existing content changes; otherwise a chassis needs `vehicleItem: true`, and a non-empty
+`units` list must name the unit's soldier type.
+
+Restricted gear is **hidden from that unit's inventory ground list**, **refused on placement**
+(`STR_CANNOT_EQUIP_ITEM`), and skipped by auto-equip and saved equipment layouts. The **ground stays
+universal** — anyone can still pick a dropped item up and haul it home; only equipping is gated, and
+hidden items remain on the tile, deploy normally and are recovered as usual. The craft equipment
+screen and the base Stores/Purchase/Sell screens are deliberately not filtered: they list what you
+own, not what one unit straps on.

@@ -96,6 +96,7 @@ Stat sub-keys **merge**: a partial `maxStats:` only overrides the keys it names.
 | `moraleLossWhenKilled` | int % | 100 | Percentage modifier on the morale hit this soldier's death inflicts on the squad. |
 | `allowPromotion` | bool | true | Whether the soldier participates in the promotion ladder. |
 | `allowPiloting` | bool | true | Whether the soldier may be assigned as a craft pilot. |
+| `vehicle` **[DX]** | bool | false | This soldier type is a [modular vehicle](../plans/Feature-ModularVehicles.md) chassis — hardware, not a person. See below. |
 | `skills` | list of skill names | — | Active [skills](Ruleset-Skills.md) this soldier type may use in battle. |
 | `spawnedSoldier` | map | — | YAML template merged into a soldier of this type when one is *spawned* (e.g. recovered civilian, transformation output) rather than hired. |
 
@@ -146,7 +147,40 @@ plus the `StatsMin.` / `StatsMax.` / `StatsCap.` stat accessors.
 
 - The mana / health "missing → counts as wounded" thresholds are **not** per-soldier keys: they come
   from the mod-wide `manaWoundThreshold` / `healthWoundThreshold` constants.
-- A soldier type with no usable `soldierNames:` pool logs a load error (total pool weight < 1).
+- A soldier type with no usable `soldierNames:` pool logs a load error (total pool weight < 1) —
+  **[DX]** except when `vehicle: true`, where having no name pool is the expected case.
+
+### [DX] `vehicle: true` — chassis instead of crew
+
+Marks the soldier type as a **modular vehicle chassis**: an HWP you buy, salary, transport and
+build a loadout for through its armor's [inventory layout](Ruleset-InventoryLayouts.md), rather
+than a person. The flag itself changes three things:
+
+- **Naming.** With no `soldierNames:` pool, a chassis is given a numbered designation
+  (`STR_VEHICLE_DESIGNATION`, e.g. `Medium Tank-7`) instead of the "John Doe" fallback, and gets
+  no gender or look roll. Supply name pools instead if you want named vehicles — they are used
+  normally.
+- **Training.** A chassis is **hidden from** the martial-training and psi-lab allocation screens
+  entirely, rather than listed as ineligible. The "assign/remove all" shortcuts skip it too, and a
+  chassis somehow already holding a slot (e.g. a hand-edited save) releases it on screen open.
+- **Armor.** A chassis *is* its armor, so armor selection is refused everywhere: the ARMOR button
+  on the soldier info screen and the inventory screen do nothing, and the craft armor list opens no
+  picker (its ctrl-click craft assign/unassign still works — putting a chassis on a craft is
+  intended). The right-click quick-swap and avatar picker on those same buttons are blocked too.
+- **Rank.** `allowPromotion` is forced to `false` — hardware holds no rank, so you don't have to
+  set it yourself (and setting `allowPromotion: true` on a vehicle has no effect). Automatic and
+  manual promotion both refuse, and the chassis is left out of the promotion-quota headcount, so
+  owning vehicles never earns the squad extra senior ranks. Instead of the blank `STR_RANK_NONE`
+  dash a rankless soldier would show, the rank column reports the **chassis type** — a roster reads
+  `DX Tank` where a person reads `Rookie`. Give the type `rankStrings` if you want something else.
+- **Validation.** The missing-name-pool load error above is suppressed.
+
+Everything else about a chassis is ordinary ruleset composition, not this flag — set `costBuy`
+and `costSalary` to price it, `allowPromotion: false` / `allowPiloting: false`, identical
+`minStats`/`maxStats`/`statCaps` so stats are fixed and never grow, and point `armor:` at a
+`size: 2`, `allowInv: true` armor carrying the hardpoint layout. See
+[plans/Feature-ModularVehicles.md](../plans/Feature-ModularVehicles.md) for the whole picture and
+`bin/standard/dx-test/dx-test-vehicles.rul` for a working example.
 
 ## See also
 

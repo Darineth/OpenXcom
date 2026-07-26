@@ -361,6 +361,10 @@ private:
 	bool _hasStatModifiers;
 	int _deathFrames;
 	bool _constantAnimation, _hasInventory;
+	/// DX: derive the unit's turret sprite from the weapon it has mounted (modular vehicle chassis).
+	bool _turretFromWeapon = false;
+	/// DX: skip the carried-weight-vs-strength TU reduction at the start of each turn.
+	bool _ignoresEncumbrance = false;
 	ForcedTorso _forcedTorso;
 	int _faceColorGroup, _hairColorGroup, _utileColorGroup, _rankColorGroup;
 	std::vector<int> _faceColor, _hairColor, _utileColor, _rankColor;
@@ -670,6 +674,10 @@ public:
 	const std::vector<int> &getRankColorRaw() const { return _rankColor; }
 	/// Can we access this unit's inventory?
 	bool hasInventory() const;
+	/// DX: does this armor take its turret sprite from the mounted weapon rather than a fixed index?
+	bool getTurretFromWeapon() const { return _turretFromWeapon; }
+	/// DX: is this unit exempt from the start-of-turn encumbrance TU reduction?
+	bool getIgnoresEncumbrance() const { return _ignoresEncumbrance; }
 	/// Gets the inventory layout this armor assigns (nullptr => use the default layout).
 	const RuleInventoryLayout* getInventoryLayout() const { return _inventoryLayout; }
 	/// Gets script.

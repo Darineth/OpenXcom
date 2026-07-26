@@ -31,6 +31,7 @@
 #include "../Savegame/Base.h"
 #include "../Interface/TextList.h"
 #include "../Savegame/Soldier.h"
+#include "../Mod/RuleSoldier.h"
 #include "../Engine/Action.h"
 #include "../Engine/Options.h"
 #include "../Interface/ComboBox.h"
@@ -313,8 +314,21 @@ void AllocateTrainingState::initList(size_t scrl)
 {
 	int row = 0;
 	_lstSoldiers->clearList();
+	_rowIndex.clear();
+	size_t soldierIndex = 0;
 	for (auto* soldier : *_base->getSoldiers())
 	{
+		// DX: a vehicle chassis doesn't do martial training, so it isn't listed here at all.
+		// (Defensively release a slot if an older save somehow has one enrolled.)
+		if (soldier->getRules()->isVehicle())
+		{
+			soldier->setTraining(false);
+			soldier->setReturnToTrainingWhenHealed(false);
+			++soldierIndex;
+			continue;
+		}
+		_rowIndex.push_back(soldierIndex++);
+
 		const UnitStats* stats = _btnPlus->getPressed() ? soldier->getStatsWithSoldierBonusesOnly() : soldier->getCurrentStats();
 
 		std::ostringstream tu;
@@ -365,6 +379,9 @@ void AllocateTrainingState::initList(size_t scrl)
 	if (scrl)
 		_lstSoldiers->scrollTo(scrl);
 	_lstSoldiers->draw();
+
+	_space = _base->getAvailableTraining() - _base->getUsedTraining();
+	_txtRemaining->setText(tr("STR_REMAINING_TRAINING_FACILITY_CAPACITY").arg(_space));
 }
 
 /**
@@ -397,16 +414,22 @@ void AllocateTrainingState::lstItemsLeftArrowClick(Action *action)
  */
 void AllocateTrainingState::moveSoldierUp(Action *action, unsigned int row, bool max)
 {
-	Soldier *s = _base->getSoldiers()->at(row);
+	// DX: rows skip vehicle chassis, so reordering works on the mapped base indices and swaps with
+	// the previous *visible* soldier -- any hidden chassis in between simply stays put.
+	if (row == 0 || row >= _rowIndex.size()) return; // row-1 must be a real row
+	const size_t from = _rowIndex[row];
+	Soldier *s = _base->getSoldiers()->at(from);
 	if (max)
 	{
-		_base->getSoldiers()->erase(_base->getSoldiers()->begin() + row);
-		_base->getSoldiers()->insert(_base->getSoldiers()->begin(), s);
+		const size_t to = _rowIndex.front();
+		_base->getSoldiers()->erase(_base->getSoldiers()->begin() + from);
+		_base->getSoldiers()->insert(_base->getSoldiers()->begin() + to, s);
 	}
 	else
 	{
-		_base->getSoldiers()->at(row) = _base->getSoldiers()->at(row - 1);
-		_base->getSoldiers()->at(row - 1) = s;
+		const size_t to = _rowIndex[row - 1];
+		_base->getSoldiers()->at(from) = _base->getSoldiers()->at(to);
+		_base->getSoldiers()->at(to) = s;
 		if (row != _lstSoldiers->getScroll())
 		{
 			SDL_WarpMouse(action->getLeftBlackBand() + action->getXMouse(), action->getTopBlackBand() + action->getYMouse() - static_cast<Uint16>(8 * action->getYScale()));
@@ -426,7 +449,7 @@ void AllocateTrainingState::moveSoldierUp(Action *action, unsigned int row, bool
 void AllocateTrainingState::lstItemsRightArrowClick(Action *action)
 {
 	unsigned int row = _lstSoldiers->getSelectedRow();
-	size_t numSoldiers = _base->getSoldiers()->size();
+	size_t numSoldiers = _rowIndex.size(); // DX: visible rows, not the base's raw soldier count
 	if (0 < numSoldiers && INT_MAX >= numSoldiers && row < numSoldiers - 1)
 	{
 		if (action->getDetails()->button.button == SDL_BUTTON_LEFT)
@@ -450,16 +473,23 @@ void AllocateTrainingState::lstItemsRightArrowClick(Action *action)
  */
 void AllocateTrainingState::moveSoldierDown(Action *action, unsigned int row, bool max)
 {
-	Soldier *s = _base->getSoldiers()->at(row);
+	// DX: see moveSoldierUp -- rows are mapped through _rowIndex because vehicles aren't listed.
+	if (row + 1 >= _rowIndex.size()) return; // row+1 must be a real row
+	const size_t from = _rowIndex[row];
+	Soldier *s = _base->getSoldiers()->at(from);
 	if (max)
 	{
-		_base->getSoldiers()->erase(_base->getSoldiers()->begin() + row);
-		_base->getSoldiers()->insert(_base->getSoldiers()->end(), s);
+		// After erasing `from` (which precedes it), the last visible soldier shifts down one, so
+		// inserting at its old index lands this soldier immediately after it.
+		const size_t to = _rowIndex.back();
+		_base->getSoldiers()->erase(_base->getSoldiers()->begin() + from);
+		_base->getSoldiers()->insert(_base->getSoldiers()->begin() + to, s);
 	}
 	else
 	{
-		_base->getSoldiers()->at(row) = _base->getSoldiers()->at(row + 1);
-		_base->getSoldiers()->at(row + 1) = s;
+		const size_t to = _rowIndex[row + 1];
+		_base->getSoldiers()->at(from) = _base->getSoldiers()->at(to);
+		_base->getSoldiers()->at(to) = s;
 		if (row != _lstSoldiers->getVisibleRows() - 1 + _lstSoldiers->getScroll())
 		{
 			SDL_WarpMouse(action->getLeftBlackBand() + action->getXMouse(), action->getTopBlackBand() + action->getYMouse() + static_cast<Uint16>(8 * action->getYScale()));
@@ -485,9 +515,13 @@ void AllocateTrainingState::lstSoldiersClick(Action *action)
 	}
 
 	_sel = _lstSoldiers->getSelectedRow();
+	if (_sel >= _rowIndex.size())
+	{
+		return;
+	}
 	if (action->getDetails()->button.button == SDL_BUTTON_LEFT)
 	{
-		auto* soldier = _base->getSoldiers()->at(_sel);
+		auto* soldier = _base->getSoldiers()->at(_rowIndex[_sel]);
 
 		// can't put fully trained soldiers back into training
 		if (soldier->isFullyTrained()) return;
@@ -534,7 +568,7 @@ void AllocateTrainingState::lstSoldiersClick(Action *action)
 	else if (action->getDetails()->button.button == SDL_BUTTON_RIGHT)
 	{
 		_doNotReset = true;
-		_game->pushState(new SoldierInfoState(_base, _sel, true, true));
+		_game->pushState(new SoldierInfoState(_base, _rowIndex[_sel], true, true));
 	}
 }
 
@@ -547,7 +581,7 @@ void AllocateTrainingState::lstSoldiersMousePress(Action *action)
 	if (Options::changeValueByMouseWheel == 0)
 		return;
 	unsigned int row = _lstSoldiers->getSelectedRow();
-	size_t numSoldiers = _base->getSoldiers()->size();
+	size_t numSoldiers = _rowIndex.size(); // DX: visible rows, not the base's raw soldier count
 	if (action->getDetails()->button.button == SDL_BUTTON_WHEELUP &&
 		row > 0)
 	{
@@ -577,6 +611,10 @@ void AllocateTrainingState::btnDeassignAllSoldiersClick(Action* action)
 	int row = 0;
 	for (auto* soldier : *_base->getSoldiers())
 	{
+		if (soldier->getRules()->isVehicle())
+		{
+			continue; // DX: not listed -- skip so rows stay aligned with the display
+		}
 		soldier->setTraining(false);
 		soldier->setReturnToTrainingWhenHealed(false);
 
@@ -605,6 +643,10 @@ void AllocateTrainingState::btnAssignAllSoldiersClick(Action* action)
 	int row = 0;
 	for (auto* soldier : *_base->getSoldiers())
 	{
+		if (soldier->getRules()->isVehicle())
+		{
+			continue; // DX: not listed, and never trains -- don't consume a row or a slot
+		}
 		if (soldier->isFullyTrained())
 		{
 			// can't put fully trained soldiers back into training

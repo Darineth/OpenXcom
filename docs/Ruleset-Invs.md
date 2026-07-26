@@ -43,6 +43,7 @@ Entries **merge** across mods/files by `id`, support `refNode:` inheritance and 
 | `battleType` **[DX]** | int | 0 (any) | Slot-side item filter: only items of this [battle type](Ruleset-Items.md) may occupy the section (0 = unrestricted). |
 | `allowCombatSwap` **[DX]** | bool | true | When false, items can't be moved into or out of the section once combat is underway (pre-battle equip unaffected). |
 | `countStats` **[DX]** | bool | true | When false, items in the section don't contribute their `stats`/`statModifiers` to the wearer. |
+| `armorSide` **[DX]** | `front`/`left`/`right`/`rear`/`under` | unset | Declares the section an armor hardpoint reinforcing that one facing; any other value is a load error. |
 | `listOrder` | int | auto (+10 per entry) | Sort position (e.g. section iteration order in the implicit default layout). |
 
 ## Section types & geometry
@@ -83,7 +84,8 @@ The three filter fields turn a section into a typed socket
 - **`battleType`** is enforced whenever an item is placed as the section's occupant (manual drop,
   ctrl-click, auto-equip candidate scan) — rejection shows `STR_INVALID_ITEM_SLOT`. Values are the
   item `battleType` ordinals: 1 firearm, 2 ammo, 3 melee, 4 grenade, 5 proximity grenade,
-  6 medikit, 7 scanner, 8 mind probe, 9 psi-amp, 10 flare, 11 corpse. It composes with the
+  6 medikit, 7 scanner, 8 mind probe, 9 psi-amp, 10 flare, 11 corpse, 12 armor plate,
+  13 equipment. It composes with the
   item-side `supportedInventorySections:` on [`items:`](Ruleset-Items.md) (both must pass), and
   does **not** block reloading a weapon already in the slot.
 - **`allowCombatSwap: false`** only bites in combat: a locked item can be picked up and put back
@@ -91,6 +93,23 @@ The three filter fields turn a section into a typed socket
   nothing can be moved in (`STR_NOT_COMBAT_SWAPPABLE`); Throw is withheld for locked items.
 - **`countStats: false`** excludes the section's items from the wearer's item stat bonuses
   (`stats`/`statModifiers` on items) — for holster/stowage sections.
+
+## [DX] Armor hardpoints — `armorSide`
+
+Normally an item with [directional armor](Ruleset-Items.md) adds each of its
+`frontArmor`/`sideArmor`/`rearArmor`/`underArmor` values to the matching facing of its wearer.
+A section that declares `armorSide` overrides that: the item plates **only** the named facing,
+using the item's own value for that side (so `armorSide: left` applies `sideArmor`).
+
+This exists so one plate item type can serve every facing of a
+[modular vehicle](../plans/Feature-ModularVehicles.md) — a chassis defines
+`STR_ARMOR_FRONT`/`_LEFT`/`_RIGHT`/`_REAR` sections and the same
+`STR_HWP_ARMOR_PLATE` bolts into any of them — instead of the mod shipping four near-identical
+per-facing plate items. Give the plate different per-side numbers and it becomes an asymmetric
+plate whose contribution depends on where it is mounted.
+
+Pair it with `battleType: 12` (`BT_ARMOR_PLATE`) so only plates fit, and `allowCombatSwap: false`
+so armor can't be re-bolted mid-firefight. Sections with several cells let plates **stack**.
 
 ## [DX] Hands by property, not by id
 

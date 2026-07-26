@@ -2655,7 +2655,7 @@ void DebriefingState::recoverCivilian(BattleUnit *from, Base *base, Craft* craft
 				target = base;
 			}
 			int nationality = _game->getSavedGame()->selectSoldierNationalityByLocation(_game->getMod(), ruleSoldier, target);
-			Soldier *s = _game->getMod()->genSoldier(_game->getSavedGame(), ruleSoldier, nationality);
+			Soldier *s = _game->getMod()->genSoldier(_game->getSavedGame(), ruleSoldier, nationality, _game->getLanguage());
 			YAML::YamlRootNodeReader reader(from->getUnitRules()->getSpawnedSoldierTemplate(), "(spawned soldier template)");
 			s->load(reader.toBase(), _game->getMod(), _game->getSavedGame(), _game->getMod()->getScriptGlobal(), true); // load from soldier template
 			if (!from->getUnitRules()->getSpawnedPersonName().empty())

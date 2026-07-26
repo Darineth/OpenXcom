@@ -31,7 +31,7 @@ namespace OpenXcom
  * type of inventory section.
  * @param id String defining the id.
  */
-RuleInventory::RuleInventory(const std::string &id, int listOrder): _id(id), _x(0), _y(0), _type(INV_SLOT), _width(0), _height(0), _listOrder(listOrder), _hand(0), _battleType(BT_NONE), _allowCombatSwap(true), _countStats(true)
+RuleInventory::RuleInventory(const std::string &id, int listOrder): _id(id), _x(0), _y(0), _type(INV_SLOT), _width(0), _height(0), _listOrder(listOrder), _hand(0), _battleType(BT_NONE), _allowCombatSwap(true), _countStats(true), _armorSide(-1)
 {
 }
 
@@ -62,6 +62,20 @@ void RuleInventory::load(const YAML::YamlNodeReader& reader)
 	reader.tryRead("allowCombatSwap", _allowCombatSwap);
 	reader.tryRead("countStats", _countStats);
 	reader.tryRead("listOrder", _listOrder);
+	std::string armorSideStr;
+	if (reader.tryRead("armorSide", armorSideStr))
+	{
+		// A hardpoint that reinforces one facing: whatever plate sits here adds its armor to this
+		// side only, so a single plate item type serves every facing instead of needing a variant
+		// per side. Unset leaves the item's own front/side/rear/under values applying as declared.
+		if (armorSideStr == "front")      _armorSide = SIDE_FRONT;
+		else if (armorSideStr == "left")  _armorSide = SIDE_LEFT;
+		else if (armorSideStr == "right") _armorSide = SIDE_RIGHT;
+		else if (armorSideStr == "rear")  _armorSide = SIDE_REAR;
+		else if (armorSideStr == "under") _armorSide = SIDE_UNDER;
+		else if (armorSideStr == "none")  _armorSide = -1;
+		else throw Exception("RuleInventory " + _id + ": invalid 'armorSide' value '" + armorSideStr + "' (expected front, left, right, rear, under, or none)");
+	}
 	std::string handStr;
 	if (reader.tryRead("hand", handStr))
 	{
@@ -438,6 +452,7 @@ void RuleInventory::ScriptRegister(ScriptParserBase* parser)
 	bu.add<&RuleInventory::getBattleType>("getBattleType", "Battle type this slot is restricted to (BT_NONE = unrestricted)");
 	bu.add<&RuleInventory::getAllowCombatSwap>("getAllowCombatSwap");
 	bu.add<&RuleInventory::getCountStats>("getCountStats");
+	bu.add<&RuleInventory::getArmorSide>("getArmorSide", "Armor facing this slot reinforces as a UnitSide ordinal (-1 = unset)");
 	bu.add<&RuleInventory::isRightHand>("isRightHand");
 	bu.add<&RuleInventory::isLeftHand>("isLeftHand");
 	bu.add<&RuleInventory::getCost>("getMoveToCost", "Cost of moving item from slot in first arg to slot from last arg");

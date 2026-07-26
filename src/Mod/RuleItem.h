@@ -32,7 +32,19 @@
 namespace OpenXcom
 {
 
-enum BattleType { BT_NONE, BT_FIREARM, BT_AMMO, BT_MELEE, BT_GRENADE, BT_PROXIMITYGRENADE, BT_MEDIKIT, BT_SCANNER, BT_MINDPROBE, BT_PSIAMP, BT_FLARE, BT_CORPSE };
+/**
+ * Item classes. Parsed from the ruleset as a plain integer, so this enum is APPEND-ONLY --
+ * existing ordinals are baked into every mod and save file and must never be renumbered.
+ * BT_ARMOR_PLATE and BT_EQUIPMENT are DX additions covering gear that is INSTALLED on a unit
+ * rather than carried by it -- armor plating, and everything else you bolt on (a vehicle engine,
+ * a targeting module, night-vision goggles, exoskeleton servos). Both are inert in battle: they
+ * behave like BT_NONE (never wielded, fired, thrown, primed or used) and grant their effect
+ * passively while installed. They exist so typed inventory slots can filter each onto the right
+ * hardpoint. Nothing about them is vehicle-specific -- a chassis' engine bay and a soldier's
+ * plate carrier use the same two classes; `supportedInventorySections` on the item is the tool
+ * for finer per-section restriction.
+ */
+enum BattleType { BT_NONE, BT_FIREARM, BT_AMMO, BT_MELEE, BT_GRENADE, BT_PROXIMITYGRENADE, BT_MEDIKIT, BT_SCANNER, BT_MINDPROBE, BT_PSIAMP, BT_FLARE, BT_CORPSE, BT_ARMOR_PLATE, BT_EQUIPMENT };
 enum BattleFuseType { BFT_NONE = -3, BFT_INSTANT = -2, BFT_SET = -1, BFT_FIX_MIN = 0, BFT_FIX_MAX = 64 };
 enum BattleMediKitType { BMT_NORMAL = 0, BMT_HEAL = 1, BMT_STIMULANT = 2, BMT_PAINKILLER = 3 };
 enum BattleMediKitAction { BMA_HEAL = 1, BMA_STIMULANT = 2, BMA_PAINKILLER = 4 };
@@ -142,6 +154,8 @@ class Surface;
 class Mod;
 class RuleInventory;
 class RuleItemCategory;
+class RuleSoldier;
+class BattleUnit;
 
 enum UnitFaction : int;
 
@@ -751,6 +765,11 @@ private:
 	int _defaultInvSlotX, _defaultInvSlotY;
 	std::vector<std::string> _supportedInventorySectionsNames;
 	std::vector<const RuleInventory*> _supportedInventorySections;
+	/// DX: may a vehicle chassis equip this? Default-deny, so every existing item is people-only.
+	bool _vehicleItem = false;
+	/// DX: if non-empty, only these soldier types may equip it (mirrors Armor::_units).
+	std::vector<std::string> _supportedUnitsNames;
+	std::vector<const RuleSoldier*> _supportedUnits;
 	int _waypoints, _invWidth, _invHeight;
 
 	int _painKiller, _heal, _stimulant;
@@ -920,6 +939,12 @@ public:
 	int getDefaultInventorySlotY() const { return _defaultInvSlotY; }
 	/// Gets the item's supported inventory sections.
 	const std::vector<const RuleInventory*> &getSupportedInventorySections() const { return _supportedInventorySections; }
+	/// DX: can a vehicle chassis equip this item?
+	bool isVehicleItem() const { return _vehicleItem; }
+	/// DX: the soldier types allowed to equip this item (empty = no restriction).
+	const std::vector<const RuleSoldier*> &getSupportedUnits() const { return _supportedUnits; }
+	/// DX: can this unit equip this item? (see Feature-ItemUserRestrictions)
+	bool canBeEquippedBy(const BattleUnit *unit) const;
 	/// Checks if the item can be placed into a given inventory section.
 	bool canBePlacedIntoInventorySection(const RuleInventory* inventorySection) const;
 
@@ -1278,6 +1303,8 @@ public:
 	bool isInventoryItem() const;
 	/// Checks if item have some use in battlescape.
 	bool isUsefulBattlescapeItem() const;
+	/// DX: is this item installed on the unit (an armor plate or equipment) rather than carried by it?
+	bool isInstalledEquipment() const { return _battleType == BT_ARMOR_PLATE || _battleType == BT_EQUIPMENT; }
 	/// Gets the item's recoverability.
 	bool isRecoverable() const;
 	/// Gets the corpse item's recoverability.

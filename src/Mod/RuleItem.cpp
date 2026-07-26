@@ -636,6 +636,8 @@ void RuleItem::load(const YAML::YamlNodeReader& node, Mod *mod, const ModScript&
 	reader.tryRead("defaultInvSlotX", _defaultInvSlotX);
 	reader.tryRead("defaultInvSlotY", _defaultInvSlotY);
 	mod->loadUnorderedNames(_type, _supportedInventorySectionsNames, reader["supportedInventorySections"]);
+	reader.tryRead("vehicleItem", _vehicleItem);
+	mod->loadUnorderedNames(_type, _supportedUnitsNames, reader["units"]);
 	reader.tryRead("isConsumable", _isConsumable);
 	reader.tryRead("isFireExtinguisher", _isFireExtinguisher);
 	reader.tryRead("isAmmoRechargeable", _isAmmoRechargeable);
@@ -902,6 +904,11 @@ void RuleItem::afterLoad(const Mod* mod)
 	{
 		mod->linkRule(_supportedInventorySections, _supportedInventorySectionsNames);
 		Collections::sortVector(_supportedInventorySections);
+	}
+	if (_supportedUnitsNames.size())
+	{
+		mod->linkRule(_supportedUnits, _supportedUnitsNames);
+		Collections::sortVector(_supportedUnits);
 	}
 	for (int i = 0; i < AmmoSlotMax; ++i)
 	{
@@ -1255,6 +1262,46 @@ bool RuleItem::canBePlacedIntoInventorySection(const RuleInventory* inventorySec
 
 	// otherwise check allowed inventory sections
 	return Collections::sortVectorHave(_supportedInventorySections, inventorySection);
+}
+
+/**
+ * DX: checks whether a given unit is allowed to EQUIP this item.
+ *
+ * The ground is deliberately not gated by this (see Inventory) -- any unit may pick a dropped item
+ * up and haul it home; only strapping it on is restricted.
+ *
+ * @param unit The unit trying to equip the item.
+ * @return True if the unit may equip it.
+ */
+bool RuleItem::canBeEquippedBy(const BattleUnit *unit) const
+{
+	if (!unit)
+	{
+		return true;
+	}
+	const Soldier *soldier = unit->getGeoscapeSoldier();
+	if (!soldier)
+	{
+		// Aliens, civilians and classic `vehicleUnit` HWPs have no RuleSoldier to test against, so
+		// they are exempt entirely -- this feature must not change any pre-existing content.
+		return true;
+	}
+	const RuleSoldier *rules = soldier->getRules();
+
+	// Default-deny for chassis: an untagged item is people-only, which is what makes every existing
+	// item in every existing mod automatically unavailable to vehicles with no tagging at all.
+	if (rules->isVehicle() && !_vehicleItem)
+	{
+		return false;
+	}
+
+	// Optional fine-grained whitelist, same semantics as Armor's `units:`.
+	if (!_supportedUnits.empty() && !Collections::sortVectorHave(_supportedUnits, rules))
+	{
+		return false;
+	}
+
+	return true;
 }
 
 /**
@@ -3199,6 +3246,8 @@ void RuleItem::ScriptRegister(ScriptParserBase* parser)
 	ri.addCustomConst("BT_PSIAMP", BT_PSIAMP);
 	ri.addCustomConst("BT_FLARE", BT_FLARE);
 	ri.addCustomConst("BT_CORPSE", BT_CORPSE);
+	ri.addCustomConst("BT_ARMOR_PLATE", BT_ARMOR_PLATE);
+	ri.addCustomConst("BT_EQUIPMENT", BT_EQUIPMENT);
 
 	ri.add<&getTypeScript>("getType");
 

@@ -67,7 +67,7 @@ Entries **merge** across mods/files by `type`, support `refNode:` inheritance an
 
 | Key | Type | Default | Meaning |
 |---|---|---|---|
-| `battleType` | int | 0 `BT_NONE` | 0 none, 1 firearm, 2 ammo, 3 melee, 4 grenade, 5 proximity grenade, 6 medikit, 7 scanner, 8 mind probe, 9 psi-amp, 10 flare, 11 corpse. |
+| `battleType` | int | 0 `BT_NONE` | 0 none, 1 firearm, 2 ammo, 3 melee, 4 grenade, 5 proximity grenade, 6 medikit, 7 scanner, 8 mind probe, 9 psi-amp, 10 flare, 11 corpse, **[DX]** 12 armor plate, **[DX]** 13 equipment. |
 | `weight` | int | 3 | Carried weight (counts against strength; also feeds the [DX] weight-based reload cost). |
 | `invWidth` / `invHeight` | int | 1 / 1 | Inventory footprint in cells. |
 | `twoHanded` | bool | false | Needs two hands (accuracy penalty when the other hand is full). |
@@ -78,6 +78,8 @@ Entries **merge** across mods/files by `type`, support `refNode:` inheritance an
 | `defaultInventorySlot` | string | — | [Inventory section](Ruleset-Invs.md) the item auto-equips into. |
 | `defaultInvSlotX` / `defaultInvSlotY` | int | 0 / 0 | Position inside that default slot. |
 | `supportedInventorySections` | list | all | Restricts which inventory sections may hold the item. |
+| `vehicleItem` **[DX]** | bool | false | May a [modular vehicle](../plans/Feature-ModularVehicles.md) chassis equip this? Default-deny — see below. |
+| `units` **[DX]** | list of soldier types | all | Restricts which [`soldiers:`](Ruleset-Soldiers.md) types may equip it (mirrors `units:` on [`armors:`](Ruleset-Armors.md)). |
 | `inventoryMoveCost:` → `basePercent` | int % | 100 | Scales the TU cost of moving the item within the inventory. |
 | `isConsumable` | bool | false | Medikit/primed item is consumed on use. |
 | `isFireExtinguisher` | bool | false | Using the item puts out fire. |
@@ -94,6 +96,72 @@ Entries **merge** across mods/files by `type`, support `refNode:` inheritance an
 
 ¹ `psiRequired` is forced to `true` when `battleType: 9` (psi-amp) is set, and can then be
 overridden explicitly.
+
+### [DX] Who may equip an item — `vehicleItem` and `units`
+
+Once [modular vehicles](../plans/Feature-ModularVehicles.md) exist, a chassis and a rifleman are both
+`soldiers:` entries drawing from one item pool, so items need to say who they are for. Two keys, with
+different jobs:
+
+- **`vehicleItem`** (default `false`) is the coarse gate: may a **vehicle chassis** equip this at
+  all? Because it defaults to *false*, every existing item in every existing mod is automatically
+  unavailable to chassis with **no tagging whatsoever** — which is the overwhelmingly common case.
+- **`units`** (default empty) is the fine gate: if non-empty, only the listed soldier types may equip
+  it. Same key, semantics and implementation as `units:` on [`armors:`](Ruleset-Armors.md).
+
+Resolution, in order:
+
+1. The unit is **not** a soldier (alien, civilian, or a classic `vehicleUnit` HWP) → **allowed**.
+   Non-soldier units are exempt entirely, so no pre-existing content changes behavior.
+2. The unit is a chassis and the item has no `vehicleItem: true` → **denied**.
+3. `units` is non-empty and the unit's soldier type isn't in it → **denied**.
+4. Otherwise → **allowed**.
+
+```yaml
+items:
+  - type: STR_RIFLE
+    # nothing: people yes, chassis no -- the default, free for every existing item
+
+  - type: STR_HWP_ENGINE
+    vehicleItem: true                      # a chassis may install it...
+    units: [ STR_MEDIUM_TANK, STR_HEAVY_TANK ]  # ...and only these two, so people can't either
+
+  - type: STR_UNIVERSAL_FLARE
+    vehicleItem: true                      # usable by BOTH chassis and people
+```
+
+Restricted gear is **hidden from that unit's inventory ground list** and refused on placement
+(`STR_CANNOT_EQUIP_ITEM`), and auto-equip and saved equipment layouts skip it. The **ground itself
+stays universal**: any unit may still pick a dropped item up and carry it home — only *equipping* is
+gated, and items merely hidden from one unit's screen remain on the tile, deploy normally and are
+recovered as usual. The craft equipment screen and the base Stores/Purchase/Sell screens are
+deliberately **not** filtered; they list what you own, not what one unit straps on.
+
+### [DX] Installed gear — `battleType: 12` and `13`
+
+Two DX item classes cover gear that is **installed on a unit rather than carried by it**:
+
+| Value | Name | Purpose |
+|---|---|---|
+| `12` | `BT_ARMOR_PLATE` | Armor plating fitted to a hardpoint. |
+| `13` | `BT_EQUIPMENT` | Anything else you bolt on or wear: a vehicle engine, a targeting module, night-vision goggles, exoskeleton servos. |
+
+Both behave exactly like `battleType: 0` (`BT_NONE`) in battle — never wielded, fired, thrown,
+primed or used — and neither can be placed in a hand section at all, since a hand is a weapon
+mount. They grant their effect passively while installed, and exist so that
+[typed inventory slots](Ruleset-Invs.md) can filter each item onto the correct hardpoint.
+
+**Neither is vehicle-specific.** A [modular vehicle](../plans/Feature-ModularVehicles.md) chassis'
+engine bay and a soldier's plate carrier use the same two classes. `battleType` is the coarse
+class; use `supportedInventorySections` above when an item needs to be restricted to particular
+sections (e.g. an engine that should only fit an engine bay, never a soldier's gear slot).
+
+A plate carries its armor in the ordinary `frontArmor` / `sideArmor` / `rearArmor` /
+`underArmor` fields above. If the section it occupies declares
+[`armorSide`](Ruleset-Invs.md), only that one facing's value is applied — which is what lets a
+single plate item type serve every hardpoint instead of shipping four near-identical per-facing
+variants. Equipment contributes through `stats` / `statModifiers`, and only when its section is
+`countStats: true`.
 
 ## Fire modes & accuracy
 

@@ -103,6 +103,7 @@ void RuleSoldier::load(const YAML::YamlNodeReader& node, Mod *mod, const ModScri
 	reader.tryRead("flagOffset", _flagOffset);
 	reader.tryRead("allowPromotion", _allowPromotion);
 	reader.tryRead("allowPiloting", _allowPiloting);
+	reader.tryRead("vehicle", _vehicle);
 	reader.tryRead("monthlyBuyLimit", _monthlyBuyLimit);
 	reader.tryRead("monthlyBuyLimitMessage", _monthlyBuyLimitMessage);
 	reader.tryRead("costBuy", _costBuy);
@@ -204,9 +205,23 @@ void RuleSoldier::afterLoad(const Mod* mod)
 	{
 		_totalSoldierNamePoolWeight += namepool->getGlobalWeight();
 	}
-	if (_totalSoldierNamePoolWeight < 1)
+	// DX: a vehicle chassis is expected to have no name pools -- it gets a numbered designation
+	// instead of a human name (see Mod::genSoldier), so don't nag about the missing 'soldierNames:'.
+	if (_totalSoldierNamePoolWeight < 1 && !_vehicle)
 	{
 		Log(LOG_ERROR) << _type << ": total soldier name pool weight is invalid. Forgotten 'soldierNames:' ?";
+	}
+
+	// DX: hardware holds no rank, so `vehicle: true` forces promotion off rather than relying on the
+	// modder also writing `allowPromotion: false`. Enforcing it on the rule (once, here, after all
+	// mods have merged) rather than inside promoteRank() covers every consumer at once: manual and
+	// automatic promotion both early-return, the rank string reads STR_RANK_NONE instead of "Rookie",
+	// transformation demotion behaves, the manual-promotion UI refuses, and -- easy to miss -- the
+	// promotion QUOTA in RankCount stops counting chassis toward `_totalSoldiers`, which would
+	// otherwise hand the player extra colonels for owning tanks.
+	if (_vehicle)
+	{
+		_allowPromotion = false;
 	}
 
 	mod->linkRule(_armor, _armorName);

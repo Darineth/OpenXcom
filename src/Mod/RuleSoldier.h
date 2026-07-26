@@ -92,6 +92,8 @@ private:
 	std::string _armorForAvatar;
 	int _avatarOffsetX, _avatarOffsetY, _flagOffset;
 	bool _allowPromotion, _allowPiloting, _showTypeInInventory;
+	/// DX: this soldier type is a modular vehicle chassis, not a person.
+	bool _vehicle = false;
 	std::vector<StatString*> _statStrings;
 	std::vector<std::string> _rankStrings;
 	int _rankSprite, _rankSpriteBattlescape, _rankSpriteTiny;
@@ -172,6 +174,8 @@ public:
 	bool getAllowPromotion() const;
 	/// Gets the allow piloting flag.
 	bool getAllowPiloting() const;
+	/// DX: is this soldier type a modular vehicle chassis (crewless hardware) rather than a person?
+	bool isVehicle() const { return _vehicle; }
 	/// Gets the female appearance ratio.
 	int getFemaleFrequency() const;
 	/// Gets the soldier's male death sounds.

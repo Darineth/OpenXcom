@@ -305,13 +305,28 @@ void AllocatePsiTrainingState::initList(size_t scrl)
 {
 	int row = 0;
 	_lstSoldiers->clearList();
+	_rowIndex.clear();
+	size_t soldierIndex = 0;
 	for (auto* soldier : *_base->getSoldiers())
 	{
+		// DX: a vehicle chassis has no mind to train, so it isn't listed here at all.
+		// (Defensively release a lab slot if an older save somehow has one enrolled.)
+		if (soldier->getRules()->isVehicle())
+		{
+			if (soldier->isInPsiTraining())
+			{
+				_labSpace++;
+				soldier->setPsiTraining(false);
+			}
+			++soldierIndex;
+			continue;
+		}
+		_rowIndex.push_back(soldierIndex++);
+
 		const UnitStats* stats = _btnPlus->getPressed() ? soldier->getStatsWithSoldierBonusesOnly() : soldier->getCurrentStats();
 
 		std::ostringstream ssStr;
 		std::ostringstream ssSkl;
-		_soldiers.push_back(soldier);
 		if (soldier->getCurrentStats()->psiSkill > 0 || (Options::psiStrengthEval && _game->getSavedGame()->isResearched(_game->getMod()->getPsiRequirements())))
 		{
 			ssStr << "   " << stats->psiStrength;
@@ -398,16 +413,22 @@ void AllocatePsiTrainingState::lstItemsLeftArrowClick(Action *action)
  */
 void AllocatePsiTrainingState::moveSoldierUp(Action *action, unsigned int row, bool max)
 {
-	Soldier *s = _base->getSoldiers()->at(row);
+	// DX: rows skip vehicle chassis, so reordering works on the mapped base indices and swaps with
+	// the previous *visible* soldier -- any hidden chassis in between simply stays put.
+	if (row == 0 || row >= _rowIndex.size()) return; // row-1 must be a real row
+	const size_t from = _rowIndex[row];
+	Soldier *s = _base->getSoldiers()->at(from);
 	if (max)
 	{
-		_base->getSoldiers()->erase(_base->getSoldiers()->begin() + row);
-		_base->getSoldiers()->insert(_base->getSoldiers()->begin(), s);
+		const size_t to = _rowIndex.front();
+		_base->getSoldiers()->erase(_base->getSoldiers()->begin() + from);
+		_base->getSoldiers()->insert(_base->getSoldiers()->begin() + to, s);
 	}
 	else
 	{
-		_base->getSoldiers()->at(row) = _base->getSoldiers()->at(row - 1);
-		_base->getSoldiers()->at(row - 1) = s;
+		const size_t to = _rowIndex[row - 1];
+		_base->getSoldiers()->at(from) = _base->getSoldiers()->at(to);
+		_base->getSoldiers()->at(to) = s;
 		if (row != _lstSoldiers->getScroll())
 		{
 			SDL_WarpMouse(action->getLeftBlackBand() + action->getXMouse(), action->getTopBlackBand() + action->getYMouse() - static_cast<Uint16>(8 * action->getYScale()));
@@ -427,7 +448,7 @@ void AllocatePsiTrainingState::moveSoldierUp(Action *action, unsigned int row, b
 void AllocatePsiTrainingState::lstItemsRightArrowClick(Action *action)
 {
 	unsigned int row = _lstSoldiers->getSelectedRow();
-	size_t numSoldiers = _base->getSoldiers()->size();
+	size_t numSoldiers = _rowIndex.size(); // DX: visible rows, not the base's raw soldier count
 	if (0 < numSoldiers && INT_MAX >= numSoldiers && row < numSoldiers - 1)
 	{
 		if (action->getDetails()->button.button == SDL_BUTTON_LEFT)
@@ -451,16 +472,23 @@ void AllocatePsiTrainingState::lstItemsRightArrowClick(Action *action)
  */
 void AllocatePsiTrainingState::moveSoldierDown(Action *action, unsigned int row, bool max)
 {
-	Soldier *s = _base->getSoldiers()->at(row);
+	// DX: see moveSoldierUp -- rows are mapped through _rowIndex because vehicles aren't listed.
+	if (row + 1 >= _rowIndex.size()) return; // row+1 must be a real row
+	const size_t from = _rowIndex[row];
+	Soldier *s = _base->getSoldiers()->at(from);
 	if (max)
 	{
-		_base->getSoldiers()->erase(_base->getSoldiers()->begin() + row);
-		_base->getSoldiers()->insert(_base->getSoldiers()->end(), s);
+		// After erasing `from` (which precedes it), the last visible soldier shifts down one, so
+		// inserting at its old index lands this soldier immediately after it.
+		const size_t to = _rowIndex.back();
+		_base->getSoldiers()->erase(_base->getSoldiers()->begin() + from);
+		_base->getSoldiers()->insert(_base->getSoldiers()->begin() + to, s);
 	}
 	else
 	{
-		_base->getSoldiers()->at(row) = _base->getSoldiers()->at(row + 1);
-		_base->getSoldiers()->at(row + 1) = s;
+		const size_t to = _rowIndex[row + 1];
+		_base->getSoldiers()->at(from) = _base->getSoldiers()->at(to);
+		_base->getSoldiers()->at(to) = s;
 		if (row != _lstSoldiers->getVisibleRows() - 1 + _lstSoldiers->getScroll())
 		{
 			SDL_WarpMouse(action->getLeftBlackBand() + action->getXMouse(), action->getTopBlackBand() + action->getYMouse() + static_cast<Uint16>(8 * action->getYScale()));
@@ -486,9 +514,13 @@ void AllocatePsiTrainingState::lstSoldiersClick(Action *action)
 	}
 
 	_sel = _lstSoldiers->getSelectedRow();
+	if (_sel >= _rowIndex.size())
+	{
+		return;
+	}
 	if (action->getDetails()->button.button == SDL_BUTTON_LEFT)
 	{
-		auto* s = _base->getSoldiers()->at(_sel);
+		auto* s = _base->getSoldiers()->at(_rowIndex[_sel]);
 		if (s->getRules()->getTrainingStatCaps().psiSkill <= 0)
 		{
 			// noop
@@ -520,7 +552,7 @@ void AllocatePsiTrainingState::lstSoldiersClick(Action *action)
 	else if (action->getDetails()->button.button == SDL_BUTTON_RIGHT)
 	{
 		_doNotReset = true;
-		_game->pushState(new SoldierInfoState(_base, _sel, true, true));
+		_game->pushState(new SoldierInfoState(_base, _rowIndex[_sel], true, true));
 	}
 }
 
@@ -533,7 +565,7 @@ void AllocatePsiTrainingState::lstSoldiersMousePress(Action *action)
 	if (Options::changeValueByMouseWheel == 0)
 		return;
 	unsigned int row = _lstSoldiers->getSelectedRow();
-	size_t numSoldiers = _base->getSoldiers()->size();
+	size_t numSoldiers = _rowIndex.size(); // DX: visible rows, not the base's raw soldier count
 	if (action->getDetails()->button.button == SDL_BUTTON_WHEELUP &&
 		row > 0)
 	{
@@ -563,6 +595,10 @@ void AllocatePsiTrainingState::btnDeassignAllSoldiersClick(Action* action)
 	int row = 0;
 	for (auto* s : *_base->getSoldiers())
 	{
+		if (s->getRules()->isVehicle())
+		{
+			continue; // DX: not listed -- skip so rows stay aligned with the display
+		}
 		s->setPsiTraining(false);
 		if (s->getRules()->getTrainingStatCaps().psiSkill <= 0)
 		{
@@ -592,6 +628,10 @@ void AllocatePsiTrainingState::btnAssignAllSoldiersClick(Action* action)
 	int row = 0;
 	for (auto* s : *_base->getSoldiers())
 	{
+		if (s->getRules()->isVehicle())
+		{
+			continue; // DX: not listed, and never trains -- don't consume a row or a lab slot
+		}
 		if (s->getRules()->getTrainingStatCaps().psiSkill <= 0)
 		{
 			// noop

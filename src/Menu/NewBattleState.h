@@ -37,6 +37,8 @@ class ComboBox;
 class Slider;
 class Frame;
 class Craft;
+class Base;
+class SavedGame;
 
 /**
  * New Battle that displays a list
@@ -71,9 +73,14 @@ private:
 	size_t _selectedGlobeTexture;
 	std::vector<size_t> _filtered;
 
+	/// DX: how many chassis of each vehicle soldier type New Battle stocks the base with.
+	static const int VEHICLES_PER_TYPE = 4;
+
 	static const int TFTD_DEPLOYMENTS = 22;
 	void fillList(NewBattleSelectType selectType, bool isRightClick);
 	void cleanup();
+	/// DX: tops the base up to VEHICLES_PER_TYPE chassis of every vehicle soldier type.
+	void stockVehicles(SavedGame *save, Base *base);
 public:
 	/// Creates the New Battle state.
 	NewBattleState();

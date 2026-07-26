@@ -40,6 +40,8 @@
 #include "Base.h"
 #include "ItemContainer.h"
 #include "../Mod/RuleSkill.h"
+#include "../Mod/RuleItem.h"
+#include "../Mod/RuleInventory.h"
 
 namespace OpenXcom
 {
@@ -110,6 +112,17 @@ Soldier::Soldier(RuleSoldier *rules, Armor *armor, int nationality, int id) :
 			_name = names.at(_nationality)->genName(&_gender, rules->getFemaleFrequency());
 			_callsign = generateCallsign(rules->getNames());
 			_look = (SoldierLook)names.at(_nationality)->genLook(4); // Once we add the ability to mod in extra looks, this will need to reference the ruleset for the maximum amount of looks.
+		}
+		else if (rules->isVehicle())
+		{
+			// DX: a modular vehicle chassis is hardware, not a person -- no gender, no look roll, and
+			// no "John Doe". Its designation is assigned by Mod::genSoldier, which has the Language
+			// needed to localize it. A modder who *wants* named vehicles just supplies name pools,
+			// in which case the branch above runs as usual.
+			_gender = GENDER_MALE;
+			_look = LOOK_BLONDE;
+			_name = "";
+			_callsign = "";
 		}
 		else
 		{
@@ -646,6 +659,14 @@ std::string Soldier::getRankString() const
 		// even if promotion is not allowed, we allow to use a different "Rookie" translation per soldier type
 		if (rankStrings.empty())
 		{
+			// DX: a vehicle chassis has no rank, but a blank "-" in the rank column wastes the one
+			// place a soldier list says what a unit *is*. Report the chassis type instead, so the
+			// roster reads "DX Tank" / "DX Hovertank" where a person would read "Rookie". A modder
+			// who prefers something else just gives the type `rankStrings`, handled below.
+			if (_rules->isVehicle())
+			{
+				return _rules->getType();
+			}
 			return "STR_RANK_NONE";
 		}
 	}
@@ -2160,6 +2181,38 @@ bool Soldier::prepareStatsWithBonuses(const Mod *mod)
 
 	// 6. stats with all bonuses
 	_tmpStatsWithAllBonuses = UnitStats::obeyFixedMinimum(tmp);
+
+	// 6b. DX: stats including the saved equipment layout, for geoscape display only.
+	// A modular vehicle chassis draws its entire mobility and carry capacity from an installed
+	// engine, so without this the base screen would report a tank with 0 TU and 0 strength. This is
+	// deliberately a SEPARATE cache from _tmpStatsWithAllBonuses: BattleUnit starts from that one and
+	// then applies the live inventory itself, so folding equipment in there would double-count it.
+	// Mirrors BattleUnit::computeEffectiveBaseStats -- same `countStats` gate, same modifier channel.
+	{
+		UnitStats itemStats;
+		UnitStats itemModifierDelta;
+		for (const auto* layoutItem : _equipmentLayout)
+		{
+			const RuleItem* itemRules = layoutItem ? layoutItem->getItemType() : nullptr;
+			const RuleInventory* slot = layoutItem ? layoutItem->getSlot() : nullptr;
+			if (!itemRules || !slot || !slot->getCountStats())
+			{
+				continue;
+			}
+			if (itemRules->hasStats())
+			{
+				itemStats += *itemRules->getStats();
+			}
+			if (itemRules->hasStatModifiers())
+			{
+				itemModifierDelta += *itemRules->getStatModifiers();
+			}
+		}
+		UnitStats withEquipment = tmp;
+		withEquipment += itemStats;
+		withEquipment += UnitStats::percent(withEquipment, itemModifierDelta);
+		_tmpStatsWithEquipment = UnitStats::obeyFixedMinimum(withEquipment);
+	}
 
 	// 7. pilot armors count as soldier bonuses
 	if (_armor->isPilotArmor())

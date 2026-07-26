@@ -292,6 +292,16 @@ void SoldierArmorState::btnQuickSearchApply(Action*)
 void SoldierArmorState::lstArmorClick(Action *)
 {
 	Soldier *soldier = _base->getSoldiers()->at(_soldier);
+
+	// DX: backstop. All three doors to this screen (soldier info, inventory, craft armor list)
+	// already refuse to open it for a vehicle chassis; enforcing it at the sink too means the
+	// "a chassis IS its armor" invariant survives any new entry point, rather than depending on
+	// every future caller remembering the check.
+	if (soldier->getRules()->isVehicle())
+	{
+		return;
+	}
+
 	Armor *prev = soldier->getArmor();
 	Armor *next = _game->getMod()->getArmor(_armors[_indices[_lstArmor->getSelectedRow()]].type);
 	Craft *craft = soldier->getCraft();

@@ -288,9 +288,10 @@ bool SoldierDiary::manageCommendations(const Mod* mod, SavedGame* save, const So
 {
 	std::vector<MissionStatistics*>* missionStatistics = save->getMissionStatistics();
 
-	const int BATTLE_TYPES = 13;
+	const int BATTLE_TYPES = 15;
 	const std::string battleTypeArray[BATTLE_TYPES] = { "BT_NONE", "BT_FIREARM", "BT_AMMO", "BT_MELEE", "BT_GRENADE",
-		"BT_PROXIMITYGRENADE", "BT_MEDIKIT", "BT_SCANNER", "BT_MINDPROBE", "BT_PSIAMP", "BT_FLARE", "BT_CORPSE", "BT_END" };
+		"BT_PROXIMITYGRENADE", "BT_MEDIKIT", "BT_SCANNER", "BT_MINDPROBE", "BT_PSIAMP", "BT_FLARE", "BT_CORPSE",
+		"BT_ARMOR_PLATE", "BT_EQUIPMENT", "BT_END" };
 	const int DAMAGE_TYPES = 21;
 	const std::string damageTypeArray[DAMAGE_TYPES] = { "DT_NONE", "DT_AP", "DT_IN", "DT_HE", "DT_LASER", "DT_PLASMA",
 		"DT_STUN", "DT_MELEE", "DT_ACID", "DT_SMOKE",

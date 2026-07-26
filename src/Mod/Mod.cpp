@@ -41,6 +41,7 @@
 #include "../Engine/ShaderDraw.h"
 #include "../Engine/ShaderMove.h"
 #include "../Engine/Exception.h"
+#include "../Engine/Language.h"
 #include "../Engine/Logger.h"
 #include "../Engine/ScriptBind.h"
 #include "../Engine/Collections.h"
@@ -5693,10 +5694,28 @@ const std::vector<std::string> &Mod::getPsiRequirements() const
  * @param type The soldier type to generate.
  * @return Newly generated soldier.
  */
-Soldier *Mod::genSoldier(SavedGame *save, const RuleSoldier* ruleSoldier, int nationality) const
+Soldier *Mod::genSoldier(SavedGame *save, const RuleSoldier* ruleSoldier, int nationality, const Language *lang) const
 {
 	Soldier *soldier = 0;
 	int newId = save->getId("STR_SOLDIER");
+
+	// DX: a modular vehicle chassis with no name pools gets a numbered designation ("Medium Tank-3")
+	// instead of a human name. Unique by construction, so it skips the duplicate-name retry loop.
+	if (ruleSoldier->isVehicle() && ruleSoldier->getNames().empty())
+	{
+		soldier = new Soldier(const_cast<RuleSoldier*>(ruleSoldier), ruleSoldier->getDefaultArmor(), nationality, newId);
+		if (lang)
+		{
+			soldier->setName(lang->getString("STR_VEHICLE_DESIGNATION").arg(lang->getString(ruleSoldier->getType())).arg(newId));
+		}
+		else
+		{
+			// No Language on hand (e.g. initial-base generation); fall back to the raw type id.
+			soldier->setName(ruleSoldier->getType() + "-" + std::to_string(newId));
+		}
+		soldier->calcStatString(getStatStrings(), (Options::psiStrengthEval && save->isResearched(getPsiRequirements())));
+		return soldier;
+	}
 
 	// Check for duplicates
 	// Original X-COM gives up after 10 tries so might as well do the same here

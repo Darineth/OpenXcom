@@ -1091,6 +1091,12 @@ void InventoryState::btnArmorClick(Action *action)
 	BattleUnit *unit = _battleGame->getSelectedUnit();
 	Soldier *s = unit->getGeoscapeSoldier();
 
+	// DX: a vehicle chassis IS its armor -- no swapping it from the inventory screen either.
+	if (s->getRules()->isVehicle())
+	{
+		return;
+	}
+
 	if (!(s->getCraft() && s->getCraft()->getStatus() == "STR_OUT"))
 	{
 		size_t soldierIndex = 0;
@@ -1128,6 +1134,13 @@ void InventoryState::btnArmorClickRight(Action *action)
 	// equipment in the base
 	BattleUnit *unit = _battleGame->getSelectedUnit();
 	Soldier *s = unit->getGeoscapeSoldier();
+
+	// DX: this is the right-click half of the same armor button. A chassis has no avatar to pick
+	// (no gender, no look), so it stays dead here too rather than leaving half the button live.
+	if (s->getRules()->isVehicle())
+	{
+		return;
+	}
 
 	if (!(s->getCraft() && s->getCraft()->getStatus() == "STR_OUT"))
 	{

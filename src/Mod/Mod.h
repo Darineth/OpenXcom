@@ -68,6 +68,7 @@ class RuleSoldier;
 class Unit;
 class Armor;
 class ArticleDefinition;
+class Language;
 class RuleInventory;
 class RuleInventoryLayout;
 class RuleResearch;
@@ -1133,8 +1134,8 @@ public:
 	const std::vector<std::string> &getPsiRequirements() const;
 	/// Returns the sorted list of inventories.
 	const std::vector<std::string> &getInvsList() const;
-	/// Generates a new soldier.
-	Soldier *genSoldier(SavedGame *save, const RuleSoldier* ruleSoldier, int nationality) const;
+	/// Generates a new soldier. `lang` is only needed to localize a DX vehicle chassis designation.
+	Soldier *genSoldier(SavedGame *save, const RuleSoldier* ruleSoldier, int nationality, const Language *lang = nullptr) const;
 	/// Gets the item to be used as fuel for ships.
 	std::string getAlienFuelName() const;
 	/// Gets the amount of alien fuel to recover

@@ -87,6 +87,7 @@ threat) before the explicit keys apply.
 | `allowsSneaking` **[DX]** | bool | auto | May sneak (Alt-move). DX shows "Cannot sneak in this armor!" when false. |
 | `allowsKneeling` | bool | auto | May kneel. |
 | `allowsMoving` | bool | true | May move at all (turrets: false). |
+| `ignoresEncumbrance` **[DX]** | bool | false | Skip the start-of-turn TU reduction applied when carried weight exceeds `strength`. Intended for [modular vehicle](../plans/Feature-ModularVehicles.md) chassis, whose loadout is already budgeted by the engine's `strength`. |
 | `standHeight` / `kneelHeight` / `floatHeight` | int | from unit | Hit-box/LOS heights in voxels (−1 = inherit from the unit/soldier definition). |
 | `size` | int | 1 | Footprint side length: 1 (1×1) or 2 (2×2). |
 | `loftempsSet` (or single `loftemps`) | list of ints | — | LOFT template ids stacked bottom-to-top — the unit's 3-D collision silhouette. Effectively required: the count must equal `size`² or loading reports an error. |
@@ -181,6 +182,7 @@ design doc [plans/Feature-StealthArmor.md](../plans/Feature-StealthArmor.md).
 | `spriteInv` | string | — | Inventory paperdoll base name (per-look suffixes appended). |
 | `allowInv` | bool | true | Whether the inventory screen is usable (false for e.g. dogs/tanks). |
 | `inventoryLayout` **[DX]** | string | standard | The [inventory layout](Ruleset-InventoryLayouts.md) (slot set) this armor gives its wearer. |
+| `turretFromWeapon` **[DX]** | bool | false | Take the unit's turret sprite from the weapon mounted in a hand section (its `turretType`) instead of a fixed index; recomputed live as guns are swapped. For [modular vehicle](../plans/Feature-ModularVehicles.md) chassis. |
 | `drawingRoutine` | int | 0 | Which hardcoded body-part draw routine to use (soldier, cyberdisc, dog…). |
 | `drawBubbles` | bool | false | Draw the breathing-bubbles animation (underwater). |
 | `forcedTorso` | int | 0 | 0 gender-based, 1 always male torso, 2 always female torso. |

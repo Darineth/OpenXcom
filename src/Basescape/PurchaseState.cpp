@@ -804,7 +804,7 @@ void PurchaseState::btnOkClick(Action *)
 						time = _game->getMod()->getPersonnelTime();
 					t = new Transfer(time);
 					int nationality = _game->getSavedGame()->selectSoldierNationalityByLocation(_game->getMod(), rule, _base);
-					Soldier* soldier = _game->getMod()->genSoldier(_game->getSavedGame(), rule, nationality);
+					Soldier* soldier = _game->getMod()->genSoldier(_game->getSavedGame(), rule, nationality, _game->getLanguage());
 					if (!rule->getSpawnedSoldierTemplate().yaml.empty())
 					{
 						YAML::YamlRootNodeReader reader(rule->getSpawnedSoldierTemplate(), "(spawned soldier template)");

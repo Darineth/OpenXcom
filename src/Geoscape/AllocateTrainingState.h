@@ -47,7 +47,9 @@ private:
 	Text *_txtTu, *_txtStamina, *_txtHealth, *_txtFiring, *_txtThrowing, *_txtMelee, *_txtStrength;
 	ComboBox *_cbxSortBy;
 	TextList *_lstSoldiers;
-	std::vector<Soldier*> _soldiers;
+	/// DX: visible row -> index into *_base->getSoldiers(). Vehicle chassis are filtered out of the
+	/// list, so a row no longer maps 1:1 onto the base's soldier vector.
+	std::vector<size_t> _rowIndex;
 	size_t _sel;
 	int _space;
 	Base *_base;

@@ -387,3 +387,13 @@ en-US:
   # {0} caster, {1} target, {2} action name, {3} psi attack score, {4} psi defence score,
   # {5} tile distance, {6} contest margin (positive is a win).
   STR_COMBATLOG_PSI_ROLL: "{0} vs {1} ({2}): psi {3} vs {4}, dist {5}, margin {6}"
+
+#=== Modular Vehicles ===
+#RuleItem.h / StatsForNerdsState.cpp - DX item classes for gear installed on a unit.
+  BT_ARMOR_PLATE: "Armor Plate"
+  BT_EQUIPMENT: "Equipment"
+#Inventory.cpp - item user restrictions (vehicleItem / units:).
+  STR_CANNOT_EQUIP_ITEM: "THIS UNIT CANNOT USE THAT EQUIPMENT"
+
+#Mod.cpp - designation for an unnamed vehicle chassis. {0} chassis type, {1} unique id.
+  STR_VEHICLE_DESIGNATION: "{0}-{1}"

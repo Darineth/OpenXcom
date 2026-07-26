@@ -1937,6 +1937,13 @@ bool BattlescapeGenerator::placeItemByLayout(BattleItem *item, const std::vector
 				continue;
 			}
 
+			// DX: honour item user restrictions (`vehicleItem` / `units:`) so a stale saved layout
+			// can't re-equip gear this unit is no longer allowed to carry.
+			if (!item->getRules()->canBeEquippedBy(unit))
+			{
+				continue;
+			}
+
 			// find the first matching layout-slot which is not already occupied
 			for (const auto* layoutItem : *unit->getGeoscapeSoldier()->getEquipmentLayout())
 			{

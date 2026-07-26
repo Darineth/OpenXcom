@@ -23,6 +23,7 @@
 #include "../Engine/Game.h"
 #include "../Mod/Mod.h"
 #include "../Mod/RuleItem.h"
+#include "../Mod/RuleSoldier.h"
 #include "../Engine/LocalizedText.h"
 #include "../Interface/TextButton.h"
 #include "../Interface/TextEdit.h"
@@ -448,6 +449,10 @@ void NewBattleState::load(const std::string &filename)
 					_craft = base->getCrafts()->front();
 				}
 
+				// DX: a New Battle config saved before the vehicle types existed (or before a mod added
+				// new ones) has no chassis, so top the base up here as well as in initSave().
+				stockVehicles(save, base);
+
 				_game->setSavedGame(save);
 
 				// Restore loadout templates saved during a previous New Battle session (both the
@@ -544,6 +549,50 @@ void NewBattleState::save(const std::string &filename)
 }
 
 /**
+ * DX: stocks the base with modular vehicle chassis for testing.
+ *
+ * Tops every `vehicle: true` soldier type up to VEHICLES_PER_TYPE, counting what is already there,
+ * so it is idempotent and also repairs a saved New Battle config that predates the vehicle types
+ * (or a mod that added new ones). Chassis are left UNASSIGNED: a 2x2 soldier draws 4 points from
+ * the same craft space pool as the squad (a Skyranger has 14), so auto-assigning would gut the
+ * squad. Pick the ones you want in the craft screen.
+ * @param save The savegame the chassis belong to (supplies their unique ids).
+ * @param base The base to stock.
+ */
+void NewBattleState::stockVehicles(SavedGame *save, Base *base)
+{
+	const Mod *mod = _game->getMod();
+	bool psiStrengthEval = (Options::psiStrengthEval && save->isResearched(mod->getPsiRequirements()));
+
+	for (const auto& soldierType : mod->getSoldiersList())
+	{
+		RuleSoldier *ruleSoldier = mod->getSoldier(soldierType, true);
+		if (!ruleSoldier->isVehicle())
+		{
+			continue;
+		}
+
+		int have = 0;
+		for (const auto* soldier : *base->getSoldiers())
+		{
+			if (soldier->getRules() == ruleSoldier)
+			{
+				++have;
+			}
+		}
+
+		for (int i = have; i < VEHICLES_PER_TYPE; ++i)
+		{
+			int nationality = save->selectSoldierNationalityByLocation(mod, ruleSoldier, nullptr); // -1
+			Soldier *chassis = mod->genSoldier(save, ruleSoldier, nationality, _game->getLanguage());
+			// No promotion or stat rolls: a chassis has fixed stats and no rank by definition.
+			chassis->calcStatString(mod->getStatStrings(), psiStrengthEval);
+			base->getSoldiers()->push_back(chassis);
+		}
+	}
+}
+
+/**
  * Initializes a new savegame with
  * everything available.
  */
@@ -573,13 +622,25 @@ void NewBattleState::initSave()
 	base->getCrafts()->push_back(_craft);
 
 	// Generate soldiers
-	bool psiStrengthEval = (Options::psiStrengthEval && save->isResearched(mod->getPsiRequirements()));
-	for (int i = 0; i < 30; ++i)
+	// DX: vehicle chassis are excluded from this roll -- they are crewless hardware with fixed stats
+	// and no rank, so the promotion/stat-bump pass below must never touch one. They are stocked
+	// deterministically by stockVehicles() instead.
+	std::vector<std::string> crewTypes;
+	for (const auto& soldierType : mod->getSoldiersList())
 	{
-		int randomType = RNG::generate(0, mod->getSoldiersList().size() - 1);
-		RuleSoldier* ruleSoldier = mod->getSoldier(mod->getSoldiersList().at(randomType), true);
+		if (!mod->getSoldier(soldierType, true)->isVehicle())
+		{
+			crewTypes.push_back(soldierType);
+		}
+	}
+
+	bool psiStrengthEval = (Options::psiStrengthEval && save->isResearched(mod->getPsiRequirements()));
+	for (int i = 0; i < 30 && !crewTypes.empty(); ++i)
+	{
+		int randomType = RNG::generate(0, crewTypes.size() - 1);
+		RuleSoldier* ruleSoldier = mod->getSoldier(crewTypes.at(randomType), true);
 		int nationality = save->selectSoldierNationalityByLocation(mod, ruleSoldier, nullptr); // -1
-		Soldier *soldier = mod->genSoldier(save, ruleSoldier, nationality);
+		Soldier *soldier = mod->genSoldier(save, ruleSoldier, nationality, _game->getLanguage());
 
 		for (int n = 0; n < 5; ++n)
 		{
@@ -615,6 +676,9 @@ void NewBattleState::initSave()
 			soldier->setCraft(_craft);
 		}
 	}
+
+	// DX: stock testable vehicle chassis (base only -- see stockVehicles).
+	stockVehicles(save, base);
 
 	// Generate items
 	for (auto& itemType : mod->getItemsList())

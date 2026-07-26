@@ -3010,10 +3010,16 @@ void BattleUnit::prepareTimeUnits(int tu)
 		setValueMax(_tu, tu, 0, getBaseStats()->tu);
 
 		// Apply reductions, if new TU == 0 then it could make not spend TU decay
-		float encumbrance = (float)getBaseStats()->strength / (float)getCarriedWeight();
-		if (encumbrance < 1)
+		// DX: `ignoresEncumbrance` armors skip this. A modular vehicle chassis already pays for a
+		// heavy loadout by needing a bigger engine to mount it at all, so a mod can opt out of
+		// taxing the same weight twice.
+		if (!_armor->getIgnoresEncumbrance())
 		{
-		  _tu = int(encumbrance * _tu);
+			float encumbrance = (float)getBaseStats()->strength / (float)getCarriedWeight();
+			if (encumbrance < 1)
+			{
+			  _tu = int(encumbrance * _tu);
+			}
 		}
 		// Each fatal wound to the left or right leg reduces the soldier's TUs by 10%.
 		_tu -= (_tu * ((_fatalWounds[BODYPART_LEFTLEG]+_fatalWounds[BODYPART_RIGHTLEG]) * 10))/100;
@@ -3439,6 +3445,14 @@ bool BattleUnit::addItem(BattleItem *item, const Mod *mod, bool allowSecondClip,
 	bool loaded = false;
 	const RuleItem *rule = item->getRules();
 	int weight = 0;
+
+	// DX: item user restrictions (`vehicleItem` / `units:`) -- auto-equip must never strap gear onto
+	// a unit that isn't allowed to carry it. Non-soldier units are exempt inside canBeEquippedBy(),
+	// so aliens and classic HWPs auto-equip exactly as before.
+	if (!rule->canBeEquippedBy(this))
+	{
+		return false;
+	}
 
 	bool isStandardPlayerUnit = getFaction() == FACTION_PLAYER && hasInventory() && !isSummonedPlayerUnit();
 
@@ -5017,6 +5031,35 @@ void BattleUnit::refreshBaseStats(bool reloadingFromSave)
 {
 	_stats = computeEffectiveBaseStats(nullptr);
 	recalculateMaxArmor(reloadingFromSave);
+	refreshTurretType();
+}
+
+/**
+ * DX: recomputes the turret sprite for a modular vehicle chassis from the weapon it has mounted.
+ *
+ * Classic HWPs are a single indivisible item that sets the turret once at spawn
+ * (BattlescapeGenerator::addXCOMVehicle), so this only runs for armors that opt in with
+ * `turretFromWeapon`. Turret mounts are the chassis layout's hands, so the right hand is turret 1
+ * and the left hand turret 2; the first mount holding a weapon that declares a `turretType` wins.
+ * An unarmed chassis reverts to -1, which is also what gates strafing, the close-quarters exemption
+ * and turn-the-turret-not-the-hull -- so this is behavior, not just cosmetics.
+ */
+void BattleUnit::refreshTurretType()
+{
+	if (!_armor || !_armor->getTurretFromWeapon())
+	{
+		return;
+	}
+	int turret = -1;
+	for (const auto* item : { getRightHandWeapon(), getLeftHandWeapon() })
+	{
+		if (item && item->getRules() && item->getRules()->getTurretType() > -1)
+		{
+			turret = item->getRules()->getTurretType();
+			break;
+		}
+	}
+	_turretType = turret;
 }
 
 /**
@@ -5046,11 +5089,25 @@ void BattleUnit::recalculateMaxArmor(bool reloadingFromSave)
 		{
 			continue;
 		}
-		itemBonus[SIDE_FRONT] += itemRules->getFrontArmorBonus();
-		itemBonus[SIDE_LEFT]  += itemRules->getSideArmorBonus();
-		itemBonus[SIDE_RIGHT] += itemRules->getSideArmorBonus();
-		itemBonus[SIDE_REAR]  += itemRules->getRearArmorBonus();
-		itemBonus[SIDE_UNDER] += itemRules->getUnderArmorBonus();
+		// A slot may declare the facing it reinforces (`armorSide`), in which case the item plates
+		// that side alone -- one plate item type serves every hardpoint instead of needing a variant
+		// per facing. The value used is still the item's own value *for that side*, so an asymmetric
+		// plate stays expressible. Slots with no `armorSide` apply all four values as declared.
+		switch (item->getSlot()->getArmorSide())
+		{
+		case SIDE_FRONT: itemBonus[SIDE_FRONT] += itemRules->getFrontArmorBonus(); break;
+		case SIDE_LEFT:  itemBonus[SIDE_LEFT]  += itemRules->getSideArmorBonus();  break;
+		case SIDE_RIGHT: itemBonus[SIDE_RIGHT] += itemRules->getSideArmorBonus();  break;
+		case SIDE_REAR:  itemBonus[SIDE_REAR]  += itemRules->getRearArmorBonus();  break;
+		case SIDE_UNDER: itemBonus[SIDE_UNDER] += itemRules->getUnderArmorBonus(); break;
+		default:
+			itemBonus[SIDE_FRONT] += itemRules->getFrontArmorBonus();
+			itemBonus[SIDE_LEFT]  += itemRules->getSideArmorBonus();
+			itemBonus[SIDE_RIGHT] += itemRules->getSideArmorBonus();
+			itemBonus[SIDE_REAR]  += itemRules->getRearArmorBonus();
+			itemBonus[SIDE_UNDER] += itemRules->getUnderArmorBonus();
+			break;
+		}
 	}
 	for (int side = 0; side < SIDE_MAX; ++side)
 	{

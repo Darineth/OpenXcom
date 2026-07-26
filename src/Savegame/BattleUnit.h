@@ -725,6 +725,8 @@ public:
 	void refreshBaseStats(bool reloadingFromSave = false);
 	/// Recomputes per-side max armor from the base armor plus equipped-item directional armor.
 	void recalculateMaxArmor(bool reloadingFromSave = false);
+	/// DX: recomputes the turret sprite from the mounted weapon (armors with `turretFromWeapon`).
+	void refreshTurretType();
 	/// Computes effective base stats for preview, optionally excluding one inventory item.
 	UnitStats getBaseStatsPreview(const BattleItem* excludedItem = nullptr) const;
 	/// Gets the unit's stats.

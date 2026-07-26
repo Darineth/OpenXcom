@@ -233,7 +233,7 @@ void GeoscapeEventState::eventLogic()
 				{
 					Transfer* t = new Transfer(24);
 					int nationality = _game->getSavedGame()->selectSoldierNationalityByLocation(_game->getMod(), ruleSoldier, city);
-					Soldier* s = mod->genSoldier(save, ruleSoldier, nationality);
+					Soldier* s = mod->genSoldier(save, ruleSoldier, nationality, _game->getLanguage());
 					YAML::YamlRootNodeReader reader(rule.getSpawnedSoldierTemplate(), "(spawned soldier template)");
 					s->load(reader, mod, save, mod->getScriptGlobal(), true); // load from soldier template
 					if (!rule.getSpawnedPersonName().empty())
@@ -284,7 +284,7 @@ void GeoscapeEventState::eventLogic()
 			{
 				Transfer* t = new Transfer(24);
 				int nationality = _game->getSavedGame()->selectSoldierNationalityByLocation(_game->getMod(), ts.first, city);
-				Soldier* s = mod->genSoldier(save, ts.first, nationality);
+				Soldier* s = mod->genSoldier(save, ts.first, nationality, _game->getLanguage());
 				YAML::YamlRootNodeReader reader(rule.getSpawnedSoldierTemplate(), "(spawned soldier template)");
 				s->load(reader, mod, save, mod->getScriptGlobal(), true); // load from soldier template
 				{

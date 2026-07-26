@@ -1,0 +1,678 @@
+# =====================================================================
+#  DX Test Content: Modular Vehicles (HWPs)
+# =====================================================================
+#  A flat port of the base game's five HWPs into the DX modular-vehicle
+#  system. Instead of five indivisible tank products you buy TWO chassis
+#  and fit them: an engine (which supplies ALL mobility and carry
+#  capacity), one turret gun, armor plates per facing, and modules.
+#
+#      vanilla                        ->  DX modular
+#      ---------------------------------  ----------------------------
+#      Tank/Cannon                        DX Tank    + Cannon turret
+#      Tank/Rocket Launcher               DX Tank    + Rocket turret
+#      Tank/Laser Cannon                  DX Tank    + Laser turret
+#      Hovertank/Plasma                   DX Hover   + Plasma turret
+#      Hovertank/Launcher                 DX Hover   + Launcher turret
+#
+#  ...and every other combination too: a Hovertank/Cannon or a
+#  Tank/Plasma are now legal builds, which is the whole point.
+#
+#  Stats, damage, accuracy, TU costs, sprites, sounds and ammo are taken
+#  verbatim from xcom1 (items.rul / units.rul / armors.rul). What is NOT
+#  vanilla is the split of armor between hull and plates, and of TU and
+#  strength between chassis and engine - see the notes on each below.
+#
+#  Engine features this exercises:
+#    * soldiers: `vehicle: true`          - chassis is hardware, not a person
+#    * armors:   `turretFromWeapon: true` - turret sprite follows the mounted gun
+#    * armors:   `ignoresEncumbrance`     - opt out of the weight TU tax
+#    * invs:     `armorSide: front|...`   - a hardpoint that plates ONE facing
+#    * items:    `battleType: 12 / 13`    - armor plate / installed equipment
+#    * items:    `vehicleItem` + `units:` - who may equip a thing
+#
+#  What to check in game:
+#    * Purchase lists "DX Tank" and "DX Hovertank" under personnel. They
+#      arrive named "DX Tank-<id>", NOT "John Doe", with no rank and no
+#      gender, and never appear in the martial-training or psi-lab
+#      allocation screens.
+#    * An UNFITTED chassis reads 0 TU / 0 strength on its Soldier Info
+#      bars - it cannot move at all. Fit an engine and both jump.
+#    * Mount the Cannon -> the hull draws the CANNON turret. Swap it for
+#      the Laser -> the sprite changes live. Empty turret -> no turret at
+#      all (and the unit loses turret-only behavior like strafing).
+#    * ONE plate item serves all four facings: put STR_DX_HWP_PLATE in
+#      FRONT vs REAR and only that side's armor rises.
+#    * Item user restrictions cut both ways: the chassis' ground list
+#      shows no rifles/medikits/grenades, and a rifleman's shows no
+#      engines, plates or turrets. Trying anyway gives
+#      STR_CANNOT_EQUIP_ITEM. Both sets still ride the same craft and are
+#      recovered normally - only EQUIPPING is gated.
+#    * Feeding a turret from the AMMO RACK costs 0 TU (free in-battle
+#      reloads); the ENGINE and PLATES are locked once combat starts
+#      (STR_NOT_COMBAT_SWAPPABLE).
+#    * WEIGHT IS THE REAL CONSTRAINT. The basic engine cannot haul a
+#      heavy turret AND a full set of plates - the chassis goes over its
+#      strength and loses TU every turn. The advanced engine can. That
+#      trade is the core of the system.
+# =====================================================================
+
+invs:
+  # --- Weapon mount ---------------------------------------------------
+  # The load-bearing trick: a turret mount is just the layout's HAND. Because DX decoupled
+  # handedness from the STR_RIGHT_HAND/STR_LEFT_HAND ids, firing, reaction fire, reloading, ammo
+  # handling, the action menu and TU costs all work on it with zero new code. Vanilla HWPs carry one
+  # gun, so these chassis have one mount; adding a `hand: left` section would give a second.
+  # battleType 1 = BT_FIREARM -> only guns mount; allowCombatSwap: false -> bolted on for the mission.
+  - id: STR_DX_TURRET
+    x: 0
+    y: 63
+    type: 1                 # INV_HAND
+    hand: right
+    battleType: 1
+    allowCombatSwap: false
+    costs:
+      STR_DX_AMMO_RACK: 0   # free to feed from the rack
+      STR_GROUND: 8
+
+  # --- Ammunition rack ------------------------------------------------
+  # 2x3 clips-only grid. Cost to the turret is 0: reloading from the rack is free in battle.
+  - id: STR_DX_AMMO_RACK
+    x: 272
+    y: 63
+    type: 0
+    battleType: 2           # BT_AMMO
+    slots:
+      - [0, 0]
+      - [1, 0]
+      - [0, 1]
+      - [1, 1]
+      - [0, 2]
+      - [1, 2]
+    costs:
+      STR_DX_TURRET: 0
+      STR_GROUND: 8
+
+  # --- Engine bay -----------------------------------------------------
+  # battleType 13 = BT_EQUIPMENT (installed gear -- nothing vehicle-specific about the class; the
+  # same one covers a soldier's night-vision module). countStats: true is what makes the engine's
+  # `stats` (tu, strength) and a module's `statModifiers` (firing) actually reach the unit. The
+  # chassis itself has tu: 0 / strength: 0, so an empty bay is an immobile hull carrying nothing.
+  - id: STR_DX_ENGINE_BAY
+    x: 176
+    y: 24
+    type: 0
+    battleType: 13          # BT_EQUIPMENT
+    countStats: true
+    allowCombatSwap: false  # you don't swap engines mid-firefight
+    slots:
+      - [0, 0]
+      - [1, 0]
+      - [2, 0]
+      - [0, 1]
+      - [1, 1]
+      - [2, 1]
+      - [0, 2]
+      - [1, 2]
+      - [2, 2]
+    costs:
+      STR_GROUND: 30
+
+  # --- Armor hardpoints, TANK (2 plates per facing) --------------------
+  # battleType 12 = BT_ARMOR_PLATE, and `armorSide` is the DX addition that makes ONE plate item
+  # type serve every facing: the plate adds its armor to whichever hardpoint it is bolted into,
+  # instead of the modder shipping four near-identical FRONT/LEFT/RIGHT/REAR plate items.
+  - id: STR_DX_PLATE_FRONT
+    x: 16
+    y: 24
+    type: 0
+    battleType: 12          # BT_ARMOR_PLATE
+    armorSide: front
+    allowCombatSwap: false
+    slots: [ [0, 0], [1, 0] ]
+    costs:
+      STR_GROUND: 20
+  - id: STR_DX_PLATE_LEFT
+    x: 16
+    y: 42
+    type: 0
+    battleType: 12
+    armorSide: left
+    allowCombatSwap: false
+    slots: [ [0, 0], [1, 0] ]
+    costs:
+      STR_GROUND: 20
+  - id: STR_DX_PLATE_RIGHT
+    x: 80
+    y: 24
+    type: 0
+    battleType: 12
+    armorSide: right
+    allowCombatSwap: false
+    slots: [ [0, 0], [1, 0] ]
+    costs:
+      STR_GROUND: 20
+  - id: STR_DX_PLATE_REAR
+    x: 80
+    y: 42
+    type: 0
+    battleType: 12
+    armorSide: rear
+    allowCombatSwap: false
+    slots: [ [0, 0], [1, 0] ]
+    costs:
+      STR_GROUND: 20
+
+  # --- Armor hardpoints, HOVER (1 plate per facing) --------------------
+  # The hover chassis trades plate depth for flight and an all-round hull, mirroring how the vanilla
+  # Hovertank is uniformly armored. Same plate item, half the stacking.
+  - id: STR_DX_HPLATE_FRONT
+    x: 16
+    y: 24
+    type: 0
+    battleType: 12
+    armorSide: front
+    allowCombatSwap: false
+    slots: [ [0, 0] ]
+    costs:
+      STR_GROUND: 20
+  - id: STR_DX_HPLATE_LEFT
+    x: 16
+    y: 42
+    type: 0
+    battleType: 12
+    armorSide: left
+    allowCombatSwap: false
+    slots: [ [0, 0] ]
+    costs:
+      STR_GROUND: 20
+  - id: STR_DX_HPLATE_RIGHT
+    x: 80
+    y: 24
+    type: 0
+    battleType: 12
+    armorSide: right
+    allowCombatSwap: false
+    slots: [ [0, 0] ]
+    costs:
+      STR_GROUND: 20
+  - id: STR_DX_HPLATE_REAR
+    x: 80
+    y: 42
+    type: 0
+    battleType: 12
+    armorSide: rear
+    allowCombatSwap: false
+    slots: [ [0, 0] ]
+    costs:
+      STR_GROUND: 20
+
+inventoryLayouts:
+  # A chassis "inventory" is a set of hardpoints, not belt/backpack: a turret mount, an ammo rack,
+  # an engine bay and the armor facings. No STR_BELT/STR_BACK_PACK - a tank has no pockets.
+  - id: STR_DX_LAYOUT_TANK
+    invs:
+      - STR_DX_TURRET
+      - STR_DX_AMMO_RACK
+      - STR_DX_ENGINE_BAY
+      - STR_DX_PLATE_FRONT
+      - STR_DX_PLATE_LEFT
+      - STR_DX_PLATE_RIGHT
+      - STR_DX_PLATE_REAR
+      - STR_GROUND
+
+  - id: STR_DX_LAYOUT_HOVER
+    invs:
+      - STR_DX_TURRET
+      - STR_DX_AMMO_RACK
+      - STR_DX_ENGINE_BAY
+      - STR_DX_HPLATE_FRONT
+      - STR_DX_HPLATE_LEFT
+      - STR_DX_HPLATE_RIGHT
+      - STR_DX_HPLATE_REAR
+      - STR_GROUND
+
+armors:
+  # Hull armor is deliberately BELOW vanilla, because plates make up the difference:
+  #   TANK  hull 66/55/44/44 + 2 plates x12 per facing = 90/79/68/68  (vanilla 90/75/60/60)
+  #   HOVER hull 118/118/118/100 + 1 plate x12         = 130/130/130/112 (vanilla 130/130/130/100)
+  # So a fully-plated chassis lands about where the vanilla HWP did, and an unplated one is notably
+  # softer - which is what makes the plate economy worth engaging with.
+  - type: STR_DX_TANK_ARMOR
+    spriteSheet: TANKS.PCK
+    allowInv: true                # a 2x2 unit WITH an inventory - this is what lets it be built
+    inventoryLayout: STR_DX_LAYOUT_TANK
+    turretFromWeapon: true        # DX: turret sprite comes from the mounted gun, live
+    ignoresEncumbrance: false     # DX: leave the weight tax ON so the engine trade-off is visible
+    # Tank treads (vanilla STR_TANK_* units use moveSound 14). REQUIRED: a chassis is backed by a
+    # geoscape Soldier, and for those BattleUnit takes the move sound from the ARMOR only -- there is
+    # no soldier-rule fallback. Without this the unit drops through to per-tile FOOTSTEP sounds, i.e.
+    # a 2x2 tank walking around in boots.
+    moveSound: 14
+    corpseBattle:
+      - TANK_CORPSE_1
+      - TANK_CORPSE_2
+      - TANK_CORPSE_3
+      - TANK_CORPSE_4
+    frontArmor: 66
+    sideArmor: 55
+    rearArmor: 44
+    underArmor: 44
+    drawingRoutine: 2
+    size: 2
+    damageModifier:
+      - 1.0
+      - 1.0
+      - 0.4
+      - 0.75
+      - 1.0
+      - 1.0
+      - 0.0
+      - 0.9
+      - 0.4
+      - 0.0
+    loftempsSet: [ 92, 89, 90, 91 ]
+
+  - type: STR_DX_HOVERTANK_ARMOR
+    spriteSheet: TANKS.PCK
+    allowInv: true
+    inventoryLayout: STR_DX_LAYOUT_HOVER
+    turretFromWeapon: true
+    ignoresEncumbrance: false
+    # Hover drive (vanilla STR_HOVERTANK_* units use moveSound 40). Without it a flying unit falls
+    # back to the engine's generic FLYING_SOUND rather than its own drive note.
+    moveSound: 40
+    corpseBattle:
+      - HOVERTANK_CORPSE_1
+      - HOVERTANK_CORPSE_2
+      - HOVERTANK_CORPSE_3
+      - HOVERTANK_CORPSE_4
+    frontArmor: 118
+    sideArmor: 118
+    rearArmor: 118
+    underArmor: 100
+    drawingRoutine: 2
+    constantAnimation: true
+    movementType: 1               # flying, as vanilla HOVERTANK_ARMOR
+    size: 2
+    damageModifier:
+      - 1.0
+      - 1.0
+      - 0.4
+      - 0.75
+      - 1.0
+      - 1.0
+      - 0.0
+      - 0.9
+      - 0.4
+      - 0.0
+    loftempsSet: [ 92, 89, 90, 91 ]
+
+soldiers:
+  # min == max == caps: every chassis rolls identical stats and can never improve.
+  # NOTE tu: 0 and strength: 0 - unlike the vanilla units (tu 70/100, strength 60), mobility and
+  # carry capacity come ENTIRELY from the installed engine. Everything else is the vanilla unit.
+  - type: STR_DX_TANK
+    vehicle: true                 # DX: hardware, not a person
+    allowPromotion: false         # implied by `vehicle: true`; spelled out here for clarity
+    allowPiloting: false
+    femaleFrequency: 0
+    costBuy: 320000               # cf. vanilla Tank/Cannon at 420000, but you still buy a gun
+    costSalary: 12000
+    transferTime: 96
+    value: 20
+    armor: STR_DX_TANK_ARMOR
+    standHeight: 16
+    kneelHeight: 16
+    deathMale: [23]
+    listOrder: 9010
+    minStats: &dxTankStats
+      tu: 0
+      stamina: 100
+      health: 90
+      bravery: 110
+      reactions: 20
+      firing: 60
+      throwing: 0
+      strength: 0
+      psiStrength: 100
+      psiSkill: 0
+      melee: 70
+    maxStats: *dxTankStats
+    statCaps: *dxTankStats
+
+  - type: STR_DX_HOVERTANK
+    vehicle: true
+    allowPromotion: false
+    allowPiloting: false
+    femaleFrequency: 0
+    costBuy: 700000
+    costSalary: 24000
+    transferTime: 96
+    value: 20
+    armor: STR_DX_HOVERTANK_ARMOR
+    standHeight: 12
+    kneelHeight: 12
+    floatHeight: 6
+    deathMale: [23]
+    listOrder: 9020
+    minStats: &dxHoverStats
+      tu: 0
+      stamina: 100
+      health: 90
+      bravery: 110
+      reactions: 30
+      firing: 60
+      throwing: 0
+      strength: 0
+      psiStrength: 100
+      psiSkill: 0
+      melee: 70
+    maxStats: *dxHoverStats
+    statCaps: *dxHoverStats
+
+items:
+  # ===================================================================
+  #  Engines (BT_EQUIPMENT) - the whole drivetrain in one item
+  # ===================================================================
+  #  `stats` add flat to the unit. TU is the point: a chassis is immobile without one. `strength`
+  #  is the carry budget every turret, plate and module below spends against.
+  #
+  #  The two are a real choice, not a straight upgrade:
+  #    Basic    (150 str) hauls a light turret and partial plating.
+  #    Advanced (280 str) hauls the heaviest turret AND a full plate set.
+  #  Weigh a build up past its engine's strength and the chassis loses TU every turn.
+  # ===================================================================
+  - type: STR_DX_HWP_ENGINE
+    size: 0.5
+    costBuy: 60000
+    costSell: 30000
+    transferTime: 48
+    weight: 30
+    bigSprite: 43
+    floorSprite: 0
+    handSprite: 0
+    battleType: 13              # BT_EQUIPMENT
+    invWidth: 2
+    invHeight: 3
+    recover: true
+    vehicleItem: true                                 # chassis may install it...
+    units: [ STR_DX_TANK, STR_DX_HOVERTANK ]          # ...and people can't
+    stats:
+      tu: 55
+      strength: 150
+  - type: STR_DX_HWP_ENGINE_ADV
+    size: 1
+    costBuy: 160000
+    costSell: 80000
+    transferTime: 48
+    weight: 55
+    bigSprite: 43
+    floorSprite: 0
+    handSprite: 0
+    battleType: 13
+    invWidth: 3
+    invHeight: 3
+    recover: true
+    vehicleItem: true
+    units: [ STR_DX_TANK, STR_DX_HOVERTANK ]
+    stats:
+      tu: 75
+      strength: 280
+
+  # ===================================================================
+  #  Accessory module (BT_EQUIPMENT)
+  # ===================================================================
+  #  `statModifiers` is the percentage channel: +20% firing while installed. Only counts because
+  #  the engine bay is countStats: true - park it in a countStats: false slot and it does nothing.
+  - type: STR_DX_HWP_TARGETING
+    size: 0.1
+    costBuy: 45000
+    costSell: 20000
+    transferTime: 48
+    weight: 10
+    bigSprite: 43
+    floorSprite: 0
+    handSprite: 0
+    battleType: 13
+    invWidth: 1
+    invHeight: 1
+    recover: true
+    vehicleItem: true
+    units: [ STR_DX_TANK, STR_DX_HOVERTANK ]
+    statModifiers:
+      firing: 20
+
+  # ===================================================================
+  #  Armor plate (BT_ARMOR_PLATE)
+  # ===================================================================
+  #  All four directional values are equal, so this ONE item works in any facing hardpoint: the
+  #  slot's `armorSide` decides where the +12 lands. (Give the values different numbers and you get
+  #  an asymmetric plate - the slot picks which of the four applies.)
+  - type: STR_DX_HWP_PLATE
+    size: 0.2
+    costBuy: 18000
+    costSell: 9000
+    transferTime: 48
+    weight: 15
+    bigSprite: 43
+    floorSprite: 0
+    handSprite: 0
+    battleType: 12              # BT_ARMOR_PLATE
+    invWidth: 1
+    invHeight: 1
+    recover: true
+    vehicleItem: true
+    units: [ STR_DX_TANK, STR_DX_HOVERTANK ]
+    frontArmor: 12
+    sideArmor: 12
+    rearArmor: 12
+    underArmor: 12
+
+  # ===================================================================
+  #  The five turrets
+  # ===================================================================
+  #  Ordinary firearms with a `turretType`, NOT fixedWeapon: they must be movable so the player can
+  #  mount and swap them. turretType picks the turret sprite the chassis draws (0 cannon, 1 rocket,
+  #  2 laser, 3 plasma, 4 launcher) - `turretFromWeapon` reads it live off the mount.
+  #  Power/accuracy/TU/sprites/sounds/ammo are verbatim from the vanilla HWPs; the added fields are
+  #  `weight` (vanilla used 1, meaningless on a fixed weapon) and the user restrictions.
+  # ===================================================================
+  - type: STR_DX_HWP_CANNON            # was Tank/Cannon
+    size: 1
+    costBuy: 110000
+    costSell: 60000
+    transferTime: 96
+    weight: 40
+    bigSprite: 43
+    floorSprite: 0
+    handSprite: 0
+    bulletSprite: 4
+    fireSound: 12
+    compatibleAmmo:
+      - STR_HWP_CANNON_SHELLS
+    accuracySnap: 60
+    accuracyAimed: 90
+    tuSnap: 33
+    tuAimed: 80
+    battleType: 1
+    invWidth: 2
+    invHeight: 3
+    turretType: 0
+    recover: true
+    vehicleItem: true
+    units: [ STR_DX_TANK, STR_DX_HOVERTANK ]
+
+  - type: STR_DX_HWP_ROCKET            # was Tank/Rocket Launcher
+    size: 1
+    costBuy: 140000
+    costSell: 70000
+    transferTime: 96
+    weight: 45
+    bigSprite: 42
+    floorSprite: 0
+    handSprite: 0
+    bulletSprite: 0
+    fireSound: 52
+    compatibleAmmo:
+      - STR_HWP_ROCKETS
+    accuracySnap: 55
+    accuracyAimed: 115
+    tuSnap: 45
+    tuAimed: 75
+    battleType: 1
+    invWidth: 2
+    invHeight: 3
+    turretType: 1
+    recover: true
+    vehicleItem: true
+    units: [ STR_DX_TANK, STR_DX_HOVERTANK ]
+
+  - type: STR_DX_HWP_LASER             # was Tank/Laser Cannon
+    size: 1
+    costSell: 200000
+    transferTime: 96
+    weight: 60
+    bigSprite: 54
+    floorSprite: 0
+    handSprite: 0
+    bulletSprite: 5
+    fireSound: 11
+    hitSound: 19
+    hitAnimation: 36
+    power: 110
+    damageType: 4
+    clipSize: -1                 # laser: no ammo, so it never touches the rack
+    accuracySnap: 50
+    accuracyAimed: 85
+    tuSnap: 33
+    tuAimed: 75
+    battleType: 1
+    invWidth: 2
+    invHeight: 3
+    turretType: 2
+    recover: true
+    vehicleItem: true
+    units: [ STR_DX_TANK, STR_DX_HOVERTANK ]
+    requires:
+      - STR_LASER_CANNON
+
+  - type: STR_DX_HWP_PLASMA            # was Hovertank/Plasma
+    size: 1
+    costSell: 400000
+    transferTime: 96
+    weight: 70
+    bigSprite: 40
+    floorSprite: 0
+    handSprite: 0
+    bulletSprite: 8
+    fireSound: 18
+    hitSound: 19
+    hitAnimation: 46
+    power: 110
+    damageType: 5
+    clipSize: -1
+    accuracySnap: 85
+    accuracyAimed: 100
+    tuSnap: 30
+    tuAimed: 60
+    battleType: 1
+    invWidth: 2
+    invHeight: 3
+    turretType: 3
+    recover: true
+    vehicleItem: true
+    units: [ STR_DX_TANK, STR_DX_HOVERTANK ]
+    requires:
+      - STR_PLASMA_CANNON
+
+  - type: STR_DX_HWP_LAUNCHER          # was Hovertank/Launcher
+    size: 1
+    costSell: 450000
+    transferTime: 96
+    weight: 80
+    bigSprite: 40
+    floorSprite: 0
+    handSprite: 0
+    bulletSprite: 10
+    fireSound: 53
+    compatibleAmmo:
+      - STR_HWP_FUSION_BOMB
+    accuracyAimed: 100
+    tuAimed: 66
+    waypoints: 9
+    battleType: 1
+    invWidth: 2
+    invHeight: 3
+    turretType: 4
+    recover: true
+    vehicleItem: true
+    units: [ STR_DX_TANK, STR_DX_HOVERTANK ]
+    requires:
+      - STR_BLASTER_LAUNCHER
+
+  # ===================================================================
+  #  Ammo: reuse the vanilla HWP rounds, made loadable by hand
+  # ===================================================================
+  #  These entries MERGE into the existing xcom1 items by `type`, so power, clipSize, damage type
+  #  and cost stay exactly as vanilla. Two things have to be added:
+  #
+  #   1. `vehicleItem: true` so a chassis is allowed to equip them at all.
+  #   2. **Inventory sprites and dimensions.** This is the non-obvious one. Vanilla HWP rounds have
+  #      NO `bigSprite`, because in the stock game they are never touched by hand - assigning a tank
+  #      to a craft silently drags its ammo along via `vehicleClipAmmo`. With no big sprite,
+  #      `RuleItem::isInventoryItem()` is false, so the craft equipment screen won't even list them
+  #      and there is physically nothing to put in the ammo rack. Giving them a sprite turns them
+  #      into real, hand-loadable magazines. Sprites/sizes are borrowed from the closest infantry
+  #      equivalent (heavy-cannon clip, large rocket, blaster bomb).
+  #
+  #  Sizes are chosen to fit the 2x3 rack: shells 2x1 (3 clips of 30), rockets 1x3 (2 clips of 8),
+  #  fusion bombs 1x2 (2 bombs - a vertical 1x2 can't use the leftover bottom row).
+  #
+  #  No `units:` here on purpose - a crewman may carry spare rounds to hand to the tank, and the
+  #  rack's `battleType: 2` filter already keeps everything that isn't ammo out.
+  - type: STR_HWP_CANNON_SHELLS
+    vehicleItem: true
+    bigSprite: 12               # heavy-cannon AP clip
+    floorSprite: 12
+    invWidth: 2
+    invHeight: 1
+  - type: STR_HWP_ROCKETS
+    vehicleItem: true
+    bigSprite: 17               # large rocket
+    floorSprite: 17
+    invWidth: 1
+    invHeight: 3
+  - type: STR_HWP_FUSION_BOMB
+    vehicleItem: true
+    bigSprite: 36               # blaster bomb
+    floorSprite: 35
+    invWidth: 1
+    invHeight: 2
+
+extraStrings:
+  - type: en-US
+    strings:
+      STR_DX_TANK: "DX Tank"
+      STR_DX_HOVERTANK: "DX Hovertank"
+      STR_DX_TANK_ARMOR: "DX Tank Chassis"
+      STR_DX_HOVERTANK_ARMOR: "DX Hovertank Chassis"
+      STR_DX_HWP_ENGINE: "HWP Engine"
+      STR_DX_HWP_ENGINE_ADV: "HWP Engine (Advanced)"
+      STR_DX_HWP_TARGETING: "HWP Targeting Module"
+      STR_DX_HWP_PLATE: "HWP Armor Plate"
+      STR_DX_HWP_CANNON: "HWP Cannon Turret"
+      STR_DX_HWP_ROCKET: "HWP Rocket Turret"
+      STR_DX_HWP_LASER: "HWP Laser Turret"
+      STR_DX_HWP_PLASMA: "HWP Plasma Turret"
+      STR_DX_HWP_LAUNCHER: "HWP Launcher Turret"
+      STR_DX_TURRET: "TURRET"
+      STR_DX_AMMO_RACK: "AMMO"
+      STR_DX_ENGINE_BAY: "ENGINE"
+      STR_DX_PLATE_FRONT: "FRONT"
+      STR_DX_PLATE_LEFT: "LEFT"
+      STR_DX_PLATE_RIGHT: "RIGHT"
+      STR_DX_PLATE_REAR: "REAR"
+      STR_DX_HPLATE_FRONT: "FRONT"
+      STR_DX_HPLATE_LEFT: "LEFT"
+      STR_DX_HPLATE_RIGHT: "RIGHT"
+      STR_DX_HPLATE_REAR: "REAR"

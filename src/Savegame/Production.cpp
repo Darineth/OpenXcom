@@ -290,7 +290,7 @@ productionProgress_e Production::step(Base * b, SavedGame * g, const Mod *m, Lan
 					{
 						Transfer *t = new Transfer(transferTimePersonnel);
 						int nationality = g->selectSoldierNationalityByLocation(m, rule, b);
-						Soldier *s = m->genSoldier(g, rule, nationality);
+						Soldier *s = m->genSoldier(g, rule, nationality, lang);
 						YAML::YamlRootNodeReader reader(_rules->getSpawnedSoldierTemplate(), "(spawned soldier template)");
 						s->load(reader, m, g, m->getScriptGlobal(), true); // load from soldier template
 						if (_rules->getSpawnedPersonName() != "")
