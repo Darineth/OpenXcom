@@ -8,6 +8,8 @@
 - Weight capacity vs TU stuff like we had before?
 - Dedicated equipment slots in examples
 - Multi-turret example
+- Tanks run out of energy forever (possibly a good balancing option, but default energy is too low)
+- Unrevealed unit has visible death notification.  Possibly only if revealed by clairvoyance?
 
 # Documentation
 

@@ -288,17 +288,28 @@ authoring anything:
 |---|---|
 | Tank/Cannon, Tank/Rocket Launcher, Tank/Laser Cannon | **DX Tank** chassis + the matching turret |
 | Hovertank/Plasma, Hovertank/Launcher | **DX Hovertank** chassis + the matching turret |
+| *(no counterpart)* | **DX Heavy Tank** — the twin-turret example |
 
-- **2 chassis** — tank (ground) and hover (`movementType: 1`, `constantAnimation`, float height 6),
-  each with its own layout: the tank stacks **2** plates per facing, the hover **1**, mirroring how
-  the vanilla Hovertank trades depth for flight and an all-round hull.
+- **3 chassis** — tank (ground), hover (`movementType: 1`, `constantAnimation`, float height 6) and
+  heavy, each with its own layout. Plate stacking is the identity: hover **1** per facing, tank **2**,
+  heavy **3** — mirroring how the vanilla Hovertank trades depth for flight and an all-round hull.
+- **The heavy tank is the multi-turret example.** A layout may declare at most two hands, so it takes
+  both: right = TURRET, left = TURRET 2. Both fire, reaction-fire and reload independently and each
+  feeds from the rack for 0 TU, with **no** vehicle-specific code — handedness was already decoupled
+  from the stock hand ids. *Known cosmetic limit:* `BattleUnit::_turretType` is a single value taken
+  from the right mount first, so the hull draws one turret sprite and turret 2 shoots unmodelled.
+  Rendering a second turret would need a per-mount turret type on the unit and a `drawRoutine 2`
+  change — deliberately not attempted here.
 - **5 turrets** — cannon/rocket/laser/plasma/launcher, `turretType` 0–4 so each draws its own turret
   sprite. Power, accuracy, TU costs, sprites, sounds and `compatibleAmmo` are verbatim from xcom1;
   the laser/plasma/launcher keep their vanilla `requires:` research gates.
-- **2 engines** — basic (55 TU / 150 str) and advanced (75 TU / 280 str). Deliberately a *choice*:
-  the basic engine cannot haul a heavy turret **and** a full plate set (tank + cannon + 8 plates =
-  190 vs 150 str → overweight, losing TU every turn), the advanced one can (215 vs 280). That trade
-  is the core mechanic and is the reason `ignoresEncumbrance` is left **off** here.
+- **3 engines** — basic (55 TU / 150 str), advanced (75 TU / 280 str) and heavy (60 TU / 420 str).
+  Deliberately a *choice*, not a ladder: the basic engine cannot haul a heavy turret **and** a full
+  plate set (tank + cannon + 8 plates = 190 vs 150 str → overweight, losing TU every turn); the
+  advanced one can (215 vs 280) and is the fastest; the heavy one is *slower* than advanced but the
+  only engine that carries the heavy chassis' two turrets plus all twelve plates (100 + 90 + 180 =
+  370 of 420 — the same build on an advanced engine is 335 against 280, overweight). That trade is
+  the core mechanic and is why `ignoresEncumbrance` is left **off** here.
 - **Plates + targeting module**, and the three vanilla HWP ammo types merged with `vehicleItem: true`
   so a chassis can load them (no `units:` on ammo — a crewman may carry spare rounds).
 

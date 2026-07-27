@@ -1788,9 +1788,13 @@ The engine additions this feature ships:
   so the battlescape (which applies the live inventory itself) never double-counts.
 
 **Demonstrator.** `bin/standard/dx-test/dx-test-vehicles.rul` ports all five vanilla HWPs into the
-system — two chassis (tank and hover), the five turrets (cannon/rocket/laser/plasma/launcher, each
-with its own turret sprite), basic and advanced engines, armor plates and a targeting module — with
-vanilla power/accuracy/TU/sprite/ammo values. Every combination is now legal, so a Hovertank/Cannon
+system — tank and hover chassis, the five turrets (cannon/rocket/laser/plasma/launcher, each with its
+own turret sprite), three engines, armor plates and a targeting module — with vanilla
+power/accuracy/TU/sprite/ammo values. A third **heavy** chassis with no vanilla counterpart is the
+multi-turret example: two weapon mounts (the layout's two hands), three plates per facing, and a
+heavy engine that is the only one able to carry both. Both turrets fire, reaction-fire and reload
+independently with no vehicle-specific code; the hull still draws a single turret sprite, since
+`BattleUnit` tracks one turret type. Every combination is now legal, so a Hovertank/Cannon
 or a Tank/Plasma is just a build. Two deliberate deviations make the mechanics visible: the chassis
 have **0 TU and 0 strength** (all mobility comes from the engine, so an unfitted hull can't move),
 and hull armor sits below vanilla with plates making up the difference.
