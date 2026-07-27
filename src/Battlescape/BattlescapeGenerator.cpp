@@ -2763,6 +2763,13 @@ void BattlescapeGenerator::runInventory(Craft *craft)
 	MapData *data = new MapData(set);
 	_craftInventoryTile = _save->getTile(0);
 
+	// Reserve the geoscape-soldier ID range, exactly as run() does. Without this _unitSequence is
+	// still 0 here, so HWPs spawned by deployXCOM() get battle IDs 0,1,2... which collide with real
+	// soldier IDs -- and since 2x2 units are added before soldiers, an ID lookup finds the tank
+	// first. SavedBattleGame also treats `id < MAX_SOLDIER_ID` as "is a geoscape soldier", so the
+	// collision corrupts that test too.
+	_unitSequence = BattleUnit::MAX_SOLDIER_ID;
+
 	// ok now generate the battle items for inventory
 	if (craft != 0) setCraft(craft);
 	deployXCOM(nullptr, nullptr);

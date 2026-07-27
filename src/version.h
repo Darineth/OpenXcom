@@ -36,14 +36,14 @@
 #define OPENXCOM_VERSION_NUMBER 8,6,2,0
 
 // DX's own version (axis 2)
-#define OPENXCOM_VERSION_DX "0.10.0"
-#define OPENXCOM_VERSION_NUMBER_DX 0,10,0,0
+#define OPENXCOM_VERSION_DX "0.10.1"
+#define OPENXCOM_VERSION_NUMBER_DX 0,10,1,0
 
-// Compact display (UI - main menu, titles, loading): "Extended DX 0.10.0". Kept short on purpose;
+// Compact display (UI - main menu, titles, loading): "Extended DX 0.10.1". Kept short on purpose;
 // the main menu has almost no room for the OXCE base.
 #define OPENXCOM_VERSION_SHORT OPENXCOM_VERSION_ENGINE " " OPENXCOM_VERSION_DX
 // Full display with the OXCE base, for places with room where lineage helps (logs, --version, save
-// headers): "Extended DX 0.10.0 (OXCE 8.6.2)".
+// headers): "Extended DX 0.10.1 (OXCE 8.6.2)".
 #define OPENXCOM_VERSION_SHORT_OXCE OPENXCOM_VERSION_SHORT " (OXCE " OPENXCOM_VERSION_OXCE ")"
 
 #ifndef OPENXCOM_VERSION_GIT

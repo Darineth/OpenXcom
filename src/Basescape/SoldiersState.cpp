@@ -702,12 +702,15 @@ void SoldiersState::btnInventoryClick(Action *)
 		if (_availableOptions.empty() || _cbxScreenActions->getSelected() == 0)
 		{
 			size_t idx = _lstSoldiers->getSelectedRow();
-			if (idx < _base->getSoldiers()->size())
+			if (idx < _filteredListOfSoldiers.size())
 			{
-				int soldierId = _base->getSoldiers()->at(idx)->getId();
+				// Match the Soldier itself rather than its id: ids are only unique among geoscape
+				// soldiers, while the battle list also holds generated units. Indexing the filtered
+				// list (not _base->getSoldiers()) keeps the row mapping right under any filter.
+				const Soldier* wanted = _filteredListOfSoldiers.at(idx);
 				for (auto* unit : *bgame->getUnits())
 				{
-					if (unit->getId() == soldierId)
+					if (unit->getGeoscapeSoldier() == wanted)
 					{
 						bgame->setSelectedUnit(unit);
 						break;

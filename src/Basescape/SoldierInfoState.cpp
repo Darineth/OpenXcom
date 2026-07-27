@@ -872,9 +872,11 @@ void SoldierInfoState::btnInventoryClick(Action *)
 	bgen.setBase(_base);
 	bgen.runInventory(0);
 
+	// Match the Soldier itself rather than its id -- ids are only unique among geoscape soldiers,
+	// while the battle list also holds generated units (HWPs etc.).
 	for (auto* unit : *bgame->getUnits())
 	{
-		if (unit->getId() == _soldier->getId())
+		if (unit->getGeoscapeSoldier() == _soldier)
 		{
 			bgame->setSelectedUnit(unit);
 			break;

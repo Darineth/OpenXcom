@@ -482,6 +482,55 @@ immediately. No ruleset surface involved.
 
 ---
 
+## ✅ Base inventory could open the wrong unit (HWP battle IDs collided with soldier IDs)
+
+**Where:** [`BattlescapeGenerator::runInventory`](src/Battlescape/BattlescapeGenerator.cpp) ·
+[`SoldiersState::btnInventoryClick`](src/Basescape/SoldiersState.cpp) ·
+[`SoldierInfoState::btnInventoryClick`](src/Basescape/SoldierInfoState.cpp)
+**Found:** Jul 2026, opening the inventory for a vehicle from the base soldier list.
+
+### What was wrong
+
+`BattlescapeGenerator` numbers generated units from `_unitSequence`, and the real-battle entry point
+guards the geoscape ID space:
+
+```cpp
+_unitSequence = BattleUnit::MAX_SOLDIER_ID; // geoscape soldier IDs should stay below this number
+```
+
+`runInventory()` — the base / craft inventory path — calls `deployXCOM()` **without that line**, so
+`_unitSequence` is still its constructor value of `0`. Every HWP spawned for the inventory therefore
+takes battle IDs `0, 1, 2, …`, which collide directly with real soldier IDs (numbered from 1).
+
+Both inventory launchers then located the unit to pre-select by ID:
+
+```cpp
+if (unit->getId() == soldierId) { bgame->setSelectedUnit(unit); break; }
+```
+
+`deployXCOM()` adds 2×2 units *before* 1×1 soldiers, so when a collision existed the HWP was found
+first and the inventory opened on the wrong unit. Two or more HWPs in the base was enough to trigger
+it; the effect was not limited to vehicles, it hit whichever soldier's ID happened to collide.
+
+The collision also breaks a second, unrelated assumption — `SavedBattleGame` uses
+`id < BattleUnit::MAX_SOLDIER_ID` as the test for "this unit is linked to a geoscape soldier".
+
+### What DX changed
+
+1. `runInventory()` now reserves the soldier ID range exactly as `run()` does, which is the root fix.
+2. Both launchers match the **`Soldier` pointer** (`unit->getGeoscapeSoldier() == wanted`) instead of
+   an ID. IDs are only unique among geoscape soldiers, while the battle list also holds generated
+   units, so the pointer comparison cannot be fooled regardless of numbering.
+3. `SoldiersState` indexes its **filtered** soldier list rather than `_base->getSoldiers()`. The two
+   agree in the default view, but the row mapping would be wrong if that view were ever filtered.
+
+### Effect on mods / players
+
+Opening the inventory from the base soldier list or the soldier info screen now always selects the
+unit you clicked. No ruleset surface involved.
+
+---
+
 *If you fix an upstream bug, add an entry here in the same shape — what the code did, why it is
 wrong, what changed, and what a mod would notice — and cross-link it from the relevant
 [ruleset doc](docs/Ruleset.md).*
