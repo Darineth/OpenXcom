@@ -233,6 +233,10 @@ private:
 	ModScriptGlobal *_scriptGlobal;
 
 	int _maxViewDistance, _maxDarknessToSeeUnits;
+	/// DX: largest item inventory footprint in the mod, in cells (see getMaxItemInvWidth).
+	/// Defaults are a hand box (RuleInventory::HAND_W/HAND_H); literals because RuleInventory is
+	/// only forward-declared here. Mod::loadAll() re-applies that floor against the real constants.
+	int _maxItemInvWidth = 2, _maxItemInvHeight = 3;
 	int _maxStaticLightDistance, _maxDynamicLightDistance, _enhancedLighting;
 	int _costHireEngineer, _costHireScientist;
 	int _costEngineer, _costScientist, _timePersonnel, _hireByCountryOdds, _hireByRegionOdds, _initialFunding;
@@ -808,6 +812,10 @@ public:
 
 	/// Gets whether or not the inventory slots overlap with the paperdoll button
 	bool getInventoryOverlapsPaperdoll() const { return _inventoryOverlapsPaperdoll; }
+	/// DX: largest `invWidth`/`invHeight` across all items, in cells. Never below a hand box, so a
+	/// mod that defines nothing unusual gets exactly the stock 2x3. Used to size the drag surface.
+	int getMaxItemInvWidth() const { return _maxItemInvWidth; }
+	int getMaxItemInvHeight() const { return _maxItemInvHeight; }
 	/// Gets max view distance in BattleScape.
 	int getMaxViewDistance() const { return _maxViewDistance; }
 	/// Gets threshold of darkness for LoS calculation.

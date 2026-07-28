@@ -565,6 +565,14 @@ and changes core progression curves.*
 *Items added outside the original plan. Each should get a design doc in `plans/` before
 implementation (see CLAUDE.md "Planning Features").*
 
+- [x] **Inventory sprites larger than 2×3** — ✅ **Done.** Items may declare any
+  `invWidth`/`invHeight` and ship a matching image; no new ruleset key, no sprite-format change.
+  *(design: [plans/Feature-LargeInventorySprites.md](plans/Feature-LargeInventorySprites.md))*
+  - *Audit:* the cap was never in the graphics layer — `Surface::loadImage` already replaces a frame
+    at the image's real size, and slot drawing blits the whole frame into a full-screen layer. The
+    two real limits were the hardcoded 32×48 **drag surface** (clipped oversized sprites while
+    carried) and the **hand sprite offset** going negative for items bigger than the hand box.
+
 - [x] **Item user restrictions (vehicle vs. soldier gear)** — ✅ **Done.** Items declare who may equip them, and
   the equipping UI filters on it, so a chassis' inventory stops listing rifles and medikits and a
   rifleman's stops listing HWP engines and armor plates. Spun out of Modular Vehicles, which put

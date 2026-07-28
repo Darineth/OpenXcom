@@ -112,7 +112,12 @@ Inventory::Inventory(Game *game, int width, int height, int x, int y, bool base)
 	_grid = new Surface(width, height, 0, 0);
 	_items = new Surface(width, height, 0, 0);
 	_gridLabels = new Surface(width, height, 0, 0);
-	_selection = new Surface(RuleInventory::HAND_W * RuleInventory::SLOT_W, RuleInventory::HAND_H * RuleInventory::SLOT_H, x, y);
+	// DX: the dragged item is rendered into _selection, so this must be able to hold the biggest
+	// item sprite the mod defines -- a hardcoded hand box clipped anything larger than 2x3 while it
+	// was being carried (it looked right in a slot and wrong in hand). Mod::getMaxItemInv* is
+	// floored at a hand box, so this is exactly the old 32x48 unless a mod asks for more.
+	_selection = new Surface(_game->getMod()->getMaxItemInvWidth() * RuleInventory::SLOT_W,
+							 _game->getMod()->getMaxItemInvHeight() * RuleInventory::SLOT_H, x, y);
 	_warning = new WarningMessage(224, 24, 48, 176);
 	_stackNumber = new NumberText(25, 15, 0, 0); // DX: wide enough for 3-4 digit stacks (e.g. 480 orbs)
 	_stackNumber->setBordered(true);

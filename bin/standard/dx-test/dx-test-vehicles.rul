@@ -571,7 +571,8 @@ items:
   #
   #  These are a real choice, not a straight upgrade -- in strength, SPEED and bay space:
   #    Basic    ( 55 TU, 150 str, 2x2) a light turret and partial plating; leaves 5 bay cells free.
-  #    Advanced ( 75 TU, 280 str, 2x3) fastest; the heaviest single turret AND a full plate set.
+  #    Advanced ( 75 TU, 280 str, 3x3) fastest; the heaviest single turret AND a full plate set,
+  #                                    but it fills the medium bay completely - no module room.
   #    Heavy    ( 60 TU, 420 str, 2x3) slower than Advanced, but the ONLY engine that carries the
   #                                    heavy chassis' two turrets plus all twelve plates
   #                                    (2 guns 100 + engine 90 + plates 180 = 370 of 420).
@@ -607,8 +608,8 @@ items:
     floorSprite: 0
     handSprite: 0
     battleType: 13
-    invWidth: 2                 # 2 wide, not 3: a BIGOBS frame is 32x48, so 2 cells is the
-    invHeight: 3                # widest an item can be DRAWN. 6 of 9 cells -> only 3 for modules
+    invWidth: 3                 # 3x3: DX lifts the old 2x3 drawing cap, so a sprite may be any
+    invHeight: 3                # size. Fills the medium 3x3 bay entirely -> no room for modules
     recover: true
     vehicleItem: true
     units: [ STR_DX_TANK, STR_DX_HOVERTANK, STR_DX_HEAVY_TANK ]
@@ -873,8 +874,10 @@ items:
 #  (block 0 greyscale for metal, block 1 amber for the advanced engine's core, block 13 blue for
 #  the targeting lens), index 0 transparent.
 #
-#  NOTE every BIGOBS frame is 32x48 and an existing set is never resized, so an item can be at
-#  most 2 cells wide x 3 tall on screen. Art is anchored top-left to match the item's footprint.
+#  Sprites may be ANY size - DX lifts the old 2x3 drawing cap, and HwpEngineAdv.png is 48x48 for a
+#  3x3 item. A frame takes the PNG's real dimensions, so just size the image invWidth x invHeight
+#  cells of 16px. (The width/height below are the set defaults and are ignored for whole-file
+#  frames.) Art is anchored top-left to match the item's footprint.
 #  The turret guns are untouched - they already borrow the vanilla HWP weapon icons.
 extraSprites:
   - type: BIGOBS.PCK

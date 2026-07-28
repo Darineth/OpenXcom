@@ -2399,6 +2399,20 @@ void Mod::loadAll()
 	// STR_LEFT_HAND in unmodded play). Per-unit code resolves hands from the unit's own layout.
 	_inventoryRightHand = _defaultInventoryLayout->getRightHand() ? getInventory(_defaultInventoryLayout->getRightHand()->getId()) : nullptr;
 	_inventoryLeftHand = _defaultInventoryLayout->getLeftHand() ? getInventory(_defaultInventoryLayout->getLeftHand()->getId()) : nullptr;
+	// DX: largest item footprint in the mod, used to size the inventory's drag surface so sprites
+	// bigger than a hand box aren't clipped while carried. Floored at a hand box, so a mod that
+	// defines nothing unusual yields exactly the stock 2x3 and behavior is unchanged.
+	_maxItemInvWidth = RuleInventory::HAND_W;
+	_maxItemInvHeight = RuleInventory::HAND_H;
+	for (const auto& pair : _items)
+	{
+		if (pair.second)
+		{
+			_maxItemInvWidth = std::max(_maxItemInvWidth, pair.second->getInventoryWidth());
+			_maxItemInvHeight = std::max(_maxItemInvHeight, pair.second->getInventoryHeight());
+		}
+	}
+
 	afterLoadHelper("armors", this, _armors, &Armor::afterLoad);
 	afterLoadHelper("units", this, _units, &Unit::afterLoad);
 	afterLoadHelper("soldiers", this, _soldiers, &RuleSoldier::afterLoad);

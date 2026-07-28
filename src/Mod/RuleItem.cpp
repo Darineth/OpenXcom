@@ -2092,7 +2092,11 @@ void RuleItem::drawHandSprite(const SurfaceSet *texture, Surface *surface, const
  */
 int RuleItem::getHandSpriteOffX() const
 {
-	return (RuleInventory::HAND_W - getInventoryWidth()) * RuleInventory::SLOT_W/2;
+	// Centres the item in the hand box. DX: clamped at 0 -- hands accept an item of ANY size
+	// (RuleInventory::fitItemInSlot returns true unconditionally for INV_HAND), so an item wider
+	// than the box used to produce a NEGATIVE offset and draw outside it. Overflowing right is
+	// visible and sane; overflowing left onto the neighbouring UI is not.
+	return std::max(0, (RuleInventory::HAND_W - getInventoryWidth()) * RuleInventory::SLOT_W/2);
 }
 
 /**
@@ -2101,7 +2105,7 @@ int RuleItem::getHandSpriteOffX() const
  */
 int RuleItem::getHandSpriteOffY() const
 {
-	return (RuleInventory::HAND_H - getInventoryHeight()) * RuleInventory::SLOT_H/2;
+	return std::max(0, (RuleInventory::HAND_H - getInventoryHeight()) * RuleInventory::SLOT_H/2);
 }
 
 /**

@@ -69,7 +69,7 @@ Entries **merge** across mods/files by `type`, support `refNode:` inheritance an
 |---|---|---|---|
 | `battleType` | int | 0 `BT_NONE` | 0 none, 1 firearm, 2 ammo, 3 melee, 4 grenade, 5 proximity grenade, 6 medikit, 7 scanner, 8 mind probe, 9 psi-amp, 10 flare, 11 corpse, **[DX]** 12 armor plate, **[DX]** 13 equipment. |
 | `weight` | int | 3 | Carried weight (counts against strength; also feeds the [DX] weight-based reload cost). |
-| `invWidth` / `invHeight` | int | 1 / 1 | Inventory footprint in cells. |
+| `invWidth` / `invHeight` | int | 1 / 1 | Inventory footprint in cells. **[DX]** may exceed the 2×3 hand box — see below. |
 | `twoHanded` | bool | false | Needs two hands (accuracy penalty when the other hand is full). |
 | `blockBothHands` | bool | false | Cannot be used at all unless both hands are free. |
 | `fixedWeapon` | bool | false | Built-in weapon that cannot be dropped; also marks an HWP weapon (an identically-named [`units:`](Ruleset-Units.md) entry makes it a vehicle). |
@@ -460,6 +460,40 @@ Throw cost is `costThrow`/`tuThrow`/`flatThrow`.
 | `hitAnimation` / `hitMissAnimation` | sprite | 0 / −1 | Impact animation start frame (SMOKE.PCK, or X1.PCK for explosives). |
 | `hitAnimFrames` / `hitMissAnimFrames` | int | −1 | Frame count (−1 = auto-detect). |
 | `glowConeAngle` **[DX]** | int degrees | 0 | Full cone angle of the light this item casts while carried; `0` = the usual circular glow. |
+
+### [DX] Inventory sprites larger than 2×3
+
+Stock inventory art tops out at a 2×3 hand box (32×48 px), the size of a `BIGOBS.PCK` frame. **DX
+removes that limit** — declare any `invWidth`/`invHeight` and supply an image to match.
+
+Nothing about the sprite format changes and there is no new ruleset key. A frame loaded from an
+`extraSprites` file already takes that file's real dimensions, so a 3×3 item simply ships a 48×48
+PNG:
+
+```yaml
+items:
+  - type: STR_BIG_ENGINE
+    invWidth: 3
+    invHeight: 3
+    bigSprite: 62
+
+extraSprites:
+  - type: BIGOBS.PCK
+    width: 32          # set defaults; ignored when a whole file replaces one frame
+    height: 48
+    files:
+      62: Resources/BigEngine.png    # 48x48
+```
+
+Two things to respect:
+
+- **The image should match `invWidth × invHeight × 16` px.** The engine reserves grid space from the
+  declared footprint but draws the whole image, so a sprite larger than its footprint will overlap
+  neighbouring slots.
+- **Art is anchored top-left** to the item's slot, so it must fill its footprint starting at (0, 0).
+
+An oversized item may still be placed in a *hand* — hands accept any size by design — in which case
+it is drawn from the hand box's top-left corner and overflows right/down rather than being centred.
 
 `power` doubles as the light radius for `battleType: 10` (flare); **[DX]** `glowConeAngle` turns
 that glow into a directional cone aimed the way the unit faces (see

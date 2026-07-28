@@ -1843,3 +1843,25 @@ universal** — anyone can still pick a dropped item up and haul it home; only e
 hidden items remain on the tile, deploy normally and are recovered as usual. The craft equipment
 screen and the base Stores/Purchase/Sell screens are deliberately not filtered: they list what you
 own, not what one unit straps on.
+
+
+## Inventory Sprites Larger Than 2×3
+
+Stock inventory art is capped at a 2×3 hand box (32×48 px). DX removes that cap: declare any
+`invWidth`/`invHeight` on an item and ship an image to match — no new ruleset key, no sprite-format
+change. *(design: [plans/Feature-LargeInventorySprites.md](plans/Feature-LargeInventorySprites.md))*
+
+The cap was never in the graphics layer. A `SurfaceSet` frame is a `Surface` with its own dimensions,
+and `Surface::loadImage` replaces the frame at the image's real size, so oversized sprites already
+loaded and already drew correctly in a slot. Two interaction-layer limits did the capping:
+
+- **The dragged-item surface** was hardcoded to one hand box, so anything larger was clipped *while
+  carried* — correct in a slot, wrong in hand. It is now sized from the largest item footprint the
+  mod defines (`Mod::getMaxItemInvWidth/Height`), floored at a hand box so stock behavior is
+  byte-identical when no mod asks for more.
+- **The hand sprite offset** centres an item in the hand box and went *negative* for anything wider
+  or taller, drawing it outside the box. Hands accept an item of any size by design, so this was
+  reachable; the offset is now clamped at 0 and an oversized item overflows right/down instead.
+
+See [docs/Ruleset-Items.md](docs/Ruleset-Items.md) for the modder-facing rules. `dx-test`'s advanced
+HWP engine is a worked 3×3 example.
