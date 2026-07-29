@@ -10,6 +10,7 @@
 - Multi-turret example
 - Tanks run out of energy forever (possibly a good balancing option, but default energy is too low)
 - Unrevealed unit has visible death notification.  Possibly only if revealed by clairvoyance?
+- No-grid slots (hands/etc) do not have the same size as gridded slots.
 
 # Documentation
 

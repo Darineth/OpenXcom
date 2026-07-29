@@ -46,8 +46,10 @@
 #    * Mount the Cannon -> the hull draws the CANNON turret. Swap it for
 #      the Laser -> the sprite changes live. Empty turret -> no turret at
 #      all (and the unit loses turret-only behavior like strafing).
-#    * ONE plate item serves all four facings: put STR_DX_HWP_PLATE in
-#      FRONT vs REAR and only that side's armor rises.
+#    * ONE plate item serves all FIVE facings: put STR_DX_HWP_PLATE in
+#      FRONT vs REAR vs UNDER and only that side's armor rises. The
+#      hardpoints are arranged the way they sit on the vehicle - front
+#      above, left/right flanking, rear and under below.
 #    * Item user restrictions cut both ways: the chassis' ground list
 #      shows no rifles/medikits/grenades, and a rifleman's shows no
 #      engines, plates or turrets. Trying anyway gives
@@ -76,8 +78,8 @@ invs:
   # gun, so these chassis have one mount; adding a `hand: left` section would give a second.
   # battleType 1 = BT_FIREARM -> only guns mount; allowCombatSwap: false -> bolted on for the mission.
   - id: STR_DX_TURRET
-    x: 0
-    y: 63
+    x: 164
+    y: 91
     type: 1                 # INV_HAND
     hand: right
     battleType: 1
@@ -89,8 +91,8 @@ invs:
   # --- Ammunition rack ------------------------------------------------
   # 2x3 clips-only grid. Cost to the turret is 0: reloading from the rack is free in battle.
   - id: STR_DX_AMMO_RACK
-    x: 272
-    y: 63
+    x: 120
+    y: 91
     type: 0
     battleType: 2           # BT_AMMO
     slots:
@@ -110,8 +112,8 @@ invs:
   # `stats` (tu, strength) and a module's `statModifiers` (firing) actually reach the unit. The
   # chassis itself has tu: 0 / strength: 0, so an empty bay is an immobile hull carrying nothing.
   - id: STR_DX_ENGINE_BAY
-    x: 176
-    y: 24
+    x: 196
+    y: 34
     type: 0
     battleType: 13          # BT_EQUIPMENT
     countStats: true
@@ -129,13 +131,25 @@ invs:
     costs:
       STR_GROUND: 30
 
-  # --- Armor hardpoints, TANK (2 plates per facing) --------------------
+  # --- Armor hardpoints -----------------------------------------------
+  # Laid out where the plates physically sit on the vehicle:
+  #
+  #             FRONT           (x64, above)
+  #      LEFT           RIGHT   (y59, flanking)
+  #      REAR                   (y91, behind)
+  #      UNDER                  (y116, beneath)
+  #
+  # REAR and UNDER stack under LEFT rather than centring under FRONT because the paperdoll owns
+  # x60..99 from y65 all the way down to y134 -- the centre column simply isn't available below
+  # the top row. Verified with .claude/skills/inventory-layout-geometry (0 errors, 0 warnings).
+  #
+  # --- TANK (2 plates per facing) --------------------------------------
   # battleType 12 = BT_ARMOR_PLATE, and `armorSide` is the DX addition that makes ONE plate item
   # type serve every facing: the plate adds its armor to whichever hardpoint it is bolted into,
   # instead of the modder shipping four near-identical FRONT/LEFT/RIGHT/REAR plate items.
   - id: STR_DX_PLATE_FRONT
-    x: 16
-    y: 24
+    x: 64
+    y: 34
     type: 0
     battleType: 12          # BT_ARMOR_PLATE
     armorSide: front
@@ -144,8 +158,8 @@ invs:
     costs:
       STR_GROUND: 20
   - id: STR_DX_PLATE_LEFT
-    x: 16
-    y: 42
+    x: 0
+    y: 59
     type: 0
     battleType: 12
     armorSide: left
@@ -154,8 +168,8 @@ invs:
     costs:
       STR_GROUND: 20
   - id: STR_DX_PLATE_RIGHT
-    x: 80
-    y: 24
+    x: 128
+    y: 59
     type: 0
     battleType: 12
     armorSide: right
@@ -164,11 +178,22 @@ invs:
     costs:
       STR_GROUND: 20
   - id: STR_DX_PLATE_REAR
-    x: 80
-    y: 42
+    x: 0
+    y: 91
     type: 0
     battleType: 12
     armorSide: rear
+    allowCombatSwap: false
+    slots: [ [0, 0], [1, 0] ]
+    costs:
+      STR_GROUND: 20
+
+  - id: STR_DX_PLATE_UNDER
+    x: 0
+    y: 116
+    type: 0
+    battleType: 12
+    armorSide: under
     allowCombatSwap: false
     slots: [ [0, 0], [1, 0] ]
     costs:
@@ -181,8 +206,8 @@ invs:
   # NOTE the hull only draws ONE turret sprite (BattleUnit::_turretType is a single value, taken
   # from the right mount first), so turret 2 shoots but isn't modelled on the sprite.
   - id: STR_DX_TURRET_2
-    x: 128
-    y: 63
+    x: 204
+    y: 91
     type: 1                 # INV_HAND
     hand: left
     battleType: 1
@@ -193,8 +218,8 @@ invs:
 
   # --- Ammunition rack, HEAVY (2x4 - two guns to feed) ------------------
   - id: STR_DX_HVY_RACK
-    x: 240
-    y: 24
+    x: 120
+    y: 91
     type: 0
     battleType: 2           # BT_AMMO
     slots:
@@ -204,8 +229,6 @@ invs:
       - [1, 1]
       - [0, 2]
       - [1, 2]
-      - [0, 3]
-      - [1, 3]
     costs:
       STR_DX_TURRET: 0
       STR_DX_TURRET_2: 0
@@ -213,8 +236,8 @@ invs:
 
   # --- Engine bay, HEAVY (3x4 - room for the big engine plus modules) ---
   - id: STR_DX_HVY_BAY
-    x: 176
-    y: 24
+    x: 196
+    y: 34
     type: 0
     battleType: 13          # BT_EQUIPMENT
     countStats: true
@@ -229,9 +252,6 @@ invs:
       - [0, 2]
       - [1, 2]
       - [2, 2]
-      - [0, 3]
-      - [1, 3]
-      - [2, 3]
     costs:
       STR_GROUND: 30
 
@@ -239,8 +259,8 @@ invs:
   # The heavy chassis' identity: the deepest plate stacking in the mod. 12 plates at 15 weight each
   # is 180 of carry budget on its own, which is why it needs the heavy engine to also mount two guns.
   - id: STR_DX_HVY_PLATE_FRONT
-    x: 16
-    y: 24
+    x: 64
+    y: 34
     type: 0
     battleType: 12
     armorSide: front
@@ -249,8 +269,8 @@ invs:
     costs:
       STR_GROUND: 20
   - id: STR_DX_HVY_PLATE_LEFT
-    x: 16
-    y: 42
+    x: 0
+    y: 59
     type: 0
     battleType: 12
     armorSide: left
@@ -259,8 +279,8 @@ invs:
     costs:
       STR_GROUND: 20
   - id: STR_DX_HVY_PLATE_RIGHT
-    x: 80
-    y: 24
+    x: 128
+    y: 59
     type: 0
     battleType: 12
     armorSide: right
@@ -269,11 +289,22 @@ invs:
     costs:
       STR_GROUND: 20
   - id: STR_DX_HVY_PLATE_REAR
-    x: 80
-    y: 42
+    x: 0
+    y: 91
     type: 0
     battleType: 12
     armorSide: rear
+    allowCombatSwap: false
+    slots: [ [0, 0], [1, 0], [2, 0] ]
+    costs:
+      STR_GROUND: 20
+
+  - id: STR_DX_HVY_PLATE_UNDER
+    x: 0
+    y: 116
+    type: 0
+    battleType: 12
+    armorSide: under
     allowCombatSwap: false
     slots: [ [0, 0], [1, 0], [2, 0] ]
     costs:
@@ -283,8 +314,8 @@ invs:
   # The hover chassis trades plate depth for flight and an all-round hull, mirroring how the vanilla
   # Hovertank is uniformly armored. Same plate item, half the stacking.
   - id: STR_DX_HPLATE_FRONT
-    x: 16
-    y: 24
+    x: 64
+    y: 34
     type: 0
     battleType: 12
     armorSide: front
@@ -293,8 +324,8 @@ invs:
     costs:
       STR_GROUND: 20
   - id: STR_DX_HPLATE_LEFT
-    x: 16
-    y: 42
+    x: 0
+    y: 59
     type: 0
     battleType: 12
     armorSide: left
@@ -303,8 +334,8 @@ invs:
     costs:
       STR_GROUND: 20
   - id: STR_DX_HPLATE_RIGHT
-    x: 80
-    y: 24
+    x: 128
+    y: 59
     type: 0
     battleType: 12
     armorSide: right
@@ -313,11 +344,22 @@ invs:
     costs:
       STR_GROUND: 20
   - id: STR_DX_HPLATE_REAR
-    x: 80
-    y: 42
+    x: 0
+    y: 91
     type: 0
     battleType: 12
     armorSide: rear
+    allowCombatSwap: false
+    slots: [ [0, 0] ]
+    costs:
+      STR_GROUND: 20
+
+  - id: STR_DX_HPLATE_UNDER
+    x: 0
+    y: 116
+    type: 0
+    battleType: 12
+    armorSide: under
     allowCombatSwap: false
     slots: [ [0, 0] ]
     costs:
@@ -335,6 +377,7 @@ inventoryLayouts:
       - STR_DX_PLATE_LEFT
       - STR_DX_PLATE_RIGHT
       - STR_DX_PLATE_REAR
+      - STR_DX_PLATE_UNDER
       - STR_GROUND
 
   - id: STR_DX_LAYOUT_HEAVY
@@ -348,6 +391,7 @@ inventoryLayouts:
       - STR_DX_HVY_PLATE_LEFT
       - STR_DX_HVY_PLATE_RIGHT
       - STR_DX_HVY_PLATE_REAR
+      - STR_DX_HVY_PLATE_UNDER
       - STR_GROUND
 
   - id: STR_DX_LAYOUT_HOVER
@@ -359,6 +403,7 @@ inventoryLayouts:
       - STR_DX_HPLATE_LEFT
       - STR_DX_HPLATE_RIGHT
       - STR_DX_HPLATE_REAR
+      - STR_DX_HPLATE_UNDER
       - STR_GROUND
 
 armors:
@@ -917,6 +962,9 @@ extraStrings:
       STR_DX_HVY_PLATE_LEFT: "LEFT"
       STR_DX_HVY_PLATE_RIGHT: "RIGHT"
       STR_DX_HVY_PLATE_REAR: "REAR"
+      STR_DX_PLATE_UNDER: "UNDER"
+      STR_DX_HPLATE_UNDER: "UNDER"
+      STR_DX_HVY_PLATE_UNDER: "UNDER"
       STR_DX_AMMO_RACK: "AMMO"
       STR_DX_ENGINE_BAY: "ENGINE"
       STR_DX_PLATE_FRONT: "FRONT"

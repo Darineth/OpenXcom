@@ -91,3 +91,5 @@ Legacy-DX-Screenshots/
 reference/__pycache__/
 # Notes
 notes/
+# Skill helper scripts
+__pycache__/
