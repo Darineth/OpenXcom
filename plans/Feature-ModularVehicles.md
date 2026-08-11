@@ -330,6 +330,38 @@ Two deliberate deviations from vanilla, both to make the system visible rather t
 - **A dedicated vehicles UI tab.** Chassis appear in the ordinary soldier lists. OXCE's
   `RuleSoldier::group` can already separate them; a bespoke screen is not needed to play the feature.
 
+## TODO: equipment cannot dictate a unit's STARTING energy
+
+Energy is the one resource a fitted item cannot supply, and it forced a design compromise in the
+demonstrator that is worth revisiting.
+
+**What happens.** `BattleUnit`'s constructor does `_energy = _stats.stamina` *before* any equipment
+is added ([BattleUnit.cpp:256](../src/Savegame/BattleUnit.cpp#L256)). Items arrive later via
+`addItem` → `refreshBaseStats()`, which recomputes the stat **maximum** but never touches the
+**current** value, and nothing else tops energy up: `prepareEnergy` only ever adds the per-turn
+recovery. TU escapes this purely by luck — armor's default *time* recovery refills `_tu` to its
+(new, higher) maximum every turn, so an engine's TU contribution shows up on turn 1 regardless.
+Energy has no equivalent because a chassis' regeneration is `initStats.tu / 3` = **0**.
+
+**Consequence.** Put `stamina:` on the engine and a chassis spawns with an *empty* tank and can
+never move — the maximum rises, the current value stays 0. So fuel capacity had to live on the
+**chassis** instead, which works but says a bigger *hull* carries more fuel rather than a bigger
+*powerplant*, and it means every chassis has the same range no matter what you fit.
+
+**Options if we revisit.**
+
+1. **Reset TU/energy once after equipping.** `BattlescapeGenerator` could call
+   `resetTimeUnitsAndEnergy()` on player units after `deployXCOM()` finishes placing items. Small
+   and targeted; the risk is picking a point late enough that every item is really in place.
+2. **Top up in `refreshBaseStats()` when a maximum rises.** More general, but it would refill energy
+   whenever an item is moved *during* battle — an obvious exploit, so it would need to be gated to
+   pre-battle only.
+3. **Leave it.** Fuel-on-the-hull is defensible and needs no engine change; this is only worth doing
+   if we want the engine choice to govern operating range as well as speed and payload.
+
+Not urgent — the demonstrator plays correctly as-is. Recorded so the constraint is not rediscovered
+from scratch.
+
 ## TODO: audit the remaining soldier-list screens
 
 **Only the two training screens have been reviewed for chassis so far.** Every other screen that

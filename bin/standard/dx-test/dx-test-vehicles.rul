@@ -58,6 +58,11 @@
 #    * Feeding a turret from the AMMO RACK costs 0 TU (free in-battle
 #      reloads); the ENGINE and PLATES are locked once combat starts
 #      (STR_NOT_COMBAT_SWAPPABLE).
+#    * FUEL, NOT STAMINA. A chassis recovers NO energy per turn, so its
+#      stamina is a one-way budget for the whole mission - an operating
+#      RANGE. Walking burns ~2/tile, sprinting ~4, so the Tank's 200
+#      covers ~100 tiles walked and the Hover's 160 only ~80. Drive hard
+#      and you strand the vehicle where it stands.
 #    * WEIGHT IS THE REAL CONSTRAINT. The basic engine cannot haul a
 #      heavy turret AND a full set of plates - the chassis goes over its
 #      strength and loses TU every turn. The advanced engine can. That
@@ -519,6 +524,25 @@ soldiers:
   # min == max == caps: every chassis rolls identical stats and can never improve.
   # NOTE tu: 0 and strength: 0 - unlike the vanilla units (tu 70/100, strength 60), mobility and
   # carry capacity come ENTIRELY from the installed engine. Everything else is the vanilla unit.
+  #
+  # STAMINA IS THE FUEL TANK. A chassis regenerates NO energy: `basicEnergyRegeneration` gives a
+  # geoscape soldier `initStats.tu / 3`, and a chassis' *initial* TU is 0 (all of it arrives from
+  # the engine), so the per-turn top-up is zero by construction. Rather than paper over that with
+  # an armor `recovery: energy:` override, DX leans into it: stamina is a big one-way budget for
+  # the whole mission, so a vehicle has an operating RANGE and driving it hard strands it.
+  #
+  # Walking costs half the terrain TU per tile (~2 on flat ground); dx-test's `runPercent` makes
+  # running cost double that. So roughly:
+  #     Tank  200 -> ~100 tiles walked, ~50 sprinting
+  #     Hover 160 -> ~ 80 / ~40   (sleek airframe, least fuel, but the most TU per turn)
+  #     Heavy 300 -> ~150 / ~75   (big hull, big tank)
+  #
+  # The capacity has to live on the CHASSIS, not the engine: BattleUnit sets
+  # `_energy = _stats.stamina` in its constructor, BEFORE any equipment is added, and nothing
+  # tops it up afterwards (refreshBaseStats recomputes the max but never the current value, and
+  # the per-turn recovery is 0). Put stamina on the engine instead and the tank spawns with an
+  # empty tank and can never move. TU escapes this only because armor's default time recovery
+  # refills it every turn.
   - type: STR_DX_TANK
     vehicle: true                 # DX: hardware, not a person
     allowPromotion: false         # implied by `vehicle: true`; spelled out here for clarity
@@ -535,7 +559,7 @@ soldiers:
     listOrder: 9010
     minStats: &dxTankStats
       tu: 0
-      stamina: 100
+      stamina: 200
       health: 90
       bravery: 110
       reactions: 20
@@ -564,7 +588,7 @@ soldiers:
     listOrder: 9030
     minStats: &dxHeavyStats
       tu: 0
-      stamina: 100
+      stamina: 300
       health: 140
       bravery: 110
       reactions: 20
@@ -594,7 +618,7 @@ soldiers:
     listOrder: 9020
     minStats: &dxHoverStats
       tu: 0
-      stamina: 100
+      stamina: 160
       health: 90
       bravery: 110
       reactions: 30

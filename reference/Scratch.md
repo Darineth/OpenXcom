@@ -8,7 +8,10 @@
 - Weight capacity vs TU stuff like we had before?
 - Dedicated equipment slots in examples
 - Multi-turret example
-- Tanks run out of energy forever (possibly a good balancing option, but default energy is too low)
+- [done] Tanks run out of energy forever -> kept as a deliberate mechanic; energy is now a
+  per-mission FUEL budget (Tank 200 / Hover 160 / Heavy 300, ~2 energy per tile walked).
+  Capacity must stay on the chassis: _energy is set in the BattleUnit ctor before equipment,
+  so putting stamina on the engine would spawn the tank with an empty tank.
 - Unrevealed unit has visible death notification.  Possibly only if revealed by clairvoyance?
 - No-grid slots (hands/etc) do not have the same size as gridded slots.
 

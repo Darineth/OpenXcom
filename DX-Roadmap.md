@@ -510,6 +510,11 @@ therefore reframed as targeted deltas:
   - [ ] *Content:* the legacy roster (4 chassis × 16 engines × ~15 turret weapons × 10 modules ×
     4 plate tiers + the `STR_MODULAR_HWP_UPGRADES` research tree) is authorable on top of this and
     remains a separate mod-content effort.
+  - [ ] *Equipment cannot set starting energy:* `BattleUnit` initialises `_energy` from stamina in
+    its constructor, before equipment is added, and nothing tops it up afterwards — so an engine
+    cannot supply a chassis' fuel capacity (it would spawn empty and never move). Capacity lives on
+    the chassis instead. Options and the reasoning are in
+    [plans/Feature-ModularVehicles.md](plans/Feature-ModularVehicles.md#todo-equipment-cannot-dictate-a-units-starting-energy).
   - [ ] *UI audit:* only the two training screens have been reviewed for how they treat a chassis
     (vehicles are filtered out of both). Every other soldier-list screen — roster, craft assignment,
     transformations, memorial, diary, rank, armor, avatar, sacking, personnel/salary counts — still
